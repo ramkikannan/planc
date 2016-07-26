@@ -1,0 +1,17 @@
+Processing posts.xml
+------------------
+. Extract Body of all questions - xmllint --xpath "/posts/row[@PostTypeId=\"1\"]/@Body" posts.xml >> questionbody.txt 2>&1
+. Very big instead of  xmllint use "grep 'PostTypeId=\"1\"' test.xml | grep -o -P '(?<=Body=\").*(?=OwnerUserId)'"
+. introduce record end indicator using sed. When we use html2text, w3m or recode it removes \n and we loose record ends. grep 'PostTypeId=\"1\"' test.xml | grep -o -P '(?<=Body=\").*(?=OwnerUserId)' | sed ':a;N;$!ba;s/\n/55RECORDEND66\n/g' 
+. Remove &lt; and &gt; from questionbody.txt using vi or sed. sed -e 's/\p*&lt\;p*//g' questionbody.txt | sed -e 's/\p*&gt\;p*//g'
+. Remove and replace #xA;, #xD; & etc. sed 's/&#*xA;//g' |sed 's/&#*xD;//g' 
+. Remove http:// urls from questionbody4.txt sed 's/http[^[:space:]]*//g' questionbody4.txt >> questionbody5.txt
+all the above together sed 's/\p*&lt\;p*//g' | sed 's/\p*&gt\;p*//g' | sed 's/&xA;//g' |sed 's/&#xD;//g' | sed 's/http[^[:space:]]*//g'
+. Remove html entitites from questionbody.txt (right combination recode then sed) using html2text
+. Remove empty lines introduced by <p> tag in html using sed. sed ':a;N;$!ba;s/\n//g'
+. Remove latex tags. Use detex questionbody5.txt >> questionbody6.txt 2>&1. Something wrong with this. Don't do this now. But use the above sed to remove.
+. Remove stop words and stem using nltk tool kit and the pythonscript.  
+
+One command for entire script 
+
+grep 'PostTypeId=\"1\"' test.xml | grep -o -P '(?<=Body=\").*(?=OwnerUserId)' | sed ':a;N;$!ba;s/\n/55RECORDEND66\n/g' | sed 's/\p*&lt\;p*//g' | sed 's/\p*&gt\;p*//g' | sed 's/&#*xA;//g' |sed 's/&#*xD;//g' | sed 's/http[^[:space:]]*//g' | html2text | sed ':a;N;$!ba;s/\n//g' | sed 's/55RECORDEND66/\n/g'
