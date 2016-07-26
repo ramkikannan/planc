@@ -59,6 +59,7 @@ message(STATUS "*** NMFLIB_LIBS = ${NMFLIB_LIBS}")
 message(STATUS "")
 
 include_directories(
+  ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
   ${DISTNMF_SOURCE_DIR}
   ${NMFLIB_COMMON}

@@ -41,7 +41,7 @@ class MUNMF: public NMF<T> {
         double t1, t2;
         this->At = this->A.t();
         INFO << "computed transpose At=" << PRINTMATINFO(this->At) << endl;
-        while (currentIteration < this->numIterations) {
+        while (currentIteration < this->num_iterations()) {
             tic();
             // update W;
             tic();
@@ -53,30 +53,32 @@ class MUNMF: public NMF<T> {
             // W = W.*AH./(W*HtH_reg + epsilon);
             this->W = (this->W % AH) / ((this->W * HtH) + EPSILON_1EMINUS16);
             INFO << "Completed W ("
-                 << currentIteration << "/" << this->numIterations << ")"
+                 << currentIteration << "/" << this->num_iterations() << ")"
                  << " time =" << toc() << endl;
             // update H
             tic();
             AtW = this->At * this->W;
             WtW = this->W.t() * this->W;
             INFO << "starting H Prereq for " << " took=" << toc();
-                    << PRINTMATINFO(WtW) << PRINTMATINFO(WtA) << endl;
+            INFO << PRINTMATINFO(WtW) << PRINTMATINFO(AtW) << endl;
             // to avoid divide by zero error.
             tic();
             // H = H.*AtW./(WtW_reg*H + epsilon);
             this->H = (this->H % AtW) / (this->H * WtW + EPSILON_1EMINUS16);
             INFO << "Completed H ("
-                 << currentIteration << "/" << this->numIterations << ")"
+                 << currentIteration << "/" << this->num_iterations() << ")"
                  << " time =" << toc() << endl;
             INFO << "Completed It ("
-                 << currentIteration << "/" << this->numIterations << ")"
+                 << currentIteration << "/" << this->num_iterations() << ")"
                  << " time =" << toc() << endl;
+            this->computeObjectiveError();
             INFO << "Completed it = " << currentIteration << " MUERR="
-                 << this->computeObjectiveError() / this->normA << endl;
+                 << this->objective_err / this->normA << endl;
             currentIteration++;
         }
+        this->computeObjectiveError();
         INFO << "Completed it = " << currentIteration << " MUERR="
-             << this->computeObjectiveError() / this->normA << endl;
+             << this->objective_err / this->normA << endl;
     }
     ~MUNMF() {
         freeMatrices();

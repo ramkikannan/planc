@@ -36,6 +36,7 @@ if(CMAKE_BUILD_SPARSE)
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 message(STATUS "CMAKE_CXX_FLAGS           = ${CMAKE_CXX_FLAGS}"          )
 message(STATUS "CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
@@ -45,6 +46,7 @@ message(STATUS "*** libraries:")
 message(STATUS "*** NMFLIB_LIBS = ${NMFLIB_LIBS}")
 
 include_directories(
+  ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
   ${NMF_SOURCE_DIR}
   ${NMFLIB_COMMON}

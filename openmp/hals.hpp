@@ -40,10 +40,10 @@ class HALSNMF: public NMF<T> {
         double t1, t2;
         this->At = this->A.t();
         INFO << "computed transpose At=" << PRINTMATINFO(this->At) << endl;
-        while (currentIteration < this->numIterations) {
+        while (currentIteration < this->num_iterations()) {
             tic();
             // update W;
-            tic()
+            tic();
             HtAt = this->H.t() * this->At;
             HtH = this->H.t() * this->H;
             INFO << "starting W Prereq for " << " took=" << toc()
@@ -60,7 +60,7 @@ class HALSNMF: public NMF<T> {
                 this->W.col(x) = Wx;
             }
             INFO << "Completed W ("
-                 << currentIteration << "/" << this->numIterations << ")"
+                 << currentIteration << "/" << this->num_iterations() << ")"
                  << " time =" << toc() << endl;
 
             // update H
@@ -76,19 +76,23 @@ class HALSNMF: public NMF<T> {
                 // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
                 fvec Hx = this->H.col(x) +
                           (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
-                fixNumericalError<fvec>(&Hx)
+                fixNumericalError<fvec>(&Hx);
                 this->H.col(x) = Hx;
             }
             INFO << "Completed H ("
-                 << currentIteration << "/" << this->numIterations << ")"
+                 << currentIteration << "/" << this->num_iterations() << ")"
                  << " time =" << toc() << endl;
             INFO << "Completed It ("
-                 << currentIteration << "/" << this->numIterations << ")"
+                 << currentIteration << "/" << this->num_iterations() << ")"
                  << " time =" << toc() << endl;
+            this->computeObjectiveError();
             INFO << "Completed it = " << currentIteration << " HALSERR="
-                 << this->computeObjectiveError() / this->normA << endl;
+                 << this->objective_err / this->normA << endl;
             currentIteration++;
         }
+        this->computeObjectiveError();
+        INFO << "Completed it = " << currentIteration << " HALSERR="
+             << this->objective_err / this->normA << endl;
     }
     ~HALSNMF() {
     }

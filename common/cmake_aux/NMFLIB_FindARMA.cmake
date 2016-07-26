@@ -22,7 +22,8 @@ include(CheckLibraryExists)
 ##
 
 set(NMFLIB_OS unix)
-
+include(${ARMADILLO_INCLUDE_DIR}/../ArmadilloConfig.cmake)
+include(${ARMADILLO_INCLUDE_DIR}/../ArmadilloConfigVersion.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindMKL.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindOpenBLAS.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindBLAS.cmake)
@@ -38,6 +39,7 @@ if(MKL_FOUND)
 
   set(NMFLIB_USE_LAPACK true)
   set(NMFLIB_USE_BLAS   true)
+  set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MKL_LIBRARIES})
 
 else()
 
