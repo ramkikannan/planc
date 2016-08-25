@@ -54,8 +54,8 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
     int solveNNLSOneRHS() {
         // local to this function.
         UINT MAX_ITERATIONS = this->q * 2;
-        uvec F;
-        uvec G(this->q);
+        UVEC F;
+        UVEC G(this->q);
         STDVEC allIdxs;
         // initalizations
         for (UINT i = 0; i < G.n_rows; i++) {
@@ -77,14 +77,14 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
         while (numIterations < MAX_ITERATIONS) {
             // compute V = {i \in F : x_i < 0} union {i \in G : y_i < 0}
             // iterate over F to find x_i < 0
-            uvec V1, V2;
+            UVEC V1, V2;
             STDVEC Vs;
             V1 = find(this->x(F) < 0);
             V2 = find(y(G) < 0);
-            boost::set_union(conv_to<STDVEC>::from(F(V1)),
-                             conv_to<STDVEC>::from(G(V2)),
+            boost::set_union(arma::conv_to<STDVEC>::from(F(V1)),
+                             arma::conv_to<STDVEC>::from(G(V2)),
                              std::inserter(Vs, Vs.begin()));
-            uvec V = conv_to<uvec>::from(Vs);
+            UVEC V = arma::conv_to<UVEC>::from(Vs);
 #ifdef _VERBOSE
             INFO << "xf<0 : " << V1.size() << endl << V1;
             INFO << "yg<0 : " << V2.size() << endl << V2;
@@ -182,18 +182,18 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
         UINT currentIteration = 0;
         UINT MAX_ITERATIONS = this->q * 2;
         MATTYPE Y = -this->CtB;
-        uvec Fv(this->q * this->r);
+        UVEC Fv(this->q * this->r);
         Fv.zeros();
-        uvec Gv(this->q * this->r);
-        umat V(this->q, this->r);
+        UVEC Gv(this->q * this->r);
+        arma::umat V(this->q, this->r);
         STDVEC allIdxs;
-        uvec alphaZeroIdxs(this->r);
+        UVEC alphaZeroIdxs(this->r);
         bool solutionFound = false;
         for (UINT i = 0; i < this->q * this->r; i++) {
             Gv(i) = i;
             allIdxs.push_back(i);
         }
-        uvec alpha(this->r), beta(this->r);
+        UVEC alpha(this->r), beta(this->r);
         alpha.ones();
         alpha = alpha * 3;
         beta.ones();
@@ -209,8 +209,8 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
         INFO << "Condition : " << cond(this->CtC) << endl;
 #endif
         while (currentIteration < MAX_ITERATIONS) {
-            uvec V1 = find(this->X(Fv) < 0);
-            uvec V2 = find(Y(Gv) < 0);
+            UVEC V1 = find(this->X(Fv) < 0);
+            UVEC V2 = find(Y(Gv) < 0);
             // Fv was initialized to zeros because the find during
             // first iteration with empty Fv gave an error.
             // However, zero Fv was giving wrong Gv during fixAllSets.
@@ -224,10 +224,10 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
             INFO << "Y(Gv)<0 : " << V2.size() << endl << V2;
 #endif
             STDVEC Vs;
-            boost::set_union(conv_to<STDVEC>::from(Fv(V1)),
-                             conv_to<STDVEC>::from(Gv(V2)),
+            boost::set_union(arma::conv_to<STDVEC>::from(Fv(V1)),
+                             arma::conv_to<STDVEC>::from(Gv(V2)),
                              std::inserter(Vs, Vs.begin()));
-            uvec VIdx = conv_to<uvec>::from(Vs);
+            UVEC VIdx = arma::conv_to<UVEC>::from(Vs);
             if (VIdx.empty()) {
 #ifdef _VERBOSE
                 INFO << "Terminating the loop" << endl;
@@ -254,7 +254,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
             //           // remove the duplicates.
             //           nonOptCols.erase(std::unique(nonOptCols.begin(), nonOptCols.end()),
             //                   nonOptCols.end());
-            uvec NonOptCols = find(sum(V) != 0);
+            UVEC NonOptCols = find(sum(V) != 0);
 #ifdef _VERBOSE
             INFO << "NonOptCols:" << NonOptCols.size() << NonOptCols;
 #endif
@@ -272,7 +272,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                     } else {
                         // Step 9 of the algorithm.
                         alpha(currentIdx) = 0;
-                        uvec temp = find(V.col(currentIdx) != 0);
+                        UVEC temp = find(V.col(currentIdx) != 0);
 #ifdef _VERBOSE
                         INFO << "temp : " << endl << temp << "max :"
                              << temp.max() << endl;
@@ -305,10 +305,10 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
 #endif
             // solve LSQ with multiple RHS.
             // Step 11 of Algorithm 2.
-            umat PassiveSet(this->q, this->r);
+            arma::umat PassiveSet(this->q, this->r);
             PassiveSet.zeros();
             PassiveSet(Fv).ones();
-            uvec FvCols = find(sum(PassiveSet) != 0);
+            UVEC FvCols = find(sum(PassiveSet) != 0);
             this->X.cols(FvCols) = solveNormalEqComb(this->CtC,
                                    this->CtB.cols(FvCols),
                                    PassiveSet.cols(FvCols));
@@ -357,8 +357,8 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
 #endif
             INFO << "calling classical activeset" << endl;
             for (UINT i = 0; i < this->r; i++) {
-                uvec V1 = find(this->X.col(i) < 0);
-                uvec V2 = find(Y.col(i) < 0);
+                UVEC V1 = find(this->X.col(i) < 0);
+                UVEC V2 = find(Y.col(i) < 0);
                 if (!V1.empty() || !V2.empty()) {
 #ifdef _VERBOSE
                     WARN << "col " << i << " not optimal " << endl;
@@ -390,10 +390,10 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
      * M. H. Van Benthem and M. R. Keenan, J. Chemometrics 2004; 18: 441-450
      * Motivated out of implementation from Jingu's solveNormalEqComb.m
      */
-    MATTYPE solveNormalEqComb(MATTYPE AtA, MATTYPE AtB, umat PassSet) {
+    MATTYPE solveNormalEqComb(MATTYPE AtA, MATTYPE AtB, arma::umat PassSet) {
         MATTYPE Z;
-        uvec Pv = find(PassSet != 0);
-        uvec anyZeros = find(PassSet == 0);
+        UVEC Pv = find(PassSet != 0);
+        UVEC anyZeros = find(PassSet == 0);
         if (anyZeros.empty()) {
             // Everything is the in the passive set.
             // INFO << "starting empty activeset solve" << endl;
@@ -414,25 +414,25 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                 // find the correlation matrix of passive set matrix.
                 // The same vectors will have value 1 in the correlation matrix on a vector.
                 // INFO << "solveNormalEqComb:PassSet:" << PassSet.n_rows << "x" << PassSet.n_cols << endl;
-                /*fmat corrPassMat=trimatl(conv_to<fmat>::from(arma::cor(PassSetTemp.t())));
+                /*fmat corrPassMat=trimatl(arma::conv_to<fmat>::from(arma::cor(PassSetTemp.t())));
 
                 fixDecimalPlaces<fmat>(corrPassMat);*/
-                // umat corrPassMat = computeCorrelationScore(PassSet);
-                vector<uword> sortedIdx, beginIdx;
+                // arma::umat corrPassMat = computeCorrelationScore(PassSet);
+                vector<UWORD> sortedIdx, beginIdx;
                 computeCorrelationScore(PassSet, sortedIdx, beginIdx);
-                // uvec solved(k1);
+                // UVEC solved(k1);
                 // solved.zeros();
                 // assert(corrPassMat.n_rows==PassSet.n_cols);
                 // assert(corrPassMat.n_cols==PassSet.n_cols);
                 for (UINT i = 1; i < beginIdx.size(); i++) {
                     // if(!solved(i))
                     // {
-                    // uvec samePassiveSetCols=find(corrPassMat.col(i)==1);
-                    uword sortedBeginIdx = beginIdx[i - 1];
-                    uword sortedEndIdx = beginIdx[i];
-                    uvec samePassiveSetCols(vector<uword>(sortedIdx.begin() + sortedBeginIdx, sortedIdx.begin() + sortedEndIdx));
+                    // UVEC samePassiveSetCols=find(corrPassMat.col(i)==1);
+                    UWORD sortedBeginIdx = beginIdx[i - 1];
+                    UWORD sortedEndIdx = beginIdx[i];
+                    UVEC samePassiveSetCols(vector<UWORD>(sortedIdx.begin() + sortedBeginIdx, sortedIdx.begin() + sortedEndIdx));
                     // solved(samePassiveSetCols).ones();
-                    uvec currentPassiveSet = find(PassSet.col( sortedIdx[sortedBeginIdx] ) == 1);
+                    UVEC currentPassiveSet = find(PassSet.col( sortedIdx[sortedBeginIdx] ) == 1);
 #ifdef _VERBOSE
                     INFO << "samePassiveSetCols:" << endl
                          <<  samePassiveSetCols;
@@ -463,18 +463,18 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
      * equation 3.5a and 3.5b. This is also the
      * step 8 of algorithm1 and step 10 of algorithm 2.
      */
-    void fixAllSets(uvec &F, uvec &G, uvec &V, STDVEC &allIdxs) {
+    void fixAllSets(UVEC &F, UVEC &G, UVEC &V, STDVEC &allIdxs) {
         // G = (G-V) union (V intersection F)
         std::set<int> temp1, temp2;
-        boost::set_difference(conv_to<STDVEC>::from(G),
-                              conv_to<STDVEC>::from(V),
+        boost::set_difference(arma::conv_to<STDVEC>::from(G),
+                              arma::conv_to<STDVEC>::from(V),
                               std::inserter(temp1, temp1.begin()));
-        boost::set_intersection(conv_to<STDVEC>::from(V),
-                                conv_to<STDVEC>::from(F),
+        boost::set_intersection(arma::conv_to<STDVEC>::from(V),
+                                arma::conv_to<STDVEC>::from(F),
                                 std::inserter(temp2, temp2.begin()));
         STDVEC Gs;
         boost::set_union(temp1, temp2, std::inserter(Gs, Gs.begin()));
-        G = conv_to<uvec>::from(Gs);
+        G = arma::conv_to<UVEC>::from(Gs);
 
 
 
@@ -488,12 +488,12 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
         boost::set_difference(allIdxs,
                               Gs,
                               std::inserter(newF, newF.begin()));
-        //       boost::set_intersection(conv_to<STDVEC>::from(V),
-        //               conv_to<STDVEC>::from(G),
+        //       boost::set_intersection(arma::conv_to<STDVEC>::from(V),
+        //               arma::conv_to<STDVEC>::from(G),
         //               std::inserter(temp2, temp2.begin()));
         //       boost::set_union(temp1, temp2, std::inserter(newF, newF.begin()));
         F.clear();
-        F = conv_to<uvec>::from(newF);
+        F = arma::conv_to<UVEC>::from(newF);
     }
 #ifdef _VERBOSE
     void printSet(std::set<int> a) {
@@ -531,11 +531,11 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
     * one datapoint. The objective is to returns a low triangular
     * correlation matrix with 1 if the strings are equal. Zero otherwise
     */
-    void computeCorrelationScore(umat &PassSet, vector<uword> &sortedIdx,
-                                 vector<uword> &beginIndex) {
-        SortBooleanMatrix<umat> sbm(PassSet);
+    void computeCorrelationScore(arma::umat &PassSet, vector<UWORD> &sortedIdx,
+                                 vector<UWORD> &beginIndex) {
+        SortBooleanMatrix<arma::umat> sbm(PassSet);
         sortedIdx = sbm.sortIndex();
-        BooleanArrayComparator<umat> bac(PassSet);
+        BooleanArrayComparator<arma::umat> bac(PassSet);
         uint beginIdx = 0;
         beginIndex.clear();
         beginIndex.push_back(beginIdx);
@@ -552,10 +552,10 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
     * checked if it reappears again. Every column in the matrix
     * is sorted index.
     */
-    bool detectCycle(umat &X) {
-        uvec lastColumn = X.col(X.n_cols - 1);
+    bool detectCycle(arma::umat &X) {
+        UVEC lastColumn = X.col(X.n_cols - 1);
         for (uint i = 0; i < X.n_cols - 2; i++) {
-            umat compVec = (X.col(i) == lastColumn);
+            arma::umat compVec = (X.col(i) == lastColumn);
             if (sum(compVec.col(0)) == X.n_rows)
                 return true;
         }

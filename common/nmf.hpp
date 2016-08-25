@@ -19,21 +19,21 @@
 // #endif
 
 
-// T must be a either an instance of mat or sp_mat
+// T must be a either an instance of MAT or sp_MAT
 template <class T>
 class NMF {
   protected:
-    // input matrix of size mxn
+    // input MATrix of size mxn
     T A;
     // low rank factors with size mxk and nxk respectively.
-    fmat W, H;
-    fmat Winit,Hinit;
+    FMAT W, H;
+    FMAT Winit,Hinit;
     UINT m, n, k;
     /*
      * Collected statistics are
      * iteration Htime Wtime totaltime normH normW densityH densityW relError
      */
-    mat stats;
+    MAT stats;
     double objective_err;
     double normA, normW, normH;
     double densityW, densityH;
@@ -44,7 +44,7 @@ class NMF {
     void collectStats(int iteration) {
         this->normW = norm(this->W, "fro");
         this->normH = norm(this->H, "fro");
-        uvec nnz = find(this->W > 0);
+        UVEC nnz = find(this->W > 0);
         this->densityW = nnz.size() / (this->m * this->k);
         nnz.clear();
         nnz = find(this->H > 0);
@@ -72,17 +72,17 @@ class NMF {
         this->m = A.n_rows;
         this->n = A.n_cols;
         this->k = rank;
-        this->W = arma::randu<fmat>(m, k);
-        this->H = arma::randu<fmat>(n, k);
-        // make the random matrix positive
-        // absmat<fmat>(W);
-        // absmat<fmat>(H);
+        this->W = arma::randu<FMAT>(m, k);
+        this->H = arma::randu<FMAT>(n, k);
+        // make the random MATrix positive
+        // absMAT<FMAT>(W);
+        // absMAT<FMAT>(H);
         // other intializations
         this->otherInitializations();
         cout << "NMF.hpp:constructor NMF(A,k) over!!!" << endl;
     }
-    NMF(const T &input, const fmat &leftlowrankfactor,
-        const fmat &rightlowrankfactor) {
+    NMF(const T &input, const FMAT &leftlowrankfactor,
+        const FMAT &rightlowrankfactor) {
         assert(leftlowrankfactor.n_cols == rightlowrankfactor.n_cols);
         this->A = input;
         this->W = leftlowrankfactor;
@@ -99,18 +99,18 @@ class NMF {
 
     virtual void computeNMF() = 0;
 
-    fmat getLeftLowRankFactor() {
+    FMAT getLeftLowRankFactor() {
         return W;
     }
 
-    fmat getRightLowRankFactor() {
+    FMAT getRightLowRankFactor() {
         return H;
     }
     /*
     * A is mxn
     * Wr is mxk will be overwritten. Must be passed with values of W.
     * Hr is nxk will be overwritten. Must be passed with values of H.
-    * All matrices are in row major format
+    * All MATrices are in row major forMAT
     * ||A-WH||_F^2 = over all nnz (a_ij - w_i h_j)^2 +
                  over all zeros (w_i h_j)^2
                = over all nnz (a_ij - w_i h_j)^2 +
@@ -128,22 +128,22 @@ class NMF {
         tic();
         float nnzsse = 0;
         float nnzwh = 0;
-        fmat Rw(this->k, this->k);
-        fmat Rh(this->k, this->k);
-        fmat Qw(this->m, this->k);
-        fmat Qh(this->n, this->k);
-        fmat RwRh(this->k, this->k);
+        FMAT Rw(this->k, this->k);
+        FMAT Rh(this->k, this->k);
+        FMAT Qw(this->m, this->k);
+        FMAT Qh(this->n, this->k);
+        FMAT RwRh(this->k, this->k);
         // #pragma omp parallel for reduction (+ : nnzsse,nnzwh)
-        for (uword jj = 1; jj <= this->A.n_cols; jj++) {
-            uword startIdx = this->A.col_ptrs[jj - 1];
-            uword endIdx = this->A.col_ptrs[jj];
-            uword col = jj - 1;
+        for (UWORD jj = 1; jj <= this->A.n_cols; jj++) {
+            UWORD startIdx = this->A.col_ptrs[jj - 1];
+            UWORD endIdx = this->A.col_ptrs[jj];
+            UWORD col = jj - 1;
             float nnzssecol = 0;
             float nnzwhcol = 0;
-            for (uword ii = startIdx; ii < endIdx; ii++) {
-                uword row = this->A.row_indices[ii];
+            for (UWORD ii = startIdx; ii < endIdx; ii++) {
+                UWORD row = this->A.row_indices[ii];
                 float tempsum = 0;
-                for (uword kk = 0; kk < k; kk++) {
+                for (UWORD kk = 0; kk < k; kk++) {
                     tempsum += (this->W(row, kk) * this->H(col, kk));
                 }
                 nnzwhcol += tempsum * tempsum;
@@ -170,15 +170,15 @@ class NMF {
 #else
     void computeObjectiveError() {
         // (init.norm_A)^2 - 2*trace(H'*(A'*W))+trace((W'*W)*(H*H'))
-        fmat WtW = this->W.t() * this->W;
-        fmat HtH = this->H.t() * this->H;
-        fmat AtW = this->A.t() * this->W;
+        FMAT WtW = this->W.t() * this->W;
+        FMAT HtH = this->H.t() * this->H;
+        FMAT AtW = this->A.t() * this->W;
         this->objective_err = this->normA * this->normA
                               - 2 * trace(this->H.t() * AtW) + trace(WtW * HtH);
     }
 #endif
-    void computeObjectiveError(const T &At, const fmat &WtW, const fmat &HtH) {
-        fmat AtW = At * this->W;
+    void computeObjectiveError(const T &At, const FMAT &WtW, const FMAT &HtH) {
+        FMAT AtW = At * this->W;
         this->objective_err = this->normA * this->normA
                               - 2 * trace(this->H.t() * AtW) + trace(WtW * HtH);
     }

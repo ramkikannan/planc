@@ -6,17 +6,16 @@
 #include "aunmf.hpp"
 
 using namespace std;
-using namespace arma;
 
 template<class INPUTMATTYPE>
 class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
   private:
-    mat tempHtH;
-    mat tempWtW;
-    mat tempAHtij;
-    mat tempWtAij;
-    frowvec localWnorm;
-    frowvec Wnorm;
+    MAT tempHtH;
+    MAT tempWtW;
+    MAT tempAHtij;
+    MAT tempWtAij;
+    FROWVEC localWnorm;
+    FROWVEC Wnorm;
 
     void allocateMatrices() {
         this->tempHtH.zeros(this->k, this->k);
@@ -28,12 +27,12 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
   protected:
     // updateW given HtH and AHt
     void updateW() {
-        tempHtH = conv_to<mat>::from(this->HtH);
-        tempAHtij = conv_to<mat>::from(this->AHtij);
-        BPPNNLS<mat, vec> subProblem(tempHtH, tempAHtij, true);
+        tempHtH = arma::conv_to<MAT>::from(this->HtH);
+        tempAHtij = arma::conv_to<MAT>::from(this->AHtij);
+        BPPNNLS<MAT, VEC > subProblem(tempHtH, tempAHtij, true);
         subProblem.solveNNLS();
-        this->Wt = conv_to<fmat>::from(subProblem.getSolutionMatrix());
-        fixNumericalError<fmat>(&(this->Wt));
+        this->Wt = arma::conv_to<FMAT >::from(subProblem.getSolutionMatrix());
+        fixNumericalError<FMAT >(&(this->Wt));
         this->W = this->Wt.t();
         // localWnorm = sum(this->W % this->W);
         // tic();
@@ -48,18 +47,18 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
     }
     // updateH given WtW and WtA
     void updateH() {
-        tempWtW = conv_to<mat>::from(this->WtW);
-        tempWtAij = conv_to<mat>::from(this->WtAij);
-        BPPNNLS<mat, vec> subProblem1(tempWtW, tempWtAij, true);
+        tempWtW = arma::conv_to<MAT>::from(this->WtW);
+        tempWtAij = arma::conv_to<MAT>::from(this->WtAij);
+        BPPNNLS<MAT, VEC > subProblem1(tempWtW, tempWtAij, true);
         subProblem1.solveNNLS();
-        this->Ht = conv_to<fmat>::from(subProblem1.getSolutionMatrix());
-        fixNumericalError<fmat>(&(this->Ht));
+        this->Ht = arma::conv_to<FMAT >::from(subProblem1.getSolutionMatrix());
+        fixNumericalError<FMAT >(&(this->Ht));
         this->H = this->Ht.t();
     }
 
   public:
-    DistANLSBPP(const INPUTMATTYPE &input, const fmat &leftlowrankfactor,
-                const fmat &rightlowrankfactor, const MPICommunicator& communicator):
+    DistANLSBPP(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
+                const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                                 rightlowrankfactor, communicator) {
         localWnorm.zeros(this->k);

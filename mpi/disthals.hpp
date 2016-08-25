@@ -7,8 +7,8 @@
 template<class INPUTMATTYPE>
 class DistHALS : public DistAUNMF<INPUTMATTYPE> {
   private:
-    fmat HWtW;
-    fmat WHtH;
+    FMAT HWtW;
+    FMAT WHtH;
   protected:
     // emulating Jingu's code
     // https://github.com/kimjingu/nonnegfac-matlab/blob/master/nmf.m
@@ -24,12 +24,12 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
         // Here ij is the element of W matrix.
         for (int i = 0; i < this->k; i++) {
             //W(:,i) = max(W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i),epsilon);
-            fvec updWi = this->W.col(i) * this->HtH(i, i)
+            FVEC updWi = this->W.col(i) * this->HtH(i, i)
                          + ((this->AHtij.row(i)).t() - this->W * this->HtH.col(i));
 #ifdef MPI_VERBOSE
             DISTPRINTINFO("b4 fixNumericalError::" << endl <<  updWi);
 #endif
-            fixNumericalError<fvec>(&updWi);
+            fixNumericalError<FVEC>(&updWi);
 #ifdef MPI_VERBOSE
             DISTPRINTINFO("after fixNumericalError::" << endl << updWi);
 #endif
@@ -59,12 +59,12 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
         // Here ij is the element of H matrix.
         for (int i = 0; i < this->k; i++) {
             // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
-            fvec updHi = this->H.col(i) +
+            FVEC updHi = this->H.col(i) +
                          ((this->WtAij.row(i)).t() - this->H * this->WtW.col(i));
 #ifdef MPI_VERBOSE
             DISTPRINTINFO("b4 fixNumericalError::" << endl << updHi);
 #endif
-            fixNumericalError<fvec>(&updHi);
+            fixNumericalError<FVEC>(&updHi);
 #ifdef MPI_VERBOSE
             DISTPRINTINFO("after fixNumericalError::" << endl << updHi);
 #endif
@@ -73,8 +73,8 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
         this->Ht = this->H.t();
     }
   public:
-    DistHALS(const INPUTMATTYPE &input, const fmat &leftlowrankfactor,
-             const fmat &rightlowrankfactor, const MPICommunicator& communicator):
+    DistHALS(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
+             const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                                 rightlowrankfactor, communicator) {
         WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);

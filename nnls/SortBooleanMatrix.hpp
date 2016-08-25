@@ -16,7 +16,7 @@ public:
         * if idxi < idxj return true;
         * if idxi >= idxj return false;
         */
-        bool operator () (uword idxi, uword idxj)
+        bool operator () (UWORD idxi, UWORD idxj)
         {
                 for (uint i = 0; i < X.n_rows; i++)
                 {
@@ -33,7 +33,7 @@ template <class T>
 class SortBooleanMatrix
 {
         const T &X;
-        vector<uword> idxs;
+        vector<UWORD> idxs;
 public:
         SortBooleanMatrix(const T &input) : X(input), idxs(X.n_cols)
         {
@@ -42,7 +42,7 @@ public:
                         idxs[i] = i;
                 }
         }
-        vector<uword> sortIndex()
+        vector<UWORD> sortIndex()
         {
                 sort(this->idxs.begin(), this->idxs.end(), BooleanArrayComparator<T>(this->X));
                 return this->idxs;

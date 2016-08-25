@@ -10,7 +10,6 @@
 #include "mpicomm.hpp"
 #include "distnmf.hpp"
 
-using namespace arma;
 using namespace std;
 
 /*
@@ -29,32 +28,32 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   // needed in derived algorithms to
   // call BPP routines
  protected:
-  fmat HtH;       // H is of size (globaln/p)*k;
-  fmat WtW;       // W is of size (globaln/p)*k;
-  fmat AHtij;     // AHtij is of size k*(globalm/p)
-  fmat WtAij;     // WtAij is of size k*(globaln/p)
-  fmat Wt;        // Wt is of size k*(globalm/p)
-  fmat Ht;        // Ht is of size k*(globaln/p)
+  FMAT HtH;       // H is of size (globaln/p)*k;
+  FMAT WtW;       // W is of size (globaln/p)*k;
+  FMAT AHtij;     // AHtij is of size k*(globalm/p)
+  FMAT WtAij;     // WtAij is of size k*(globaln/p)
+  FMAT Wt;        // Wt is of size k*(globalm/p)
+  FMAT Ht;        // Ht is of size k*(globaln/p)
 
   virtual void updateW() = 0;
   virtual void updateH() = 0;
 
  private:
   // Things needed while solving for W
-  fmat localHtH;          // H is of size (globaln/p)*k;
-  fmat Hjt, Hj;           // Hj is of size n*k;
-  fmat AijHj, AijHjt;     // AijHj is of size m*k;
+  FMAT localHtH;          // H is of size (globaln/p)*k;
+  FMAT Hjt, Hj;           // Hj is of size n*k;
+  FMAT AijHj, AijHjt;     // AijHj is of size m*k;
   INPUTMATTYPE A_ij_t;    // n*m
   // Things needed while solving for H
-  fmat localWtW;          // W is of size (globalm/p)*k;
-  fmat Wit, Wi;           // Wi is of size m*k;
-  fmat WitAij, AijWit;    // WijtAij is of size k*n;
+  FMAT localWtW;          // W is of size (globalm/p)*k;
+  FMAT Wit, Wi;           // Wi is of size m*k;
+  FMAT WitAij, AijWit;    // WijtAij is of size k*n;
 
   // needed for error computation
-  fmat prevH;     // used for error computation
-  fmat prevHtH;   // used for error computation
-  fmat WtAijH;  // global k*k matrix.
-  fmat localWtAijH;  // local k*k matrix
+  FMAT prevH;     // used for error computation
+  FMAT prevHtH;   // used for error computation
+  FMAT WtAijH;  // global k*k matrix.
+  FMAT localWtAijH;  // local k*k matrix
 
   std::vector<int> recvWtAsize;
   std::vector<int> recvAHsize;
@@ -126,8 +125,8 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   }
 
  public:
-  DistAUNMF(const INPUTMATTYPE &input, const fmat &leftlowrankfactor,
-            const fmat &rightlowrankfactor,
+  DistAUNMF(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
+            const FMAT &rightlowrankfactor,
             const MPICommunicator& communicator):
     DistNMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor,
                           communicator) {
@@ -286,7 +285,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
    * WtW of size k*k is symmetric. So not to worry
    * about column/row major formats.
    */
-  void distInnerProduct(const fmat &X, fmat *XtX) {
+  void distInnerProduct(const FMAT &X, FMAT *XtX) {
     // each process computes its own kxk matrix
     mpitic();  // gram
     localWtW = X.t() * X;
@@ -459,37 +458,5 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
               << "::tWtWHtH::" << tWtWHtH);
     this->objective_err = this->m_globalsqnormA - 2 * tWtAijh + tWtWHtH;
   }
-
-  /*void computeError(const int it) {
-    int sendcnt = (this->globalm() / MPI_SIZE) * this->k;
-    int recvcnt = (this->globalm() / MPI_SIZE) * this->k;
-    this->Wit.zeros();
-    this->Hjt.zeros();
-    mpitic();
-    MPI_Allgather(Wt.memptr(), sendcnt, MPI_FLOAT,
-                  Wit.memptr(), recvcnt, MPI_FLOAT,
-                  this->m_mpicomm.commSubs()[1]);
-    sendcnt = (this->globaln() / MPI_SIZE) * this->k;
-    recvcnt = (this->globaln() / MPI_SIZE) * this->k;
-    MPI_Allgather(this->Ht.memptr(), sendcnt, MPI_FLOAT,
-                  this->Hjt.memptr(), recvcnt, MPI_FLOAT,
-                  this->m_mpicomm.commSubs()[0]);
-    DISTPRINTINFO("n::" << this->n << "::k::" << this->k \
-                  << PRINTMATINFO(Ht) << PRINTMATINFO(Hjt));
-  #ifdef MPI_VERBOSE
-    DISTPRINTINFO(PRINTMAT(Ht));
-    DISTPRINTINFO(PRINTMAT(Hjt));
-    DISTPRINTINFO(PRINTMAT(this->A_ij_t));
-  #endif
-    double temp = mpitoc();
-    this->time_stats.err_communication_duration(temp);
-    mpitic();
-    double localerr = norm((this->A - trans(this->Wit) * this->Hjt), "fro");
-    localerr *= localerr;
-    temp = mpitoc();
-    this->time_stats.err_compute_duration(temp);
-    MPI_Allreduce(&localerr, &(this->objective_err), 1, MPI_DOUBLE,
-                  MPI_SUM, MPI_COMM_WORLD);
-  }*/
 };
 #endif  // MPI_AUNMF_HPP_

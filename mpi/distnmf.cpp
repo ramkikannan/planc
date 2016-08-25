@@ -14,7 +14,7 @@ class DistNMFDriver {
     int m_argc;
     char **m_argv;
     int m_k;
-    uword m_globalm, m_globaln;
+    UWORD m_globalm, m_globaln;
     std::string m_Afile_name;
     std::string m_outputfile_name;
     int m_num_it;
@@ -45,9 +45,9 @@ class DistNMFDriver {
         std::string rand_prefix("rand_");
         MPICommunicator mpicomm(this->m_argc, this->m_argv);
 #ifdef BUILD_SPARSE
-        DistIO<sp_fmat> dio(mpicomm, m_distio);
+        DistIO<SP_FMAT> dio(mpicomm, m_distio);
 #else
-        DistIO<fmat> dio(mpicomm, m_distio);
+        DistIO<FMAT> dio(mpicomm, m_distio);
 #endif
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_globalm,
@@ -57,17 +57,17 @@ class DistNMFDriver {
             dio.readInput(m_Afile_name);
         }
 #ifdef BUILD_SPARSE
-        // sp_fmat Arows(dio.Arows().row_indices, dio.Arows().col_ptrs,
+        // SP_FMAT Arows(dio.Arows().row_indices, dio.Arows().col_ptrs,
         //               dio.Arows().values,
         //               dio.Arows().n_rows, dio.Arows().n_cols);
-        // sp_fmat Acols(dio.Acols().row_indices, dio.Acols().col_ptrs,
+        // SP_FMAT Acols(dio.Acols().row_indices, dio.Acols().col_ptrs,
         //               dio.Acols().values,
         //               dio.Acols().n_rows, dio.Acols().n_cols);
-        sp_fmat Arows(dio.Arows());
-        sp_fmat Acols(dio.Acols());
+        SP_FMAT Arows(dio.Arows());
+        SP_FMAT Acols(dio.Acols());
 #else
-        fmat Arows(dio.Arows());
-        fmat Acols(dio.Acols());
+        FMAT Arows(dio.Arows());
+        FMAT Acols(dio.Acols());
 #endif
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             this->m_globaln = Arows.n_cols;
@@ -79,9 +79,9 @@ class DistNMFDriver {
 #ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
 #endif
-        arma_rng::set_seed(random_sieve(mpicomm.rank() + kprimeoffset));
-        fmat W = randu<fmat>(this->m_globalm / mpicomm.size(), this->m_k);
-        fmat H = randu<fmat>(this->m_globaln / mpicomm.size(), this->m_k);
+        arma::arma_rng::set_seed(random_sieve(mpicomm.rank() + kprimeoffset));
+        FMAT W = arma::randu<FMAT>(this->m_globalm / mpicomm.size(), this->m_k);
+        FMAT H = arma::randu<FMAT>(this->m_globaln / mpicomm.size(), this->m_k);
         MPI_Barrier(MPI_COMM_WORLD);
         NMFTYPE nmfAlgorithm(Arows, Acols, W, H, mpicomm);
         nmfAlgorithm.num_iterations(this->m_num_it);
@@ -108,13 +108,13 @@ class DistNMFDriver {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 #ifdef BUILD_SPARSE
-        uword nnz;
-        DistIO<sp_fmat> dio(mpicomm, m_distio);
+        UWORD nnz;
+        DistIO<SP_FMAT> dio(mpicomm, m_distio);
         if (mpicomm.rank() == 0) {
             INFO << "sparse case" << endl;
         }
 #else
-        DistIO<fmat> dio(mpicomm, m_distio);
+        DistIO<FMAT> dio(mpicomm, m_distio);
 #endif
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_globalm,
@@ -124,15 +124,15 @@ class DistNMFDriver {
             dio.readInput(m_Afile_name);
         }
 #ifdef BUILD_SPARSE
-        // sp_fmat A(dio.A().row_indices, dio.A().col_ptrs, dio.A().values,
+        // SP_FMAT A(dio.A().row_indices, dio.A().col_ptrs, dio.A().values,
         //           dio.A().n_rows, dio.A().n_cols);
-        sp_fmat A(dio.A());
+        SP_FMAT A(dio.A());
 #else
-        fmat A(dio.A());
+        FMAT A(dio.A());
 #endif
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
-            uword localm = A.n_rows;
-            uword localn = A.n_cols;
+            UWORD localm = A.n_rows;
+            UWORD localn = A.n_cols;
             MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
                           MPI_SUM, mpicomm.commSubs()[0]);
             MPI_Allreduce(&localn, &(this->m_globaln), 1, MPI_INT,
@@ -145,9 +145,9 @@ class DistNMFDriver {
 #endif
         // don't worry about initializing with the
         // same matrix as only one of them will be used.
-        arma_rng::set_seed(mpicomm.rank());
-        fmat W = randu<fmat>(this->m_globalm / mpicomm.size(), this->m_k);
-        fmat H = randu<fmat>(this->m_globaln / mpicomm.size(), this->m_k);
+        arma::arma_rng::set_seed(mpicomm.rank());
+        FMAT W = arma::randu<FMAT >(this->m_globalm / mpicomm.size(), this->m_k);
+        FMAT H = arma::randu<FMAT >(this->m_globaln / mpicomm.size(), this->m_k);
 #ifdef MPI_VERBOSE
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
              << PRINTMATINFO(W) << endl;
@@ -253,30 +253,30 @@ class DistNMFDriver {
         switch (this->m_nmfalgo) {
         case MU2D:
 #ifdef BUILD_SPARSE
-            callDistNMF2D<DistMU<sp_fmat> >();
+            callDistNMF2D<DistMU<SP_FMAT> >();
 #else
-            callDistNMF2D<DistMU<fmat> >();
+            callDistNMF2D<DistMU<FMAT> >();
 #endif
             break;
         case HALS2D:
 #ifdef BUILD_SPARSE
-            callDistNMF2D<DistHALS<sp_fmat> >();
+            callDistNMF2D<DistHALS<SP_FMAT> >();
 #else
-            callDistNMF2D<DistHALS<fmat> >();
+            callDistNMF2D<DistHALS<FMAT> >();
 #endif
             break;
         case ANLSBPP2D:
 #ifdef BUILD_SPARSE
-            callDistNMF2D<DistANLSBPP<sp_fmat> >();
+            callDistNMF2D<DistANLSBPP<SP_FMAT> >();
 #else
-            callDistNMF2D<DistANLSBPP<fmat> >();
+            callDistNMF2D<DistANLSBPP<FMAT> >();
 #endif
             break;
         case NAIVEANLSBPP:
 #ifdef BUILD_SPARSE
-            callDistNMF1D<DistNaiveANLSBPP<sp_fmat> >();
+            callDistNMF1D<DistNaiveANLSBPP<SP_FMAT> >();
 #else
-            callDistNMF1D<DistNaiveANLSBPP<fmat> >();
+            callDistNMF1D<DistNaiveANLSBPP<FMAT> >();
 #endif
         }
     }

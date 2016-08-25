@@ -13,30 +13,30 @@ class DistNMF1D {
   INPUTMATTYPE m_Arows;
   INPUTMATTYPE m_Acols;
   MPICommunicator m_mpicomm;
-  uword m_globalm, m_globaln;
-  fmat m_W, m_H;
-  fmat m_Wt, m_Ht;
-  fmat m_globalW, m_globalH;
-  fmat m_globalWt, m_globalHt;
+  UWORD m_globalm, m_globaln;
+  FMAT m_W, m_H;
+  FMAT m_Wt, m_Ht;
+  FMAT m_globalW, m_globalH;
+  FMAT m_globalWt, m_globalHt;
   double m_objective_err;
   double m_globalsqnormA;
   int m_num_iterations;
   int m_k;    // low rank k
   DistNMFTime time_stats;
-  fmat m_prevH;     // this is needed for error computation
-  fmat m_prevHtH;   // this is needed for error computation
+  FMAT m_prevH;     // this is needed for error computation
+  FMAT m_prevHtH;   // this is needed for error computation
   uint m_compute_error;
   distalgotype m_algorithm;
 
  private:
-  fmat HAtW;        // needed for error computation
-  fmat globalHAtW;  // needed for error computation
-  fmat err_matrix;   // needed for error computation.
+  FMAT HAtW;        // needed for error computation
+  FMAT globalHAtW;  // needed for error computation
+  FMAT err_matrix;   // needed for error computation.
 
 
  public:
   DistNMF1D(const INPUTMATTYPE &Arows, const INPUTMATTYPE &Acols,
-            const  fmat &leftlowrankfactor, const fmat &rightlowrankfactor,
+            const  FMAT &leftlowrankfactor, const FMAT &rightlowrankfactor,
             const MPICommunicator& mpicomm):
     m_Arows(Arows), m_Acols(Acols), m_W(leftlowrankfactor),
     m_H(rightlowrankfactor),
@@ -112,7 +112,7 @@ class DistNMF1D {
    * each process owns globalsqnormA will have (init.norm_A)^2
    *
    */
-  void computeError(const fmat &WtW, const fmat &HtH) {
+  void computeError(const FMAT &WtW, const FMAT &HtH) {
     mpitic();
     if (this->m_Acols.n_rows == this->m_globalm) {
       HAtW = this->m_prevH.t() * (this->m_Acols.t() * this->m_globalW);
@@ -158,10 +158,10 @@ class DistNMF1D {
   virtual void computeNMF() = 0;
   const int num_iterations() const {return this->m_num_iterations;}
   void num_iterations(int it) {m_num_iterations = it;}
-  const uword globalm() const {return m_globalm;}
-  const uword globaln() const {return m_globaln;}
-  fmat getLeftLowRankFactor() {return this->m_W;}
-  fmat getRightLowRankFactor() {return this->m_H;}
+  const UWORD globalm() const {return m_globalm;}
+  const UWORD globaln() const {return m_globaln;}
+  FMAT getLeftLowRankFactor() {return this->m_W;}
+  FMAT getRightLowRankFactor() {return this->m_H;}
   void compute_error(const uint &ce) {this->m_compute_error = ce;}
   const bool is_compute_error() const {return (this->m_compute_error);}
   void algorithm(distalgotype dat) {this->m_algorithm = dat;}

@@ -23,18 +23,18 @@ template <typename INPUTMATTYPE>
 class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
   const MPICommunicator& m_mpicomm;
-  uword m_globalm;
-  uword m_globaln;
+  UWORD m_globalm;
+  UWORD m_globaln;
   double m_globalsqnormA;
   DistNMFTime time_stats;
   uint m_compute_error;
   distalgotype m_algorithm;
-  frowvec localWnorm;
-  frowvec Wnorm;
+  FROWVEC localWnorm;
+  FROWVEC Wnorm;
 
  public:
-  DistNMF(const INPUTMATTYPE &input, const fmat &leftlowrankfactor,
-          const fmat &rightlowrankfactor, const MPICommunicator& communicator):
+  DistNMF(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
+          const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
     NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
     m_mpicomm(communicator), time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     double sqnorma = this->normA * this->normA;

@@ -10,7 +10,6 @@
 #include "distutils.hpp"
 
 using namespace std;
-using namespace arma;
 
 /*
  * File name formats
@@ -52,9 +51,9 @@ class DistIO {
                     const double sparsity,
                     MATTYPE *X) {
         if (primeseedidx == -1) {
-            arma_rng::set_seed_random();
+            arma::arma_rng::set_seed_random();
         } else {
-            arma_rng::set_seed(random_sieve(primeseedidx));
+            arma::arma_rng::set_seed(random_sieve(primeseedidx));
         }
 #ifdef DEBUG_VERBOSE
         DISTPRINTINFO("randMatrix::" << primeseedidx << "::sp=" << sparsity);
@@ -65,9 +64,9 @@ class DistIO {
         } else if (type == "normal") {
             (*X).sprandn((*X).n_rows, (*X).n_cols, sparsity);
         }
-        sp_fmat::iterator start_it = (*X).begin();
-        sp_fmat::iterator end_it = (*X).end();
-        for (sp_fmat::iterator it = start_it; it != end_it; ++it) {
+        SP_FMAT::iterator start_it = (*X).begin();
+        SP_FMAT::iterator end_it = (*X).end();
+        for (SP_FMAT::iterator it = start_it; it != end_it; ++it) {
             float currentValue = (*it);
             (*it) = ceil(kalpha * currentValue + kbeta);
             if ((*it) < 0) (*it) = kbeta;
@@ -95,7 +94,7 @@ class DistIO {
     * Uses the pattern from the input matrix X but
     * the value is computed as low rank.
     */
-    void randomLowRank(const uword m, const uword n, const uword k,
+    void randomLowRank(const UWORD m, const UWORD n, const UWORD k,
                        MATTYPE *X) {
         uint start_row = 0, end_row = 0, start_col = 0, end_col = 0;
         switch (m_distio) {
@@ -138,35 +137,35 @@ class DistIO {
         }
         // all machines will generate same Wrnd and Hrnd
         // at all times.
-        arma_rng::set_seed(kW_seed_idx);
-        fmat Wrnd(m, k);
+        arma::arma_rng::set_seed(kW_seed_idx);
+        FMAT Wrnd(m, k);
         Wrnd.randu();
-        fmat Hrnd(k, n);
+        FMAT Hrnd(k, n);
         Hrnd.randu();
 #ifdef BUILD_SPARSE
-        sp_fmat::iterator start_it = (*X).begin();
-        sp_fmat::iterator end_it = (*X).end();
+        SP_FMAT::iterator start_it = (*X).begin();
+        SP_FMAT::iterator end_it = (*X).end();
         float tempVal = 0.0;
-        for (sp_fmat::iterator it = start_it; it != end_it; ++it) {
-            fvec Wrndi = vectorise(Wrnd.row(start_row + it.row()));
-            fvec Hrndj = Hrnd.col(start_col + it.col());
+        for (SP_FMAT::iterator it = start_it; it != end_it; ++it) {
+            FVEC Wrndi = vectorise(Wrnd.row(start_row + it.row()));
+            FVEC Hrndj = Hrnd.col(start_col + it.col());
             tempVal =  dot(Wrndi, Hrndj);
             (*it) = ceil(kalpha * tempVal + kbeta);
         }
 #else
-        fmat templr;
+        FMAT templr;
         if ((*X).n_cols == n) { // ONED_ROW
-            fmat myWrnd = Wrnd.rows(start_row, end_row);
+            FMAT myWrnd = Wrnd.rows(start_row, end_row);
             templr =  myWrnd * Hrnd;
         } else if ((*X).n_rows == m) {  // ONED_COL
-            fmat myHcols = Hrnd.cols(start_col, end_col);
+            FMAT myHcols = Hrnd.cols(start_col, end_col);
             templr = Wrnd * myHcols;
         } else if ((*X).n_rows == (m / MPI_SIZE) &&
                    (*X).n_cols == (n / MPI_SIZE) ||
                    ((*X).n_rows == (m / this->m_mpicomm.pr()) &&
                     (*X).n_cols == (n / this->m_mpicomm.pc()))) {
-            fmat myWrnd = Wrnd.rows(start_row, end_row);
-            fmat myHcols = Hrnd.cols(start_col, end_col);
+            FMAT myWrnd = Wrnd.rows(start_row, end_row);
+            FMAT myHcols = Hrnd.cols(start_col, end_col);
             templr = myWrnd * myHcols;
         }
         (*X) = ceil(kalpha * templr + kbeta);
@@ -183,8 +182,8 @@ class DistIO {
      *
      */
     void readInput(const std::string file_name,
-                   uword m = 0, uword n = 0, uword k = 0, double sparsity = 0,
-                   uword pr = 0, uword pc = 0) {
+                   UWORD m = 0, UWORD n = 0, UWORD k = 0, double sparsity = 0,
+                   UWORD pr = 0, UWORD pc = 0) {
         // INFO << "readInput::" << file_name << "::" << distio << "::"
         //     << m << "::" << n << "::" << pr << "::" << pc
         //     << "::" << this->MPI_RANK << "::" << this->m_mpicomm.size() << endl;
@@ -234,37 +233,37 @@ class DistIO {
             if (m_distio == ONED_ROW || m_distio == ONED_DOUBLE) {
                 sr << file_name << "rows_" << MPI_SIZE << "_" << MPI_RANK;
 #ifdef BUILD_SPARSE
-                m_Arows.load(sr.str(), coord_ascii);
+                m_Arows.load(sr.str(), arma::coord_ascii);
 #else
-                m_Arows.load(sr.str(), raw_ascii);
+                m_Arows.load(sr.str(), arma::raw_ascii);
 #endif
             }
             if (m_distio == ONED_COL || m_distio == ONED_DOUBLE) {
                 sc << file_name << "cols_" << MPI_SIZE << "_" << MPI_RANK;
 #ifdef BUILD_SPARSE
-                m_Acols.load(sc.str(), coord_ascii);                
+                m_Acols.load(sc.str(), arma::coord_ascii);                
 #else
-                m_Acols.load(sc.str(), raw_ascii);
+                m_Acols.load(sc.str(), arma::raw_ascii);
 #endif
                 m_Acols=m_Acols.t();
             }
             if (m_distio == TWOD) {
                 sr << file_name << "_" << MPI_SIZE << "_" << MPI_RANK;
 #ifdef BUILD_SPARSE
-                m_A.load(sr.str(), coord_ascii);
+                m_A.load(sr.str(), arma::coord_ascii);
 #else
-                m_A.load(sr.str(), raw_ascii);
+                m_A.load(sr.str(), arma::raw_ascii);
 #endif
             }
         }
     }
-    void writeOutput(const fmat & W, const fmat & H,
+    void writeOutput(const FMAT & W, const FMAT & H,
                      const std::string & output_file_name) {
         stringstream sw, sh;
         sw << output_file_name << "_W_" << MPI_SIZE << "_" << MPI_RANK;
         sh << output_file_name << "_H_" << MPI_SIZE << "_" << MPI_RANK;
-        W.save(sw, raw_ascii);
-        H.save(sh, raw_ascii);
+        W.save(sw, arma::raw_ascii);
+        H.save(sh, arma::raw_ascii);
     }
     void writeRandInput() {
         std::string file_name("Arnd");
@@ -275,9 +274,9 @@ class DistIO {
                           << PRINTMATINFO(m_A));
 
 #ifdef BUILD_SPARSE
-            this->m_A.save(sr.str(), coord_ascii);
+            this->m_A.save(sr.str(), arma::coord_ascii);
 #else
-            this->m_A.save(sr.str(), raw_ascii);
+            this->m_A.save(sr.str(), arma::raw_ascii);
 #endif
         }
         if (m_distio == ONED_ROW || m_distio == ONED_DOUBLE) {
@@ -285,9 +284,9 @@ class DistIO {
             DISTPRINTINFO("Writing rand input file " << sr.str() \
                           << PRINTMATINFO(m_Arows));
 #ifdef BUILD_SPARSE
-            this->m_Arows.save(sr.str(), coord_ascii);
+            this->m_Arows.save(sr.str(), arma::coord_ascii);
 #else
-            this->m_Arows.save(sr.str(), raw_ascii);
+            this->m_Arows.save(sr.str(), arma::raw_ascii);
 #endif
         }
         if (m_distio == ONED_COL || m_distio == ONED_DOUBLE) {
@@ -295,9 +294,9 @@ class DistIO {
             DISTPRINTINFO("Writing rand input file " << sc.str()\
                           << PRINTMATINFO(m_Acols));
 #ifdef BUILD_SPARSE
-            this->m_Acols.save(sc.str(), coord_ascii);
+            this->m_Acols.save(sc.str(), arma::coord_ascii);
 #else
-            this->m_Acols.save(sc.str(), raw_ascii);
+            this->m_Acols.save(sc.str(), arma::raw_ascii);
 #endif
         }
     }
@@ -311,14 +310,14 @@ class DistIO {
 void testDistIO(char argc, char *argv[]) {
     MPICommunicator mpicomm(argc, argv);
 #ifdef BUILD_SPARSE
-    DistIO<sp_fmat> dio(mpicomm, ONED_DOUBLE);
+    DistIO<SP_FMAT> dio(mpicomm, ONED_DOUBLE);
 #else
-    DistIO<fmat> dio(mpicomm, ONED_DOUBLE);
+    DistIO<FMAT> dio(mpicomm, ONED_DOUBLE);
 #endif
     dio.readInput("rand", 12, 9, 0.5);
     cout << "Arows:" << mpicomm.rank() << endl
-         << conv_to<fmat>::from(dio.Arows()) << endl;
+         << arma::conv_to<FMAT >::from(dio.Arows()) << endl;
     cout << "Acols:" << mpicomm.rank() << endl
-         << conv_to<fmat>::from(dio.Acols()) << endl;
+         << arma::conv_to<FMAT >::from(dio.Acols()) << endl;
 }
 #endif  // MPI_DISTIO_HPP_

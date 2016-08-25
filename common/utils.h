@@ -23,7 +23,6 @@ enum algotype {MU_NMF, HALS_NMF, BPP_NMF};
 #include <armadillo>
 
 using namespace std;
-using namespace arma;
 
 #ifndef ERR
 #define ERR cerr
@@ -47,6 +46,17 @@ using namespace arma;
 #define RAND_SEED 100
 #define RAND_SEED_SPARSE 100
 
+// defines for namespace confusion
+#define FMAT    arma::fmat
+#define MAT     arma::mat
+#define FROWVEC arma::frowvec
+#define FVEC    arma::fvec
+#define SP_FMAT arma::sp_fmat
+#define UVEC    arma::uvec
+#define UWORD   arma::uword
+#define VEC     arma::vec
+
+
 //#define PRINTMATINFO(A) \
 "::"#A"::" << (A).n_rows << "x" << (A).n_cols << "::norm::" << norm((A),"fro")
 
@@ -58,7 +68,7 @@ typedef std::vector<int> STDVEC;
 typedef unsigned int UINT;
 typedef unsigned long ULONG;
 
-void absmat(const fmat *X);
+void absmat(const FMAT *X);
 
 inline void tic();
 inline double toc();
@@ -94,4 +104,4 @@ inline void fillVector(const FVT value, vector<FVT> *a) {
   }
 }
 
-#endif /* COMMON_UTILS_H_ */
+#endif  // COMMON_UTILS_H_

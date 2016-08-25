@@ -15,3 +15,16 @@ all the above together sed 's/\p*&lt\;p*//g' | sed 's/\p*&gt\;p*//g' | sed 's/&x
 One command for entire script 
 
 grep 'PostTypeId=\"1\"' test.xml | grep -o -P '(?<=Body=\").*(?=OwnerUserId)' | sed ':a;N;$!ba;s/\n/55RECORDEND66\n/g' | sed 's/\p*&lt\;p*//g' | sed 's/\p*&gt\;p*//g' | sed 's/&#*xA;//g' |sed 's/&#*xD;//g' | sed 's/http[^[:space:]]*//g' | html2text | sed ':a;N;$!ba;s/\n//g' | sed 's/55RECORDEND66/\n/g'
+
+clean up strings
+&quot
+/li
+/ol
+/ul
+/code
+/strong
+/em
+href=
+&amp
+Example : 
+cat testquestionbody.txt | sed 's/\/li//g' | sed 's/\/ul//g' | sed 's/href-//g' | sed 's/\&quot\;//g' | sed 's/\/code//g' | sed 's/\/strong//g' | sed 's/\&amp//g' | sed 's/;*#[0-9,A-Z,a-z]*;//g' | sed 's/55RECORDEND66//g'

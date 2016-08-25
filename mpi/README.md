@@ -16,7 +16,9 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/rnu/libraries/openblas/lib/:
 export NMFLIB_DIR=/ccs/home/ramki/rhea/research/nmflib/
 export INCLUDE=$INCLUDE:$ARMADILLO_INCLUDE_DIR:$NMFLIB_DIR
 export CPATH=$CPATH:$INCLUDE:
-export MKLROOT=/ccs/compilers/intel/rh6-x86_64/14.0.4/composer_xe_2013_sp1.4.211/mkl/
+export MKLROOT=/ccs/compilers/intel/rh6-x86_64/16.0.0/mkl/
+
+If you have got MKL, please source MKLVARS.sh before running make/cmake
 
 Sparse NMF
 ---------

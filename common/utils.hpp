@@ -104,7 +104,7 @@ int random_sieve(const int nthprime) {
 }
 
 template <class T> void absmat(T *X) {
-    uvec negativeIdx = find((*X) < 0);
+    UVEC negativeIdx = find((*X) < 0);
     (*X)(negativeIdx) = (*X)(negativeIdx) * -1;
 }
 
@@ -114,23 +114,23 @@ template <class T> void makeSparse(const double sparsity, T (*X)) {
     #pragma omp parallel for
     for (int j = 0; j < X->n_cols; j++) {
         for (int i = 0; i < X->n_rows; i++) {
-            if (randu() > sparsity) (*X)(i, j) = 0;
+            if (arma::randu() > sparsity) (*X)(i, j) = 0;
         }
     }
 }
 
-template <class T> void randNMF(const uword m, const uword n,
-                                const uword k, const double sparsity, T *A) {
+template <class T> void randNMF(const UWORD m, const UWORD n,
+                                const UWORD k, const double sparsity, T *A) {
 #ifdef BUILD_SPARSE
-    T temp = sprandu<T>(m, n, sparsity);
+    T temp = arma::sprandu<T >(m, n, sparsity);
     A = &temp;
 #else
     srand(RAND_SEED);
-    fmat W = 10 * randu<fmat>(m, k);
-    fmat H = 10 * randu<fmat>(n, k);
+    FMAT W = 10 * arma::randu<FMAT >(m, k);
+    FMAT H = 10 * arma::randu<FMAT >(n, k);
     if (sparsity < 1) {
-        makeSparse<fmat>(sparsity, &W);
-        makeSparse<fmat>(sparsity, &H);
+        makeSparse<FMAT>(sparsity, &W);
+        makeSparse<FMAT>(sparsity, &H);
     }
     T temp = ceil(W * trans(H));
     A = &temp;
@@ -157,9 +157,9 @@ double computeObjectiveError(const INPUTTYPE &A,
     // 4. use sgemm to compute RL
     // 5. use slange to compute ||RL||_F^2
     // 6. return nnzsse+nnzwh-||RL||_F^2
-    uword k = W.n_cols;
-    uword m = A.n_rows;
-    uword n = A.n_cols;
+    UWORD k = W.n_cols;
+    UWORD m = A.n_rows;
+    UWORD n = A.n_cols;
     tic();
     float nnzsse = 0;
     float nnzwh = 0;
@@ -169,16 +169,16 @@ double computeObjectiveError(const INPUTTYPE &A,
     LRTYPE Qh(n, k);
     LRTYPE RwRh(k, k);
     #pragma omp parallel for reduction (+ : nnzsse, nnzwh)
-    for (uword jj = 1; jj <= A.n_cols; jj++) {
-        uword startIdx = A.col_ptrs[jj - 1];
-        uword endIdx = A.col_ptrs[jj];
-        uword col = jj - 1;
+    for (UWORD jj = 1; jj <= A.n_cols; jj++) {
+        UWORD startIdx = A.col_ptrs[jj - 1];
+        UWORD endIdx = A.col_ptrs[jj];
+        UWORD col = jj - 1;
         float nnzssecol = 0;
         float nnzwhcol = 0;
-        for (uword ii = startIdx; ii < endIdx; ii++) {
-            uword row = A.row_indices[ii];
+        for (UWORD ii = startIdx; ii < endIdx; ii++) {
+            UWORD row = A.row_indices[ii];
             float tempsum = 0;
-            for (uword kk = 0; kk < k; kk++) {
+            for (UWORD kk = 0; kk < k; kk++) {
                 tempsum += (W(row, kk) * H(col, kk));
             }
             nnzwhcol += tempsum * tempsum;
@@ -209,13 +209,13 @@ double computeObjectiveError(const INPUTTYPE &A,
 * Once you receive Ct, transpose again to print
 * C using arma
 */
-void ARMAMKLSCSCMM(const sp_fmat &mklMat, char transa, const fmat &Bt,
+void ARMAMKLSCSCMM(const SP_FMAT &mklMat, char transa, const FMAT &Bt,
                    float *Ct) {
     MKL_INT m, k, n, nnz;
     m = static_cast<MKL_INT>(mklMat.n_rows);
     k = static_cast<MKL_INT>(mklMat.n_cols);
     n = static_cast<MKL_INT>(Bt.n_rows);
-    // fmat B = B.t();
+    // FMAT B = B.t();
     // C = alpha * A * B + beta * C;
     // mkl_?cscmm - https://software.MKL_INTel.com/en-us/node/468598
     // char transa = 'N';
@@ -238,10 +238,10 @@ void ARMAMKLSCSCMM(const sp_fmat &mklMat, char transa, const fmat &Bt,
 * This is an sgemm wrapper for armadillo matrices
 * Something is going crazy with armadillo
 */
-void cblas_sgemm(const fmat &A, const fmat &B, float *C) {
-    uword m = A.n_rows;
-    uword n = B.n_cols;
-    uword k = A.n_cols;
+void cblas_sgemm(const FMAT &A, const FMAT &B, float *C) {
+    UWORD m = A.n_rows;
+    UWORD n = B.n_cols;
+    UWORD k = A.n_cols;
     double alpha = 1.0;
     double beta = 0.0;
     cblas_sgemm(CblasColMajor,

@@ -7,17 +7,16 @@
 
 
 using namespace std;
-using namespace arma;
 
 template<class INPUTMATTYPE>
 class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
-    fmat HtH, WtW;
-    fmat AcolstW, ArowsH;
-    fmat ArowsHt, AcolstWt;
+    FMAT HtH, WtW;
+    FMAT AcolstW, ArowsH;
+    FMAT ArowsHt, AcolstWt;
     // need double precision for nnls
-    mat tempHtH, tempArowsH, tempWtW, tempAcolstW;
-    frowvec localWnorm;
-    frowvec Wnorm;
+    MAT tempHtH, tempArowsH, tempWtW, tempAcolstW;
+    FROWVEC localWnorm;
+    FROWVEC Wnorm;
 
     void printConfig() {
         PRINTROOT("NAIVEANLSBPP constructor completed::" << "::A::" \
@@ -28,7 +27,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
 
   public:
     DistNaiveANLSBPP(const INPUTMATTYPE &Arows, const INPUTMATTYPE &Acols,
-                     const fmat &leftlowrankfactor, const fmat &rightlowrankfactor,
+                     const FMAT &leftlowrankfactor, const FMAT &rightlowrankfactor,
                      const MPICommunicator& communicator):
         DistNMF1D<INPUTMATTYPE>(Arows, Acols, leftlowrankfactor,
                                 rightlowrankfactor, communicator) {
@@ -108,14 +107,14 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                 this->time_stats.mm_duration(tempTime);
                 this->reportTime(tempTime, "::AcolstW::");
                 mpitic();  // nnlsH
-                tempWtW = conv_to<mat>::from(WtW);
-                tempAcolstW = conv_to<mat>::from(trans(AcolstW));
+                tempWtW = arma::conv_to<MAT >::from(WtW);
+                tempAcolstW = arma::conv_to<MAT >::from(trans(AcolstW));
                 DISTPRINTINFO(PRINTMATINFO(tempWtW));
                 DISTPRINTINFO(PRINTMATINFO(tempAcolstW));
-                BPPNNLS<mat, vec> subProblem2(tempWtW, tempAcolstW, true);
+                BPPNNLS<MAT, VEC > subProblem2(tempWtW, tempAcolstW, true);
                 subProblem2.solveNNLS();
-                this->m_Ht = conv_to<fmat>::from(subProblem2.getSolutionMatrix());
-                fixNumericalError<fmat>(&(this->m_Ht));
+                this->m_Ht = arma::conv_to<FMAT >::from(subProblem2.getSolutionMatrix());
+                fixNumericalError<FMAT >(&(this->m_Ht));
                 DISTPRINTINFO("OptimizeBlock::NNLS::" << PRINTMATINFO(this->m_Ht));
 #ifdef MPI_VERBOSE
                 DISTPRINTINFO(PRINTMAT(this->m_Ht));
@@ -164,14 +163,14 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                 this->time_stats.mm_duration(tempTime);
                 this->reportTime(tempTime, "::ArowsH::");
                 mpitic();  // nnlsW
-                tempHtH = conv_to<mat>::from(HtH);
-                tempArowsH = conv_to<mat>::from(trans(ArowsH));
+                tempHtH = arma::conv_to<MAT >::from(HtH);
+                tempArowsH = arma::conv_to<MAT >::from(trans(ArowsH));
                 DISTPRINTINFO(PRINTMATINFO(tempHtH));
                 DISTPRINTINFO(PRINTMATINFO(tempArowsH));
-                BPPNNLS<mat, vec> subProblem1(tempHtH, tempArowsH, true);
+                BPPNNLS<MAT, VEC > subProblem1(tempHtH, tempArowsH, true);
                 subProblem1.solveNNLS();
-                this->m_Wt = conv_to<fmat>::from(subProblem1.getSolutionMatrix());
-                fixNumericalError<fmat>(&(this->m_Wt));
+                this->m_Wt = arma::conv_to<FMAT >::from(subProblem1.getSolutionMatrix());
+                fixNumericalError<FMAT >(&(this->m_Wt));
                 DISTPRINTINFO("OptimizeBlock::NNLS::" << PRINTMATINFO(this->m_Wt));
 #ifdef MPI_VERBOSE
                 DISTPRINTINFO(PRINTMAT(this->m_Wt));
