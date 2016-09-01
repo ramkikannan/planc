@@ -47,3 +47,11 @@ Output interpretation
 For W matrix row major ordering. That is., W_0, W_1, .., W_p
 For H matrix column major ordering. That is., for 6 processes
 with pr=3, pc=2, interpret as H_0, H_2, H_4, H_1, H_3, H_5
+
+
+Citation:
+=========
+
+If you are using this MPI implementation, kindly cite.
+
+Ramakrishnan Kannan, Grey Ballard, and Haesun Park. 2016. A high-performance parallel algorithm for nonnegative matrix factorization. In Proceedings of the 21st ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming (PPoPP '16). ACM, New York, NY, USA, , Article 9 , 11 pages. DOI: http://dx.doi.org/10.1145/2851141.2851152

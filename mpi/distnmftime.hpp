@@ -58,7 +58,9 @@ class DistNMFTime {
     const double mm_duration() const {return m_mm_duration;}
     const double nnls_duration() const {return m_nnls_duration;}
     const double err_compute_duration() const {return m_err_compute_duration;}
-    const double err_communication_duration() const {return m_err_communication_duration;}
+    const double err_communication_duration() const {
+        return m_err_communication_duration;
+    }
     void duration(double d) {m_duration += d;}
     void compute_duration(double d) {m_compute_duration += d;}
     void communication_duration(double d) {m_communication_duration += d;}
@@ -69,7 +71,9 @@ class DistNMFTime {
     void mm_duration(double d) {m_mm_duration += d;}
     void nnls_duration(double d) {m_nnls_duration += d;}
     void err_compute_duration(double d) {m_err_compute_duration += d;}
-    void err_communication_duration(double d) {m_err_communication_duration += d;}
+    void err_communication_duration(double d) {
+        m_err_communication_duration += d;
+    }
 };
 
 #endif  // MPI_DISTNMFTIME_HPP_

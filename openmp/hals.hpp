@@ -1,26 +1,26 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef OPENMP_HALS_HPP
-#define OPENMP_HALS_HPP
+#ifndef OPENMP_HALS_HPP_
+#define OPENMP_HALS_HPP_
 template <class T>
 class HALSNMF: public NMF<T> {
   private:
     // Not happy with this design. However to avoid computing At again and again
     // making this as private variable.
     T At;
-    fmat WtW;
-    fmat HtH;
-    fmat WtA;
-    fmat HtAt;
+    FMAT WtW;
+    FMAT HtH;
+    FMAT WtA;
+    FMAT HtAt;
 
     /*
      * Collected statistics are
      * iteration Htime Wtime totaltime normH normW densityH densityW relError
      */
     void allocateMatrices() {
-        WtW = zeros<fmat>(this->k, this->k);
-        HtH = zeros<fmat>(this->k, this->k);
-        WtA = zeros<fmat>(this->n, this->k);
-        HtAt = zeros<fmat>(this->m, this->k);
+        WtW = arma::zeros<FMAT >(this->k, this->k);
+        HtH = arma::zeros<FMAT >(this->k, this->k);
+        WtA = arma::zeros<FMAT >(this->n, this->k);
+        HtAt = arma::zeros<FMAT >(this->m, this->k);
     }
     void freeMatrices() {
         this->At.clear();
@@ -32,7 +32,7 @@ class HALSNMF: public NMF<T> {
   public:
     HALSNMF(const T &A, int lowrank): NMF<T>(A, lowrank) {
     }
-    HALSNMF(const T &A, const fmat &llf, const fmat &rlf) :
+    HALSNMF(const T &A, const FMAT &llf, const FMAT &rlf) :
         NMF<T>(A, llf, rlf) {
     }
     void computeNMF() {
@@ -50,12 +50,12 @@ class HALSNMF: public NMF<T> {
                  << PRINTMATINFO(HtH) << PRINTMATINFO(HtAt) << endl;
             tic();
             for (int x = 0; x < this->k; x++) {
-                // fvec Wx = W(:,x) + (AHt(:,x)-W*HHt(:,x))/HHtDiag(x);
+                // FVEC Wx = W(:,x) + (AHt(:,x)-W*HHt(:,x))/HHtDiag(x);
                 float normConst;
                 // W(:,i) = W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i);
-                fvec Wx = this->W.col(x) * HtH(x, x) +
+                FVEC Wx = this->W.col(x) * HtH(x, x) +
                           (((HtAt.row(x)).t()) - (this->W * (HtH.col(x))));
-                fixNumericalError<fvec>(&Wx);
+                fixNumericalError<FVEC>(&Wx);
                 Wx = Wx / norm(Wx);
                 this->W.col(x) = Wx;
             }
@@ -74,9 +74,9 @@ class HALSNMF: public NMF<T> {
             for (int x = 1; x < this->k; x++) {
                 float normConst;
                 // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
-                fvec Hx = this->H.col(x) +
+                FVEC Hx = this->H.col(x) +
                           (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
-                fixNumericalError<fvec>(&Hx);
+                fixNumericalError<FVEC>(&Hx);
                 this->H.col(x) = Hx;
             }
             INFO << "Completed H ("
@@ -97,4 +97,4 @@ class HALSNMF: public NMF<T> {
     ~HALSNMF() {
     }
 };
-#endif
+#endif  // OPENMP_HALS_HPP_

@@ -44,6 +44,10 @@ export LD_LIBRARY_PATH=MKL_LIB path
 2. In the NMF.cpp comment cblas.h
 3. make sure there is no compilation problem/warning specifically about openmp
 
-If you are using this implementation, kindly cite.
+
+Citation
+========
+
+If you are using this openmp implementation, kindly cite.
 
 James P. Fairbanks, Ramakrishnan Kannan, Haesun Park, David A. Bader, Behavioral clusters in dynamic graphs, Parallel Computing, Volume 47, August 2015, Pages 38-50, ISSN 0167-8191, http://dx.doi.org/10.1016/j.parco.2015.03.002.

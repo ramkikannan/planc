@@ -34,7 +34,6 @@ class DistNMFDriver {
              << "::error::" << this->m_compute_error
              << "::distio::" << this->m_distio << endl;
     }
-
   public:
     DistNMFDriver(int argc, char *argv[]) {
         this->m_argc = argc;
@@ -74,8 +73,8 @@ class DistNMFDriver {
             this->m_globalm = Acols.n_rows;
         }
         INFO << mpicomm.rank() <<  "::Completed generating 1D rand Arows="
-             << PRINTMATINFO(Arows) << "::Acols=" << PRINTMATINFO(Acols) << endl;
-
+             << PRINTMATINFO(Arows) << "::Acols="
+             << PRINTMATINFO(Acols) << endl;
 #ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
 #endif

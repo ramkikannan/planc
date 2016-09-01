@@ -85,7 +85,7 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
         unsigned int n = A.n_cols;
         int fileNameLen = strlen(outputDir) + strlen(suffixStr)
                           + 2 * strlen(numSplitStr) + 2;
-        //#pragma omp parallel for
+        #pragma omp parallel for
         for (int i = 0; i <= pr; i++) {
             uword beginRowIdx = i * perRowSplit;
             uword endRowIdx = (i + 1) * perRowSplit - 1;
@@ -93,7 +93,7 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                 endRowIdx = m - 1;
             if (beginRowIdx < endRowIdx) {
                 sp_fmat currentRowMatrix = A.rows(beginRowIdx, endRowIdx);
-                #pragma omp parallel for
+                //#pragma omp parallel for
                 for (int j = 0; j <= pc; j++) {
                     uword beginColIdx = j * perColSplit;
                     uword endColIdx = (j + 1) * perColSplit - 1;

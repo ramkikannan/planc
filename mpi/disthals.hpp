@@ -33,7 +33,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
 #ifdef MPI_VERBOSE
             DISTPRINTINFO("after fixNumericalError::" << endl << updWi);
 #endif
-            //W(:,i) = W(:,i)/norm(W(:,i));
+            // W(:,i) = W(:,i)/norm(W(:,i));
             double normWi = norm(updWi);
             normWi *= normWi;
             double globalnormWi;
@@ -46,7 +46,6 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
             if (globalnormWi > 0) {
                 this->W.col(i) = updWi / sqrt(globalnormWi);
             }
-            
         }
         this->Wt = this->W.t();
     }
@@ -74,7 +73,8 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
     }
   public:
     DistHALS(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-             const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
+             const FMAT &rightlowrankfactor,
+             const MPICommunicator& communicator):
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                                 rightlowrankfactor, communicator) {
         WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);

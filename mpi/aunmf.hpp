@@ -155,13 +155,6 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
    */
 
   void distWtA() {
-    /*
-    DISTPRINTINFO("distAtW::" << "::Arows::" \
-                  << Arows.n_rows << "x" << Arows.n_cols \
-                  << "::norm::" << arma::norm(Arows, "fro"));
-    DISTPRINTINFO("distAtW::" << "::W::" \
-                  << this->W.n_rows << "x" << this->W.n_cols);
-    */
     int sendcnt = (this->globalm() / MPI_SIZE) * this->k;
     int recvcnt = (this->globalm() / MPI_SIZE) * this->k;
     Wit.zeros();
@@ -189,14 +182,14 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 // #endif
 //     this->WitAij = reshape(this->AijWit, this->k, this->n);
 // #else
-//     this->WitAij = this->Wit * this->A;    
+//     this->WitAij = this->Wit * this->A;
 // #endif
     temp = mpitoc();  // mm WtA
 #ifdef MPI_VERBOSE
     DISTPRINTINFO(PRINTMAT(this->WitAij));
 #endif
     PRINTROOT(PRINTMATINFO(this->A) << PRINTMATINFO(this->Wit)
-                  << PRINTMATINFO(this->WitAij));
+              << PRINTMATINFO(this->WitAij));
     this->time_stats.compute_duration(temp);
     this->time_stats.mm_duration(temp);
     this->reportTime(temp, "WtA::");
@@ -258,14 +251,14 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 // #endif
 //     this->AijHjt = reshape(this->AijHj, this->k, this->m);
 // #else
-//     this->AijHjt = this->Hjt * this->A_ij_t;    
+//     this->AijHjt = this->Hjt * this->A_ij_t;
 // #endif
 // #ifdef MPI_VERBOSE
 //     DISTPRINTINFO(PRINTMAT(this->AijHjt));
 // #endif
     temp = mpitoc();  // mm AH
     PRINTROOT(PRINTMATINFO(this->A_ij_t) << PRINTMATINFO(this->Hjt)
-                  << PRINTMATINFO(this->AijHjt));
+              << PRINTMATINFO(this->AijHjt));
     this->time_stats.compute_duration(temp);
     this->time_stats.mm_duration(temp);
     this->reportTime(temp, "AH::");
@@ -399,7 +392,8 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
                   << "::err::" << this->objective_err \
                   << "::relerr::" << this->objective_err / this->m_globalsqnormA);
       }
-      PRINTROOT("completed it=" << iter << "::taken::" << this->time_stats.duration());
+      PRINTROOT("completed it=" << iter << "::taken::"
+                << this->time_stats.duration());
     }  // end for loop
     MPI_Barrier(MPI_COMM_WORLD);
     this->reportTime(this->time_stats.duration(), "total_d");
@@ -445,7 +439,8 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     double temp = mpitoc();  // computererror
     this->time_stats.err_compute_duration(temp);
     mpitic();  // coommunication error
-    MPI_Allreduce(this->localWtAijH.memptr(), this->WtAijH.memptr(), this->k * this->k,
+    MPI_Allreduce(this->localWtAijH.memptr(), this->WtAijH.memptr(),
+                  this->k * this->k,
                   MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
     temp = mpitoc();  // communication error
 #ifdef MPI_VERBOSE
@@ -454,7 +449,8 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->time_stats.err_communication_duration(temp);
     double tWtAijh = trace(this->WtAijH);
     double tWtWHtH = trace(this->WtW * this->prevHtH);
-    PRINTROOT("::it=" << it << "normA::" << this->m_globalsqnormA << "::tWtAijH::" << 2 * tWtAijh \
+    PRINTROOT("::it=" << it << "normA::" << this->m_globalsqnormA \
+              << "::tWtAijH::" << 2 * tWtAijh \
               << "::tWtWHtH::" << tWtWHtH);
     this->objective_err = this->m_globalsqnormA - 2 * tWtAijh + tWtWHtH;
   }

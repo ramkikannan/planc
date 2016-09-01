@@ -50,7 +50,7 @@ struct option distnmfopts[] = {
                                 << "::" << __LINE__ \
                                 << "::" << MSG << endl;
 
-#define PRINTTICTOCTOP if(ISROOT) INFO << "tictoc::" << tictoc_stack.top() \
+#define PRINTTICTOCTOP if (ISROOT) INFO << "tictoc::" << tictoc_stack.top() \
                                          << endl;
 
 #endif  // MPI_DISTUTILS_H_

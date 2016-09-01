@@ -1,26 +1,26 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef OPENMP_MU_HPP
-#define OPENMP_MU_HPP
+#ifndef OPENMP_MU_HPP_
+#define OPENMP_MU_HPP_
 template <class T>
 class MUNMF: public NMF<T> {
   private:
     // Not happy with this design. However to avoid computing At again and again
     // making this as private variable.
     T At;
-    fmat WtW;
-    fmat HtH;
-    fmat AtW;
-    fmat AH;
+    FMAT WtW;
+    FMAT HtH;
+    FMAT AtW;
+    FMAT AH;
 
     /*
      * Collected statistics are
      * iteration Htime Wtime totaltime normH normW densityH densityW relError
      */
     void allocateMatrices() {
-        WtW = zeros<fmat>(this->k, this->k);
-        HtH = zeros<fmat>(this->k, this->k);
-        AtW = zeros<fmat>(this->n, this->k);
-        AH = zeros<fmat>(this->m, this->k);
+        WtW = arma::zeros<FMAT >(this->k, this->k);
+        HtH = arma::zeros<FMAT >(this->k, this->k);
+        AtW = arma::zeros<FMAT >(this->n, this->k);
+        AH = arma::zeros<FMAT >(this->m, this->k);
     }
     void freeMatrices() {
         this->At.clear();
@@ -33,7 +33,7 @@ class MUNMF: public NMF<T> {
     MUNMF(const T &A, int lowrank): NMF<T>(A, lowrank) {
         allocateMatrices();
     }
-    MUNMF(const T &A, const fmat &llf, const fmat &rlf) : NMF<T>(A, llf, rlf) {
+    MUNMF(const T &A, const FMAT &llf, const FMAT &rlf) : NMF<T>(A, llf, rlf) {
         allocateMatrices();
     }
     void computeNMF() {
@@ -84,4 +84,4 @@ class MUNMF: public NMF<T> {
         freeMatrices();
     }
 };
-#endif
+#endif  // OPENMP_MU_HPP_

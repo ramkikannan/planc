@@ -9,16 +9,16 @@
 #include "utils.hpp"
 
 inline void mpitic() {
-	tictoc_stack.push(clock());
+    tictoc_stack.push(clock());
 }
 
 inline double mpitoc() {
 #ifdef __WITH__BARRIER__TIMING__
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
-	double rc = (static_cast<double>
-	             (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
-	tictoc_stack.pop();
-	return rc;
+    double rc = (static_cast<double>
+                 (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
+    tictoc_stack.pop();
+    return rc;
 }
 #endif

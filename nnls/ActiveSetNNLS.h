@@ -21,17 +21,17 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#ifndef NNLS_H
-#define NNLS_H
+#ifndef NNLS_ACTIVESETNNLS_H_
+#define NNLS_ACTIVESETNNLS_H_
 
 #include <stdio.h>
 #include <math.h>
-#define nnls_max(a,b) ((a) >= (b) ? (a) : (b))
+#define nnls_max(a, b) ((a) >= (b) ? (a) : (b))
 #define nnls_abs(x) ((x) >= 0 ? (x) : -(x))
 
-//has definitions of nnls, g1, h12 function
-//defined them static to avoid multiple definitions
-//error
+// has definitions of nnls, g1, h12 function
+// defined them static to avoid multiple definitions
+// error
 #include "ActiveSetNNLS.hpp"
 
 typedef int integer;
@@ -156,13 +156,11 @@ typedef double doublereal;
 // Included string for support of memcpy
 #include <string.h>
 template<class T>
-class ActiveSetNNLS
-{
-public:
+class ActiveSetNNLS {
+  public:
     ActiveSetNNLS(int rows, int maxCols) :
         _rows( rows ),
-        _maxCols( maxCols )
-    {
+        _maxCols( maxCols ) {
         _workA     = new T[_rows * _maxCols];
         _workW     = new T[_maxCols];
         _workZ     = new T[_rows];
@@ -171,16 +169,14 @@ public:
         _maxIter = 1;
     }
 
-    ~ActiveSetNNLS()
-    {
+    ~ActiveSetNNLS() {
         delete[] _workA;
         delete[] _workW;
         delete[] _workZ;
         delete[] _workIndex;
     }
 
-    bool solve(T* A, int numCols, T* b, T* x, T& rNorm)
-    {
+    bool solve(T* A, int numCols, T* b, T* x, T& rNorm) {
         int workMode;
 
         // make copy of A, since nnls() clobbers it
@@ -193,17 +189,11 @@ public:
         return (workMode == 1);
     }
 
-    int& maxIter()
-    {
-        return _maxIter;
-    };
+    int& maxIter() { return _maxIter;}
 
-    T* getDual()
-    {
-        return _workW;
-    };
+    T* getDual() {return _workW;}
 
-private:
+  private:
     int _rows;
     int _maxCols;
 
@@ -215,5 +205,4 @@ private:
     // maximum iterations of NNLS
     int _maxIter;
 };
-
-#endif
+#endif  // NNLS_ACTIVESETNNLS_H_

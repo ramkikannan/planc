@@ -69,7 +69,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                 this->m_prevHtH = this->HtH;
             }
             mpitic();  // total_d W&H
-            //update H given A,W
+            // update H given A,W
             {
                 double tempTime = this->globalW();
                 this->time_stats.communication_duration(tempTime);
@@ -125,7 +125,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                 this->time_stats.nnls_duration(tempTime);
                 this->reportTime(tempTime, "NNLS::H::");
             }
-            //update W given A,H
+            // update W given A,H
             {
                 double tempTime = this->globalH();
                 this->time_stats.communication_duration(tempTime);
@@ -157,7 +157,8 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                 DISTPRINTINFO(PRINTMAT(trans(ArowsH)));
 #endif
                 tempTime = mpitoc();  // mmW
-                PRINTROOT(PRINTMATINFO(this->m_Arows) << PRINTMATINFO(this->m_globalH)
+                PRINTROOT(PRINTMATINFO(this->m_Arows)
+                          << PRINTMATINFO(this->m_globalH)
                           << PRINTMATINFO(ArowsH));
                 this->time_stats.compute_duration(tempTime);
                 this->time_stats.mm_duration(tempTime);
@@ -189,7 +190,8 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                           << "::err::" << this->m_objective_err \
                           << "::relerr::" << this->m_objective_err / this->m_globalsqnormA);
             }
-            PRINTROOT("completed it=" << iter << "::taken::" << this->time_stats.duration());
+            PRINTROOT("completed it=" << iter << "::taken::"
+                      << this->time_stats.duration());
         }
         MPI_Barrier(MPI_COMM_WORLD);
         this->reportTime(this->time_stats.duration(), "total_d");
@@ -200,8 +202,10 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
         this->reportTime(this->time_stats.mm_duration(), "total_mm");
         this->reportTime(this->time_stats.nnls_duration(), "total_nnls");
         if (this->is_compute_error()) {
-            this->reportTime(this->time_stats.err_compute_duration(), "total_err_compute");
-            this->reportTime(this->time_stats.err_compute_duration(), "total_err_communication");
+            this->reportTime(this->time_stats.err_compute_duration(),
+                             "total_err_compute");
+            this->reportTime(this->time_stats.err_compute_duration(),
+                             "total_err_communication");
         }
     }
 };

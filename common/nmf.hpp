@@ -165,7 +165,7 @@ class NMF {
         INFO << "error compute time " << toc() << endl;
         float fastErr = sqrt(nnzsse + (normWH * normWH - nnzwh));
         this->objective_err = fastErr;
-        return (fastErr);
+        // return (fastErr);
     }
 #else
     void computeObjectiveError() {

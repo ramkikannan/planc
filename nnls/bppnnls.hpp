@@ -9,13 +9,13 @@
 #include <lapacke.h>
 #endif
 #include <assert.h>
-#include <set>
-#include <boost/range/algorithm/set_algorithm.hpp>
-#include <algorithm>
-#include <iomanip>
 #include "ActiveSetNNLS.h"
 #include "nnls.hpp"
 #include "utils.hpp"
+#include <set>
+#include <algorithm>
+#include <iomanip>
+#include <boost/range/algorithm/set_algorithm.hpp>
 #include "ActiveSetNNLS.hpp"
 #include "SortBooleanMatrix.hpp"
 
@@ -39,11 +39,9 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
             // we initialized r appropriately in the
             // constructor.
             rcIterations = solveNNLSMultipleRHS();
-
         }
         return rcIterations;
     }
-
   private:
     /*
      * This implementation is based on Algorithm 1 on Page 6 of paper
@@ -345,7 +343,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                  << " : r=" << this->r << " :p=" << this->p
                  << " :q=" << this->q << endl;
             std::ostringstream fileName, fileName2;
-            int temp = rand();
+            int temp = rand_r();
             fileName << "errinputmatrix" << temp;
             INFO << "input file matrix " << fileName << endl;
             this->CtC.save(fileName.str());
@@ -412,12 +410,6 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
             } else {
                 // we have to group passive set columns that are same.
                 // find the correlation matrix of passive set matrix.
-                // The same vectors will have value 1 in the correlation matrix on a vector.
-                // INFO << "solveNormalEqComb:PassSet:" << PassSet.n_rows << "x" << PassSet.n_cols << endl;
-                /*fmat corrPassMat=trimatl(arma::conv_to<fmat>::from(arma::cor(PassSetTemp.t())));
-
-                fixDecimalPlaces<fmat>(corrPassMat);*/
-                // arma::umat corrPassMat = computeCorrelationScore(PassSet);
                 vector<UWORD> sortedIdx, beginIdx;
                 computeCorrelationScore(PassSet, sortedIdx, beginIdx);
                 // UVEC solved(k1);
@@ -430,7 +422,9 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                     // UVEC samePassiveSetCols=find(corrPassMat.col(i)==1);
                     UWORD sortedBeginIdx = beginIdx[i - 1];
                     UWORD sortedEndIdx = beginIdx[i];
-                    UVEC samePassiveSetCols(vector<UWORD>(sortedIdx.begin() + sortedBeginIdx, sortedIdx.begin() + sortedEndIdx));
+                    UVEC samePassiveSetCols(vector<UWORD>
+                                            (sortedIdx.begin() + sortedBeginIdx,
+                                             sortedIdx.begin() + sortedEndIdx));
                     // solved(samePassiveSetCols).ones();
                     UVEC currentPassiveSet = find(PassSet.col( sortedIdx[sortedBeginIdx] ) == 1);
 #ifdef _VERBOSE
@@ -443,13 +437,9 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                     INFO << "AtB:" << endl
                          << AtB(currentPassiveSet, samePassiveSetCols);
 #endif
-                    // INFO << "Entry grouped passive set" << endl;
-                    // Z(currentPassiveSet,samePassiveSetCols)=arma::solve(AtA(currentPassiveSet,currentPassiveSet),AtB(currentPassiveSet,samePassiveSetCols));
-                    // INFO << "Exit grouped passive set" << endl;
                     Z(currentPassiveSet, samePassiveSetCols) =
                         solveSymmetricLinearEquations(AtA(currentPassiveSet, currentPassiveSet),
                                                       AtB(currentPassiveSet, samePassiveSetCols));
-                    //  }
                 }
             }
         }

@@ -8,90 +8,87 @@
 #include <omp.h>
 
 template <class NMFTYPE>
-void NMFDriver(int k, uword m, uword n, std::string AfileName,
+void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
                std::string WinitFileName, std::string HinitFileName,
                std::string WfileName, std::string HfileName, int numIt) {
 #ifdef BUILD_SPARSE
-    sp_fmat A;
-    uword nnz;
+    SP_FMAT A;
+    UWORD nnz;
 #else
-    fmat A;
+    FMAT A;
 #endif
     double t1, t2;
     if (!AfileName.empty()) {
 #ifdef BUILD_SPARSE
-        INFO << "calling load matrix market " << AfileName << endl;
-        uword uim, uin, uinnz;
-        LoadMatrixMarketFile<sp_fmat, fvec, uword>(AfileName, uim, uin, uinnz, A, false);
-        m = uim;
-        n = uin;
-        nnz = uinnz;
+        A.load(AfileName, arma::coord_ascii);
         INFO << "Successfully loaded the input matrix" << endl;
 #else
-        t1 = omp_get_wtime();
-        A.load(AfileName, raw_ascii);
-        t2 = omp_get_wtime();
-        INFO << "Successfully loaded dense input matrix. A=" << A.n_rows << "x" << A.n_cols << " took=" << t2 - t1 << endl;
+        tic();
+        A.load(AfileName, arma::raw_ascii);
+        t2 = toc();
+        INFO << "Successfully loaded dense input matrix. A=" << PRINTMATINFO(A)
+             << " took=" << t2 << endl;
         m = A.n_rows;
         n = A.n_cols;
 #endif
     } else {
-        A = randu<fmat>(m, n);
-        INFO << "Completed generating random matrix A=" << A.n_rows << "x" << A.n_cols << endl;
+        A = arma::randu<FMAT >(m, n);
+        INFO << "generated random matrix A=" << PRINTMATINFO(A) << endl;
     }
-    fmat W, H;
+    FMAT W, H;
     if (!WinitFileName.empty()) {
         INFO << "Winitfilename = " << WinitFileName << endl;
-        W.load(WinitFileName, raw_ascii);
-        INFO << "Successfully loaded W. W=" << W.n_rows << "x" << W.n_cols << endl;
+        W.load(WinitFileName, arma::raw_ascii);
+        INFO << "Loaded W." << PRINTMATINFO(W) << endl;
     }
     if (!HinitFileName.empty()) {
         INFO << "HInitfilename=" << HinitFileName << endl;
-        H.load(HinitFileName, raw_ascii);
-        INFO << "Successfully loaded H. H=" << H.n_rows << "x" << H.n_cols << endl;
+        H.load(HinitFileName, arma::raw_ascii);
+        INFO << "Loaded H." << PRINTMATINFO(H) << endl;
     }
     if (!WinitFileName.empty()) {
-        NMFTYPE nmfAlgorithm (A, W, H);
+        NMFTYPE nmfAlgorithm(A, W, H);
         nmfAlgorithm.num_iterations(numIt);
         INFO << "completed constructor" << endl;
-        t1 = omp_get_wtime();
+        tic();
         nmfAlgorithm.computeNMF();
-        t2 = omp_get_wtime();
-        INFO << "time taken:" << (t2 - t1) << endl;
+        t2 = toc();
+        INFO << "time taken:" << t2 << endl;
         if (!WfileName.empty()) {
-            nmfAlgorithm.getLeftLowRankFactor().save(WfileName, raw_ascii);
+            nmfAlgorithm.getLeftLowRankFactor().save(WfileName, arma::raw_ascii);
         }
         if (!HfileName.empty()) {
-            nmfAlgorithm.getRightLowRankFactor().save(HfileName, raw_ascii);
+            nmfAlgorithm.getRightLowRankFactor().save(HfileName, arma::raw_ascii);
         }
     } else {
         NMFTYPE nmfAlgorithm(A, k);
         nmfAlgorithm.num_iterations(numIt);
-        INFO << "completed constructor" << " A = " << A.n_rows << "x" << A.n_cols << endl; //" W=" << this->W.n_rows << "x" << this->W.n_cols << " H=" << this->H.n_rows "x" << this->H.n_cols <<  endl;
-        t1 = omp_get_wtime();
+        INFO << "completed constructor" << PRINTMATINFO(A) << endl;
+        tic();
         nmfAlgorithm.computeNMF();
-        t2 = omp_get_wtime();
-        INFO << "time taken:" << (t2 - t1) << endl;
+        t2 = toc();
+        INFO << "time taken:" << t2 << endl;
         if (!WfileName.empty()) {
-            nmfAlgorithm.getLeftLowRankFactor().save(WfileName, raw_ascii);
+            nmfAlgorithm.getLeftLowRankFactor().save(WfileName,
+                    arma::raw_ascii);
         }
         if (!HfileName.empty()) {
-            nmfAlgorithm.getRightLowRankFactor().save(HfileName, raw_ascii);
+            nmfAlgorithm.getRightLowRankFactor().save(HfileName,
+                    arma::raw_ascii);
         }
     }
 }
 #ifdef BUILD_SPARSE
 void incrementalGraph(std::string AfileName, std::string WfileName) {
-    sp_fmat A;
-    uword m, n, nnz;
-    LoadMatrixMarketFile<sp_fmat, fvec, uword>(AfileName, m, n, nnz, A, false);
-    INFO << "m=" << m << " n=" << n << " nnz=" << nnz << endl;
-    INFO << "Loaded input matrix A=" << A.n_rows << "x" << A.n_cols << endl;
-    fmat W, H;
-    W.load(WfileName, raw_ascii);
-    INFO << "Loaded input matrix W=" << W.n_rows << "x" << W.n_cols << endl;
+    SP_FMAT A;
+    UWORD m, n, nnz;
+    A.load(AfileName, arma::coord_ascii);
+    INFO << "Loaded input matrix A=" << PRINTMATINFO(A) << endl;
+    FMAT W, H;
+    W.load(WfileName, arma::raw_ascii);
+    INFO << "Loaded input matrix W=" << PRINTMATINFO(W) << endl;
     H.ones(A.n_cols, W.n_cols);
-    BPPNMF<sp_fmat> bppnmf(A, W, H);
+    BPPNMF<SP_FMAT > bppnmf(A, W, H);
     H = bppnmf.solveScalableNNLS();
     OUTPUT << H << endl;
 }
@@ -118,7 +115,7 @@ void parseCommandLineandCallNMF(int argc, char *argv[]) {
     std::string HInitfileName;
     std::string WfileName;
     std::string HfileName;
-    uword m = 0, n = 0;
+    UWORD m = 0, n = 0;
     int opt, long_index;
     while ((opt = getopt_long(argc, argv, "a:h:i:k:m:n:t:w:", nmfopts,
                               &long_index)) != -1) {
@@ -172,28 +169,28 @@ void parseCommandLineandCallNMF(int argc, char *argv[]) {
     switch (nmfalgo) {
     case MU_NMF:
 #ifdef BUILD_SPARSE
-        NMFDriver<MUNMF<sp_fmat> >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<MUNMF<SP_FMAT > >(lowRank, m, n, AfileName, WInitfileName,
                                    HInitfileName, WfileName, HfileName, numIt);
 #else
-        NMFDriver<MUNMF<fmat> >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<MUNMF<FMAT > >(lowRank, m, n, AfileName, WInitfileName,
                                 HInitfileName, WfileName, HfileName, numIt);
 #endif
         break;
     case HALS_NMF:
 #ifdef BUILD_SPARSE
-        NMFDriver<HALSNMF<sp_fmat> >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<HALSNMF<SP_FMAT > >(lowRank, m, n, AfileName, WInitfileName,
                                      HInitfileName, WfileName, HfileName, numIt);
 #else
-        NMFDriver<HALSNMF<fmat> >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<HALSNMF<FMAT > >(lowRank, m, n, AfileName, WInitfileName,
                                   HInitfileName, WfileName, HfileName, numIt);
 #endif
         break;
     case BPP_NMF:
 #ifdef BUILD_SPARSE
-        NMFDriver<BPPNMF<sp_fmat> >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<BPPNMF<SP_FMAT > >(lowRank, m, n, AfileName, WInitfileName,
                                     HInitfileName, WfileName, HfileName, numIt);
 #else
-        NMFDriver<BPPNMF<fmat> >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<BPPNMF<FMAT > >(lowRank, m, n, AfileName, WInitfileName,
                                  HInitfileName, WfileName, HfileName, numIt);
 #endif
         break;

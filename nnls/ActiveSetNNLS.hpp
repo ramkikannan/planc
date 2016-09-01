@@ -22,13 +22,12 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#ifndef ACTIVESET_NNLS_HPP_
-#define ACTIVESET_NNLS_HPP_
+#ifndef NNLS_ACTIVESETNNLS_HPP_
+#define NNLS_ACTIVESETNNLS_HPP_
 
 #include "ActiveSetNNLS.h"
 template <typename T>
-static double d_sign(T& a, T& b)
-{
+static double d_sign(T& a, T& b) {
     double x;
     x = (a >= 0 ? a : - a);
     return (b >= 0 ? x : -x);
@@ -41,16 +40,14 @@ static int c__0 = 0;
 static int c__2 = 2;
 
 template <typename T>
-static int g1(T* a, T* b, T* cterm, T* sterm, T* sig)
-{
+static int g1(T* a, T* b, T* cterm, T* sterm, T* sig) {
     /* System generated locals */
     T d;
 
     static T xr, yr;
 
 
-    if (nnls_abs(*a) > nnls_abs(*b))
-    {
+    if (nnls_abs(*a) > nnls_abs(*b)) {
         xr = *b / *a;
         /* Computing 2nd power */
         d = xr;
@@ -61,8 +58,7 @@ static int g1(T* a, T* b, T* cterm, T* sterm, T* sig)
         *sig = nnls_abs(*a) * yr;
         return 0;
     }
-    if (*b != 0.)
-    {
+    if (*b != 0.) {
         xr = *a / *b;
         /* Computing 2nd power */
         d = xr;
@@ -84,8 +80,7 @@ static int g1(T* a, T* b, T* cterm, T* sterm, T* sig)
 template <typename T>
 static int h12(int mode, int* lpivot, int* l1,
                int m, T* u, int* iue, T* up, T* c__,
-               int* ice, int* icv, int* ncv)
-{
+               int* ice, int* icv, int* ncv) {
     /* System generated locals */
     int u_dim1, u_offset, idx1, idx2;
     T d, d2;
@@ -114,31 +109,25 @@ static int h12(int mode, int* lpivot, int* l1,
     --c__;
 
     /* Function Body */
-    if (0 >= *lpivot || *lpivot >= *l1 || *l1 > m)
-    {
+    if (0 >= *lpivot || *lpivot >= *l1 || *l1 > m) {
         return 0;
     }
     cl = (d = u[*lpivot * u_dim1 + 1], nnls_abs(d));
-    if (mode == 2)
-    {
+    if (mode == 2) {
         goto L60;
     }
     /*                            ****** CONSTRUCT THE TRANSFORMATION. ******
      */
     idx1 = m;
-    for (j = *l1; j <= idx1; ++j)
-    {
+    for (j = *l1; j <= idx1; ++j) {
         /* L10: */
         /* Computing MAX */
         d2 = (d = u[j * u_dim1 + 1], nnls_abs(d));
         cl = nnls_max(d2, cl);
     }
-    if (cl <= 0.)
-    {
+    if (cl <= 0.) {
         goto L130;
-    }
-    else
-    {
+    } else {
         goto L20;
     }
 L20:
@@ -147,20 +136,16 @@ L20:
     d = u[*lpivot * u_dim1 + 1] * clinv;
     sm = d * d;
     idx1 = m;
-    for (j = *l1; j <= idx1; ++j)
-    {
+    for (j = *l1; j <= idx1; ++j) {
         /* L30: */
         /* Computing 2nd power */
         d = u[j * u_dim1 + 1] * clinv;
         sm += d * d;
     }
     cl *= sqrt(sm);
-    if (u[*lpivot * u_dim1 + 1] <= 0.)
-    {
+    if (u[*lpivot * u_dim1 + 1] <= 0.) {
         goto L50;
-    }
-    else
-    {
+    } else {
         goto L40;
     }
 L40:
@@ -173,29 +158,22 @@ L50:
      */
 
 L60:
-    if (cl <= 0.)
-    {
+    if (cl <= 0.) {
         goto L130;
-    }
-    else
-    {
+    } else {
         goto L70;
     }
 L70:
-    if (*ncv <= 0)
-    {
+    if (*ncv <= 0) {
         return 0;
     }
     b = *up * u[*lpivot * u_dim1 + 1];
     /*                       B  MUST BE NONPOSITIVE HERE.  IF B = 0., RETURN.
      */
 
-    if (b >= 0.)
-    {
+    if (b >= 0.) {
         goto L130;
-    }
-    else
-    {
+    } else {
         goto L80;
     }
 L80:
@@ -203,33 +181,27 @@ L80:
     i2 = 1 - *icv + *ice * (*lpivot - 1);
     incr = *ice * (*l1 - *lpivot);
     idx1 = *ncv;
-    for (j = 1; j <= idx1; ++j)
-    {
+    for (j = 1; j <= idx1; ++j) {
         i2 += *icv;
         i3 = i2 + incr;
         i4 = i3;
         sm = c__[i2] * *up;
         idx2 = m;
-        for (i__ = *l1; i__ <= idx2; ++i__)
-        {
+        for (i__ = *l1; i__ <= idx2; ++i__) {
             sm += c__[i3] * u[i__ * u_dim1 + 1];
             /* L90: */
             i3 += *ice;
         }
-        if (sm != 0.)
-        {
+        if (sm != 0.) {
             goto L100;
-        }
-        else
-        {
+        } else {
             goto L120;
         }
 L100:
         sm *= b;
         c__[i2] += sm * *up;
         idx2 = m;
-        for (i__ = *l1; i__ <= idx2; ++i__)
-        {
+        for (i__ = *l1; i__ <= idx2; ++i__) {
             c__[i4] += sm * u[i__ * u_dim1 + 1];
             /* L110: */
             i4 += *ice;
@@ -244,8 +216,7 @@ L130:
 template <typename T>
 static int nnls(T* a,  int mda,  int m,  int n, T* b,
                 T* x, T* rnorm, T* w, T* zz, int* index,
-                int* mode, int maxIter)
-{
+                int* mode, int maxIter) {
     /* System generated locals */
     int a_dim1, a_offset, idx1, idx2;
     T d1, d2;
@@ -283,8 +254,7 @@ static int nnls(T* a,  int mda,  int m,  int n, T* b,
 
     /* Function Body */
     *mode = 1;
-    if (m <= 0 || n <= 0)
-    {
+    if (m <= 0 || n <= 0) {
         *mode = 2;
         return 0;
     }
@@ -298,8 +268,7 @@ static int nnls(T* a,  int mda,  int m,  int n, T* b,
     /*                    INITIALIZE THE ARRAYS INDEX() AND X(). */
 
     idx1 = n;
-    for (i__ = 1; i__ <= idx1; ++i__)
-    {
+    for (i__ = 1; i__ <= idx1; ++i__) {
         x[i__] = 0.;
         /* L20: */
         index[i__] = i__;
@@ -315,8 +284,7 @@ L30:
      */
     /*                        OR IF M COLS OF A HAVE BEEN TRIANGULARIZED. */
 
-    if (iz1 > iz2 || nsetp >= m)
-    {
+    if (iz1 > iz2 || nsetp >= m) {
         goto L350;
     }
 
@@ -324,13 +292,11 @@ L30:
      */
 
     idx1 = iz2;
-    for (iz = iz1; iz <= idx1; ++iz)
-    {
+    for (iz = iz1; iz <= idx1; ++iz) {
         j = index[iz];
         sm = 0.;
         idx2 = m;
-        for (l = npp1; l <= idx2; ++l)
-        {
+        for (l = npp1; l <= idx2; ++l) {
             /* L40: */
             sm += a[l + j * a_dim1] * b[l];
         }
@@ -341,11 +307,9 @@ L30:
 L60:
     wmax = 0.;
     idx1 = iz2;
-    for (iz = iz1; iz <= idx1; ++iz)
-    {
+    for (iz = iz1; iz <= idx1; ++iz) {
         j = index[iz];
-        if (w[j] > wmax)
-        {
+        if (w[j] > wmax) {
             wmax = w[j];
             izmax = iz;
         }
@@ -356,8 +320,7 @@ L60:
     /*             THIS INDICATES SATISFACTION OF THE KUHN-TUCKER CONDITIONS.
      */
 
-    if (wmax <= 0.)
-    {
+    if (wmax <= 0.) {
         goto L350;
     }
     iz = izmax;
@@ -372,11 +335,9 @@ L60:
     h12<T>(c__1, &npp1, &idx1, m, &a[j * a_dim1 + 1], &c__1, &up, dummy, &
            c__1, &c__1, &c__0);
     unorm = 0.;
-    if (nsetp != 0)
-    {
+    if (nsetp != 0) {
         idx1 = nsetp;
-        for (l = 1; l <= idx1; ++l)
-        {
+        for (l = 1; l <= idx1; ++l) {
             /* L90: */
             /* Computing 2nd power */
             d1 = a[l + j * a_dim1];
@@ -385,16 +346,14 @@ L60:
     }
     unorm = sqrt(unorm);
     d2 = unorm + (d1 = a[npp1 + j * a_dim1], nnls_abs(d1)) * .01;
-    if ((d2 - unorm) > 0.)
-    {
+    if ((d2 - unorm) > 0.) {
 
         /*        COL J IS SUFFICIENTLY INDEPENDENT.  COPY B INTO ZZ, UPDATE Z
               Z */
         /*        AND SOLVE FOR ZTEST ( = PROPOSED NEW VALUE FOR X(J) ). */
 
         idx1 = m;
-        for (l = 1; l <= idx1; ++l)
-        {
+        for (l = 1; l <= idx1; ++l) {
             /* L120: */
             zz[l] = b[l];
         }
@@ -405,8 +364,7 @@ L60:
 
         /*                                     SEE IF ZTEST IS POSITIVE */
 
-        if (ztest > 0.)
-        {
+        if (ztest > 0.) {
             goto L140;
         }
     }
@@ -426,8 +384,7 @@ L60:
 
 L140:
     idx1 = m;
-    for (l = 1; l <= idx1; ++l)
-    {
+    for (l = 1; l <= idx1; ++l) {
         /* L150: */
         b[l] = zz[l];
     }
@@ -438,11 +395,9 @@ L140:
     nsetp = npp1;
     ++npp1;
 
-    if (iz1 <= iz2)
-    {
+    if (iz1 <= iz2) {
         idx1 = iz2;
-        for (jz = iz1; jz <= idx1; ++jz)
-        {
+        for (jz = iz1; jz <= idx1; ++jz) {
             jj = index[jz];
             h12(c__2, &nsetp, &npp1, m,
                 &a[j * a_dim1 + 1], &c__1, &up,
@@ -451,11 +406,9 @@ L140:
         }
     }
 
-    if (nsetp != m)
-    {
+    if (nsetp != m) {
         idx1 = m;
-        for (l = npp1; l <= idx1; ++l)
-        {
+        for (l = npp1; l <= idx1; ++l) {
             /* L180: */
             // SS: CHECK THIS DAMAGE....
             a[l + j * a_dim1] = 0.;
@@ -476,8 +429,7 @@ L200:
 
 L210:
     ++iter;
-    if (iter > itmax)
-    {
+    if (iter > itmax) {
         *mode = 3;
         /* The following lines were replaced after the f2c translation */
         /* s_wsfe(&io___22); */
@@ -493,14 +445,11 @@ L210:
 
     alpha = 2.;
     idx1 = nsetp;
-    for (ip = 1; ip <= idx1; ++ip)
-    {
+    for (ip = 1; ip <= idx1; ++ip) {
         l = index[ip];
-        if (zz[ip] <= 0.)
-        {
+        if (zz[ip] <= 0.) {
             t = -x[l] / (zz[ip] - x[l]);
-            if (alpha > t)
-            {
+            if (alpha > t) {
                 alpha = t;
                 jj = ip;
             }
@@ -511,8 +460,7 @@ L210:
     /*          IF ALL NEW CONSTRAINED COEFFS ARE FEASIBLE THEN ALPHA WILL */
     /*          STILL = 2.    IF SO EXIT FROM SECONDARY LOOP TO MAIN LOOP. */
 
-    if (alpha == 2.)
-    {
+    if (alpha == 2.) {
         goto L330;
     }
 
@@ -520,8 +468,7 @@ L210:
     /*          INTERPOLATE BETWEEN THE OLD X AND THE NEW ZZ. */
 
     idx1 = nsetp;
-    for (ip = 1; ip <= idx1; ++ip)
-    {
+    for (ip = 1; ip <= idx1; ++ip) {
         l = index[ip];
         x[l] += alpha * (zz[ip] - x[l]);
         /* L250: */
@@ -534,12 +481,10 @@ L210:
 L260:
     x[i__] = 0.;
 
-    if (jj != nsetp)
-    {
+    if (jj != nsetp) {
         ++jj;
         idx1 = nsetp;
-        for (j = jj; j <= idx1; ++j)
-        {
+        for (j = jj; j <= idx1; ++j) {
             ii = index[j];
             index[j - 1] = ii;
             g1(&a[j - 1 + ii * a_dim1], &a[j + ii * a_dim1],
@@ -547,10 +492,8 @@ L260:
             // SS: CHECK THIS DAMAGE...
             a[j + ii * a_dim1] = 0.;
             idx2 = n;
-            for (l = 1; l <= idx2; ++l)
-            {
-                if (l != ii)
-                {
+            for (l = 1; l <= idx2; ++l) {
+                if (l != ii) {
 
                     /*                 Apply procedure G2 (CC,SS,A(J-1,L),A(J,
                              L)) */
@@ -585,11 +528,9 @@ L260:
     /*        AND MOVED FROM SET P TO SET Z. */
 
     idx1 = nsetp;
-    for (jj = 1; jj <= idx1; ++jj)
-    {
+    for (jj = 1; jj <= idx1; ++jj) {
         i__ = index[jj];
-        if (x[i__] <= 0.)
-        {
+        if (x[i__] <= 0.) {
             goto L260;
         }
         /* L300: */
@@ -598,8 +539,7 @@ L260:
     /*         COPY B( ) INTO ZZ( ).  THEN SOLVE AGAIN AND LOOP BACK. */
 
     idx1 = m;
-    for (i__ = 1; i__ <= idx1; ++i__)
-    {
+    for (i__ = 1; i__ <= idx1; ++i__) {
         /* L310: */
         zz[i__] = b[i__];
     }
@@ -611,8 +551,7 @@ L320:
 
 L330:
     idx1 = nsetp;
-    for (ip = 1; ip <= idx1; ++ip)
-    {
+    for (ip = 1; ip <= idx1; ++ip) {
         i__ = index[ip];
         /* L340: */
         x[i__] = zz[ip];
@@ -627,22 +566,17 @@ L330:
 
 L350:
     sm = 0.;
-    if (npp1 <= m)
-    {
+    if (npp1 <= m) {
         idx1 = m;
-        for (i__ = npp1; i__ <= idx1; ++i__)
-        {
+        for (i__ = npp1; i__ <= idx1; ++i__) {
             /* L360: */
             /* Computing 2nd power */
             d1 = b[i__];
             sm += d1 * d1;
         }
-    }
-    else
-    {
+    } else {
         idx1 = n;
-        for (j = 1; j <= idx1; ++j)
-        {
+        for (j = 1; j <= idx1; ++j) {
             /* L380: */
             w[j] = 0.;
         }
@@ -655,14 +589,11 @@ L350:
 
 L400:
     idx1 = nsetp;
-    for (l = 1; l <= idx1; ++l)
-    {
+    for (l = 1; l <= idx1; ++l) {
         ip = nsetp + 1 - l;
-        if (l != 1)
-        {
+        if (l != 1) {
             idx2 = ip;
-            for (ii = 1; ii <= idx2; ++ii)
-            {
+            for (ii = 1; ii <= idx2; ++ii) {
                 zz[ii] -= a[ii + jj * a_dim1] * zz[ip + 1];
                 /* L410: */
             }
@@ -671,8 +602,7 @@ L400:
         zz[ip] /= a[ip + jj * a_dim1];
         /* L430: */
     }
-    switch ((int)rtnkey)
-    {
+    switch ((int)rtnkey) {
     case 1:  goto L200;
     case 2:  goto L320;
     }
@@ -684,4 +614,4 @@ L400:
 
 } /* nnls_ */
 
-#endif
+#endif  // NNLS_ACTIVESETNNLS_HPP_

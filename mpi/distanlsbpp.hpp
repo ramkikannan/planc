@@ -58,7 +58,8 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
 
   public:
     DistANLSBPP(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-                const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
+                const FMAT &rightlowrankfactor,
+                const MPICommunicator& communicator):
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                                 rightlowrankfactor, communicator) {
         localWnorm.zeros(this->k);
@@ -74,6 +75,6 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
         tempWtAij.clear();
         */
     }
-}; // class DistANLSBPP2D
+};  // class DistANLSBPP2D
 
 #endif  // MPI_DISTANLSBPP_HPP_

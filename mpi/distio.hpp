@@ -30,7 +30,7 @@ class DistIO {
     MATTYPE m_A;            // TWOD
     // don't start getting prime number from 2;
     static const int kPrimeOffset = 10;
-    //Hope no one hits on this number.
+    // Hope no one hits on this number.
     static const int kW_seed_idx = 1210873;
 #ifdef BUILD_SPARSE
     static const int kalpha = 5;
@@ -114,14 +114,13 @@ class DistIO {
         // m/p x n/p matrices and in TWOD we are
         // stitching m/pr * n/pc matrices.
         case ONED_DOUBLE:
-            if ((*X).n_cols == n) { //  m_Arows
+            if ((*X).n_cols == n) {  //  m_Arows
                 start_row = MPI_RANK * (*X).n_rows;
                 end_row = ((MPI_RANK + 1) * (*X).n_rows) - 1;
                 start_col = 0;
                 end_col = n - 1;
-
             }
-            if ((*X).n_rows == m) { // m_Acols
+            if ((*X).n_rows == m) {  // m_Acols
                 start_row = 0;
                 end_row = m - 1;
                 start_col = MPI_RANK * (*X).n_cols;
@@ -154,7 +153,7 @@ class DistIO {
         }
 #else
         FMAT templr;
-        if ((*X).n_cols == n) { // ONED_ROW
+        if ((*X).n_cols == n) {  // ONED_ROW
             FMAT myWrnd = Wrnd.rows(start_row, end_row);
             templr =  myWrnd * Hrnd;
         } else if ((*X).n_rows == m) {  // ONED_COL
@@ -241,11 +240,11 @@ class DistIO {
             if (m_distio == ONED_COL || m_distio == ONED_DOUBLE) {
                 sc << file_name << "cols_" << MPI_SIZE << "_" << MPI_RANK;
 #ifdef BUILD_SPARSE
-                m_Acols.load(sc.str(), arma::coord_ascii);                
+                m_Acols.load(sc.str(), arma::coord_ascii);
 #else
                 m_Acols.load(sc.str(), arma::raw_ascii);
 #endif
-                m_Acols=m_Acols.t();
+                m_Acols = m_Acols.t();
             }
             if (m_distio == TWOD) {
                 sr << file_name << "_" << MPI_SIZE << "_" << MPI_RANK;

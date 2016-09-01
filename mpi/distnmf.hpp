@@ -92,5 +92,4 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     }
   }
 };
-
 #endif  // MPI_DISTNMF_HPP_

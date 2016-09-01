@@ -39,7 +39,7 @@ class MPICommunicator {
         MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
     }
     ~MPICommunicator() {
-        MPI_Barrier(MPI_COMM_WORLD);        
+        MPI_Barrier(MPI_COMM_WORLD);
         MPI_Finalize();
     }
     MPICommunicator(int argc, char *argv[], int pr, int pc) {
@@ -63,7 +63,8 @@ class MPICommunicator {
         //                const int periods[], int reorder, MPI_Comm *comm_cart)
         if (dimSizes[0]*dimSizes[1] != m_numProcs) {
             if (m_rank == 0) {
-                std::cerr << "Processor grid dimensions do not multiply to MPI_SIZE" << std::endl;
+                std::cerr << "Processor grid dimensions do not"
+                          << "multiply to MPI_SIZE" << std::endl;
             }
             MPI_Barrier(MPI_COMM_WORLD);
             MPI_Abort(MPI_COMM_WORLD, 1);
