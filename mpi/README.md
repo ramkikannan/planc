@@ -30,17 +30,20 @@ Sparse Debug build
 ------------------
 Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
-CMAKE Macros
+Other Macros
+-------------
 
-For sparse NMF - cmake -DBUILD_SPARSE=1 - Default dense build
-For timing with barrier after mpi calls - cmake -DCMAKE_WITH_BARRIER_TIMING - Default with barrier timing
-For performance, disable the WITH__BARRIER__TIMING. Run as "cmake -DCMAKE_WITH_BARRIER_TIMING:BOOL=OFF"
+* CMAKE macros
 
-Code level macros - Define in distutils.h
+  For sparse NMF - cmake -DBUILD_SPARSE=1 - Default dense build
+  For timing with barrier after mpi calls - cmake -DCMAKE_WITH_BARRIER_TIMING - Default with barrier timing
+  For performance, disable the WITH__BARRIER__TIMING. Run as "cmake -DCMAKE_WITH_BARRIER_TIMING:BOOL=OFF"
 
-MPI_VERBOSE - Be doubly sure about what you do. It prints all intermediary matrices.
-			  Try this only for very very small matrix that is of size less than 10.
-WRITE_RAND_INPUT - for dumping the generated random matrix
+* Code level macros - Defined in distutils.h
+
+  MPI_VERBOSE - Be doubly sure about what you do. It prints all intermediary matrices.
+			   Try this only for very very small matrix that is of size less than 10.
+  WRITE_RAND_INPUT - for dumping the generated random matrix
 
 Output interpretation
 ======================
