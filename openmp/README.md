@@ -36,7 +36,7 @@ Tell OpenBlas how many threads you want to use. For example on a quad core syste
 
 ````
 export OPENBLAS_NUM_THREADS=4
- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MKL_LIB
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MKL_LIB
 ````
 
 Intel MKL vs Openblas
