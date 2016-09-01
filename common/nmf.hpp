@@ -27,7 +27,7 @@ class NMF {
     T A;
     // low rank factors with size mxk and nxk respectively.
     FMAT W, H;
-    FMAT Winit,Hinit;
+    FMAT Winit, Hinit;
     UINT m, n, k;
     /*
      * Collected statistics are
@@ -40,6 +40,8 @@ class NMF {
     bool cleared;
     int m_num_iterations;
     std::string input_file_name;
+    FVEC regW;
+    FVEC regH;
 
     void collectStats(int iteration) {
         this->normW = norm(this->W, "fro");
@@ -74,6 +76,8 @@ class NMF {
         this->k = rank;
         this->W = arma::randu<FMAT>(m, k);
         this->H = arma::randu<FMAT>(n, k);
+        this->regW = arma::zeros<FVEC>(2);
+        this->regH = arma::zeros<FVEC>(2);
         // make the random MATrix positive
         // absMAT<FMAT>(W);
         // absMAT<FMAT>(H);
@@ -92,6 +96,8 @@ class NMF {
         this->m = A.n_rows;
         this->n = A.n_cols;
         this->k = W.n_cols;
+        this->regW = arma::zeros<FVEC>(2);
+        this->regH = arma::zeros<FVEC>(2);
         // other initializations
         this->otherInitializations();
         INFO << "NMF.hpp::constructor over" << endl;
