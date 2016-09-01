@@ -16,7 +16,8 @@ Usage 2 : SplitFiles m n density seed numsplits outputdirectory
 ````
 
 In the case of Usage 1, if you don't specify pr, pc it will generate a 1D split and 2D otherwise.
-If you want to generate a splits for random sparse matrix, you can use this file as well. 
+The usage 2, generates splits for 1D and 2D random sparse matrix. The usage 2 may not be needed
+for this library as it can generate synthetic matrix on the fly in memory. 
 
 4. The file processstackexchange.txt, gives the shell command listing for converting
 the .xml file into a .txt file that contains one question every line. This can then be
