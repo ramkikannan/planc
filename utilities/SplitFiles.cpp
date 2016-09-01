@@ -13,18 +13,6 @@ inline int sub2ind(int i, int j, int n) {
 
 void removeNonZeroRowsCols(sp_fmat &currentMatrix, uword fullRows, uword fullCols) {
     cout << "removeNonZeroRowsCols nnz b4::" << currentMatrix.n_nonzero << endl;
-    // sp_fmat zeroCols = sum(currentMatrix);
-    // for (int i = 0; i < zeroCols.n_cols; i++) {
-    //     if (zeroCols(0,i) == 0) {
-    //         currentMatrix(fullRows-1, i) = 1e-6;
-    //     }
-    // }
-    // sp_fmat zeroRows = sum(currentMatrix, 1);
-    // for (int i = 0; i < zeroRows.n_rows; i++) {
-    //     if (zeroRows(i,0) == 0) {
-    //         currentMatrix(i, fullCols-1) = 1e-6;
-    //     }
-    // }
     fvec temp(fullRows);
     temp.fill(1e-6);
     currentMatrix.col(fullCols - 1) = currentMatrix.col(fullCols - 1) + temp;
