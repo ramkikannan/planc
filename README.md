@@ -14,9 +14,9 @@ Kindly cite the following work appropriately.
 Contributors
 =============
 
-Ramakrishnan Kannan - Oak Ridge National Laboratories
-Grey Ballard - Wake Forest University
-Haesun Park - Georgia Institute of Technology, GA
+* Ramakrishnan Kannan - Oak Ridge National Laboratories
+* Grey Ballard - Wake Forest University
+* Haesun Park - Georgia Institute of Technology, GA
 
 Acknowledgements
 ================

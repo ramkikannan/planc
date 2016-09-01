@@ -9,6 +9,7 @@ This program depends on:
 
 Once you have installed these libraries set the following environment variables.
 
+````
 export ARMADILLO_INCLUDE_DIR=/home/rnu/libraries/armadillo-6.600.5/include/
 export LIB=$LIB:/home/rnu/libraries/openblas/lib:
 export INCLUDE=$INCLUDE:/home/rnu/libraries/openblas/include:$ARMADILLO_INCLUDE_DIR:
@@ -17,18 +18,17 @@ export NMFLIB_DIR=/ccs/home/ramki/rhea/research/nmflib/
 export INCLUDE=$INCLUDE:$ARMADILLO_INCLUDE_DIR:$NMFLIB_DIR
 export CPATH=$CPATH:$INCLUDE:
 export MKLROOT=/ccs/compilers/intel/rh6-x86_64/16.0.0/mkl/
+````
 
 If you have got MKL, please source MKLVARS.sh before running make/cmake
 
 Sparse NMF
 ---------
-cd build and run cmake ../ -DCMAKE_BUILD_SPARSE
+Run cmake with -DCMAKE_BUILD_SPARSE
 
 Sparse Debug build
 ------------------
-cd build and run cmake ../ -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
-
-Once cmake is ready without any errors, run make. 
+Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
 CMAKE Macros
 
@@ -47,7 +47,6 @@ Output interpretation
 For W matrix row major ordering. That is., W_0, W_1, .., W_p
 For H matrix column major ordering. That is., for 6 processes
 with pr=3, pc=2, interpret as H_0, H_2, H_4, H_1, H_3, H_5
-
 
 Citation:
 =========
