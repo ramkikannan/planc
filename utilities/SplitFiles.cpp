@@ -15,9 +15,11 @@ void removeNonZeroRowsCols(sp_fmat &currentMatrix, uword fullRows, uword fullCol
     cout << "removeNonZeroRowsCols nnz b4::" << currentMatrix.n_nonzero << endl;
     fvec temp(fullRows);
     temp.fill(1e-6);
+    temp.clear();
     currentMatrix.col(fullCols - 1) = currentMatrix.col(fullCols - 1) + temp;
     frowvec temp1(fullCols);
     temp1.fill(1e-6);
+    temp1.clear();
     currentMatrix.row(fullRows - 1) = currentMatrix.row(fullRows - 1) + temp1;
     if (currentMatrix.n_rows != fullRows || currentMatrix.n_cols != fullCols) {
         cout << "i didnt do good job::" << currentMatrix.n_rows
@@ -26,6 +28,7 @@ void removeNonZeroRowsCols(sp_fmat &currentMatrix, uword fullRows, uword fullCol
              << "::fullCols::" << fullCols << endl;
     }
     cout << "removeNonZeroRowsCols nnz after::" << currentMatrix.n_nonzero << endl;
+    sleep(1);
 }
 
 void writeMatrixMarket(char* file_path, sp_fmat &input) {
@@ -33,11 +36,7 @@ void writeMatrixMarket(char* file_path, sp_fmat &input) {
     fileStream.open(file_path);
     cout << "currentMatrix::" << input.n_rows \
          << "x" << input.n_cols << "::nnz::" << input.n_nonzero << endl;
-    sp_fmat::const_iterator it = input.begin();
-    while (it != input.end()) {
-        fileStream << it.row()  << " " << it.col() << " " << *it << endl;
-        ++it;
-    }
+    input.save(file_path);
 }
 void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, int pr = 1, int pc = 1) {
     // #pragma omp parallel for
@@ -62,6 +61,8 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                 removeNonZeroRowsCols(currentMatrix, perSplit, A.n_cols);
                 writeMatrixMarket(outputFileName, currentMatrix);
                 free(outputFileName);
+                currentMatrix.clear();
+                sleep(1);
             }
         }
     } else {
@@ -98,6 +99,8 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                         removeNonZeroRowsCols(currentMatrix, perRowSplit, perColSplit);
                         writeMatrixMarket(outputFileName, currentMatrix);
                         free(outputFileName);
+                        currentMatrix.clear();
+                        sleep(1);
                     }
                 }
             }
