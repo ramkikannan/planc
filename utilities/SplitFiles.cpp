@@ -16,8 +16,10 @@ void removeNonZeroRowsCols(sp_fmat &currentMatrix, uword fullRows, uword fullCol
     fvec temp(fullRows);
     temp.fill(1e-6);
     currentMatrix.col(fullCols - 1) = currentMatrix.col(fullCols - 1) + temp;
+    temp.clear();
     frowvec temp1(fullCols);
     temp1.fill(1e-6);
+    temp1.clear();
     currentMatrix.row(fullRows - 1) = currentMatrix.row(fullRows - 1) + temp1;
     if (currentMatrix.n_rows != fullRows || currentMatrix.n_cols != fullCols) {
         cout << "i didnt do good job::" << currentMatrix.n_rows
@@ -26,6 +28,7 @@ void removeNonZeroRowsCols(sp_fmat &currentMatrix, uword fullRows, uword fullCol
              << "::fullCols::" << fullCols << endl;
     }
     cout << "removeNonZeroRowsCols nnz after::" << currentMatrix.n_nonzero << endl;
+    sleep(1);
 }
 
 void writeMatrixMarket(char* file_path, sp_fmat &input) {
@@ -33,11 +36,7 @@ void writeMatrixMarket(char* file_path, sp_fmat &input) {
     fileStream.open(file_path);
     cout << "currentMatrix::" << input.n_rows \
          << "x" << input.n_cols << "::nnz::" << input.n_nonzero << endl;
-    sp_fmat::const_iterator it = input.begin();
-    while (it != input.end()) {
-        fileStream << it.row()  << " " << it.col() << " " << *it << endl;
-        ++it;
-    }
+    input.save(file_path);
 }
 void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, int pr = 1, int pc = 1) {
     // #pragma omp parallel for
@@ -62,6 +61,8 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                 removeNonZeroRowsCols(currentMatrix, perSplit, A.n_cols);
                 writeMatrixMarket(outputFileName, currentMatrix);
                 free(outputFileName);
+                currentMatrix.clear();
+                sleep(1);
             }
         }
     } else {
@@ -81,7 +82,7 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                 endRowIdx = m - 1;
             if (beginRowIdx < endRowIdx) {
                 sp_fmat currentRowMatrix = A.rows(beginRowIdx, endRowIdx);
-                //#pragma omp parallel for
+                // #pragma omp parallel for
                 for (int j = 0; j <= pc; j++) {
                     uword beginColIdx = j * perColSplit;
                     uword endColIdx = (j + 1) * perColSplit - 1;
@@ -98,6 +99,8 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                         removeNonZeroRowsCols(currentMatrix, perRowSplit, perColSplit);
                         writeMatrixMarket(outputFileName, currentMatrix);
                         free(outputFileName);
+                        currentMatrix.clear();
+                        sleep(1);
                     }
                 }
             }
@@ -109,10 +112,7 @@ void splitFile(char* inputFile, char* outputDir, int numSplits, int pr = 1, int 
     sp_fmat A, At;
     char* rowStr = "rows";
     char* colStr = "cols";
-    //LoadMatrixMarketFile<sp_fmat, fvec, uword>(strif, m, n, nnz, A, false);
-    //cout << "LMM Output:m=" << m << " n=" << n << " nnz=" << nnz << endl;
     A.load(strif, coord_ascii);
-    //cout << "input matrix A:" << A << endl;
     int roundRowSplit = A.n_rows / numSplits;
     int roundColSplit = A.n_cols / numSplits;
     A = A.rows(0, roundRowSplit * numSplits - 1);

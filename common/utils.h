@@ -82,18 +82,22 @@ int random_sieve(const int);
 // NMFLibrary algotype lowrank Afile WInitfile HInitfile WoutputFile HoutputFile numIteration
 #define WINITFLAG 1000
 #define HINITFLAG 1001
+#define REGWFLAG  1002
+#define REGHFLAG  1003
 
 struct option nmfopts[] = {
-  {"input",   optional_argument, 0, 'i'},
-  {"algo",  optional_argument, 0, 'a'},
+  {"input",       required_argument, 0, 'i'},
+  {"algo",        required_argument, 0, 'a'},
   {"lowrank",     optional_argument, 0, 'k'},
-  {"iter",   optional_argument,       0, 't'},
-  {"rows",   optional_argument,       0, 'm'},
-  {"columns",   optional_argument,       0, 'n'},
-  {"winit",   optional_argument,       0, WINITFLAG},
-  {"hinit",   optional_argument,       0, HINITFLAG},
-  {"wout",   optional_argument,       0, 'w'},
-  {"hout",   optional_argument,       0, 'h'},
+  {"iter",        optional_argument, 0, 't'},
+  {"rows",        optional_argument, 0, 'm'},
+  {"columns",     optional_argument, 0, 'n'},
+  {"winit",       optional_argument, 0, WINITFLAG},
+  {"hinit",       optional_argument, 0, HINITFLAG},
+  {"wout",        optional_argument, 0, 'w'},
+  {"hout",        optional_argument, 0, 'h'},
+  {"regw",        optional_argument, 0, REGW},
+  {"regh",        optional_argument, 0, REGH},
   {0,         0,                 0,  0 }
 };
 

@@ -40,6 +40,8 @@ class NMF {
     bool cleared;
     int m_num_iterations;
     std::string input_file_name;
+    // The regularization is a vector of two values. The first value specifies
+    // L2 regularization values and the second is L1 regularization.
     FVEC regW;
     FVEC regH;
 
@@ -56,6 +58,25 @@ class NMF {
         this->stats(iteration, 6) = this->densityH;
         this->stats(iteration, 7) = this->densityW;
         this->stats(iteration, 8) = this->objective_err;
+    }
+
+    /*
+    * For both L1 and L2 regularizations we only adjust the
+    * HtH or WtW. The regularization is a vector of two values.
+    * The first value specifies L2 regularization values 
+    * and the second is L1 regularization. 
+    * Mostly we expect 
+    */
+
+    void applyReg(const FVEC &reg, const FMAT *AtA) {
+        // Frobenius norm regularization
+        if (reg(1) > 0) {
+            *AtA = *AtA + 2 * reg(1) * arma::eye(arma::size(*AtA));
+        }
+        // L1 - norm regularization
+        if reg(2) > 0 {
+            *AtA = *AtA + 2 * reg(2) * arma::ones(arma::size(*AtA));
+        }
     }
 
   private:
@@ -203,4 +224,4 @@ class NMF {
         }
     }
 };
-#endif // COMMON_NMF_HPP_
+#endif  // COMMON_NMF_HPP_

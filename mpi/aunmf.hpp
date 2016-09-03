@@ -336,6 +336,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         // compute WtW
         this->distInnerProduct(this->W, &this->WtW);
         DISTPRINTINFO(PRINTMATINFO(this->WtW));
+        this->applyReg(this->regH,&this->WtW);
 #ifdef MPI_VERBOSE
         PRINTROOT(PRINTMAT(this->WtW));
 #endif
@@ -362,6 +363,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         // compute HtH
         this->distInnerProduct(this->H, &this->HtH);
         DISTPRINTINFO("HtH::" << PRINTMATINFO(this->HtH));
+        this->applyReg(this->regW,&this->HtH);
 #ifdef MPI_VERBOSE
         PRINTROOT(PRINTMAT(this->HtH));
 #endif
