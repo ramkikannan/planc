@@ -14,13 +14,13 @@ inline int sub2ind(int i, int j, int n) {
 void removeNonZeroRowsCols(sp_fmat &currentMatrix, uword fullRows, uword fullCols) {
     cout << "removeNonZeroRowsCols nnz b4::" << currentMatrix.n_nonzero << endl;
     fvec temp(fullRows);
-    temp.fill(1e-6);
-    currentMatrix.col(fullCols - 1) = currentMatrix.col(fullCols - 1) + temp;
+    temp.fill(1e-6);    
+    currentMatrix.col(fullCols - 1) =  currentMatrix.col(fullCols - 1) + temp;
     temp.clear();
     frowvec temp1(fullCols);
-    temp1.fill(1e-6);
-    temp1.clear();
+    temp1.fill(1e-6);    
     currentMatrix.row(fullRows - 1) = currentMatrix.row(fullRows - 1) + temp1;
+    temp1.clear();
     if (currentMatrix.n_rows != fullRows || currentMatrix.n_cols != fullCols) {
         cout << "i didnt do good job::" << currentMatrix.n_rows
              << "x"  << currentMatrix.n_cols \
