@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
+#include <limits>
+
+#define PRINTMATINFO(A) "::"#A"::" << (A).n_rows << "x" << (A).n_cols
 
 using namespace arma;
 using namespace std;
@@ -13,14 +17,22 @@ inline int sub2ind(int i, int j, int n) {
 
 void removeNonZeroRowsCols(sp_fmat &currentMatrix, uword fullRows, uword fullCols) {
     cout << "removeNonZeroRowsCols nnz b4::" << currentMatrix.n_nonzero << endl;
+    cout << PRINTMATINFO(currentMatrix)
+         << "fullRows::" << fullRows <<  "::fullCols::" << fullCols << endl;
+    sp_fmat tempI = speye<sp_fmat>(fullRows, fullCols) * 1e-6;
+    currentMatrix = currentMatrix + tempI;
     fvec temp(fullRows);
     temp.fill(1e-6);
+    sp_fvec lastCol = currentMatrix.col(fullCols - 1);
+    currentMatrix.col(fullCols - 1) = lastCol + temp;
     temp.clear();
-    currentMatrix.col(fullCols - 1) = currentMatrix.col(fullCols - 1) + temp;
+    lastCol.clear();
     frowvec temp1(fullCols);
-    temp1.fill(1e-6);    
-    currentMatrix.row(fullRows - 1) = currentMatrix.row(fullRows - 1) + temp1;
+    temp1.fill(1e-6);
+    sp_frowvec lastRow = currentMatrix.row(fullRows - 1);
+    currentMatrix.row(fullRows - 1) =  lastRow + temp1;
     temp1.clear();
+    lastRow.clear();
     if (currentMatrix.n_rows != fullRows || currentMatrix.n_cols != fullCols) {
         cout << "i didnt do good job::" << currentMatrix.n_rows
              << "x"  << currentMatrix.n_cols \
@@ -36,12 +48,13 @@ void writeMatrixMarket(char* file_path, sp_fmat &input) {
     fileStream.open(file_path);
     cout << "currentMatrix::" << input.n_rows \
          << "x" << input.n_cols << "::nnz::" << input.n_nonzero << endl;
-    input.save(file_path);
+    input.save(file_path, arma::coord_ascii);
 }
 void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, int pr = 1, int pc = 1) {
     // #pragma omp parallel for
     if (pr == 1 && pc == 1) {
         unsigned int perSplit = (unsigned int)ceil((A.n_rows * 1.0) / numSplits);
+        cout << PRINTMATINFO(A) << "::perSplit::" << perSplit << endl;
         char numSplitStr[6];
         sprintf(numSplitStr, "%d", numSplits);
         int fileNameLen = strlen(outputDir) + strlen(suffixStr) + 2 * strlen(numSplitStr) + 2;
@@ -57,8 +70,11 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                 sprintf(outputFileName, "%s%s_%d_%d", outputDir, suffixStr, numSplits, i);
                 cout << "beginIdx=" << beginIdx << " endIdx=" << endIdx
                      << " fileName=" << outputFileName << endl;
+                sp_fmat tempMatrix = zeros<sp_fmat>(perSplit, A.n_cols);
                 sp_fmat currentMatrix = A.rows(beginIdx, endIdx);
-                removeNonZeroRowsCols(currentMatrix, perSplit, A.n_cols);
+                float lastVal = currentMatrix(perSplit, A.n_cols);
+                currentMatrix(perSplit, A.n_cols) = lastVal + 1e-16;
+                // removeNonZeroRowsCols(currentMatrix, perSplit, A.n_cols);
                 writeMatrixMarket(outputFileName, currentMatrix);
                 free(outputFileName);
                 currentMatrix.clear();
@@ -74,6 +90,8 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
         unsigned int n = A.n_cols;
         int fileNameLen = strlen(outputDir) + strlen(suffixStr)
                           + 2 * strlen(numSplitStr) + 2;
+        cout << PRINTMATINFO(A) << "::perRowSplit::" << perRowSplit
+             << "::perColSplit" << perColSplit << endl;
         #pragma omp parallel for
         for (int i = 0; i <= pr; i++) {
             uword beginRowIdx = i * perRowSplit;
@@ -92,12 +110,35 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                     int mpi_rank = sub2ind(i, j, pc);
                     sprintf(outputFileName, "%s_%d_%d", outputDir, numSplits, mpi_rank);
                     if (beginColIdx < endColIdx) {
-                        cout << "beginRowIdx=" << beginRowIdx << " endRowIdx=" << endRowIdx
-                             << "beginColIdx=" << beginColIdx << " endColIdx=" << endColIdx
-                             << " fileName=" << outputFileName << endl;
                         sp_fmat currentMatrix = currentRowMatrix.cols(beginColIdx, endColIdx);
-                        removeNonZeroRowsCols(currentMatrix, perRowSplit, perColSplit);
+                        cout << "beginRowIdx=" << beginRowIdx << " endRowIdx="
+                             << endRowIdx << "beginColIdx=" << beginColIdx
+                             << " endColIdx=" << endColIdx << " fileName="
+                             << outputFileName << PRINTMATINFO(currentMatrix) << endl;
+                        // removeNonZeroRowsCols(currentMatrix, perRowSplit, perColSplit);
                         writeMatrixMarket(outputFileName, currentMatrix);
+                        if (currentMatrix.n_rows < perRowSplit
+                                || currentMatrix.n_cols < perColSplit) {
+
+                            int prec = std::numeric_limits<double>::digits10 + 2; // generally 17
+                            int exponent_digits = std::log10(std::numeric_limits<double>::max_exponent10) + 1; // generally 3
+                            int exponent_sign   = 1; // 1.e-123
+                            int exponent_symbol = 1; // 'e' 'E'
+                            int digits_sign = 1;
+                            int digits_dot = 1; // 1.2
+
+
+                            int division_extra_space = 1;
+                            int width = prec + exponent_digits + digits_sign
+                                        + exponent_sign + digits_dot
+                                        + exponent_symbol + division_extra_space;                            
+                            std::ofstream outfile;
+                            outfile.open(outputFileName, std::ios_base::app);
+                            outfile << perRowSplit << " " << perColSplit << " ";
+                            double lastvalue = 1e-12;
+                            outfile << std::setprecision(prec) << std::setw(width)
+                                    << lastvalue << endl;
+                        }
                         free(outputFileName);
                         currentMatrix.clear();
                         sleep(1);
