@@ -253,9 +253,9 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 // #else
 //     this->AijHjt = this->Hjt * this->A_ij_t;
 // #endif
-// #ifdef MPI_VERBOSE
-//     DISTPRINTINFO(PRINTMAT(this->AijHjt));
-// #endif
+#ifdef MPI_VERBOSE
+    DISTPRINTINFO(PRINTMAT(this->AijHjt));
+#endif
     temp = mpitoc();  // mm AH
     PRINTROOT(PRINTMATINFO(this->A_ij_t) << PRINTMATINFO(this->Hjt)
               << PRINTMATINFO(this->AijHjt));
