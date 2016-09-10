@@ -20,6 +20,8 @@ class DistNMFDriver {
     int m_num_it;
     int m_pr;
     int m_pc;
+    FVEC m_regW;
+    FVEC m_regH;
     distalgotype m_nmfalgo;
     float m_sparsity;
     iodistributions m_distio;
@@ -32,12 +34,9 @@ class DistNMFDriver {
              << "::n::" << this->m_globaln << "::t::" << this->m_num_it
              << "::pr::" << this->m_pr << "::pc::" << this->m_pc
              << "::error::" << this->m_compute_error
-             << "::distio::" << this->m_distio << endl;
-    }
-  public:
-    DistNMFDriver(int argc, char *argv[]) {
-        this->m_argc = argc;
-        this->m_argv = argv;
+             << "::distio::" << this->m_distio
+             << "::regW::" << this->m_regW
+             << "::regH::" << this->m_regH << endl;
     }
     template<class NMFTYPE>
     void callDistNMF1D() {
@@ -86,6 +85,8 @@ class DistNMFDriver {
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
+        nmfAlgorithm.regW(this->m_regW);
+        nmfAlgorithm.regH(this->m_regH);
         MPI_Barrier(MPI_COMM_WORLD);
         nmfAlgorithm.computeNMF();
         if (!m_outputfile_name.empty()) {
@@ -158,6 +159,8 @@ class DistNMFDriver {
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
+        nmfAlgorithm.regW(this->m_regW);
+        nmfAlgorithm.regH(this->m_regH);
         MPI_Barrier(MPI_COMM_WORLD);
         nmfAlgorithm.computeNMF();
         if (!m_outputfile_name.empty()) {
@@ -166,23 +169,14 @@ class DistNMFDriver {
                             m_outputfile_name);
         }
     }
-    void print_usage() {
-        INFO << "for short arguments like -i no equals sign"
-             << "for long arguments like --pr give key=value pair"
-             << "-a 0 for MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP " << endl;
-        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i rand_uniform/rand_normal/rand_lowrank "
-             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"  << endl;
+    void parseRegularizedParameter(const char *input, FVEC *reg) {
+        stringstream ss(input);
+        string s;
+        int i = 0;
+        while (getline(ss, s, ' ')) {
+            *(m_regW)(i) = atof(s);
+            i++;
+        }
     }
     void parseCommandLine() {
         int opt, long_index;
@@ -195,6 +189,8 @@ class DistNMFDriver {
         this->m_num_it = 10;
         this->m_distio = TWOD;
         this->m_compute_error = 0;
+        this->m_regW = arma::zeros<FVEC>(2);
+        this->m_regH = arma::zeros<FVEC>(2);
         while ((opt = getopt_long(this->m_argc, this->m_argv,
                                   "a:i:e:k:m:n:o:t:s:", distnmfopts,
                                   &long_index)) != -1) {
@@ -236,6 +232,12 @@ class DistNMFDriver {
             case PROCCOLS:
                 this->m_pc = atoi(optarg);
                 break;
+            case REGWFLAG:
+                parseRegularizedParameter(optarg, &this->m_regW);
+                break;
+            case REGHFLAG:
+                parseRegularizedParameter(optarg, &this->m_regH);
+                break;
             default:
                 cout << "failed while processing argument:" << optarg << endl;
                 print_usage();
@@ -247,7 +249,6 @@ class DistNMFDriver {
         } else {
             this->m_distio = TWOD;
         }
-
         printConfig();
         switch (this->m_nmfalgo) {
         case MU2D:
@@ -278,6 +279,34 @@ class DistNMFDriver {
             callDistNMF1D<DistNaiveANLSBPP<FMAT> >();
 #endif
         }
+    }
+  public:
+    DistNMFDriver(int argc, char *argv[]) {
+        this->m_argc = argc;
+        this->m_argv = argv;
+    }
+
+    void print_usage() {
+        INFO << "for short arguments like -i no equals sign"
+             << "for long arguments like --pr give key=value pair"
+             << "-a 0 for MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP " << endl;
+        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i rand_uniform/rand_normal/rand_lowrank "
+             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
+        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i Ainput -t 10 --pr 3 --pc 2"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
+        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
+        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
     }
 };
 

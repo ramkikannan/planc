@@ -63,9 +63,9 @@ class NMF {
     /*
     * For both L1 and L2 regularizations we only adjust the
     * HtH or WtW. The regularization is a vector of two values.
-    * The first value specifies L2 regularization values 
-    * and the second is L1 regularization. 
-    * Mostly we expect 
+    * The first value specifies L2 regularization values
+    * and the second is L1 regularization.
+    * Mostly we expect
     */
 
     void applyReg(const FVEC &reg, const FMAT *AtA) {
@@ -210,6 +210,8 @@ class NMF {
                               - 2 * trace(this->H.t() * AtW) + trace(WtW * HtH);
     }
     void num_iterations(const int it) {this->m_num_iterations = it;}
+    void regW(const FVEC &iregW) {this->regW = iregW;}
+    void regH(const FVEC &iregH) {this->regH = iregH;}
     const int num_iterations() const {return m_num_iterations;}
     ~NMF() {
         clear();
