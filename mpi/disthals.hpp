@@ -34,7 +34,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
             DISTPRINTINFO("after fixNumericalError::" << endl << updWi);
 #endif
             // W(:,i) = W(:,i)/norm(W(:,i));
-            double normWi = norm(updWi);
+            double normWi = arma::norm(updWi, 2);
             normWi *= normWi;
             double globalnormWi;
             mpitic();
