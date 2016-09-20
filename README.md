@@ -11,6 +11,12 @@ If you use this code, kindly cite the following papers appropriately.
 * James P. Fairbanks, Ramakrishnan Kannan, Haesun Park, David A. Bader, Behavioral clusters in dynamic graphs, Parallel Computing, Volume 47, August 2015, Pages 38-50, ISSN 0167-8191, http://dx.doi.org/10.1016/j.parco.2015.03.002.
 * Kannan, Ramakrishnan. "SCALABLE AND DISTRIBUTED CONSTRAINED LOW RANK APPROXIMATIONS." (Doctoral Disseration) (2016). https://smartech.gatech.edu/handle/1853/54962
 
+In this library we support the following
+
+* Shared Memory [OPENMP](openmp/README.md)  based implementation
+* Distributed Memory [MPI](mpi/README.md) based implementation
+
+
 
 Contributors
 =============
