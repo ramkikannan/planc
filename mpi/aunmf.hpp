@@ -163,7 +163,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
                   Wit.memptr(), recvcnt, MPI_FLOAT,
                   this->m_mpicomm.commSubs()[1]);
     double temp = mpitoc();   // allgather WtA
-    DISTPRINTINFO("n::" << this->n << "::k::" << this->k \
+    PRINTROOT("n::" << this->n << "::k::" << this->k \
                   << PRINTMATINFO(Wt) << PRINTMATINFO(Wit));
 #ifdef MPI_VERBOSE
     DISTPRINTINFO(PRINTMAT(Wt));
@@ -230,7 +230,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     MPI_Allgather(this->Ht.memptr(), sendcnt, MPI_FLOAT,
                   this->Hjt.memptr(), recvcnt, MPI_FLOAT,
                   this->m_mpicomm.commSubs()[0]);
-    DISTPRINTINFO("n::" << this->n << "::k::" << this->k \
+    PRINTROOT("n::" << this->n << "::k::" << this->k \
                   << PRINTMATINFO(Ht) << PRINTMATINFO(Hjt));
 #ifdef MPI_VERBOSE
     DISTPRINTINFO(PRINTMAT(Ht));
@@ -282,8 +282,10 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     // each process computes its own kxk matrix
     mpitic();  // gram
     localWtW = X.t() * X;
+#ifdef MPI_VERBOSE
     DISTPRINTINFO("W::" << norm(X, "fro") \
                   << "::localWtW::" << norm(this->localWtW, "fro"));
+#endif
     double temp = mpitoc();  // gram
     this->time_stats.compute_duration(temp);
     this->time_stats.gram_duration(temp);
@@ -335,14 +337,14 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
       {
         // compute WtW
         this->distInnerProduct(this->W, &this->WtW);
-        DISTPRINTINFO(PRINTMATINFO(this->WtW));
+        PRINTROOT(PRINTMATINFO(this->WtW));
         this->applyReg(this->regH,&this->WtW);
 #ifdef MPI_VERBOSE
         PRINTROOT(PRINTMAT(this->WtW));
 #endif
         // compute WtA
         this->distWtA();
-        DISTPRINTINFO(PRINTMATINFO(this->WtAij));
+        PRINTROOT(PRINTMATINFO(this->WtAij));
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->WtAij));
 #endif
@@ -362,14 +364,14 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
       {
         // compute HtH
         this->distInnerProduct(this->H, &this->HtH);
-        DISTPRINTINFO("HtH::" << PRINTMATINFO(this->HtH));
+        PRINTROOT("HtH::" << PRINTMATINFO(this->HtH));
         this->applyReg(this->regW,&this->HtH);
 #ifdef MPI_VERBOSE
         PRINTROOT(PRINTMAT(this->HtH));
 #endif
         // compute AH
         this->distAH();
-        DISTPRINTINFO(PRINTMATINFO(this->AHtij));
+        PRINTROOT(PRINTMATINFO(this->AHtij));
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->AHtij));
 #endif

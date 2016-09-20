@@ -44,7 +44,7 @@ endif()
 
 OPTION(CMAKE_WITH_BARRIER_TIMING "Barrier placed to collect time" ON)
 if(CMAKE_WITH_BARRIER_TIMING)
-  add_definitions(-D__WITH__BARRIER__TIMING=1)
+  add_definitions(-D__WITH__BARRIER__TIMING__=1)
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0")
