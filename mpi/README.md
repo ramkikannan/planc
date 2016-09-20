@@ -41,9 +41,9 @@ Other Macros
 
 * Code level macros - Defined in distutils.h
 
-  MPI_VERBOSE - Be doubly sure about what you do. It prints all intermediary matrices.
+  - MPI_VERBOSE - Be doubly sure about what you do. It prints all intermediary matrices.
 			   Try this only for very very small matrix that is of size less than 10.
-  WRITE_RAND_INPUT - for dumping the generated random matrix
+  - WRITE_RAND_INPUT - for dumping the generated random matrix
 
 Command Line options
 ====================

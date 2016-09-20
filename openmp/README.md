@@ -33,8 +33,8 @@ Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
 Intel MKL vs Openblas
 =====================
-export LD_LIBRARY_PATH=MKL_LIB path
-source the ````$MKLROOT/bin/mkl_vars.sh intel64````
+- ````export LD_LIBRARY_PATH=MKL_LIB path````
+- source the ````$MKLROOT/bin/mkl_vars.sh intel64````
 
 Runtime usage
 =============
