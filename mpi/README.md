@@ -53,25 +53,25 @@ For eg., "input" is the long equivalent of short option 'i'. Typically long opti
 with "--algo=3" and short option with "-a 0". The following is the brief description of 
 the various command line options. 
 
-*{"input",'i'} - Either it can be a path to a sparse/dense 
+* {"input",'i'} - Either it can be a path to a sparse/dense 
 matrix file or synthetically generate matrix. Synthetic matrices can be 
 generated as rand_normal, rand_uniform or rand_lowrank
-*{"algo",'a'} - We support four algorithms. 
+* {"algo",'a'} - We support four algorithms. 
   0 - Multiplicative update (MU)
   1 - Hierarchical Alternating Least Squares (HALS)
   2 - ANLS/BPP 2D implementation
   3 - Naive ANLS/BPP 
-*{"error",'e'} - Must be called as -e 1 to compute error
+* {"error",'e'} - Must be called as -e 1 to compute error
 after every iteration.
-*{"lowrank",'k'} - Low rank 'k'. 
-*{"iter",'t'} - Number of iterations
-*{"rows",'m'} - This is applicable only for synthetic matrices. 
-*{"columns",'n'} - This is applicable only for synthetic matrices. 
-*{"output",'o'} - File name to dump W and H matrix. 
+* {"lowrank",'k'} - Low rank 'k'. 
+* {"iter",'t'} - Number of iterations
+* {"rows",'m'} - This is applicable only for synthetic matrices. 
+* {"columns",'n'} - This is applicable only for synthetic matrices. 
+* {"output",'o'} - File name to dump W and H matrix. 
 It will saved as outputfilename_W_MPIRANK and outputfilename_H_MPIRANK. 
-*{"sparsity",'s'} - Density for the synthetic sparse matrix. 
-*{"pr"} - Number of 2D rows
-*{"pc",} - Number of 2D cols
+* {"sparsity",'s'} - Density for the synthetic sparse matrix. 
+* {"pr"} - Number of 2D rows
+* {"pc",} - Number of 2D cols
 
 Few usage examples are
 Sparse synthetic distributed NMF on 96 processors 

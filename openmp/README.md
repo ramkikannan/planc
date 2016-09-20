@@ -54,22 +54,22 @@ For eg., "input" is the long equivalent of short option 'i'. Typically long opti
 with "--algo=3" and short option with "-a 0". The following is the brief description of 
 the various command line options. 
 
-*{"input",'i'} - Either it can be a path to a sparse/dense 
+* {"input",'i'} - Either it can be a path to a sparse/dense 
 matrix file or synthetically generate matrix. If this 
 option is not passed, we generate synthetic matrix.
-*{"algo",'a'} - We support four algorithms. 
+* {"algo",'a'} - We support four algorithms. 
   0 - Multiplicative update (MU)
   1 - Hierarchical Alternating Least Squares (HALS)
   2 - ANLS/BPP implementation  
-*{"lowrank",'k'} - Low rank 'k'. 
-*{"iter",'t'} - Number of iterations
-*{"rows",'m'} - This is applicable only for synthetic matrices. 
-*{"columns",'n'} - This is applicable only for synthetic matrices. 
-*{'w'} - File name to dump W 
-*{'h'} - File name to dump H matrix. 
-*{"sparsity",'s'} - Density for the synthetic sparse matrix. 
-*{'winit'} - Initialization file for W matrix. 
-*{'hinit'} - Initialization file for H matrix. 
+* {"lowrank",'k'} - Low rank 'k'. 
+* {"iter",'t'} - Number of iterations
+* {"rows",'m'} - This is applicable only for synthetic matrices. 
+* {"columns",'n'} - This is applicable only for synthetic matrices. 
+* {'w'} - File name to dump W 
+* {'h'} - File name to dump H matrix. 
+* {"sparsity",'s'} - Density for the synthetic sparse matrix. 
+* {'winit'} - Initialization file for W matrix. 
+* {'hinit'} - Initialization file for H matrix. 
 winit and hinit Will be useful when you want to benchmark
 multiple algorithms from same starting point.
 
