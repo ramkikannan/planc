@@ -15,7 +15,7 @@ If you use this code, kindly cite the following papers appropriately.
 Contributors
 =============
 
-* Ramakrishnan Kannan - Oak Ridge National Laboratories
+* Ramakrishnan Kannan - Oak Ridge National Laboratory
 * Grey Ballard - Wake Forest University
 * Haesun Park - Georgia Institute of Technology, GA
 
