@@ -21,7 +21,7 @@ In this library we support the following
 Contributors
 =============
 
-* Ramakrishnan Kannan - Oak Ridge National Laboratories
+* Ramakrishnan Kannan - Oak Ridge National Laboratory
 * Grey Ballard - Wake Forest University
 * Haesun Park - Georgia Institute of Technology, GA
 
