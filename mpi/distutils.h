@@ -17,6 +17,7 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 // mpirun -np 12 distnmf algotype lowrank Afile  outputfile numIteration pr pc
 #define PROCROWS        2002
 #define PROCCOLS        2003
+#define NUMKBLOCKS      2004
 
 // we are not supporting initfiles for distnmf.
 // consistent initializations will be distIO
@@ -34,6 +35,7 @@ struct option distnmfopts[] = {
     {"pc",          optional_argument, 0, PROCCOLS},
     {"regw",        optional_argument, 0, REGWFLAG},
     {"regh",        optional_argument, 0, REGHFLAG},
+    {"numkblocks",  optional_argument, 0, NUMKBLOCKS},
     {0,             0,                 0,  0 }
 };
 

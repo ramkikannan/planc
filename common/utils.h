@@ -96,8 +96,8 @@ struct option nmfopts[] = {
   {"hinit",       optional_argument, 0, HINITFLAG},
   {"wout",        optional_argument, 0, 'w'},
   {"hout",        optional_argument, 0, 'h'},
-  {"regw",        optional_argument, 0, REGW},
-  {"regh",        optional_argument, 0, REGH},
+  {"regw",        optional_argument, 0, REGWFLAG},
+  {"regh",        optional_argument, 0, REGHFLAG},
   {0,         0,                 0,  0 }
 };
 

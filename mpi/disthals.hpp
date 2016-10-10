@@ -74,9 +74,10 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
   public:
     DistHALS(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
              const FMAT &rightlowrankfactor,
-             const MPICommunicator& communicator):
+             const MPICommunicator& communicator, 
+             const int numkblks):
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
-                                rightlowrankfactor, communicator) {
+                                rightlowrankfactor, communicator, numkblks) {
         WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);
         HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
     }

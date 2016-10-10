@@ -26,6 +26,7 @@ class DistNMFDriver {
     float m_sparsity;
     iodistributions m_distio;
     uint m_compute_error;
+    int m_num_k_blocks;
     static const int kprimeoffset = 17;
 
     void printConfig() {
@@ -36,7 +37,9 @@ class DistNMFDriver {
              << "::error::" << this->m_compute_error
              << "::distio::" << this->m_distio
              << "::regW::" << this->m_regW
-             << "::regH::" << this->m_regH << endl;
+             << "::regH::" << this->m_regH
+             << "::num_k_blocks::" << m_num_k_blocks
+             << endl;
     }
     template<class NMFTYPE>
     void callDistNMF1D() {
@@ -85,8 +88,6 @@ class DistNMFDriver {
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
-        nmfAlgorithm.regW(this->m_regW);
-        nmfAlgorithm.regH(this->m_regH);
         MPI_Barrier(MPI_COMM_WORLD);
         nmfAlgorithm.computeNMF();
         if (!m_outputfile_name.empty()) {
@@ -155,7 +156,7 @@ class DistNMFDriver {
              << PRINTMATINFO(H) << endl;
 #endif
         MPI_Barrier(MPI_COMM_WORLD);
-        NMFTYPE nmfAlgorithm(A, W, H, mpicomm);
+        NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
@@ -173,11 +174,14 @@ class DistNMFDriver {
         stringstream ss(input);
         string s;
         int i = 0;
+        float temp;
         while (getline(ss, s, ' ')) {
-            *(m_regW)(i) = atof(s);
+            temp = ::atof(s.c_str());
+            (*reg)(i) = temp;
             i++;
         }
     }
+  public:
     void parseCommandLine() {
         int opt, long_index;
         this->m_nmfalgo = static_cast<distalgotype>(2);  // defaults to ANLS/BPP
@@ -191,6 +195,7 @@ class DistNMFDriver {
         this->m_compute_error = 0;
         this->m_regW = arma::zeros<FVEC>(2);
         this->m_regH = arma::zeros<FVEC>(2);
+        this->m_num_k_blocks = 1;
         while ((opt = getopt_long(this->m_argc, this->m_argv,
                                   "a:i:e:k:m:n:o:t:s:", distnmfopts,
                                   &long_index)) != -1) {
@@ -238,6 +243,9 @@ class DistNMFDriver {
             case REGHFLAG:
                 parseRegularizedParameter(optarg, &this->m_regH);
                 break;
+            case NUMKBLOCKS:
+                this->m_num_k_blocks = atoi(optarg);
+                break;
             default:
                 cout << "failed while processing argument:" << optarg << endl;
                 print_usage();
@@ -280,7 +288,6 @@ class DistNMFDriver {
 #endif
         }
     }
-  public:
     DistNMFDriver(int argc, char *argv[]) {
         this->m_argc = argc;
         this->m_argv = argv;

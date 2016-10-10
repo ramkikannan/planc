@@ -63,9 +63,10 @@ class DistMU : public DistAUNMF<INPUTMATTYPE> {
 
  public:
   DistMU(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-         const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
+         const FMAT &rightlowrankfactor, const MPICommunicator& communicator, 
+         const int numkblks):
     DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
-                            rightlowrankfactor, communicator) {
+                            rightlowrankfactor, communicator, numkblks) {
     WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);
     HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
     localWnorm.zeros(this->k);
