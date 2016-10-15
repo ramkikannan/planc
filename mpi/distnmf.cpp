@@ -34,11 +34,6 @@ class DistNMFDriver {
              << "::error::" << this->m_compute_error
              << "::distio::" << this->m_distio << endl;
     }
-  public:
-    DistNMFDriver(int argc, char *argv[]) {
-        this->m_argc = argc;
-        this->m_argv = argv;
-    }
     template<class NMFTYPE>
     void callDistNMF1D() {
         std::string rand_prefix("rand_");
@@ -184,6 +179,12 @@ class DistNMFDriver {
         INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"  << endl;
     }
+  public:
+    DistNMFDriver(int argc, char *argv[]) {
+        this->m_argc = argc;
+        this->m_argv = argv;
+    }
+
     void parseCommandLine() {
         int opt, long_index;
         this->m_nmfalgo = static_cast<distalgotype>(2);  // defaults to ANLS/BPP

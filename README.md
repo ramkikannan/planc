@@ -16,14 +16,14 @@ In this library we support the following
 * Shared Memory [OPENMP](openmp/README.md)  based implementation
 * Distributed Memory [MPI](mpi/README.md) based implementation
 
-
+For other NMF implementations from Prof. Park's lab, please visit [smallk](https://github.com/smallk/smallk)
 
 Contributors
 =============
 
-* Ramakrishnan Kannan - Oak Ridge National Laboratory
-* Grey Ballard - Wake Forest University
-* Haesun Park - Georgia Institute of Technology, GA
+* [Ramakrishnan Kannan](https://sites.google.com/site/ramakrishnankannan/) - Oak Ridge National Laboratory
+* [Grey Ballard](http://users.wfu.edu/ballard/) - Wake Forest University
+* [Haesun Park](http://www.cc.gatech.edu/~hpark/) - Georgia Institute of Technology, GA
 
 Acknowledgements
 ================
