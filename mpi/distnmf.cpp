@@ -36,8 +36,10 @@ class DistNMFDriver {
              << "::pr::" << this->m_pr << "::pc::" << this->m_pc
              << "::error::" << this->m_compute_error
              << "::distio::" << this->m_distio
-             << "::regW::" << this->m_regW
-             << "::regH::" << this->m_regH
+             << "::regW::" << "l2::" << this->m_regW(0) 
+             << "::l1::" << this->m_regW(1)
+             << "::regH::" << "l2::" << this->m_regH(0) 
+             << "::l1::" << this->m_regH(1)
              << "::num_k_blocks::" << m_num_k_blocks
              << endl;
     }

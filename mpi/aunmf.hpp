@@ -138,7 +138,10 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
             WtAijH.clear();
             localWtAijH.clear();
         }
-
+        Ht_blk.clear();
+        AHtij_blk.clear();
+        Wt_blk.clear();
+        WtAij_blk.clear();
     }
 
   public:

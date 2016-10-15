@@ -70,15 +70,15 @@ class NMF {
 
     void applyReg(const FVEC &reg, FMAT *AtA) {
         // Frobenius norm regularization
-        if (reg(1) > 0) {
+        if (reg(0) > 0) {
             FMAT identity = arma::eye<FMAT>(this->k,this->k);
-            float lambda_l2 = reg(1);
+            float lambda_l2 = reg(0);
             (*AtA) = (*AtA) + 2 *  lambda_l2 * identity;
         }
         // L1 - norm regularization
-        if (reg(2) > 0) {
+        if (reg(1) > 0) {
             FMAT onematrix = arma::ones<FMAT>(this->k,this->k);
-            float lambda_l1 = reg(2);
+            float lambda_l1 = reg(1);
             (*AtA) = (*AtA) + 2 * lambda_l1 * onematrix ;
         }
     }
