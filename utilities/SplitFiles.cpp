@@ -131,7 +131,7 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                             int division_extra_space = 1;
                             int width = prec + exponent_digits + digits_sign
                                         + exponent_sign + digits_dot
-                                        + exponent_symbol + division_extra_space;                            
+                                        + exponent_symbol + division_extra_space;
                             std::ofstream outfile;
                             outfile.open(outputFileName, std::ios_base::app);
                             outfile << perRowSplit << " " << perColSplit << " ";
@@ -148,20 +148,34 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
         }
     }
 }
-void splitFile(char* inputFile, char* outputDir, int numSplits, int pr = 1, int pc = 1) {
+void splitFile(char* inputFile, char* outputDir, int numSplits,
+               int pr = 1, int pc = 1, bool shuffle = false) {
     std::string strif = std::string(inputFile);
     sp_fmat A, At;
     char* rowStr = "rows";
     char* colStr = "cols";
-    //LoadMatrixMarketFile<sp_fmat, fvec, uword>(strif, m, n, nnz, A, false);
-    //cout << "LMM Output:m=" << m << " n=" << n << " nnz=" << nnz << endl;
+    // LoadMatrixMarketFile<sp_fmat, fvec, uword>(strif, m, n, nnz, A, false);
+    // cout << "LMM Output:m=" << m << " n=" << n << " nnz=" << nnz << endl;
     A.load(strif, coord_ascii);
-    //cout << "input matrix A:" << A << endl;
+    // cout << "input matrix A:" << A << endl;
     int roundRowSplit = A.n_rows / numSplits;
     int roundColSplit = A.n_cols / numSplits;
     A = A.rows(0, roundRowSplit * numSplits - 1);
     A = A.cols(0, roundColSplit * numSplits - 1);
-    cout << "Adjusted : m=" << A.n_rows << " n=" << A.n_cols << " nnz=" << A.n_nonzero << endl;
+    cout << "Adjusted : m=" << A.n_rows << " n=" << A.n_cols
+         << " nnz=" << A.n_nonzero << endl;
+    if (shuffle) {
+        uvec idx_rows = linspace(0, A.n_rows - 1, A.n_rows);
+        uvec idx_rows_shuffled = shuffle(idx);
+        A = A.rows(idx_rows_shuffled);
+        idx_rows.clear();
+        idx_rows_shuffled.clear();
+        uvec idx_cols = linspace(0, A.n_cols - 1, A.n_cols);
+        uvec idx_cols_shuffled = shuffle(idx);
+        A = A.cols(idx_cols_shuffled);
+        idx_cols.clear();
+        idx_cols_shuffled.clear();
+    }
     splitandWrite(A, numSplits, outputDir, rowStr, pr, pc);
     if (pr == 1 && pc == 1) {
         splitandWrite(A.t(), numSplits, outputDir, colStr);
@@ -187,7 +201,7 @@ void spMatIteratorTest() {
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-        cout << "Usage 1 : SplitFiles inputmtxfile outputdirectory numsplits [pr=1] [pc=1]" << endl;
+        cout << "Usage 1 : SplitFiles inputmtxfile outputdirectory numsplits [pr=1] [pc=1] [shuffle=0]" << endl;
         cout << "Usage 2 : SplitFiles m n density seed numsplits outputdirectory" << endl;
     }
     if (argc == 4) {
@@ -205,6 +219,19 @@ int main(int argc, char* argv[]) {
     }
     if (argc == 7) {
         int m = atoi(argv[1]);
+        if (m == 0) {
+            // this is the case of using the input file.
+            cout << "input mtx file with random shuffling" << endl;
+            int numSplits = atoi(argv[3]);
+            int pr = atoi(argv[4]);
+            int pc = atoi(argv[5]);
+            if (pr * pc != numSplits) {
+                cout << "pr *pc != numSplits. Quitting the program" << endl;
+                return -1;
+            }
+            bool shuffle = atoi(argv[6])
+            splitFile(argv[1], argv[2], atoi(argv[3]), pr, pc,argv[6]);
+        }
         int n = atoi(argv[2]);
         float  density = atof(argv[3]);
         int seed = atoi(argv[4]);

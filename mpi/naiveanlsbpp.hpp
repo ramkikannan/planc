@@ -98,7 +98,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
 //                 AcolstW = Acolst * this->m_globalW;
 // #endif
 #ifdef MPI_VERBOSE
-                DISTPRINTINFO(PRINTMAT(trans(AcolstW)));
+                DISTPRINTINFO(PRINTMAT(AcolstW));
 #endif
                 tempTime = mpitoc();  // mmH
                 PRINTROOT(PRINTMATINFO(this->m_Acols) << PRINTMATINFO(this->m_globalW)
@@ -154,7 +154,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
 //                 ArowsH = this->m_Arows * this->m_globalH;
 // #endif
 #ifdef MPI_VERBOSE
-                DISTPRINTINFO(PRINTMAT(trans(ArowsH)));
+                DISTPRINTINFO(PRINTMAT(ArowsH));
 #endif
                 tempTime = mpitoc();  // mmW
                 PRINTROOT(PRINTMATINFO(this->m_Arows)

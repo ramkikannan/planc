@@ -79,7 +79,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         AijHjt.zeros(this->perk, this->m);
         AHtij.zeros(this->k, this->globalm() / MPI_SIZE);
         this->recvAHsize.resize(NUMCOLPROCS);
-        int fillsize = this->k * (this->globalm() / MPI_SIZE);
+        int fillsize = this->perk * (this->globalm() / MPI_SIZE);
         fillVector<int>(fillsize, &recvAHsize);
 #ifdef MPI_VERBOSE
         if (ISROOT) {
@@ -101,7 +101,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         AijWit.zeros(this->n, this->perk);
         WtAij.zeros(this->k, this->globaln() / MPI_SIZE);
         this->recvWtAsize.resize(NUMROWPROCS);
-        fillsize = this->k * (this->globaln() / MPI_SIZE);
+        fillsize = this->perk * (this->globaln() / MPI_SIZE);
         fillVector<int>(fillsize, &recvWtAsize);
 
         // allocated for block implementation
@@ -196,8 +196,8 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         double temp = mpitoc();   // allgather WtA
         PRINTROOT("n::" << this->n << "::k::" << this->k \
                   << PRINTMATINFO(Wt) << PRINTMATINFO(Wit));
-#ifdef MPI_VERBOSE
-        DISTPRINTINFO(PRINTMAT(Wt));
+#ifdef MPI_VERBOSE        
+        DISTPRINTINFO(PRINTMAT(Wt_blk));
         DISTPRINTINFO(PRINTMAT(Wit));
 #endif
         this->time_stats.communication_duration(temp);
