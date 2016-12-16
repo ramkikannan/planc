@@ -36,9 +36,9 @@ class DistNMFDriver {
              << "::pr::" << this->m_pr << "::pc::" << this->m_pc
              << "::error::" << this->m_compute_error
              << "::distio::" << this->m_distio
-             << "::regW::" << "l2::" << this->m_regW(0) 
+             << "::regW::" << "l2::" << this->m_regW(0)
              << "::l1::" << this->m_regW(1)
-             << "::regH::" << "l2::" << this->m_regH(0) 
+             << "::regH::" << "l2::" << this->m_regH(0)
              << "::l1::" << this->m_regH(1)
              << "::num_k_blocks::" << m_num_k_blocks
              << endl;
@@ -85,12 +85,16 @@ class DistNMFDriver {
         arma::arma_rng::set_seed(random_sieve(mpicomm.rank() + kprimeoffset));
         FMAT W = arma::randu<FMAT>(this->m_globalm / mpicomm.size(), this->m_k);
         FMAT H = arma::randu<FMAT>(this->m_globaln / mpicomm.size(), this->m_k);
+        sleep(10);
         MPI_Barrier(MPI_COMM_WORLD);
+        memusage(mpicomm.rank(),"b4 constructor ");
         NMFTYPE nmfAlgorithm(Arows, Acols, W, H, mpicomm);
+        sleep(10);
+        memusage(mpicomm.rank(),"after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);                
         nmfAlgorithm.computeNMF();
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
@@ -158,14 +162,19 @@ class DistNMFDriver {
              << PRINTMATINFO(H) << endl;
 #endif
         MPI_Barrier(MPI_COMM_WORLD);
+        sleep(10);
+        memusage(mpicomm.rank(),"b4 constructor ");
         NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
+        sleep(10);
+        memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
         nmfAlgorithm.regW(this->m_regW);
         nmfAlgorithm.regH(this->m_regH);
+        MPI_Barrier(MPI_COMM_WORLD);        
         MPI_Barrier(MPI_COMM_WORLD);
-        nmfAlgorithm.computeNMF();
+        nmfAlgorithm.computeNMF();        
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                             nmfAlgorithm.getRightLowRankFactor(),

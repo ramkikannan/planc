@@ -164,18 +164,19 @@ void splitFile(char* inputFile, char* outputDir, int numSplits,
     A = A.cols(0, roundColSplit * numSplits - 1);
     cout << "Adjusted : m=" << A.n_rows << " n=" << A.n_cols
          << " nnz=" << A.n_nonzero << endl;
-    if (shuffle) {
-        uvec idx_rows = linspace(0, A.n_rows - 1, A.n_rows);
-        uvec idx_rows_shuffled = shuffle(idx);
+    // Matrix subview is not support for sparse matrices     
+    /* if (shuffle) {
+        vec idx_rows = linspace(0, A.n_rows - 1, A.n_rows);
+        vec idx_rows_shuffled = arma::shuffle(idx_rows);
         A = A.rows(idx_rows_shuffled);
         idx_rows.clear();
         idx_rows_shuffled.clear();
-        uvec idx_cols = linspace(0, A.n_cols - 1, A.n_cols);
-        uvec idx_cols_shuffled = shuffle(idx);
+        vec idx_cols = linspace(0, A.n_cols - 1, A.n_cols);
+        vec idx_cols_shuffled = arma::shuffle(idx_cols);
         A = A.cols(idx_cols_shuffled);
         idx_cols.clear();
         idx_cols_shuffled.clear();
-    }
+    } */
     splitandWrite(A, numSplits, outputDir, rowStr, pr, pc);
     if (pr == 1 && pc == 1) {
         splitandWrite(A.t(), numSplits, outputDir, colStr);
@@ -204,9 +205,11 @@ int main(int argc, char* argv[]) {
         cout << "Usage 1 : SplitFiles inputmtxfile outputdirectory numsplits [pr=1] [pc=1] [shuffle=0]" << endl;
         cout << "Usage 2 : SplitFiles m n density seed numsplits outputdirectory" << endl;
     }
+    // 1D Distribution split
     if (argc == 4) {
         splitFile(argv[1], argv[2], atoi(argv[3]));
     }
+    // 2D Uniform distribution
     if (argc == 6) {
         int numSplits = atoi(argv[3]);
         int pr = atoi(argv[4]);
@@ -217,6 +220,7 @@ int main(int argc, char* argv[]) {
         }
         splitFile(argv[1], argv[2], atoi(argv[3]), pr, pc);
     }
+    // 2D random distribution
     if (argc == 7) {
         int m = atoi(argv[1]);
         if (m == 0) {
@@ -229,14 +233,15 @@ int main(int argc, char* argv[]) {
                 cout << "pr *pc != numSplits. Quitting the program" << endl;
                 return -1;
             }
-            bool shuffle = atoi(argv[6])
-            splitFile(argv[1], argv[2], atoi(argv[3]), pr, pc,argv[6]);
+            bool shuffle = atoi(argv[6]);
+            splitFile(argv[1], argv[2], atoi(argv[3]), pr, pc, shuffle);
+        } else {
+            int n = atoi(argv[2]);
+            float  density = atof(argv[3]);
+            int seed = atoi(argv[4]);
+            int numSplits = atoi(argv[5]);
+            randSplit(m, n, density, seed, numSplits, argv[6]);
         }
-        int n = atoi(argv[2]);
-        float  density = atof(argv[3]);
-        int seed = atoi(argv[4]);
-        int numSplits = atoi(argv[5]);
-        randSplit(m, n, density, seed, numSplits, argv[6]);
     }
     return 0;
 }
