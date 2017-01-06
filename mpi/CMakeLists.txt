@@ -9,6 +9,7 @@ set(ARMA_USE_WRAPPER true)
 set(PACOSS_DIR /home/okaya/pacoss)
 set(PACOSS_INCLUDE_DIR /home/okaya/pacoss/src /home/okaya/tmpi/src)
 set(PACOSS_LIB_DIR /home/okaya/pacoss/lib)
+set(ARMADILLO_LIB_DIR /home/okaya/armadillo-6.600.5/install/usr/lib)
 
 project(DISTNMF CXX)
 set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
@@ -78,6 +79,7 @@ include_directories(
 
 link_directories(
   ${PACOSS_LIB_DIR}
+  ${ARMADILLO_LIB_DIR}
 )
 
 add_executable(distnmf
@@ -86,4 +88,4 @@ add_executable(distnmf
 
 add_definitions(-std=c++11 -w)
 
-target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss)
+target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss armadillo)
