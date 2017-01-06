@@ -1,4 +1,6 @@
 /* Copyright 2016 Ramakrishnan Kannan */
+#define USE_PACOSS
+
 #include <string>
 #include "distutils.hpp"
 #include "distio.hpp"

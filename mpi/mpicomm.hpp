@@ -18,7 +18,9 @@ class MPICommunicator {
     int m_row_rank, m_row_size;
     int m_col_rank, m_col_size;
     int m_pr, m_pc;
+#ifdef USE_PACOSS
     Pacoss_Communicator<float> *pcomm;
+#endif
 
     // for 2D communicators
     // MPI Related stuffs
