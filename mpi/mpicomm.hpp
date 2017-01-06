@@ -7,6 +7,10 @@
 #include "distutils.hpp"
 #include "stacktrace.h"
 
+#ifdef USE_PACOSS
+#include "pacoss.h"
+#endif
+
 class MPICommunicator {
   private:
     int m_rank;
@@ -14,6 +18,7 @@ class MPICommunicator {
     int m_row_rank, m_row_size;
     int m_col_rank, m_col_size;
     int m_pr, m_pc;
+    Pacoss_Communicator<float> *pcomm;
 
     // for 2D communicators
     // MPI Related stuffs
@@ -34,16 +39,28 @@ class MPICommunicator {
     // Violating the cpp guidlines. Other functions need
     // non const pointers.
     MPICommunicator(int argc, char *argv[]) {
+#ifdef USE_PACOSS
+        TMPI_Init(&argc, &argv);
+#else
         MPI_Init(&argc, &argv);
+#endif
         MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
     }
     ~MPICommunicator() {
         MPI_Barrier(MPI_COMM_WORLD);
+#ifdef USE_PACOSS
+        TMPI_Finalize();
+#else
         MPI_Finalize();
+#endif
     }
     MPICommunicator(int argc, char *argv[], int pr, int pc) {
+#ifdef USE_PACOSS
+        TMPI_Init(&argc, &argv);
+#else
         MPI_Init(&argc, &argv);
+#endif
         MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
         int reorder = 0;
