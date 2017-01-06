@@ -110,6 +110,30 @@ class DistNMFDriver {
         std::string rand_prefix("rand_");
         MPICommunicator mpicomm(this->m_argc, this->m_argv,
                                 this->m_pr, this->m_pc);
+#ifdef USE_PACOSS
+        std::string dim_part_file_name = this->m_Afile_name;
+        dim_part_file_name += ".dpart.part" + std::to_string(mpicomm.rank());
+        this->m_Afile_name += ".part" + std::to_string(mpicomm.rank());
+        Pacoss_SparseStruct<float> ss;
+        ss.load(m_Afile_name.c_str());
+        ss.print();
+        std::vector<std::vector<Pacoss_IntPair>> dim_part;
+        Pacoss_Communicator<float>::loadDistributedDimPart(dim_part_file_name.c_str(), dim_part);
+        Pacoss_Communicator<float> row_comm(MPI_COMM_WORLD, ss._idx[0], dim_part[0]);
+        Pacoss_Communicator<float> col_comm(MPI_COMM_WORLD, ss._idx[1], dim_part[1]);
+        this->m_globalm = ss._dimSize[0];
+        this->m_globaln = ss._dimSize[1];
+        arma::umat locations(2, ss._idx[0].size());
+        for (Pacoss_Int i = 0; i < ss._idx[0].size(); i++) {
+          locations(0,i) = ss._idx[0][i];
+          locations(1,i) = ss._idx[1][i];
+        }
+        arma::fvec values(ss._idx[0].size());
+        for (Pacoss_Int i = 0; i < values.size(); i++) { values[i] = ss._val[i]; }
+        SP_FMAT A(locations, values); A.resize(row_comm.localRowCount(), col_comm.localRowCount()); 
+        A.print();
+
+#else
         if (this->m_pr > 0 && this->m_pc > 0
                 && this->m_pr * this->m_pc != mpicomm.size()) {
             ERR << "pr*pc is not MPI_SIZE" << endl;
@@ -152,6 +176,8 @@ class DistNMFDriver {
 #ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
 #endif
+#endif
+        return;
         // don't worry about initializing with the
         // same matrix as only one of them will be used.
         arma::arma_rng::set_seed(mpicomm.rank());
@@ -177,11 +203,13 @@ class DistNMFDriver {
         MPI_Barrier(MPI_COMM_WORLD);        
         MPI_Barrier(MPI_COMM_WORLD);
         nmfAlgorithm.computeNMF();        
+#ifndef USE_PACOSS
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                             nmfAlgorithm.getRightLowRankFactor(),
                             m_outputfile_name);
         }
+#endif
     }
     void parseRegularizedParameter(const char *input, FVEC *reg) {
         stringstream ss(input);

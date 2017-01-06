@@ -3,3 +3,6 @@ cmake*
 Makefile
 distnmf
 spmat*
+.*.swp
+mpiout*
+pacoss
