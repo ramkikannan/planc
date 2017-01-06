@@ -6,6 +6,10 @@ set(ARMA_USE_WRAPPER true)
 
 # the settings below will be automatically configured by the rest of this script
 
+set(PACOSS_DIR /home/okaya/pacoss)
+set(PACOSS_INCLUDE_DIR /home/okaya/pacoss/src /home/okaya/tmpi/src)
+set(PACOSS_LIB_DIR /home/okaya/pacoss/lib)
+
 project(DISTNMF CXX)
 set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
 set(NNLS_SRC ${DISTNMF_SOURCE_DIR}/../nnls/)
@@ -59,6 +63,7 @@ message(STATUS "*** NMFLIB_LIBS = ${NMFLIB_LIBS}")
 message(STATUS "")
 
 include_directories(
+  ${PACOSS_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
   ${DISTNMF_SOURCE_DIR}
@@ -71,8 +76,14 @@ include_directories(
   ${MKL_INCLUDE_DIR}
 )
 
+link_directories(
+  ${PACOSS_LIB_DIR}
+)
+
 add_executable(distnmf
   distnmf.cpp
 )
 
-target_link_libraries(distnmf ${NMFLIB_LIBS})
+add_definitions(-std=c++11 -w)
+
+target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss)
