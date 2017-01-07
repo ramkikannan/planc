@@ -55,6 +55,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
 #ifdef USE_PACOSS
     // TODO: This is a hack for now. Talk to Ramki.
     this->m_globalm = this->W.n_rows * this->m_mpicomm.size(); 
+    this->m_globaln = this->H.n_rows * this->m_mpicomm.size(); 
 #else
     MPI_Allreduce(&(this->m), &(this->m_globalm), 1, MPI_INT, MPI_SUM,
                   this->m_mpicomm.commSubs()[0]);
