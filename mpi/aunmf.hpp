@@ -196,7 +196,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         double temp = mpitoc();   // allgather WtA
         PRINTROOT("n::" << this->n << "::k::" << this->k \
                   << PRINTMATINFO(Wt) << PRINTMATINFO(Wit));
-#ifdef MPI_VERBOSE        
+#ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(Wt_blk));
         DISTPRINTINFO(PRINTMAT(Wit));
 #endif
@@ -439,6 +439,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
             }
             PRINTROOT("completed it=" << iter << "::taken::"
                       << this->time_stats.duration());
+            printf("iter = %d, error = %lf\n", iter, this->objective_err / this->m_globalsqnormA);
         }  // end for loop
         MPI_Barrier(MPI_COMM_WORLD);
         this->reportTime(this->time_stats.duration(), "total_d");

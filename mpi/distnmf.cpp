@@ -119,8 +119,8 @@ class DistNMFDriver {
         ss.print();
         std::vector<std::vector<Pacoss_IntPair>> dim_part;
         Pacoss_Communicator<float>::loadDistributedDimPart(dim_part_file_name.c_str(), dim_part);
-        Pacoss_Communicator<float> row_comm(MPI_COMM_WORLD, ss._idx[0], dim_part[0]);
-        Pacoss_Communicator<float> col_comm(MPI_COMM_WORLD, ss._idx[1], dim_part[1]);
+        Pacoss_Communicator<float> *rowcomm = new Pacoss_Communicator<float>(MPI_COMM_WORLD, ss._idx[0], dim_part[0]);
+        Pacoss_Communicator<float> *colcomm = new Pacoss_Communicator<float>(MPI_COMM_WORLD, ss._idx[0], dim_part[0]);
         this->m_globalm = ss._dimSize[0];
         this->m_globaln = ss._dimSize[1];
         arma::umat locations(2, ss._idx[0].size());
@@ -130,7 +130,7 @@ class DistNMFDriver {
         }
         arma::fvec values(ss._idx[0].size());
         for (Pacoss_Int i = 0; i < values.size(); i++) { values[i] = ss._val[i]; }
-        SP_FMAT A(locations, values); A.resize(row_comm.localRowCount(), col_comm.localRowCount()); 
+        SP_FMAT A(locations, values); A.resize(rowcomm->localRowCount(), colcomm->localRowCount()); 
         A.print();
 
 #else
@@ -177,12 +177,16 @@ class DistNMFDriver {
         dio.writeRandInput();
 #endif
 #endif
-        return;
         // don't worry about initializing with the
         // same matrix as only one of them will be used.
         arma::arma_rng::set_seed(mpicomm.rank());
+#ifdef USE_PACOSS
+        FMAT W = arma::randu<FMAT>(rowcomm->localOwnedRowCount(), this->m_k);
+        FMAT H = arma::randu<FMAT>(colcomm->localOwnedRowCount(), this->m_k);
+#else
         FMAT W = arma::randu<FMAT >(this->m_globalm / mpicomm.size(), this->m_k);
         FMAT H = arma::randu<FMAT >(this->m_globaln / mpicomm.size(), this->m_k);
+#endif
 #ifdef MPI_VERBOSE
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
              << PRINTMATINFO(W) << endl;
@@ -190,10 +194,14 @@ class DistNMFDriver {
              << PRINTMATINFO(H) << endl;
 #endif
         MPI_Barrier(MPI_COMM_WORLD);
-        sleep(10);
+//        sleep(10);
         memusage(mpicomm.rank(),"b4 constructor ");
+        // TODO: I was here. Need to modify the reallocations by using localOwnedRowCount instead of m_globalm.
         NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
-        sleep(10);
+        nmfAlgorithm.set_rowcomm(rowcomm);
+        nmfAlgorithm.set_colcomm(colcomm);
+        return;
+//        sleep(10);
         memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);

@@ -19,7 +19,8 @@ class MPICommunicator {
     int m_col_rank, m_col_size;
     int m_pr, m_pc;
 #ifdef USE_PACOSS
-    Pacoss_Communicator<float> *pcomm;
+    Pacoss_Communicator<float> *m_row_comm = NULL;
+    Pacoss_Communicator<float> *m_col_comm = NULL;
 #endif
 
     // for 2D communicators
@@ -52,6 +53,8 @@ class MPICommunicator {
     ~MPICommunicator() {
         MPI_Barrier(MPI_COMM_WORLD);
 #ifdef USE_PACOSS
+        if (m_row_comm) { free(m_row_comm); }
+        if (m_col_comm) { free(m_col_comm); }
         TMPI_Finalize();
 #else
         MPI_Finalize();
@@ -107,6 +110,12 @@ class MPICommunicator {
         printConfig();
 #endif
     }
+#ifdef USE_PACOSS
+    void set_row_comm(Pacoss_Communicator<float> * comm) { m_row_comm = comm; }
+    void set_col_comm(Pacoss_Communicator<float> * comm) { m_col_comm = comm; }
+    Pacoss_Communicator<float> * row_comm() { return m_row_comm; }
+    Pacoss_Communicator<float> * col_comm() { return m_col_comm; }
+#endif
     const int rank() const {return m_rank;}
     const int size() const {return m_numProcs;}
     const int row_rank() const {return m_row_rank;}
