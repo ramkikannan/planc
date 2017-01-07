@@ -116,11 +116,10 @@ class DistNMFDriver {
         this->m_Afile_name += ".part" + std::to_string(mpicomm.rank());
         Pacoss_SparseStruct<float> ss;
         ss.load(m_Afile_name.c_str());
-        ss.print();
         std::vector<std::vector<Pacoss_IntPair>> dim_part;
         Pacoss_Communicator<float>::loadDistributedDimPart(dim_part_file_name.c_str(), dim_part);
         Pacoss_Communicator<float> *rowcomm = new Pacoss_Communicator<float>(MPI_COMM_WORLD, ss._idx[0], dim_part[0]);
-        Pacoss_Communicator<float> *colcomm = new Pacoss_Communicator<float>(MPI_COMM_WORLD, ss._idx[0], dim_part[0]);
+        Pacoss_Communicator<float> *colcomm = new Pacoss_Communicator<float>(MPI_COMM_WORLD, ss._idx[1], dim_part[1]);
         this->m_globalm = ss._dimSize[0];
         this->m_globaln = ss._dimSize[1];
         arma::umat locations(2, ss._idx[0].size());
@@ -131,7 +130,6 @@ class DistNMFDriver {
         arma::fvec values(ss._idx[0].size());
         for (Pacoss_Int i = 0; i < values.size(); i++) { values[i] = ss._val[i]; }
         SP_FMAT A(locations, values); A.resize(rowcomm->localRowCount(), colcomm->localRowCount()); 
-        A.print();
 
 #else
         if (this->m_pr > 0 && this->m_pc > 0
@@ -200,7 +198,6 @@ class DistNMFDriver {
         NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
         nmfAlgorithm.set_rowcomm(rowcomm);
         nmfAlgorithm.set_colcomm(colcomm);
-        return;
 //        sleep(10);
         memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
@@ -210,7 +207,12 @@ class DistNMFDriver {
         nmfAlgorithm.regH(this->m_regH);
         MPI_Barrier(MPI_COMM_WORLD);        
         MPI_Barrier(MPI_COMM_WORLD);
-        nmfAlgorithm.computeNMF();        
+        try {
+          nmfAlgorithm.computeNMF();        
+        } catch (std::exception &e) {
+          printf("Failed rank %d\n", mpicomm.rank());
+          MPI_Abort(MPI_COMM_WORLD, 1);
+        }
 #ifndef USE_PACOSS
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
