@@ -72,8 +72,10 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     Wnorm.zeros(this->k);
   }
 
+#ifdef USE_PACOSS
   void set_rowcomm(Pacoss_Communicator<float> *rowcomm) { this->m_rowcomm = rowcomm; }
   void set_colcomm(Pacoss_Communicator<float> *colcomm) { this->m_colcomm = colcomm; }
+#endif
   const int globalm() const {return m_globalm;}
   const int globaln() const {return m_globaln;}
   const double globalsqnorma() const {return m_globalsqnormA;}

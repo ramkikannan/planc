@@ -196,8 +196,10 @@ class DistNMFDriver {
         memusage(mpicomm.rank(),"b4 constructor ");
         // TODO: I was here. Need to modify the reallocations by using localOwnedRowCount instead of m_globalm.
         NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
+#ifdef USE_PACOSS
         nmfAlgorithm.set_rowcomm(rowcomm);
         nmfAlgorithm.set_colcomm(colcomm);
+#endif
 //        sleep(10);
         memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
