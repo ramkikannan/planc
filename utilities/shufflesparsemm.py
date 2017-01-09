@@ -10,9 +10,10 @@ import getopt
 ###############################################################################
 
 def save_sparse_matrix(filename,x):
+    print 'finding the sparse entries'
     [rowidx,colidx,val]=sp.find(x)
     y = np.column_stack((rowidx,colidx,val))
-    print 'saving shuffled matrix'
+    print 'saving shuffled matrix '
     np.savetxt(filename,y,fmt='%u',delimiter=' ')
 
 def load_sparse_matrix(filename):
@@ -27,10 +28,13 @@ def randomize_matrix(input_file_name,output_file_name):
     z=load_sparse_matrix(input_file_name)
     print 'loaded input matrix'
     shape=z.shape
+    print 'shuffling row idxs'
     rowperm=np.arange(0,shape[0],dtype=np.int32)
     np.random.shuffle(rowperm)
+    print 'shuffling col idxs'
     colperm=np.arange(0,shape[1],dtype=np.int32)
     np.random.shuffle(colperm)
+    print 'starting input matrix shuffle'
     z_rnd=z[rowperm,:]
     z_rnd=z_rnd[:,colperm]
     print 'shuffled input matrix'

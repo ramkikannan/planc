@@ -196,7 +196,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         double temp = mpitoc();   // allgather WtA
         PRINTROOT("n::" << this->n << "::k::" << this->k \
                   << PRINTMATINFO(Wt) << PRINTMATINFO(Wit));
-#ifdef MPI_VERBOSE        
+#ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(Wt_blk));
         DISTPRINTINFO(PRINTMAT(Wit));
 #endif
@@ -298,11 +298,11 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 //     DISTPRINTINFO(PRINTMAT(this->AijHjt));
 // #endif
         temp = mpitoc();  // mm AH
-        PRINTROOT(PRINTMATINFO(this->A_ij_t) << PRINTMATINFO(this->Hjt)
-                  << PRINTMATINFO(this->AijHjt));
         this->time_stats.compute_duration(temp);
         this->time_stats.mm_duration(temp);
         this->reportTime(temp, "AH::");
+        PRINTROOT(PRINTMATINFO(this->A_ij_t) << PRINTMATINFO(this->Hjt)
+                  << PRINTMATINFO(this->AijHjt));
         AHtij_blk.zeros();
         mpitic();  // reduce_scatter AH
         MPI_Reduce_scatter(this->AijHjt.memptr(), this->AHtij_blk.memptr(),

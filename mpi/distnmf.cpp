@@ -87,14 +87,14 @@ class DistNMFDriver {
         FMAT H = arma::randu<FMAT>(this->m_globaln / mpicomm.size(), this->m_k);
         sleep(10);
         MPI_Barrier(MPI_COMM_WORLD);
-        memusage(mpicomm.rank(),"b4 constructor ");
+        memusage(mpicomm.rank(), "b4 constructor ");
         NMFTYPE nmfAlgorithm(Arows, Acols, W, H, mpicomm);
         sleep(10);
-        memusage(mpicomm.rank(),"after constructor ");
+        memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
-        MPI_Barrier(MPI_COMM_WORLD);                
+        MPI_Barrier(MPI_COMM_WORLD);
         nmfAlgorithm.computeNMF();
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
@@ -155,6 +155,20 @@ class DistNMFDriver {
         arma::arma_rng::set_seed(mpicomm.rank());
         FMAT W = arma::randu<FMAT >(this->m_globalm / mpicomm.size(), this->m_k);
         FMAT H = arma::randu<FMAT >(this->m_globaln / mpicomm.size(), this->m_k);
+#ifdef BUILD_SPARSE
+        // sometimes for really very large matrices starting w/
+        // rand initialization hurts ANLS BPP running time. For a better
+        // initializer we run couple of iterations of HALS.
+        if (m_nmfalgo == ANLSBPP2D) {
+          DistHALS<SP_FMAT> lrinitializer(A, W, H, mpicomm, this->m_num_k_blocks);
+          lrinitializer.num_iterations(4);
+          lrinitializer.algorithm(HALS2D);
+          lrinitializer.computeNMF();
+          W = lrinitializer.getLeftLowRankFactor();
+          H = lrinitializer.getRightLowRankFactor();
+        }
+#endif
+
 #ifdef MPI_VERBOSE
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
              << PRINTMATINFO(W) << endl;
@@ -163,7 +177,7 @@ class DistNMFDriver {
 #endif
         MPI_Barrier(MPI_COMM_WORLD);
         sleep(10);
-        memusage(mpicomm.rank(),"b4 constructor ");
+        memusage(mpicomm.rank(), "b4 constructor ");
         NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
         sleep(10);
         memusage(mpicomm.rank(), "after constructor ");
@@ -172,9 +186,9 @@ class DistNMFDriver {
         nmfAlgorithm.algorithm(this->m_nmfalgo);
         nmfAlgorithm.regW(this->m_regW);
         nmfAlgorithm.regH(this->m_regH);
-        MPI_Barrier(MPI_COMM_WORLD);        
         MPI_Barrier(MPI_COMM_WORLD);
-        nmfAlgorithm.computeNMF();        
+        MPI_Barrier(MPI_COMM_WORLD);
+        nmfAlgorithm.computeNMF();
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                             nmfAlgorithm.getRightLowRankFactor(),
