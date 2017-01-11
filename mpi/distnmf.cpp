@@ -130,7 +130,6 @@ class DistNMFDriver {
         arma::fvec values(ss._idx[0].size());
         for (Pacoss_Int i = 0; i < values.size(); i++) { values[i] = ss._val[i]; }
         SP_FMAT A(locations, values); A.resize(rowcomm->localRowCount(), colcomm->localRowCount()); 
-
 #else
         if (this->m_pr > 0 && this->m_pc > 0
                 && this->m_pr * this->m_pc != mpicomm.size()) {
@@ -245,7 +244,7 @@ class DistNMFDriver {
         this->m_sparsity = 0.01;
         this->m_num_it = 10;
         this->m_distio = TWOD;
-        this->m_compute_error = 0;
+        this->m_compute_error = 1;
         this->m_regW = arma::zeros<FVEC>(2);
         this->m_regH = arma::zeros<FVEC>(2);
         this->m_num_k_blocks = 1;
