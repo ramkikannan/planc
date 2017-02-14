@@ -124,8 +124,7 @@ class Tensor {
                 int k = ncols;
                 int lda = k; // not sure. could be m. higher confidence on k.
                 int ldb = i_krp.n_rows;
-                // int ldc = m;
-                int ldc = n;
+                int ldc = m;
                 float alpha = 1;
                 float beta = (i == 0) ? 0 : 1;
                 float *A = this->m_data + i * k * m;

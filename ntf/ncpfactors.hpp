@@ -55,6 +55,14 @@ class NCPFactors {
             (*o_UtU) = (*o_UtU) % currentGram;
         }
     }
+
+    FMAT krp_leave_out_one(const int i_n){
+        UWORD krpsize = arma::prod(this->m_dimensions);
+        krpsize /= this->m_dimensions[i_n];
+        FMAT krp(krpsize,this->m_k);
+        krp_leave_out_one(i_n, &krp);
+        return krp;
+    }
     // construct low rank tensor using the factors
 
     // khatrirao leaving out one. we are using the implementation
@@ -84,7 +92,7 @@ class NCPFactors {
         // This is our k. So keep N = k in our case.
         // P = A{matorder(1)};
         // take the first factor of matorder
-        UWORD current_nrows = ncp_factors[matorder(0)].n_rows - 1;
+        /*UWORD current_nrows = ncp_factors[matorder(0)].n_rows - 1;
         (*o_krp).rows(0, current_nrows) = ncp_factors[matorder(0)];
         // this is factor by factor
         for (int i = 1; i < this->m_order - 1; i++) {
@@ -103,12 +111,31 @@ class NCPFactors {
                 }
             }
             current_nrows *= rightkrp.n_rows;
+        }*/
+// Loop through all the columns
+// for n = 1:N
+//     % Loop through all the matrices
+//     ab = A{matorder(1)}(:,n);
+//     for i = matorder(2:end)
+//        % Compute outer product of nth columns
+//        ab = A{i}(:,n) * ab(:).';
+//     end
+//     % Fill nth column of P with reshaped result
+//     P(:,n) = ab(:);
+// end
+        for (int n = 0; n < this->m_k; n++) {
+            FMAT ab = ncp_factors[matorder[0]].col(n);
+            for (int i = 1; i < this->m_order - 1; i++) {
+                FVEC abvec = arma::vectorise(ab);
+                ab = abvec * trans(ncp_factors[matorder[i]].col(n));
+            }
+            (*o_krp).col(n) = arma::vectorise(ab);
         }
     }
-    // caller must free
+// caller must free
     Tensor rankk_tensor() {
         UWORD krpsize = arma::prod(this->m_dimensions);
-        krpsize -= this->m_dimensions[0];
+        krpsize /= this->m_dimensions[0];
         FMAT krpleavingzero = arma::zeros<FMAT>(krpsize, this->m_k);
         krp_leave_out_one(0, &krpleavingzero);
         FMAT lowranktensor(this->m_dimensions[0], krpsize);

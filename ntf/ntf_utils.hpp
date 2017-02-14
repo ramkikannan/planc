@@ -30,11 +30,7 @@ inline void kronecker(const FVEC &i_acol, const FVEC &i_bcol, FVEC *o_c) {
 
 void mttkrp(const int i_n, PLANC::Tensor& X,
             PLANC::NCPFactors& i_F, FMAT *o_mttkrp) {
-    UVEC ten_dimensions = X.dimensions();
-    UWORD krpsize = arma::prod(ten_dimensions);
-    krpsize /= ten_dimensions[i_n];
-    FMAT krp(krpsize, i_F.rank());
-    i_F.krp_leave_out_one(i_n, &krp);
+    FMAT krp = i_F.krp_leave_out_one(i_n);    
     X.mttkrp(i_n, krp, o_mttkrp);
 }
 

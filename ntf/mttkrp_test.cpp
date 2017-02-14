@@ -7,14 +7,15 @@
 #include "utils.h"
 
 int main(int argc, char* argv[]) {
-    UVEC dimensions(3);
+    // UVEC dimensions(3);
+    UVEC dimensions(4);
     dimensions(0) = 3;
     dimensions(1) = 4;
     dimensions(2) = 5;
+    dimensions(3) = 6;
     PLANC::NCPFactors cpfactors(dimensions, 2);
     cpfactors.print();
-    FMAT krp_2(12, 2);
-    cpfactors.krp_leave_out_one(2, &krp_2);
+    FMAT krp_2=cpfactors.krp_leave_out_one(2);;    
     cout << "krp" << endl << "------" << endl << krp_2;
     PLANC::Tensor my_tensor = cpfactors.rankk_tensor();
     FMAT my_mttkrp_0(3, 2);
