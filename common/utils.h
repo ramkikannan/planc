@@ -56,7 +56,6 @@ using namespace std;
 #define UWORD   arma::uword
 #define VEC     arma::vec
 
-
 //#define PRINTMATINFO(A) \
 "::"#A"::" << (A).n_rows << "x" << (A).n_cols << "::norm::" << norm((A),"fro")
 
