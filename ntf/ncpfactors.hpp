@@ -26,8 +26,11 @@ class NCPFactors {
         ncp_factors = new FMAT[4];
         this->m_order = i_dimensions.n_rows;
         this->m_k = i_k;
+        UWORD numel = arma::prod(this->m_dimensions);
         for (int i = 0; i < this->m_order; i++) {
-            ncp_factors[i] = arma::randu<FMAT>(i_dimensions[i], this->m_k);
+            // ncp_factors[i] = arma::randu<FMAT>(i_dimensions[i], this->m_k);
+            ncp_factors[i] = arma::randi<FMAT>(i_dimensions[i], this->m_k,
+                                               arma::distr_param(0, numel));
         }
     }
     // getters
@@ -56,10 +59,10 @@ class NCPFactors {
         }
     }
 
-    FMAT krp_leave_out_one(const int i_n){
+    FMAT krp_leave_out_one(const int i_n) {
         UWORD krpsize = arma::prod(this->m_dimensions);
         krpsize /= this->m_dimensions[i_n];
-        FMAT krp(krpsize,this->m_k);
+        FMAT krp(krpsize, this->m_k);
         krp_leave_out_one(i_n, &krp);
         return krp;
     }

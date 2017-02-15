@@ -4,6 +4,7 @@
 #define NTF_TENSOR_HPP_
 
 #include <armadillo>
+#include <random>
 
 namespace PLANC {
 /*
@@ -62,6 +63,16 @@ class Tensor {
             unsigned int *temp = const_cast<unsigned int *>(&rand_seed);
             this->m_data[i] = static_cast <float> (rand_r(temp))
                               / static_cast <float> (RAND_MAX);
+        }
+    }
+
+    void randi() {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        int max_randi = this->m_numel;
+        std::uniform_int_distribution<> dis(0, max_randi);
+        for (UWORD i = 0; i < this->m_numel; i++) {
+            this->m_data[i] = dis(gen);
         }
     }
 
