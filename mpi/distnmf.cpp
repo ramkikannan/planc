@@ -209,7 +209,10 @@ class DistNMFDriver {
         MPI_Barrier(MPI_COMM_WORLD);        
         MPI_Barrier(MPI_COMM_WORLD);
         try {
+          mpitic();
           nmfAlgorithm.computeNMF();        
+          double temp = mpitoc();
+          if (mpicomm.rank() == 0) { printf("NMF took %.3lf secs.\n", temp); }
         } catch (std::exception &e) {
           printf("Failed rank %d\n", mpicomm.rank());
           MPI_Abort(MPI_COMM_WORLD, 1);
