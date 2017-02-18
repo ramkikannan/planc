@@ -130,7 +130,7 @@ class NCPFactors {
             FMAT ab = ncp_factors[matorder[0]].col(n);
             for (int i = 1; i < this->m_order - 1; i++) {
                 FVEC abvec = arma::vectorise(ab);
-                ab = abvec * trans(ncp_factors[matorder[i]].col(n));
+                ab = ncp_factors[matorder[i]].col(n) * trans(abvec);
             }
             (*o_krp).col(n) = arma::vectorise(ab);
         }
