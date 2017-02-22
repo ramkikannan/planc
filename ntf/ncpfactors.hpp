@@ -22,9 +22,9 @@ class NCPFactors {
 
     //constructors
     NCPFactors(const UVEC i_dimensions, const int i_k)
-        : m_dimensions(i_dimensions) {
-        ncp_factors = new FMAT[4];
+        : m_dimensions(i_dimensions) {        
         this->m_order = i_dimensions.n_rows;
+        ncp_factors = new FMAT[this->m_order];
         this->m_k = i_k;
         UWORD numel = arma::prod(this->m_dimensions);
         for (int i = 0; i < this->m_order; i++) {

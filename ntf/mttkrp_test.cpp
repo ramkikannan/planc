@@ -7,26 +7,28 @@
 #include "utils.h"
 
 int main(int argc, char* argv[]) {
-    UVEC dimensions(3);
+    int test_order = 5;
+    int low_rank = 2;
+    UVEC dimensions(test_order);
+    FMAT *mttkrps = new FMAT[test_order];
     // UVEC dimensions(4);
-    dimensions(0) = 3;
-    dimensions(1) = 4;
-    dimensions(2) = 5;
+    for (int i = 0; i < test_order; i++) {
+        dimensions(i) = i + 2;
+    }
     // dimensions(3) = 6;
-    PLANC::NCPFactors cpfactors(dimensions, 2);
+    PLANC::NCPFactors cpfactors(dimensions, low_rank);
     cpfactors.print();
     FMAT krp_2 = cpfactors.krp_leave_out_one(2);
     cout << "krp" << endl << "------" << endl << krp_2;
     PLANC::Tensor my_tensor = cpfactors.rankk_tensor();
-    cout << "input tensor" << endl << "--------" << endl;
-    my_tensor.print();
-    FMAT my_mttkrp_0(3, 2);
-    FMAT my_mttkrp_1(4, 2);
-    FMAT my_mttkrp_2(5, 2);
-    mttkrp(0, my_tensor, cpfactors, &my_mttkrp_0);
-    mttkrp(1, my_tensor, cpfactors, &my_mttkrp_1);
-    mttkrp(2, my_tensor, cpfactors, &my_mttkrp_2);
-    cout << "mttkrp 0" << endl << "---------" << endl << my_mttkrp_0;
-    cout << "mttkrp 1" << endl << "---------" << endl << my_mttkrp_1;
-    cout << "mttkrp n" << endl << "---------" << endl << my_mttkrp_2;
+    // cout << "input tensor" << endl << "--------" << endl;
+    // my_tensor.print();
+    for (int i = 0; i < test_order; i++) {
+        mttkrps[i] = arma::zeros<FMAT>(dimensions(i), low_rank);
+
+    }
+    for (int i = 0; i < test_order; i++) {
+        mttkrp(i, my_tensor, cpfactors, &mttkrps[i]);
+        cout << "mttkrp " << i << endl << "---------" << endl << mttkrps[i];
+    }
 }
