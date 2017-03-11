@@ -42,7 +42,7 @@ class NCPFactors {
     // getters
     int rank() const {return m_k;}
     UVEC dimensions() const {return m_dimensions;}
-    FMAT factor(const int i_n) const {return ncp_factors[i_n];}
+    FMAT& factor(const int i_n) const {return ncp_factors[i_n];}
 
     // setters
     void set(const int i_n, const FMAT &i_factor) {
@@ -50,13 +50,9 @@ class NCPFactors {
         this->ncp_factors[i_n] = i_factor;
     }
 
-    //computations
-    void gram(const int i_n, FMAT *o_UtU) {
-        (*o_UtU) = ncp_factors[i_n] * trans(ncp_factors[i_n]);
-    }
-
     //compute gram of all local factors
-    void gram(FMAT *o_UtU) {        
+    void gram(FMAT *o_UtU) {
+        FMAT currentGram(this->m_k, this->m_k);
         for (int i = 0; i < this->m_order; i++) {
             currentGram = ncp_factors[i] * trans(ncp_factors[i]);
             (*o_UtU) = (*o_UtU) % currentGram;

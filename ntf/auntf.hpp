@@ -28,7 +28,8 @@ class AUNTF {
         m_low_rank_k(i_k),
         m_updalgo(i_algo) {
         gram_without_one = arma::zeros<FMAT>(i_k, i_k);
-        ncp_mttkrp = arma::zeros<FMAT>(TENSOR_NUMEL, i_k);
+        ncp_mttkrp = new FMAT[i_tensor.order()];
+        ncp_krp = new FMAT[i_tensor.order()];
         for (int i = 0; i < i_tensor.order(); i++) {
             UWORD current_size = TENSOR_NUMEL - TENSOR_DIM[i];
             ncp_krp[i] = arma::zeros <FMAT>(current_size, i_k);
