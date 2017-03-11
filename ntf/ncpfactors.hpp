@@ -21,16 +21,22 @@ class NCPFactors {
   public:
 
     //constructors
-    NCPFactors(const UVEC i_dimensions, const int i_k)
-        : m_dimensions(i_dimensions) {        
+    NCPFactors(const UVEC i_dimensions, const int i_k, bool trans = false)
+        : m_dimensions(i_dimensions) {
         this->m_order = i_dimensions.n_rows;
         ncp_factors = new FMAT[this->m_order];
         this->m_k = i_k;
         UWORD numel = arma::prod(this->m_dimensions);
         for (int i = 0; i < this->m_order; i++) {
             // ncp_factors[i] = arma::randu<FMAT>(i_dimensions[i], this->m_k);
-            ncp_factors[i] = arma::randi<FMAT>(i_dimensions[i], this->m_k,
-                                               arma::distr_param(0, numel));
+            if (trans) {
+                ncp_factors[i] = arma::randu<FMAT>(this->m_k, i_dimensions[i]);
+
+            } else {
+                //ncp_factors[i] = arma::randi<FMAT>(i_dimensions[i], this->m_k,
+                //                                   arma::distr_param(0, numel));
+                ncp_factors[i] = arma::randu<FMAT>(i_dimensions[i], this->m_k);
+            }
         }
     }
     // getters
@@ -48,6 +54,15 @@ class NCPFactors {
     void gram(const int i_n, FMAT *o_UtU) {
         (*o_UtU) = ncp_factors[i_n] * trans(ncp_factors[i_n]);
     }
+
+    //compute gram of all local factors
+    void gram(FMAT *o_UtU) {        
+        for (int i = 0; i < this->m_order; i++) {
+            currentGram = ncp_factors[i] * trans(ncp_factors[i]);
+            (*o_UtU) = (*o_UtU) % currentGram;
+        }
+    }
+
     // find the hadamard product of all the factor grams
     // except the n. This is equation 50 of the JGO paper.
     void gram_leave_out_one(const int i_n, FMAT *o_UtU) {
@@ -158,6 +173,11 @@ class NCPFactors {
     void print(const int i_n) {
         cout << i_n << "th factor" << endl << "=============" << endl;
         cout << this->ncp_factors[i_n];
+    }
+    void trans(NCPFactors &factor_t) {
+        for (int i = 0; i < this->m_order; i++) {
+            factor_t.set(i, this->ncp_factors[i].t());
+        }
     }
 };
 }  // PLANC

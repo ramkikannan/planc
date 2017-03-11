@@ -40,11 +40,11 @@ class AUNTF {
         for (int i = 0; i < m_num_it; i++) {
             for (int j = 0; j < this->m_input_tensor.order(); j++) {
                 m_ncp_factors.gram_leave_out_one(j, &gram_without_one);
-                m_ncp_factors.krp_leave_out_one(j, &ncp_krp[i]);
-                m_input_tensor.mttkrp(j, &ncp_krp[i], &ncp_mttkrp[i]);
+                m_ncp_factors.krp_leave_out_one(j, &ncp_krp[j]);
+                m_input_tensor.mttkrp(j, &ncp_krp[j], &ncp_mttkrp[j]);
                 FMAT factor = update(m_updalgo, gram_without_one,
-                                     ncp_mttkrp[i]);
-                m_ncp_factors.set(i, factor);
+                                     ncp_mttkrp[j]);
+                m_ncp_factors.set(j, factor);
             }
         }
     }
