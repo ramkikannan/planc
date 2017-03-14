@@ -36,9 +36,9 @@ class DistAUNTF {
     FMAT *ncp_mttkrp;
     FMAT *ncp_local_mttkrp_t;
     // gram related variables.
-    FMAT *factor_local_grams; // U in the algorithm
+    FMAT factor_local_grams; // U in the algorithm.
     FMAT *factor_global_grams; // G in the algorithm
-    FMAT global_gram;
+    FMAT global_gram; // hadamard of the global_grams
 
     // NTF related variable.
     const int m_low_rank_k;
@@ -57,18 +57,20 @@ class DistAUNTF {
 
     // do the local syrk only for the current updated factor
     // and all reduce only for the current updated factor.
-    void update_local_gram(const int current_mode) {
+    // computes G^(current_mode)
+    void update_global_gram(const int current_mode) {
         // computing U
         mpitic();  // gram
-        factor_local_grams[current_mode] = m_local_ncp_factors.factor(current_mode) *
-                                           m_local_ncp_factors_t.factor(current_mode);
+        // force a ssyrk instead of gemm.
+        factor_local_grams = m_local_ncp_factors.factor(current_mode) *
+                             m_local_ncp_factors_t.factor(current_mode);
         double temp = mpitoc();  // gram
         this->time_stats.compute_duration(temp);
         this->time_stats.gram_duration(temp);
         factor_global_grams[current_mode].zeros();
         //Computing G.
         mpitic();  // allreduce gram
-        MPI_Allreduce(factor_local_grams[current_mode].memptr(),
+        MPI_Allreduce(factor_local_grams.memptr(),
                       factor_global_grams[current_mode].memptr(),
                       this->k * this->k, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 #ifdef __WITH__BARRIER__TIMING__
@@ -82,10 +84,13 @@ class DistAUNTF {
     /*
     * This iterates over all grams and find hadamard of the grams
     */
-    void gram_hadamard() {
+    void gram_hadamard(int current_mode) {
         global_gram.ones();
         for (int i = 0; i < m_order; i++) {
-            global_gram %= factor_global_grams[i];
+            if (i != current_mode) {
+                //%= element-wise multiplication
+                global_gram %= factor_global_grams[i];
+            }
         }
     }
 
@@ -103,7 +108,9 @@ class DistAUNTF {
                       sendcnt, MPI_FLOAT,
                       m_gathered_ncp_factors_t.factor(current_mode).memptr(),
                       recvcnt, MPI_FLOAT,
-                      this->m_mpicomm.fiber(current_mode));
+                      // todo:: check whether it is slice or fiber while running
+                      // and debugging the code.
+                      this->m_mpicomm.slice(current_mode));
         temp = mpitoc();  // allgather toc
         this->time_stats.communication_duration(temp);
         this->time_stats.allgather_duration(temp);
@@ -145,13 +152,14 @@ class DistAUNTF {
         recvmttkrpsize = new UVEC[m_order];
         factor_local_grams = new FMAT[m_order];
         factor_global_grams = new FMAT[m_order];
+        factor_local_grams = arma::zeros<FMAT>(i_k, i_k);
 
         for (int i = 0; i < m_order; i++) {
             UWORD current_size = TENSOR_NUMEL - TENSOR_DIM[i];
             ncp_krp[i] = arma::zeros <FMAT>(current_size, i_k);
             ncp_mttkrp[i] = arma::zeros<FMAT>(TENSOR_DIM[i], i_k);
+            ncp_local_mttkrp_t = arma::zeros<FMAT>(m_local_ncp_factors.factor(i).size());
             recvmttkrpsize[i] = arma::UVEC(TENSOR_DIM[i] * i_k);
-            factor_local_grams[i] = arma::zeros<FMAT>(i_k, i_k);
             factor_global_grams[i] = arma::zeros<FMAT>(i_k, i_k);
         }
     }
@@ -185,7 +193,7 @@ class DistAUNTF {
         //initialize everything.
         //line 3,4,5 of the algorithm
         for (int i = 1; i < m_order; i++) {
-            update_local_gram(i);
+            update_global_gram(i);
             gather_ncp_factor(i);
         }
         for (int current_it = 0; current_it < m_num_it; current_it++) {
@@ -193,14 +201,14 @@ class DistAUNTF {
                 // line 9 and 10 of the algorithm
                 distmttkrp(current_mode);
                 // line 11 of the algorithm
-                gram_hadamard();
+                gram_hadamard(current_mode);
                 // line 12 of the algorithm
                 FMAT factor = update(m_updalgo, global_gram,
                                      ncp_local_mttkrp_t[current_mode]);
                 m_local_ncp_factors_t.set(current_mode, factor);
                 m_local_ncp_factors.set(current_mode, factor.t());
                 // line 13 and 14
-                update_local_gram(current_mode);
+                update_global_gram(current_mode);
                 // line 15
                 gather_ncp_factor(current_mode);
             }

@@ -62,13 +62,13 @@ class NTFMPICommunicator {
         UVEC remainDims = arma::zeros<UVEC>(MPI_CART_DIMS);
         for (int i = 0; i < MPI_CART_DIMS; i++) {
             remainDims[i] = 1;
-            MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_fiber_comm[i]));
+            MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_slice_comm[i]));
             remainDims[i] = 0;
         }
         remainDims = 1;
         for (int i = 0; i < ndims; i++) {
             remainDims[i] = 0;
-            MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_slice_comm[i]));
+            MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_fiber_comm[i]));
             remainDims[i] = 1;
         }
     }
