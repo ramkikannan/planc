@@ -29,6 +29,7 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
     void updateW() {
         tempHtH = arma::conv_to<MAT>::from(this->HtH);
         tempAHtij = arma::conv_to<MAT>::from(this->AHtij);
+        DISTPRINTINFO(PRINTMATINFO(tempAHtij));
         BPPNNLS<MAT, VEC > subProblem(tempHtH, tempAHtij, true);
         subProblem.solveNNLS();
         this->Wt = arma::conv_to<FMAT >::from(subProblem.getSolutionMatrix());
@@ -49,6 +50,7 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
     void updateH() {
         tempWtW = arma::conv_to<MAT>::from(this->WtW);
         tempWtAij = arma::conv_to<MAT>::from(this->WtAij);
+        DISTPRINTINFO(PRINTMATINFO(tempWtAij));
         BPPNNLS<MAT, VEC > subProblem1(tempWtW, tempWtAij, true);
         subProblem1.solveNNLS();
         this->Ht = arma::conv_to<FMAT >::from(subProblem1.getSolutionMatrix());

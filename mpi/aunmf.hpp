@@ -425,7 +425,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 #endif
                 // compute WtA
                 this->distWtA();
-                PRINTROOT(PRINTMATINFO(this->WtAij));
+                // PRINTROOT(PRINTMATINFO(this->WtAij));
 #ifdef MPI_VERBOSE
                 DISTPRINTINFO(PRINTMAT(this->WtAij));
 #endif
@@ -452,7 +452,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 #endif
                 // compute AH
                 this->distAH();
-                PRINTROOT(PRINTMATINFO(this->AHtij));
+                // PRINTROOT(PRINTMATINFO(this->AHtij));
 #ifdef MPI_VERBOSE
                 DISTPRINTINFO(PRINTMAT(this->AHtij));
 #endif
