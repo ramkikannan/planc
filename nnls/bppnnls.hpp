@@ -177,6 +177,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
      */
 
     int solveNNLSMultipleRHS() {
+        printf("Q , R = %d %d\n", this->q, this->r);
         UINT currentIteration = 0;
         UINT MAX_ITERATIONS = this->q * 2;
         MATTYPE Y = -this->CtB;
