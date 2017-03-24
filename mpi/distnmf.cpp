@@ -247,7 +247,7 @@ class DistNMFDriver {
         this->m_sparsity = 0.01;
         this->m_num_it = 10;
         this->m_distio = TWOD;
-        this->m_compute_error = 1;
+        this->m_compute_error = 0;
         this->m_regW = arma::zeros<FVEC>(2);
         this->m_regH = arma::zeros<FVEC>(2);
         this->m_num_k_blocks = 1;

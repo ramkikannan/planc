@@ -6,12 +6,10 @@ set(ARMA_USE_WRAPPER true)
 
 # the settings below will be automatically configured by the rest of this script
 
-set(PACOSS_DIR /home/okaya/pacoss)
-set(PACOSS_INCLUDE_DIR /home/okaya/pacoss/src /home/okaya/tmpi/src)
-set(PACOSS_LIB_DIR /home/okaya/pacoss/lib)
-set(ARMADILLO_LIB_DIR /home/okaya/armadillo-6.600.5/install/usr/lib)
+# set(ARMADILLO_LIB_DIR /home/okaya/armadillo-6.600.5/install/usr/lib)
 
 project(DISTNMF CXX)
+
 set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
 set(NNLS_SRC ${DISTNMF_SOURCE_DIR}/../nnls/)
 message(STATUS "DISTNMF_SOURCE_DIR =  ${DISTNMF_SOURCE_DIR}")
@@ -52,6 +50,15 @@ if(CMAKE_WITH_BARRIER_TIMING)
   add_definitions(-D__WITH__BARRIER__TIMING__=1)
 endif()
 
+OPTION(CMAKE_BUILD_PACOSS "Build with PACOSS" OFF)
+if(CMAKE_WITH_PACOSS)
+  add_definitions(-DUSE_PACOSS=1)
+  set(PACOSS_DIR ${DISTNMF_SOURCE_DIR}/../pacoss)
+  set(PACOSS_INCLUDE_DIR ${DISTNMF_SOURCE_DIR}/../pacoss/src) 
+  set(PACOSS_INCLUDE_DIR ${PACOSS_INCLUDE_DIR} ${DISTNMF_SOURCE_DIR}/../tmpi/src)
+  set(PACOSS_LIB_DIR ${DISTNMF_SOURCE_DIR}/../pacoss/lib)
+endif()
+
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0")
 
 message(STATUS "CMAKE_CXX_FLAGS           = ${CMAKE_CXX_FLAGS}"          )
@@ -64,7 +71,9 @@ message(STATUS "*** NMFLIB_LIBS = ${NMFLIB_LIBS}")
 message(STATUS "")
 
 include_directories(
-  ${PACOSS_INCLUDE_DIR}
+  if(CMAKE_WITH_PACOSS)
+    ${PACOSS_INCLUDE_DIR}
+  endif()
   ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
   ${DISTNMF_SOURCE_DIR}
@@ -77,10 +86,12 @@ include_directories(
   ${MKL_INCLUDE_DIR}
 )
 
-link_directories(
-  ${PACOSS_LIB_DIR}
-  ${ARMADILLO_LIB_DIR}
-)
+
+if(CMAKE_WITH_PACOSS)
+  link_directories(
+    ${PACOSS_LIB_DIR}  
+  )
+endif()
 
 add_executable(distnmf
   distnmf.cpp
@@ -88,4 +99,8 @@ add_executable(distnmf
 
 add_definitions(-std=c++11 -w)
 
-target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss armadillo)
+if(CMAKE_WITH_PACOSS)
+  target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss)
+else()
+  target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss)
+endif()
