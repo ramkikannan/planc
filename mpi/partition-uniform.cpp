@@ -23,17 +23,10 @@ int main(int argc, char **argv)
     printf("Unable to open file %s.\n", argv[1]);
     return 0;
   }
-  std::vector<FILE *> outFile(procCount);
-  for (int i = 0; i < procCount; i++) { 
-    std::string outFileName(argv[1]);
-    outFileName += std::to_string(i);
-    outFile[i] = fopen(outFileName.c_str(), "w");
-    if (outFile[i] == NULL) { 
-      printf("Unable to open file %s.\n", outFileName.c_str());
-      return 0;
-    }
-  }
 
+  std::vector< std::vector<int> > procRowIdxs(procCount);
+  std::vector< std::vector<int> > procColIdxs(procCount);
+  std::vector< std::vector<double> > procVals(procCount);
   printf("Partitioning nonzeros and outputting to files...\n");
   int order, nnz;
   int rowCount, colCount;
@@ -53,10 +46,29 @@ int main(int argc, char **argv)
     int procIdx = procRowIdx * colProcCount + procColIdx;
     int localRowIdx = rowIdx % rowsPerProc;
     int localColIdx = colIdx % colsPerProc;
-    fprintf(outFile[procIdx], "%d %d\n", localRowIdx, localColIdx);
+    procRowIdxs[procIdx].push_back(localRowIdx);
+    procColIdxs[procIdx].push_back(localColIdx);
+    procVals[procIdx].push_back(val);
   }
-  for (int i = 0; i < procCount; i++) { fclose(outFile[i]); }
   fclose(file);
+
+  for (int i = 0; i < procCount; i++) { 
+    printf("Writing the matrix for part %d...\n", i);
+    std::string outFileName(argv[1]);
+    outFileName += std::to_string(i);
+    file = fopen(outFileName.c_str(), "w");
+    if (file == NULL) { 
+      printf("Unable to open file %s.\n", outFileName.c_str());
+      return 0;
+    }
+    auto &curRowIdxs = procRowIdxs[i];
+    auto &curColIdxs = procColIdxs[i];
+    auto &curVals = procVals[i];
+    for (int j = 0; j < curRowIdxs.size(); j++) {
+      fprintf(file, "%d %d %e\n", curRowIdxs[j], curColIdxs[j], curVals[j]);
+    }
+    fclose(file);
+  }
 
   printf("partition-uniform finished.\n");
   return 0;
