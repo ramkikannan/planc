@@ -21,4 +21,26 @@ inline double mpitoc() {
     tictoc_stack.pop();
     return rc;
 }
-#endif
+
+inline void memusage(const int myrank, std::string event) {
+    // Based on the answer from stackoverflow
+    // http://stackoverflow.com/questions/669438/how-to-get-memory-usage-at-run-time-in-c
+    long rss = 0L;
+    FILE* fp = NULL;
+    if ((fp = fopen( "/proc/self/statm", "r" )) == NULL )
+        return;
+    if (fscanf(fp, "%*s%ld", &rss) != 1) {
+        fclose(fp);
+        return;
+    }
+    fclose(fp);
+    long current_proc_mem = (size_t)rss * (size_t)sysconf(_SC_PAGESIZE);
+    // INFO << myrank << "::mem::" << current_proc_mem << endl;
+    long allprocmem;
+    MPI_Reduce(&current_proc_mem, &allprocmem, 1, MPI_LONG,
+               MPI_SUM, 0, MPI_COMM_WORLD);
+    if (myrank == 0) {
+        INFO << event << " total rss::" << allprocmem << endl;
+    }
+}
+#endif  // MPI_DISTUTILS_HPP_

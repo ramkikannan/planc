@@ -20,10 +20,13 @@ class DistNMFDriver {
     int m_num_it;
     int m_pr;
     int m_pc;
+    FVEC m_regW;
+    FVEC m_regH;
     distalgotype m_nmfalgo;
     float m_sparsity;
     iodistributions m_distio;
     uint m_compute_error;
+    int m_num_k_blocks;
     static const int kprimeoffset = 17;
 
     void printConfig() {
@@ -32,12 +35,13 @@ class DistNMFDriver {
              << "::n::" << this->m_globaln << "::t::" << this->m_num_it
              << "::pr::" << this->m_pr << "::pc::" << this->m_pc
              << "::error::" << this->m_compute_error
-             << "::distio::" << this->m_distio << endl;
-    }
-  public:
-    DistNMFDriver(int argc, char *argv[]) {
-        this->m_argc = argc;
-        this->m_argv = argv;
+             << "::distio::" << this->m_distio
+             << "::regW::" << "l2::" << this->m_regW(0)
+             << "::l1::" << this->m_regW(1)
+             << "::regH::" << "l2::" << this->m_regH(0)
+             << "::l1::" << this->m_regH(1)
+             << "::num_k_blocks::" << m_num_k_blocks
+             << endl;
     }
     template<class NMFTYPE>
     void callDistNMF1D() {
@@ -81,8 +85,12 @@ class DistNMFDriver {
         arma::arma_rng::set_seed(random_sieve(mpicomm.rank() + kprimeoffset));
         FMAT W = arma::randu<FMAT>(this->m_globalm / mpicomm.size(), this->m_k);
         FMAT H = arma::randu<FMAT>(this->m_globaln / mpicomm.size(), this->m_k);
+        sleep(10);
         MPI_Barrier(MPI_COMM_WORLD);
+        memusage(mpicomm.rank(), "b4 constructor ");
         NMFTYPE nmfAlgorithm(Arows, Acols, W, H, mpicomm);
+        sleep(10);
+        memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
@@ -147,6 +155,20 @@ class DistNMFDriver {
         arma::arma_rng::set_seed(mpicomm.rank());
         FMAT W = arma::randu<FMAT >(this->m_globalm / mpicomm.size(), this->m_k);
         FMAT H = arma::randu<FMAT >(this->m_globaln / mpicomm.size(), this->m_k);
+#ifdef BUILD_SPARSE
+        // sometimes for really very large matrices starting w/
+        // rand initialization hurts ANLS BPP running time. For a better
+        // initializer we run couple of iterations of HALS.
+        if (m_nmfalgo == ANLSBPP2D) {
+          DistHALS<SP_FMAT> lrinitializer(A, W, H, mpicomm, this->m_num_k_blocks);
+          lrinitializer.num_iterations(4);
+          lrinitializer.algorithm(HALS2D);
+          lrinitializer.computeNMF();
+          W = lrinitializer.getLeftLowRankFactor();
+          H = lrinitializer.getRightLowRankFactor();
+        }
+#endif
+
 #ifdef MPI_VERBOSE
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
              << PRINTMATINFO(W) << endl;
@@ -154,10 +176,17 @@ class DistNMFDriver {
              << PRINTMATINFO(H) << endl;
 #endif
         MPI_Barrier(MPI_COMM_WORLD);
-        NMFTYPE nmfAlgorithm(A, W, H, mpicomm);
+        sleep(10);
+        memusage(mpicomm.rank(), "b4 constructor ");
+        NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
+        sleep(10);
+        memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
+        nmfAlgorithm.regW(this->m_regW);
+        nmfAlgorithm.regH(this->m_regH);
+        MPI_Barrier(MPI_COMM_WORLD);
         MPI_Barrier(MPI_COMM_WORLD);
         nmfAlgorithm.computeNMF();
         if (!m_outputfile_name.empty()) {
@@ -166,24 +195,18 @@ class DistNMFDriver {
                             m_outputfile_name);
         }
     }
-    void print_usage() {
-        INFO << "for short arguments like -i no equals sign"
-             << "for long arguments like --pr give key=value pair"
-             << "-a 0 for MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP " << endl;
-        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i rand_uniform/rand_normal/rand_lowrank "
-             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"  << endl;
+    void parseRegularizedParameter(const char *input, FVEC *reg) {
+        stringstream ss(input);
+        string s;
+        int i = 0;
+        float temp;
+        while (getline(ss, s, ' ')) {
+            temp = ::atof(s.c_str());
+            (*reg)(i) = temp;
+            i++;
+        }
     }
+  public:
     void parseCommandLine() {
         int opt, long_index;
         this->m_nmfalgo = static_cast<distalgotype>(2);  // defaults to ANLS/BPP
@@ -195,6 +218,9 @@ class DistNMFDriver {
         this->m_num_it = 10;
         this->m_distio = TWOD;
         this->m_compute_error = 0;
+        this->m_regW = arma::zeros<FVEC>(2);
+        this->m_regH = arma::zeros<FVEC>(2);
+        this->m_num_k_blocks = 1;
         while ((opt = getopt_long(this->m_argc, this->m_argv,
                                   "a:i:e:k:m:n:o:t:s:", distnmfopts,
                                   &long_index)) != -1) {
@@ -236,6 +262,15 @@ class DistNMFDriver {
             case PROCCOLS:
                 this->m_pc = atoi(optarg);
                 break;
+            case REGWFLAG:
+                parseRegularizedParameter(optarg, &this->m_regW);
+                break;
+            case REGHFLAG:
+                parseRegularizedParameter(optarg, &this->m_regH);
+                break;
+            case NUMKBLOCKS:
+                this->m_num_k_blocks = atoi(optarg);
+                break;
             default:
                 cout << "failed while processing argument:" << optarg << endl;
                 print_usage();
@@ -247,7 +282,6 @@ class DistNMFDriver {
         } else {
             this->m_distio = TWOD;
         }
-
         printConfig();
         switch (this->m_nmfalgo) {
         case MU2D:
@@ -278,6 +312,33 @@ class DistNMFDriver {
             callDistNMF1D<DistNaiveANLSBPP<FMAT> >();
 #endif
         }
+    }
+    DistNMFDriver(int argc, char *argv[]) {
+        this->m_argc = argc;
+        this->m_argv = argv;
+    }
+
+    void print_usage() {
+        INFO << "for short arguments like -i no equals sign"
+             << "for long arguments like --pr give key=value pair"
+             << "-a 0 for MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP " << endl;
+        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i rand_uniform/rand_normal/rand_lowrank "
+             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
+        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i Ainput -t 10 --pr 3 --pc 2"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
+        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
+        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"
+             <<  "--regW=\"0.0001 0\" --regH=\"0 0.0001\""  << endl;
     }
 };
 

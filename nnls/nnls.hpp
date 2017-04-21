@@ -44,7 +44,15 @@ class NNLS {
         this->inputProd = prodSent;
         if (this->inputProd) {
             this->CtC = inputMat;
-            this->CtB = RHS;
+            // bug raised by oguz
+            if (RHS.n_cols==1){
+                // user has called RHS as mattype instead 
+                // of vec type. Take just the first col
+                // of CtB in this case. 
+                this->Ctb = RHS.col(0);
+            } else {
+                this->CtB = RHS;
+            }
             this->q = RHS.n_rows;
         } else {
             this->CtC = inputMat.t() * inputMat;
