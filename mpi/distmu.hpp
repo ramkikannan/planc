@@ -19,16 +19,18 @@ class DistMU : public DistAUNMF<INPUTMATTYPE> {
         // w_ij = w_ij .* (AH)_ij/(WHtH)_ij
         // Here ij is the element of W matrix.
         WHtH = (this->W * this->HtH) + EPSILON;
-        this->W = (this->W % this->AHtij.t()) / WHtH;
 #ifdef MPI_VERBOSE
         DISTPRINTINFO("::WHtH::" << endl << this->WHtH);
+#endif
+        this->W = (this->W % this->AHtij.t()) / WHtH;
+        DISTPRINTINFO("MU::updateW::HtH::" << PRINTMATINFO(this->HtH)\
+                      << "::WHtH::" << PRINTMATINFO(WHtH)\
+                      << "::AHtij::" << PRINTMATINFO(this->AHtij) \
+                      << "::W::" << PRINTMATINFO(this->W));
         DISTPRINTINFO("MU::updateW::HtH::" << norm(this->HtH, "fro")\
                       << "::WHtH::" << norm(WHtH, "fro")\
                       << "::AHtij::" << norm(this->AHtij, "fro") \
                       << "::W::" << norm(this->W, "fro"));
-
-#endif
-
         /*localWnorm = sum(this->W % this->W);
         mpitic();
         MPI_Allreduce(localWnorm.memptr(), Wnorm.memptr(), this->k, MPI_FLOAT,
@@ -54,21 +56,25 @@ class DistMU : public DistAUNMF<INPUTMATTYPE> {
         this->H = (this->H % this->WtAij.t()) / HWtW;
 #ifdef MPI_VERBOSE
         DISTPRINTINFO("::HWtW::" << endl << HWtW);
+#endif
+        // fixNumericalError<FMAT>(&this->H);
+        DISTPRINTINFO("MU::updateH::WtW::" << PRINTMATINFO(this->WtW)\
+                      << "::HWtW::" << PRINTMATINFO(HWtW)\
+                      << "::WtAij::" << PRINTMATINFO(this->WtAij)\
+                      << "::H::" << PRINTMATINFO(this->H));
         DISTPRINTINFO("MU::updateH::WtW::" << norm(this->WtW, "fro")\
                       << "::HWtW::" << norm(HWtW, "fro")\
                       << "::WtAij::" << norm(this->WtAij, "fro")\
                       << "::H::" << norm(this->H, "fro"));
-
-#endif
-        // fixNumericalError<FMAT>(&this->H);
         this->Ht = this->H.t();
     }
 
   public:
     DistMU(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-           const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
+           const FMAT &rightlowrankfactor, const MPICommunicator& communicator,
+           const int numkblks):
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
-                                rightlowrankfactor, communicator) {
+                                rightlowrankfactor, communicator, numkblks) {
         WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);
         HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
         localWnorm.zeros(this->k);

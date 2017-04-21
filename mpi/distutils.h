@@ -15,8 +15,9 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
 // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
 // mpirun -np 12 distnmf algotype lowrank Afile  outputfile numIteration pr pc
-#define PROCROWS        1002
-#define PROCCOLS        1003
+#define PROCROWS        2002
+#define PROCCOLS        2003
+#define NUMKBLOCKS      2004
 
 // we are not supporting initfiles for distnmf.
 // consistent initializations will be distIO
@@ -32,6 +33,9 @@ struct option distnmfopts[] = {
     {"sparsity",    optional_argument, 0, 's'},
     {"pr",          optional_argument, 0, PROCROWS},
     {"pc",          optional_argument, 0, PROCCOLS},
+    {"regw",        optional_argument, 0, REGWFLAG},
+    {"regh",        optional_argument, 0, REGHFLAG},
+    {"numkblocks",  optional_argument, 0, NUMKBLOCKS},
     {0,             0,                 0,  0 }
 };
 
@@ -43,9 +47,13 @@ struct option distnmfopts[] = {
 #define NUMROWPROCS this->m_mpicomm.pr()
 #define NUMCOLPROCS this->m_mpicomm.pc()
 
+#define MPITIC mpitic()
+#define MPITOC mpitoc()
+
+// #define PRINTROOT(MSG) 
 #define PRINTROOT(MSG) if (ISROOT) INFO << "::" << __PRETTY_FUNCTION__ \
-                                        << "::" << __LINE__ \
-                                        << "::" << MSG << endl;
+                                       << "::" << __LINE__ \
+                                       << "::" << MSG << endl;
 #define DISTPRINTINFO(MSG) INFO << MPI_RANK << "::" << __PRETTY_FUNCTION__ \
                                 << "::" << __LINE__ \
                                 << "::" << MSG << endl;
