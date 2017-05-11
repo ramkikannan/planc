@@ -1,0 +1,11 @@
+# Specify the build type. DEBUG or RELEASE
+BUILD = RELEASE
+
+# Specify the MPI C++11 compiler, i.e., mpicxx
+CPP = mpicxx
+
+# Provide the path for TMPI source files
+TMPI_SRC_FOLDER = /.../tmpi/src
+
+# (Optional) Provide the root folder of PaToH for hypergraph partitioning interface
+PATOH_FOLDER = /.../patoh/3.2

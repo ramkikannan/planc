@@ -1,0 +1,5 @@
+# Specify the build type. DEBUG or RELEASE
+BUILD=RELEASE
+
+# Specify the MPI C++ compiler, i.e., mpicxx
+CPP=mpicxx
