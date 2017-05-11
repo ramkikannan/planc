@@ -47,9 +47,13 @@ struct option distnmfopts[] = {
 #define NUMROWPROCS this->m_mpicomm.pr()
 #define NUMCOLPROCS this->m_mpicomm.pc()
 
+#define MPITIC mpitic()
+#define MPITOC mpitoc()
+
+// #define PRINTROOT(MSG) 
 #define PRINTROOT(MSG) if (ISROOT) INFO << "::" << __PRETTY_FUNCTION__ \
-                                        << "::" << __LINE__ \
-                                        << "::" << MSG << endl;
+                                       << "::" << __LINE__ \
+                                       << "::" << MSG << endl;
 #define DISTPRINTINFO(MSG) INFO << MPI_RANK << "::" << __PRETTY_FUNCTION__ \
                                 << "::" << __LINE__ \
                                 << "::" << MSG << endl;

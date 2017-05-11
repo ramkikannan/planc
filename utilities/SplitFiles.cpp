@@ -127,7 +127,6 @@ void splitandWrite(sp_fmat A, int numSplits, char *outputDir, char *suffixStr, i
                             int digits_sign = 1;
                             int digits_dot = 1; // 1.2
 
-
                             int division_extra_space = 1;
                             int width = prec + exponent_digits + digits_sign
                                         + exponent_sign + digits_dot

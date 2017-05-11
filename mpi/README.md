@@ -41,53 +41,9 @@ Other Macros
 
 * Code level macros - Defined in distutils.h
 
-  - MPI_VERBOSE - Be doubly sure about what you do. It prints all intermediary matrices.
+  MPI_VERBOSE - Be doubly sure about what you do. It prints all intermediary matrices.
 			   Try this only for very very small matrix that is of size less than 10.
-  - WRITE_RAND_INPUT - for dumping the generated random matrix
-
-Command Line options
-====================
-
-The single alphabet is called short option and the string equivalent is called long option. 
-For eg., "input" is the long equivalent of short option 'i'. Typically long option is passed
-with "--algo=3" and short option with "-a 0". The following is the brief description of 
-the various command line options. 
-
-* {"input",'i'} - Either it can be a path to a sparse/dense 
-matrix file or synthetically generate matrix. Synthetic matrices can be 
-generated as rand_normal, rand_uniform or rand_lowrank
-* {"algo",'a'} - We support four algorithms. 
-  0 - Multiplicative update (MU)
-  1 - Hierarchical Alternating Least Squares (HALS)
-  2 - ANLS/BPP 2D implementation
-  3 - Naive ANLS/BPP 
-* {"error",'e'} - Must be called as -e 1 to compute error
-after every iteration.
-* {"lowrank",'k'} - Low rank 'k'. 
-* {"iter",'t'} - Number of iterations
-* {"rows",'m'} - This is applicable only for synthetic matrices. 
-* {"columns",'n'} - This is applicable only for synthetic matrices. 
-* {"output",'o'} - File name to dump W and H matrix. 
-It will saved as outputfilename_W_MPIRANK and outputfilename_H_MPIRANK. 
-* {"sparsity",'s'} - Density for the synthetic sparse matrix. 
-* {"pr"} - Number of 2D rows
-* {"pc",} - Number of 2D cols
-
-Few usage examples are
-Sparse synthetic distributed NMF on 96 processors 
-````mpirun -np 96 ./distnmf -a 2 -m 207360 -n 138240 -k 50 --pr=12 --pc=8 -i rand_lowrank -t 30  -s 0.001````
-
-Dense synthetic distributed NMF. Remember you have to compile dense nmf and sparse nmf differently. 
-Look for build instructions above. 
-````mpirun -np 96 ./distnmf -a 0 -m 207360 -n 138240 -k 200 --pr=8 --pc=12 -i rand_lowrank -t 10````
-
-Sparse real world distributed NMF on 864 processors
-````mpirun -np 864 ./distnmf -a 3  -k 50 --pr=36 --pc=24 -i /lustre/atlas/proj-shared/csc209/ramki/sparserw/nbpp/864/A -t 30````
-
-Dense real world distributed NMF. In this case, we are running a distributed NMF built for dense matrices.
-Also the input matrix is double 1D distributed which is differented from 2D input matrix. Refer the paper 
-for details. The preprocessing scripts can be found under utilities/. 
-````mpirun -np 1536 ./distnmf -a 3 -m 1299456 -n 3456 -k 50 --pr=1536 --pc=1 -i /lustre/atlas/proj-shared/csc209/ramki/videorw/nbpp/1536cores/A -t 30````
+  WRITE_RAND_INPUT - for dumping the generated random matrix
 
 Output interpretation
 ======================

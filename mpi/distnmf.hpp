@@ -6,7 +6,9 @@
 #include "mpicomm.hpp"
 #include "nmf.hpp"
 #include "distnmftime.hpp"
-
+#ifdef USE_PACOSS
+#include "pacoss.h"
+#endif
 
 /*
  * There are totally prxpc process.
@@ -23,6 +25,12 @@ template <typename INPUTMATTYPE>
 class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
   const MPICommunicator& m_mpicomm;
+#ifdef USE_PACOSS
+  Pacoss_Communicator<float> *m_rowcomm;
+  Pacoss_Communicator<float> *m_colcomm;
+#endif
+  UWORD m_ownedm;
+  UWORD m_ownedn;
   UWORD m_globalm;
   UWORD m_globaln;
   double m_globalsqnormA;
@@ -42,10 +50,18 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     this->m_globaln = 0;
     MPI_Allreduce(&sqnorma, &(this->m_globalsqnormA), 1, MPI_DOUBLE,
                   MPI_SUM, MPI_COMM_WORLD);
+    this->m_ownedm = this->W.n_rows;
+    this->m_ownedn = this->H.n_rows;
+#ifdef USE_PACOSS
+    // TODO: This is a hack for now. Talk to Ramki.
+    this->m_globalm = this->W.n_rows * this->m_mpicomm.size(); 
+    this->m_globaln = this->H.n_rows * this->m_mpicomm.size(); 
+#else
     MPI_Allreduce(&(this->m), &(this->m_globalm), 1, MPI_INT, MPI_SUM,
                   this->m_mpicomm.commSubs()[0]);
     MPI_Allreduce(&(this->n), &(this->m_globaln), 1, MPI_INT, MPI_SUM,
                   this->m_mpicomm.commSubs()[1]);
+#endif
     if (ISROOT) {
       INFO << "globalsqnorma::" << this->m_globalsqnormA
            << "::globalm::" << this->m_globalm
@@ -56,6 +72,10 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     Wnorm.zeros(this->k);
   }
 
+#ifdef USE_PACOSS
+  void set_rowcomm(Pacoss_Communicator<float> *rowcomm) { this->m_rowcomm = rowcomm; }
+  void set_colcomm(Pacoss_Communicator<float> *colcomm) { this->m_colcomm = colcomm; }
+#endif
   const int globalm() const {return m_globalm;}
   const int globaln() const {return m_globaln;}
   const double globalsqnorma() const {return m_globalsqnormA;}

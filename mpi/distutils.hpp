@@ -12,6 +12,24 @@ inline void mpitic() {
     tictoc_stack.push(clock());
 }
 
+inline void mpitic(int rank) {
+    double temp = clock();
+    cout << "tic::" << rank << "::" << temp << endl;
+    tictoc_stack.push(temp);
+}
+
+inline double mpitoc(int rank) {
+#ifdef __WITH__BARRIER__TIMING__
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    cout << "toc::" << rank << "::"
+         << tictoc_stack.top() << endl;
+    double rc = (static_cast<double>
+                 (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
+    tictoc_stack.pop();
+    return rc;
+}
+
 inline double mpitoc() {
 #ifdef __WITH__BARRIER__TIMING__
     MPI_Barrier(MPI_COMM_WORLD);
