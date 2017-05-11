@@ -23,7 +23,9 @@ include(CheckLibraryExists)
 set(NMFLIB_OS unix)
 include(${ARMADILLO_INCLUDE_DIR}/../ArmadilloConfig.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../ArmadilloConfigVersion.cmake)
-include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindMKL.cmake)
+if(NOT CMAKE_IGNORE_MKL)
+  include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindMKL.cmake)
+endif()
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindOpenBLAS.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindBLAS.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindLAPACK.cmake)
@@ -81,9 +83,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DMKL_ILP64 -m64" CA
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-as-needed")
 
 #BOOST package needed for activeset NNLS
-set(BOOST false)
+#set(BOOST false)
 #As advised by Wlliam Renaud note dated 4/22. There is an issue on Rhea
 #in which the system boost is found before the version in modules.
 #Ignore system boost and use module system boost
-set(Boost_NO_BOOST_CMAKE TRUE)
-find_package(Boost REQUIRED)
+#set(Boost_NO_BOOST_CMAKE TRUE)
+#find_package(Boost REQUIRED)

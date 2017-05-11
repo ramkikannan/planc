@@ -10,7 +10,7 @@ set(ARMA_USE_WRAPPER true)
 
 project(DISTNMF CXX)
 
-OPTION(CMAKE_BUILD_CRAY_EOS "Build for cray eos" OFF)
+OPTION(CMAKE_IGNORE_MKL "Build ignoring MKL" OFF)
 
 set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
 set(NNLS_SRC ${DISTNMF_SOURCE_DIR}/../nnls/)
@@ -20,12 +20,12 @@ message(STATUS "NMFLIB_COMMON =  ${NMFLIB_COMMON}")
 include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
 #BOOST package needed for activeset NNLS
-set(BOOST false)
+#set(BOOST false)
 #As advised by Wlliam Renaud note dated 4/22. There is an issue on Rhea
 #in which the system boost is found before the version in modules.
 #Ignore system boost and use module system boost
-set(Boost_NO_BOOST_CMAKE TRUE)
-find_package(Boost REQUIRED)
+#set(Boost_NO_BOOST_CMAKE TRUE)
+#find_package(Boost REQUIRED)
 
 find_package(MPI REQUIRED)
 
