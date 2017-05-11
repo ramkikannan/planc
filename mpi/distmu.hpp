@@ -63,16 +63,16 @@ class DistMU : public DistAUNMF<INPUTMATTYPE> {
         // fixNumericalError<FMAT>(&this->H);
         this->Ht = this->H.t();
     }
-
-  public:
-    DistMU(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-           const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
-        DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
-                                rightlowrankfactor, communicator) {
-        WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);
-        HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
-        localWnorm.zeros(this->k);
-        Wnorm.zeros(this->k);
-    }
+ public:
+  DistMU(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
+         const FMAT &rightlowrankfactor, const MPICommunicator& communicator,
+         const int numkblks):
+    DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
+                            rightlowrankfactor, communicator, numkblks) {
+    WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);
+    HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
+    localWnorm.zeros(this->k);
+    Wnorm.zeros(this->k);
+  }
 };
 #endif  // MPI_DISTMU_HPP_

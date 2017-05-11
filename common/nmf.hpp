@@ -27,7 +27,7 @@ class NMF {
     T A;
     // low rank factors with size mxk and nxk respectively.
     FMAT W, H;
-    FMAT Winit,Hinit;
+    FMAT Winit, Hinit;
     UINT m, n, k;
     /*
      * Collected statistics are
@@ -40,6 +40,10 @@ class NMF {
     bool cleared;
     int m_num_iterations;
     std::string input_file_name;
+    // The regularization is a vector of two values. The first value specifies
+    // L2 regularization values and the second is L1 regularization.
+    FVEC m_regW;
+    FVEC m_regH;
 
     void collectStats(int iteration) {
         this->normW = norm(this->W, "fro");
@@ -54,6 +58,29 @@ class NMF {
         this->stats(iteration, 6) = this->densityH;
         this->stats(iteration, 7) = this->densityW;
         this->stats(iteration, 8) = this->objective_err;
+    }
+
+    /*
+    * For both L1 and L2 regularizations we only adjust the
+    * HtH or WtW. The regularization is a vector of two values.
+    * The first value specifies L2 regularization values
+    * and the second is L1 regularization.
+    * Mostly we expect
+    */
+
+    void applyReg(const FVEC &reg, FMAT *AtA) {
+        // Frobenius norm regularization
+        if (reg(0) > 0) {
+            FMAT identity = arma::eye<FMAT>(this->k,this->k);
+            float lambda_l2 = reg(0);
+            (*AtA) = (*AtA) + 2 *  lambda_l2 * identity;
+        }
+        // L1 - norm regularization
+        if (reg(1) > 0) {
+            FMAT onematrix = arma::ones<FMAT>(this->k,this->k);
+            float lambda_l1 = reg(1);
+            (*AtA) = (*AtA) + 2 * lambda_l1 * onematrix ;
+        }
     }
 
   private:
@@ -74,6 +101,8 @@ class NMF {
         this->k = rank;
         this->W = arma::randu<FMAT>(m, k);
         this->H = arma::randu<FMAT>(n, k);
+        this->m_regW = arma::zeros<FVEC>(2);
+        this->m_regH = arma::zeros<FVEC>(2);
         // make the random MATrix positive
         // absMAT<FMAT>(W);
         // absMAT<FMAT>(H);
@@ -92,6 +121,8 @@ class NMF {
         this->m = A.n_rows;
         this->n = A.n_cols;
         this->k = W.n_cols;
+        this->m_regW = arma::zeros<FVEC>(2);
+        this->m_regH = arma::zeros<FVEC>(2);
         // other initializations
         this->otherInitializations();
         INFO << "NMF.hpp::constructor over" << endl;
@@ -183,6 +214,10 @@ class NMF {
                               - 2 * trace(this->H.t() * AtW) + trace(WtW * HtH);
     }
     void num_iterations(const int it) {this->m_num_iterations = it;}
+    void regW(const FVEC &iregW) {this->m_regW = iregW;}
+    void regH(const FVEC &iregH) {this->m_regH = iregH;}
+    FVEC regW(){return this->m_regW;}
+    FVEC regH(){return this->m_regH;}
     const int num_iterations() const {return m_num_iterations;}
     ~NMF() {
         clear();
@@ -197,4 +232,4 @@ class NMF {
         }
     }
 };
-#endif // COMMON_NMF_HPP_
+#endif  // COMMON_NMF_HPP_

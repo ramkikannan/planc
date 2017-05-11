@@ -59,9 +59,10 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
   public:
     DistANLSBPP(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
                 const FMAT &rightlowrankfactor,
-                const MPICommunicator& communicator):
+                const MPICommunicator& communicator,
+                const int numkblks):
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
-                                rightlowrankfactor, communicator) {
+                                rightlowrankfactor, communicator, numkblks) {
         localWnorm.zeros(this->k);
         Wnorm.zeros(this->k);
         PRINTROOT("DistANLSBPP() constructor successful");
