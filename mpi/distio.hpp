@@ -171,6 +171,7 @@ class DistIO {
 #endif
     }
 
+#ifdef BUILD_SPARSE
     void uniform_dist_matrix(MATTYPE &A) {
         // make the matrix of ONED distribution
         // sometimes in the pacoss it gives nearly equal
@@ -250,6 +251,7 @@ class DistIO {
         A.clear();
         A = A_new;
     }
+#endif
   public:
     DistIO<MATTYPE>(const MPICommunicator &mpic, const iodistributions &iod):
         m_mpicomm(mpic), m_distio(iod) {
@@ -313,20 +315,20 @@ class DistIO {
                 sr << file_name << "rows_" << MPI_SIZE << "_" << MPI_RANK;
 #ifdef BUILD_SPARSE
                 m_Arows.load(sr.str(), arma::coord_ascii);
+                uniform_dist_matrix(m_Arows);
 #else
                 m_Arows.load(sr.str(), arma::raw_ascii);
 #endif
-                uniform_dist_matrix(m_Arows);
             }
             if (m_distio == ONED_COL || m_distio == ONED_DOUBLE) {
                 sc << file_name << "cols_" << MPI_SIZE << "_" << MPI_RANK;
 #ifdef BUILD_SPARSE
                 m_Acols.load(sc.str(), arma::coord_ascii);
+                uniform_dist_matrix(m_Acols);
 #else
                 m_Acols.load(sc.str(), arma::raw_ascii);
 #endif
                 m_Acols = m_Acols.t();
-                uniform_dist_matrix(m_Acols);
             }
             if (m_distio == TWOD) {
                 //sr << file_name << "_" << MPI_SIZE << "_" << MPI_RANK;
@@ -350,10 +352,10 @@ class DistIO {
                     m_A = temp_spfmat;
                 }
                 // m_A.load(sr.str(), arma::coord_ascii);
+                uniform_dist_matrix(m_A);
 #else
                 m_A.load(sr.str(), arma::raw_ascii);
 #endif
-                uniform_dist_matrix(m_A);
             }
         }
     }

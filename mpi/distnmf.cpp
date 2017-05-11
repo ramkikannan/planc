@@ -60,12 +60,6 @@ class DistNMFDriver {
             dio.readInput(m_Afile_name);
         }
 #ifdef BUILD_SPARSE
-        // SP_FMAT Arows(dio.Arows().row_indices, dio.Arows().col_ptrs,
-        //               dio.Arows().values,
-        //               dio.Arows().n_rows, dio.Arows().n_cols);
-        // SP_FMAT Acols(dio.Acols().row_indices, dio.Acols().col_ptrs,
-        //               dio.Acols().values,
-        //               dio.Acols().n_rows, dio.Acols().n_cols);
         SP_FMAT Arows(dio.Arows());
         SP_FMAT Acols(dio.Acols());
 #else
@@ -198,6 +192,7 @@ class DistNMFDriver {
           W = lrinitializer.getLeftLowRankFactor();
           H = lrinitializer.getRightLowRankFactor();
         }
+#endif
 #endif
 
 #ifdef MPI_VERBOSE
@@ -361,6 +356,7 @@ class DistNMFDriver {
     DistNMFDriver(int argc, char *argv[]) {
         this->m_argc = argc;
         this->m_argv = argv;
+        this->parseCommandLine();
     }
 
     void print_usage() {
@@ -389,5 +385,4 @@ class DistNMFDriver {
 
 int main(int argc, char* argv[]) {
     DistNMFDriver dnd(argc, argv);
-    dnd.parseCommandLine();
 }
