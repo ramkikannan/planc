@@ -13,8 +13,8 @@ inline void mpitic() {
 }
 
 inline void mpitic(int rank) {
-    double temp = clock();
-    cout << "tic::" << rank << "::" << temp << endl;
+    double temp = clock();    
+    std::cout << "tic::" << rank << "::" << temp << std::endl;
     tictoc_stack.push(temp);
 }
 
@@ -22,8 +22,8 @@ inline double mpitoc(int rank) {
 #ifdef __WITH__BARRIER__TIMING__
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    cout << "toc::" << rank << "::"
-         << tictoc_stack.top() << endl;
+    std::cout << "toc::" << rank << "::"
+         << tictoc_stack.top() << std::endl;
     double rc = (static_cast<double>
                  (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
     tictoc_stack.pop();
@@ -53,12 +53,12 @@ inline void memusage(const int myrank, std::string event) {
     }
     fclose(fp);
     long current_proc_mem = (size_t)rss * (size_t)sysconf(_SC_PAGESIZE);
-    // INFO << myrank << "::mem::" << current_proc_mem << endl;
+    // INFO << myrank << "::mem::" << current_proc_mem << std::endl;
     long allprocmem;
     MPI_Reduce(&current_proc_mem, &allprocmem, 1, MPI_LONG,
                MPI_SUM, 0, MPI_COMM_WORLD);
     if (myrank == 0) {
-        INFO << event << " total rss::" << allprocmem << endl;
+        INFO << event << " total rss::" << allprocmem << std::endl;
     }
 }
 #endif  // MPI_DISTUTILS_HPP_

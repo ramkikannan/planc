@@ -21,39 +21,40 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
     if (!AfileName.empty()) {
 #ifdef BUILD_SPARSE
         A.load(AfileName, arma::coord_ascii);
-        INFO << "Successfully loaded the input matrix" << endl;
+        INFO << "Successfully loaded the input matrix" << std::endl;
 #else
         tic();
         A.load(AfileName, arma::raw_ascii);
         t2 = toc();
         INFO << "Successfully loaded dense input matrix. A=" << PRINTMATINFO(A)
-             << " took=" << t2 << endl;
+             << " took=" << t2 << std::endl;
         m = A.n_rows;
         n = A.n_cols;
 #endif
     } else {
-        A = arma::randu<FMAT >(m, n);
-        INFO << "generated random matrix A=" << PRINTMATINFO(A) << endl;
+        A = arma::randu<FMAT>(m, n);
+        // A.save("rand_uniform.csv",arma::raw_ascii);
+        INFO << "generated random matrix A=" << PRINTMATINFO(A) << std::endl;
     }
     FMAT W, H;
     if (!WinitFileName.empty()) {
-        INFO << "Winitfilename = " << WinitFileName << endl;
+        INFO << "Winitfilename = " << WinitFileName << std::endl;
         W.load(WinitFileName, arma::raw_ascii);
-        INFO << "Loaded W." << PRINTMATINFO(W) << endl;
+        INFO << "Loaded W." << PRINTMATINFO(W) << std::endl;
     }
     if (!HinitFileName.empty()) {
-        INFO << "HInitfilename=" << HinitFileName << endl;
+        INFO << "HInitfilename=" << HinitFileName << std::endl;
         H.load(HinitFileName, arma::raw_ascii);
-        INFO << "Loaded H." << PRINTMATINFO(H) << endl;
+        INFO << "Loaded H." << PRINTMATINFO(H) << std::endl;
     }
     if (!WinitFileName.empty()) {
         NMFTYPE nmfAlgorithm(A, W, H);
         nmfAlgorithm.num_iterations(numIt);
-        INFO << "completed constructor" << endl;
+        INFO << "completed constructor" << std::endl;
         tic();
         nmfAlgorithm.computeNMF();
         t2 = toc();
-        INFO << "time taken:" << t2 << endl;
+        INFO << "time taken:" << t2 << std::endl;
         if (!WfileName.empty()) {
             nmfAlgorithm.getLeftLowRankFactor().save(WfileName, arma::raw_ascii);
         }
@@ -63,11 +64,11 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
     } else {
         NMFTYPE nmfAlgorithm(A, k);
         nmfAlgorithm.num_iterations(numIt);
-        INFO << "completed constructor" << PRINTMATINFO(A) << endl;
+        INFO << "completed constructor" << PRINTMATINFO(A) << std::endl;
         tic();
         nmfAlgorithm.computeNMF();
         t2 = toc();
-        INFO << "time taken:" << t2 << endl;
+        INFO << "time taken:" << t2 << std::endl;
         if (!WfileName.empty()) {
             nmfAlgorithm.getLeftLowRankFactor().save(WfileName,
                     arma::raw_ascii);
@@ -83,28 +84,28 @@ void incrementalGraph(std::string AfileName, std::string WfileName) {
     SP_FMAT A;
     UWORD m, n, nnz;
     A.load(AfileName, arma::coord_ascii);
-    INFO << "Loaded input matrix A=" << PRINTMATINFO(A) << endl;
+    INFO << "Loaded input matrix A=" << PRINTMATINFO(A) << std::endl;
     FMAT W, H;
     W.load(WfileName, arma::raw_ascii);
-    INFO << "Loaded input matrix W=" << PRINTMATINFO(W) << endl;
+    INFO << "Loaded input matrix W=" << PRINTMATINFO(W) << std::endl;
     H.ones(A.n_cols, W.n_cols);
     BPPNMF<SP_FMAT > bppnmf(A, W, H);
     H = bppnmf.solveScalableNNLS();
-    OUTPUT << H << endl;
+    OUTPUT << H << std::endl;
 }
 #endif
 void print_usage() {
     cout << "Usage1 : NMFLibrary --algo=[0/1/2] --lowrank=20 "
-         << "--input=filename --iter=20" << endl;
+         << "--input=filename --iter=20" << std::endl;
     cout << "Usage2 : NMFLibrary --algo=[0/1/2] --lowrank=20 "
-         << "--rows=20000 --columns=10000 --iter=20" << endl;
+         << "--rows=20000 --columns=10000 --iter=20" << std::endl;
     cout << "Usage3 : NMFLibrary --algo=[0/1/2] --lowrank=20 "
          <<  "--input=filename  --winit=filename --hinit=filename "
-         <<   "--iter=20" << endl;
+         <<   "--iter=20" << std::endl;
     cout << "Usage4 : --algo=[0/1/2] --lowrank=20 "
          << "--input=filename --winit=filename --hinit=filename "
-         << "--w=woutputfilename --h=outputfilename --iter=20" << endl;
-    cout << "Usage5: NMFLibrary --input=filename" << endl;
+         << "--w=woutputfilename --h=outputfilename --iter=20" << std::endl;
+    cout << "Usage5: NMFLibrary --input=filename" << std::endl;
 }
 void parseCommandLineandCallNMF(int argc, char *argv[]) {
     algotype nmfalgo = BPP_NMF;

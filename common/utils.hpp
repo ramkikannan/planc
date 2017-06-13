@@ -142,7 +142,7 @@ void printVector(const std::vector<T> &x) {
     for (int i = 0; i < x.size(); i++) {
         INFO << x[i] << ' ';
     }
-    INFO << endl;
+    INFO << std::endl;
 }
 
 /*
@@ -190,13 +190,13 @@ double computeObjectiveError(const INPUTTYPE &A,
     qr_econ(Qw, Rw, W);
     qr_econ(Qh, Rh, H);
     RwRh = Rw * Rh.t();
-    double normWH = norm(RwRh, "fro");
+    double normWH = arma::norm(RwRh, "fro");
     Rw.clear();
     Rh.clear();
     Qw.clear();
     Qh.clear();
     RwRh.clear();
-    INFO << "error compute time " << toc() << endl;
+    INFO << "error compute time " << toc() << std::endl;
     double fastErr = sqrt(nnzsse + (normWH * normWH - nnzwh));
     return (fastErr);
 }

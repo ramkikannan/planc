@@ -38,7 +38,7 @@ class BPPNMF: public NMF<T> {
         t2 = toc();
         INFO << "starting " << worh << ". Prereq for " << worh
              << " took=" << t2 << " NumThreads=" << numThreads
-             << PRINTMATINFO(giventGiven) << PRINTMATINFO(giventInput) << endl;
+             << PRINTMATINFO(giventGiven) << PRINTMATINFO(giventInput) << std::endl;
         tic();
         #pragma omp parallel for schedule(dynamic)
         for (UINT i = 0; i < numThreads; i++) {
@@ -62,7 +62,7 @@ class BPPNMF: public NMF<T> {
 #ifdef _VERBOSE
                 INFO << "Scheduling " << worh << " start=" << spanStart
                      << ", end=" << spanEnd << ", tid=" << omp_get_thread_num()
-                     << endl;
+                     << std::endl;
 #endif
                 tic();
                 subProblem->solveNNLS();
@@ -72,7 +72,7 @@ class BPPNMF: public NMF<T> {
                      << spanStart << ", end=" << spanEnd << ", tid="
                      << omp_get_thread_num()
                      << " cpu=" << sched_getcpu() << " time taken=" << t2
-                     << " num_iterations()=" << numIter << endl;
+                     << " num_iterations()=" << numIter << std::endl;
 #endif
                 if (spanStart == spanEnd) {
                     FROWVEC solVec = arma::conv_to<FROWVEC>::from(
@@ -87,7 +87,7 @@ class BPPNMF: public NMF<T> {
             }
         }
         double totalH2 = toc();
-        INFO << worh << " total time taken :" << totalH2  << endl;
+        INFO << worh << " total time taken :" << totalH2  << std::endl;
         giventGiven.clear();
         giventInput.clear();
     }
@@ -130,11 +130,11 @@ class BPPNMF: public NMF<T> {
                     this->H.row(i) = arma::conv_to<FVEC>::from(subProblemforH->getSolutionVector().t());
                     INFO << "Comp H(" << i << "/" << this->n << ") of it="
                          << currentIteration << " time taken=" << t2
-                         << " num_iterations()=" << numIter << endl;
+                         << " num_iterations()=" << numIter << std::endl;
                 }
             }
 #ifdef _VERBOSE
-            INFO << "H: at it = " << currentIteration << endl << this->H;
+            INFO << "H: at it = " << currentIteration << std::endl << this->H;
 #endif
 // #pragma omp parallel
             {
@@ -164,16 +164,16 @@ class BPPNMF: public NMF<T> {
                     this->W.row(i) = arma::conv_to<FVEC>::from(subProblemforW->getSolutionVector().t());
                     INFO << "Comp W(" << i << "/" << this->n << ") of it="
                          << currentIteration << " time taken=" << t2
-                         << " num_iterations()=" << numIter << endl;
+                         << " num_iterations()=" << numIter << std::endl;
                 }
                 HtH.clear();
                 HtAt.clear();
             }
 #ifdef _VERBOSE
-            INFO << "W: at it = " << currentIteration << endl << this->W;
+            INFO << "W: at it = " << currentIteration << std::endl << this->W;
 #endif
 #ifdef COLLECTSTATS
-            // INFO << "iteration = " << currentIteration << " currentObjectiveError=" << this->objective_err << endl;
+            // INFO << "iteration = " << currentIteration << " currentObjectiveError=" << this->objective_err << std::endl;
 #endif
             currentIteration++;
         }
@@ -191,10 +191,10 @@ class BPPNMF: public NMF<T> {
         this->H = tempHals.getRightLowRankFactor();
         INFO << PRINTMATINFO(this->At);
 #ifdef BUILD_SPARSE
-        INFO << " nnz = " << this->At.n_nonzero << endl;
+        INFO << " nnz = " << this->At.n_nonzero << std::endl;
 #endif
         INFO << "Starting BPP for num_iterations()="
-             << this->num_iterations() << endl;
+             << this->num_iterations() << std::endl;
         while (currentIteration < this->num_iterations()) {
 #ifdef COLLECTSTATS
             this->collectStats(currentIteration);
@@ -202,11 +202,12 @@ class BPPNMF: public NMF<T> {
 #endif
             tic();
             tic();
-            updateOtherGivenOneMultipleRHS(this->A, this->W, 'H', &(this->H));
-            double totalH2 = toc();
-            tic();
             updateOtherGivenOneMultipleRHS(this->At, this->H, 'W', &(this->W));
             double totalW2 = toc();
+            tic();
+            updateOtherGivenOneMultipleRHS(this->A, this->W, 'H', &(this->H));
+            double totalH2 = toc();
+
 #ifdef COLLECTSTATS
             // end of H and start of W are almost same.
             this->stats(currentIteration + 1, 1) = totalH2;
@@ -215,14 +216,14 @@ class BPPNMF: public NMF<T> {
             this->stats(currentIteration + 1, 3) = toc();
 #endif
             INFO << "completed it=" << currentIteration << " time taken = "
-                 << this->stats(currentIteration + 1, 3) << endl;
+                 << this->stats(currentIteration + 1, 3) << std::endl;
             INFO << "error:it = " << currentIteration << "bpperr ="
-                 << this->objective_err / this->normA << endl;
+                 << this->objective_err << std::endl;
             currentIteration++;
         }
 #ifdef COLLECTSTATS
         this->collectStats(currentIteration);
-        INFO << "NMF Statistics:" << endl << this->stats << endl;
+        INFO << "NMF Statistics:" << std::endl << this->stats << std::endl;
 #endif
     }
     double getObjectiveError() {

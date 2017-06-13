@@ -22,22 +22,22 @@ enum algotype {MU_NMF, HALS_NMF, BPP_NMF};
 #include <iostream>
 #include <armadillo>
 
-using namespace std;
+// using namespace std;
 
 #ifndef ERR
-#define ERR cerr
+#define ERR std::cerr
 #endif
 
 #ifndef WARN
-#define WARN cerr
+#define WARN std::cerr
 #endif
 
 #ifndef INFO
-#define INFO cout
+#define INFO std::cout
 #endif
 
 #ifndef OUTPUT
-#define OUTPUT cout
+#define OUTPUT std::cout
 #endif
 
 #define EPSILON_1EMINUS16 0.00000000000000001
@@ -101,7 +101,7 @@ struct option nmfopts[] = {
 };
 
 template<typename FVT>
-inline void fillVector(const FVT value, vector<FVT> *a) {
+inline void fillVector(const FVT value, std::vector<FVT> *a) {
   for (int ii = 0; ii < a->size(); ii++) {
     (*a)[ii] = value;
   }

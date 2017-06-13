@@ -10,7 +10,7 @@ class HALSNMF: public NMF<T> {
     FMAT WtW;
     FMAT HtH;
     FMAT WtA;
-    FMAT HtAt;
+    FMAT AH;
 
     /*
      * Collected statistics are
@@ -20,14 +20,14 @@ class HALSNMF: public NMF<T> {
         WtW = arma::zeros<FMAT >(this->k, this->k);
         HtH = arma::zeros<FMAT >(this->k, this->k);
         WtA = arma::zeros<FMAT >(this->n, this->k);
-        HtAt = arma::zeros<FMAT >(this->m, this->k);
+        AH = arma::zeros<FMAT >(this->m, this->k);
     }
     void freeMatrices() {
         this->At.clear();
         WtW.clear();
         HtH.clear();
         WtA.clear();
-        HtAt.clear();
+        AH.clear();
     }
   public:
     HALSNMF(const T &A, int lowrank): NMF<T>(A, lowrank) {
@@ -39,60 +39,67 @@ class HALSNMF: public NMF<T> {
         int currentIteration = 0;
         double t1, t2;
         this->At = this->A.t();
-        INFO << "computed transpose At=" << PRINTMATINFO(this->At) << endl;
+        INFO << "computed transpose At=" << PRINTMATINFO(this->At) << std::endl;
         while (currentIteration < this->num_iterations()) {
             tic();
             // update W;
             tic();
-            HtAt = this->H.t() * this->At;
+            AH = this->A * this->H;
             HtH = this->H.t() * this->H;
             INFO << "starting W Prereq for " << " took=" << toc()
-                 << PRINTMATINFO(HtH) << PRINTMATINFO(HtAt) << endl;
-            tic();
-            for (int x = 0; x < this->k; x++) {
-                // FVEC Wx = W(:,x) + (AHt(:,x)-W*HHt(:,x))/HHtDiag(x);
-                float normConst;
-                // W(:,i) = W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i);
-                FVEC Wx = this->W.col(x) * HtH(x, x) +
-                          (((HtAt.row(x)).t()) - (this->W * (HtH.col(x))));
-                fixNumericalError<FVEC>(&Wx);
-                Wx = Wx / norm(Wx);
-                this->W.col(x) = Wx;
-            }
-            INFO << "Completed W ("
-                 << currentIteration << "/" << this->num_iterations() << ")"
-                 << " time =" << toc() << endl;
-
+                 << PRINTMATINFO(HtH) << PRINTMATINFO(AH) << std::endl;
             // update H
             tic();
             WtA = this->W.t() * this->A;
             WtW = this->W.t() * this->W;
             INFO << "starting H Prereq for " << " took=" << toc()
-                 << PRINTMATINFO(WtW) << PRINTMATINFO(WtA) << endl;
+                 << PRINTMATINFO(WtW) << PRINTMATINFO(WtA) << std::endl;
             // to avoid divide by zero error.
             tic();
+            float normConst;
+            FVEC Hx;
             for (int x = 1; x < this->k; x++) {
-                float normConst;
                 // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
-                FVEC Hx = this->H.col(x) +
-                          (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
+                Hx = this->H.col(x) +
+                     (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
                 fixNumericalError<FVEC>(&Hx);
-                this->H.col(x) = Hx;
+                normConst = norm(Hx);
+                if (normConst != 0) {
+                    this->H.col(x) = Hx;
+                }
             }
             INFO << "Completed H ("
                  << currentIteration << "/" << this->num_iterations() << ")"
-                 << " time =" << toc() << endl;
+                 << " time =" << toc() << std::endl;
+            // update W
+            tic();
+            FVEC Wx;
+            for (int x = 0; x < this->k; x++) {
+                // FVEC Wx = W(:,x) + (AHt(:,x)-W*HHt(:,x))/HHtDiag(x);
+
+                // W(:,i) = W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i);
+                Wx = (this->W.col(x) * HtH(x, x)) +
+                     (((AH.col(x))) - (this->W * (HtH.col(x))));
+                fixNumericalError<FVEC>(&Wx);
+                normConst = norm(Wx);
+                if (normConst != 0) {
+                    Wx = Wx / normConst;
+                    this->W.col(x) = Wx;
+                }
+            }
+
+            INFO << "Completed W ("
+                 << currentIteration << "/" << this->num_iterations() << ")"
+                 << " time =" << toc() << std::endl;
+
             INFO << "Completed It ("
                  << currentIteration << "/" << this->num_iterations() << ")"
-                 << " time =" << toc() << endl;
+                 << " time =" << toc() << std::endl;
             this->computeObjectiveError();
             INFO << "Completed it = " << currentIteration << " HALSERR="
-                 << this->objective_err / this->normA << endl;
+                 << this->objective_err << std::endl;
             currentIteration++;
         }
-        this->computeObjectiveError();
-        INFO << "Completed it = " << currentIteration << " HALSERR="
-             << this->objective_err / this->normA << endl;
     }
     ~HALSNMF() {
     }

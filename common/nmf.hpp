@@ -48,8 +48,8 @@ protected:
     FVEC m_regH;
 
     void collectStats(int iteration) {
-        this->normW = norm(this->W, "fro");
-        this->normH = norm(this->H, "fro");
+        this->normW = arma::norm(this->W, "fro");
+        this->normH = arma::norm(this->H, "fro");
         UVEC nnz = find(this->W > 0);
         this->densityW = nnz.size() / (this->m * this->k);
         nnz.clear();
@@ -89,7 +89,7 @@ private:
     void otherInitializations() {
         this->stats.zeros();
         this->cleared          = false;
-        this->normA            = norm(this->A, "fro");
+        this->normA            = arma::norm(this->A, "fro");
         this->m_num_iterations = 20;
         this->objective_err    = 1000000000000;
         this->stats.resize(m_num_iterations + 1, NUM_STATS);
@@ -101,7 +101,11 @@ public:
         this->m      = A.n_rows;
         this->n      = A.n_cols;
         this->k      = rank;
+        // prime number closer to W.
+        arma::arma_rng::set_seed(89);        
         this->W      = arma::randu<FMAT>(m, k);
+        // prime number close to H
+        arma::arma_rng::set_seed(73);
         this->H      = arma::randu<FMAT>(n, k);
         this->m_regW = arma::zeros<FVEC>(2);
         this->m_regH = arma::zeros<FVEC>(2);
@@ -152,7 +156,7 @@ public:
      ||WH||_F^2 - over all nnz (w_i h_j)^2
      *
      */
-#ifdef BUILD_SPARSE
+#if 0
     void computeObjectiveError() {
         // 1. over all nnz (a_ij - w_i h_j)^2
         // 2. over all nnz (w_i h_j)^2
@@ -194,7 +198,7 @@ public:
         qr_econ(Qw, Rw, this->W);
         qr_econ(Qh, Rh, this->H);
         RwRh = Rw * Rh.t();
-        float normWH = norm(RwRh, "fro");
+        float normWH = arma::norm(RwRh, "fro");
         Rw.clear();
         Rh.clear();
         Qw.clear();
@@ -215,18 +219,17 @@ public:
         FMAT AtW = this->A.t() * this->W;
 
         this->objective_err = this->normA * this->normA
-                              - 2 * trace(this->H.t() * AtW)
-                              + trace(WtW * HtH);
+                              - 2 * arma::trace(this->H.t() * AtW)
+                              + arma::trace(WtW * HtH);
     }
 
 #endif // ifdef BUILD_SPARSE
     void computeObjectiveError(const T& At, const FMAT& WtW,
                                const FMAT& HtH) {
         FMAT AtW = At * this->W;
-
         this->objective_err = this->normA * this->normA
-                              - 2 * trace(this->H.t() * AtW)
-                              + trace(WtW * HtH);
+                              - 2 * arma::trace(this->H.t() * AtW)
+                              + arma::trace(WtW * HtH);
     }
 
     void num_iterations(const int it) {
