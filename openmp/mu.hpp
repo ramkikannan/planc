@@ -74,7 +74,7 @@ class MUNMF: public NMF<T> {
                  << " time =" << toc() << std::endl;
             this->computeObjectiveError();
             INFO << "Completed it = " << currentIteration << " MUERR="
-                 << this->objective_err << std::endl;
+                 << sqrt(this->objective_err)/this->normA << std::endl;
             currentIteration++;
         }
     }

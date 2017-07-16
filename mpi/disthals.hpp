@@ -72,7 +72,19 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE>{
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("after fixNumericalError::" << endl << updHi);
 #endif // ifdef MPI_VERBOSE
-      this->H.col(i) = updHi;
+      double normHi = arma::norm(updHi, 2);
+      normHi *= normHi;
+      double globalnormHi;
+      mpitic();
+      MPI_Allreduce(&normHi, &globalnormHi, 1, MPI_DOUBLE,
+                    MPI_SUM, MPI_COMM_WORLD);
+      double temp = mpitoc();
+      this->time_stats.communication_duration(temp);
+      this->time_stats.allreduce_duration(temp);
+
+      if (globalnormHi > 0) {
+        this->H.col(i) = updHi;
+      }
     }
     this->Ht = this->H.t();
   }

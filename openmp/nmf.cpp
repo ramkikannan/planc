@@ -32,8 +32,11 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
         n = A.n_cols;
 #endif
     } else {
+#ifdef BUILD_SPARSE
+        A = arma::sprandu<SP_FMAT>(m, n, 0.001);
+#else
         A = arma::randu<FMAT>(m, n);
-        // A.save("rand_uniform.csv",arma::raw_ascii);
+#endif
         INFO << "generated random matrix A=" << PRINTMATINFO(A) << std::endl;
     }
     FMAT W, H;

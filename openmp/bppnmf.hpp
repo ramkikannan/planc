@@ -184,11 +184,13 @@ class BPPNMF: public NMF<T> {
         // this->objective_err;
 #endif
         this->At = this->A.t();  // do it once
+#ifdef BUILD_SPARSE
         // run hals once to get proper initializations
         HALSNMF<T> tempHals(this->A, this->W, this->H);
         tempHals.num_iterations(2);
         this->W = tempHals.getLeftLowRankFactor();
         this->H = tempHals.getRightLowRankFactor();
+#endif
         INFO << PRINTMATINFO(this->At);
 #ifdef BUILD_SPARSE
         INFO << " nnz = " << this->At.n_nonzero << std::endl;
@@ -217,8 +219,9 @@ class BPPNMF: public NMF<T> {
 #endif
             INFO << "completed it=" << currentIteration << " time taken = "
                  << this->stats(currentIteration + 1, 3) << std::endl;
-            INFO << "error:it = " << currentIteration << "bpperr ="
-                 << this->objective_err << std::endl;
+            this->computeObjectiveError();
+            INFO << "error:it = " << currentIteration << " bpperr ="
+                 << sqrt(this->objective_err)/this->normA << std::endl;
             currentIteration++;
         }
 #ifdef COLLECTSTATS
