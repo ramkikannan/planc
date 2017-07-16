@@ -85,6 +85,18 @@ protected:
         }
     }
 
+    void normalize_by_W(){
+        FMAT W_square = arma::pow(this->W, 2);
+        FROWVEC norm2 = arma::sqrt(arma::sum(W_square, 0));
+        for (int i=0; i < this->k; i++){
+            if (norm2(i) > 0){
+                this->W.col(i) = this->W.col(i) / norm2(i);
+                this->H.col(i) = this->H.col(i) * norm2(i);
+            }
+        }
+
+    }
+
 private:
     void otherInitializations() {
         this->stats.zeros();
@@ -123,8 +135,8 @@ public:
         this->A      = input;
         this->W      = leftlowrankfactor;
         this->H      = rightlowrankfactor;
-        this->Winit  = leftlowrankfactor;
-        this->Hinit  = rightlowrankfactor;
+        this->Winit  = this->W;
+        this->Hinit  = this->H;
         this->m      = A.n_rows;
         this->n      = A.n_cols;
         this->k      = W.n_cols;
@@ -137,7 +149,7 @@ public:
 
     virtual void computeNMF() = 0;
 
-    FMAT         getLeftLowRankFactor() {
+    FMAT getLeftLowRankFactor() {
         return W;
     }
 
@@ -218,18 +230,23 @@ public:
         FMAT HtH = this->H.t() * this->H;
         FMAT AtW = this->A.t() * this->W;
 
-        this->objective_err = this->normA * this->normA
-                              - 2 * arma::trace(this->H.t() * AtW)
-                              + arma::trace(WtW * HtH);
+        double sqnormA  = this->normA * this->normA;
+        double TrHtAtW  = arma::trace(this->H.t() * AtW);
+        double TrWtWHtH = arma::trace(WtW * HtH);
+
+        this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
     }
 
 #endif // ifdef BUILD_SPARSE
     void computeObjectiveError(const T& At, const FMAT& WtW,
                                const FMAT& HtH) {
         FMAT AtW = At * this->W;
-        this->objective_err = this->normA * this->normA
-                              - 2 * arma::trace(this->H.t() * AtW)
-                              + arma::trace(WtW * HtH);
+
+        double sqnormA  = this->normA * this->normA;
+        double TrHtAtW  = arma::trace(this->H.t() * AtW);
+        double TrWtWHtH = arma::trace(WtW * HtH);
+
+        this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
     }
 
     void num_iterations(const int it) {
