@@ -10,8 +10,6 @@
 #include "mpicomm.hpp"
 #include "distnmf.hpp"
 
-//using namespace std;
-
 /*
  * There are totally prxpc process.
  * Each process will hold the following
