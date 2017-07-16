@@ -467,8 +467,6 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
             }
             PRINTROOT("completed it=" << iter << "::taken::"
                       << this->time_stats.duration());
-            if (this->m_mpicomm.rank() == 0) { printf("iter = %d, error = %lf\n", iter, sqrt(this->objective_err /
-                this->m_globalsqnormA)); }
         }  // end for loop
         MPI_Barrier(MPI_COMM_WORLD);
         this->reportTime(this->time_stats.duration(), "total_d");
