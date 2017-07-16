@@ -10,7 +10,7 @@
 #include "mpicomm.hpp"
 #include "distnmf.hpp"
 
-using namespace std;
+//using namespace std;
 
 /*
  * There are totally prxpc process.
@@ -381,6 +381,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     */
     void computeNMF() {
         PRINTROOT("computeNMF started");
+        
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->A));
 #endif
@@ -395,7 +396,6 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
         for (int iter = 0; iter < this->num_iterations(); iter++) {
-            // this->normalize_by_W();
             // saving current instance for error computation.
             if (iter > 0 && this->is_compute_error()) {
                 this->prevH = this->H;
@@ -462,12 +462,12 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
                 this->computeError(iter);
                 PRINTROOT("it=" << iter << "::algo::" << this->m_algorithm \
                           << "::k::" << this->k \
-                          << "::err::" << this->objective_err \
-                          << "::relerr::" << this->objective_err / this->m_globalsqnormA);
+                          << "::err::" << sqrt(this->objective_err) \
+                          << "::relerr::" << sqrt(this->objective_err) / this->m_globalsqnormA);
             }
             PRINTROOT("completed it=" << iter << "::taken::"
                       << this->time_stats.duration());
-            if (this->m_mpicomm.rank() == 0) { printf("iter = %d, error = %lf\n", iter, this->objective_err /
+            if (this->m_mpicomm.rank() == 0) { printf("iter = %d, error = %lf\n", iter, sqrt(this->objective_err) /
                 this->m_globalsqnormA); }
         }  // end for loop
         MPI_Barrier(MPI_COMM_WORLD);
