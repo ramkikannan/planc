@@ -1,5 +1,6 @@
 /* Copyright 2016 Ramakrishnan Kannan */
 
+#include "parsecommandline.h"
 #include "bppnmf.hpp"
 #include "utils.hpp"
 #include "hals.hpp"

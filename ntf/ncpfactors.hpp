@@ -54,7 +54,7 @@ class NCPFactors {
     void gram(FMAT *o_UtU) {
         FMAT currentGram(this->m_k, this->m_k);
         for (int i = 0; i < this->m_order; i++) {
-            currentGram = ncp_factors[i] * trans(ncp_factors[i]);
+            currentGram = ncp_factors[i].t() * ncp_factors[i];
             (*o_UtU) = (*o_UtU) % currentGram;
         }
     }
@@ -65,7 +65,7 @@ class NCPFactors {
         FMAT currentGram(this->m_k, this->m_k);
         (*o_UtU) = arma::ones<FMAT>(this->m_k, this->m_k);
         for (int i = 0; i < this->m_order && i != i_n; i++) {
-            currentGram = ncp_factors[i] * trans(ncp_factors[i]);
+            currentGram = ncp_factors[i].t() * ncp_factors[i];
             (*o_UtU) = (*o_UtU) % currentGram;
         }
     }
@@ -99,7 +99,7 @@ class NCPFactors {
 #ifdef NTF_VERBOSE
         INFO << "::" << __PRETTY_FUNCTION__
              << "::" << __LINE__
-             << "::matorder::" << matorder << endl;
+             << "::matorder::" << matorder << std::endl;
 #endif
         (*o_krp).zeros();
         // N = ncols(1);
@@ -140,8 +140,10 @@ class NCPFactors {
         for (int n = 0; n < this->m_k; n++) {
             FMAT ab = ncp_factors[matorder[0]].col(n);
             for (int i = 1; i < this->m_order - 1; i++) {
-                FVEC abvec = arma::vectorise(ab);
-                ab = ncp_factors[matorder[i]].col(n) * trans(abvec);
+                FVEC oldabvec = arma::vectorise(ab);
+                FVEC currentvec = ncp_factors[matorder[i]].col(n);
+                ab.clear();
+                ab = currentvec * oldabvec.t();
             }
             (*o_krp).col(n) = arma::vectorise(ab);
         }
@@ -153,29 +155,29 @@ class NCPFactors {
         FMAT krpleavingzero = arma::zeros<FMAT>(krpsize, this->m_k);
         krp_leave_out_one(0, &krpleavingzero);
         FMAT lowranktensor(this->m_dimensions[0], krpsize);
-        lowranktensor = this->ncp_factors[0] * trans(krpleavingzero);
+        lowranktensor = this->ncp_factors[0] * krpleavingzero.t();
         Tensor rc(this->m_dimensions, lowranktensor.memptr());
         return rc;
     }
 
     void print() {
-        cout << "order::" << this->m_order << "::k::" << this->m_k;
-        cout << "::dims::"  << endl << this->m_dimensions << endl;
+        std::cout << "order::" << this->m_order << "::k::" << this->m_k;
+        std::cout << "::dims::"  << std::endl << this->m_dimensions << std::endl;
         for (int i = 0; i < this->m_order; i++) {
-            cout << i << "th factor" << endl << "=============" << endl;
-            cout << this->ncp_factors[i];
+            std::cout << i << "th factor" << std::endl << "=============" << std::endl;
+            std::cout << this->ncp_factors[i];
         }
     }
     void print(const int i_n) {
-        cout << i_n << "th factor" << endl << "=============" << endl;
-        cout << this->ncp_factors[i_n];
+        std::cout << i_n << "th factor" << std::endl << "=============" << std::endl;
+        std::cout << this->ncp_factors[i_n];
     }
     void trans(NCPFactors &factor_t) {
         for (int i = 0; i < this->m_order; i++) {
             factor_t.set(i, this->ncp_factors[i].t());
         }
     }
-};
+}; // NCPFactors
 }  // PLANC
 
 #endif  //  NTF_CPFACTORS_HPP_

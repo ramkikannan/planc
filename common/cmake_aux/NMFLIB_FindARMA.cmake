@@ -31,17 +31,23 @@ include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindBLAS.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindLAPACK.cmake)
 
 
-message(STATUS "     MKL_FOUND = ${MKL_FOUND}"     )
+message(STATUS "     MKL_FOUND = ${MKL_ROOT}"     )
 message(STATUS "OpenBLAS_FOUND = ${OpenBLAS_FOUND}")
 message(STATUS "    BLAS_FOUND = ${BLAS_FOUND}"    )
 message(STATUS "  LAPACK_FOUND = ${LAPACK_FOUND}"  )
 
 if(MKL_FOUND)
-
   set(NMFLIB_USE_LAPACK true)
   set(NMFLIB_USE_BLAS   true)
+  add_definitions(-DMKL_FOUND=1)
+  set(MKL_INCLUDE_DIR ${MKL_ROOT}/include)
+  link_directories(${MKL_ROOT}/lib/intel64)
+  #just linked with mkl_rt didn't work fine for syrk call. 
+  #https://software.intel.com/en-us/forums/intel-math-kernel-library/topic/737425
+  #overriding MKL_LIBRARIES and CXX flags
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMKL_ILP64 -m64")
+  set(MKL_LIBRARIES "-Wl,--start-group ${MKL_ROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKL_ROOT}/lib/intel64/libmkl_gnu_thread.a ${MKL_ROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl")
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MKL_LIBRARIES})
-
 else()
 
   if(OpenBLAS_FOUND AND BLAS_FOUND)

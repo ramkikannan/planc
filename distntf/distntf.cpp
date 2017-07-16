@@ -126,7 +126,7 @@ class DistNTFDriver {
         }
         printConfig();
     }
-    DistNMFDriver(int argc, char *argv[]) {
+    DistNTFDriver(int argc, char *argv[]) {
         this->m_argc = argc;
         this->m_argv = argv;
     }
@@ -156,6 +156,6 @@ class DistNTFDriver {
 };
 
 int main(int argc, char* argv[]) {
-    DistNMFDriver dnd(argc, argv);
+    DistNTFDriver dnd(argc, argv);
     dnd.parseCommandLine();
 }

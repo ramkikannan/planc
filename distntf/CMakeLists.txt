@@ -27,11 +27,6 @@ find_package(MPI REQUIRED)
 message(STATUS "   Boost_FOUND = ${Boost_FOUND}"   )
 message(STATUS " MPI_CXX_FOUND = ${MPI_CXX_FOUND}" )
 
-if(MKL_FOUND)
-  add_definitions(-DMKL_FOUND=1)
-  set(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
-endif()
-
 if(MPI_CXX_FOUND)
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MPI_CXX_LIBRARIES})
 endif()

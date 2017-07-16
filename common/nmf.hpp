@@ -85,6 +85,18 @@ protected:
         }
     }
 
+    void normalize_by_W(){
+        FMAT W_square = arma::pow(this->W,2);
+        FVEC norm2 = arma::sqrt(arma::sum(W_square,1));
+        for (int i=0; i < this->k; i++){
+            if (norm2(i) > 0){
+                this->W.col(i) = this->W.col(i)/norm2(i);
+                this->H.col(i) = this->H.col(i) * norm2(i);
+            }
+        }
+
+    }
+
 private:
     void otherInitializations() {
         this->stats.zeros();
@@ -109,6 +121,7 @@ public:
         this->H      = arma::randu<FMAT>(n, k);
         this->m_regW = arma::zeros<FVEC>(2);
         this->m_regH = arma::zeros<FVEC>(2);
+        normalize_by_W();
 
         // make the random MATrix positive
         // absMAT<FMAT>(W);
@@ -123,8 +136,9 @@ public:
         this->A      = input;
         this->W      = leftlowrankfactor;
         this->H      = rightlowrankfactor;
-        this->Winit  = leftlowrankfactor;
-        this->Hinit  = rightlowrankfactor;
+        normalize_by_W();
+        this->Winit  = this->W;
+        this->Hinit  = this->H;
         this->m      = A.n_rows;
         this->n      = A.n_cols;
         this->k      = W.n_cols;

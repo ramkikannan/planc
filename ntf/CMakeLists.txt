@@ -24,12 +24,6 @@ include(${NTFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
 message(STATUS "   Boost_FOUND = ${Boost_FOUND}"   )
 
-if(MKL_FOUND)
-  add_definitions(-DMKL_FOUND=1)
-  set(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
-  set(NTFLIB_LIBS ${NTFLIB_LIBS}  ${MKL_LIBRARIES})
-endif()
-
 #to build sparse comment or uncomment this line.
 OPTION(CMAKE_BUILD_SPARSE "Build Sparse" OFF)
 if(CMAKE_BUILD_SPARSE)
@@ -61,7 +55,8 @@ include_directories(
 # )
 
 add_executable(ntf
-mttkrp_test.cpp
+#mttkrp_test.cpp
+ntf.cpp
 )
 
 target_link_libraries(ntf ${NTFLIB_LIBS})

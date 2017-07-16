@@ -49,6 +49,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE>{
 
       if (globalnormWi > 0) {
         this->W.col(i) = updWi / sqrt(globalnormWi);
+        this->H.col(i) = this->H.col(i) * sqrt(globalnormWi);
       }
     }
     this->Wt = this->W.t();

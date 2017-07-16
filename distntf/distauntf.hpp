@@ -214,6 +214,6 @@ class DistAUNTF {
             }
         }
     }
-}
+}  // class DistAUNTF
 }  // namespace PLANC
 #endif  // DISTNTF_DISTAUNTF_HPP

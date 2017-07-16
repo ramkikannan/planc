@@ -265,19 +265,6 @@ class DistNMFDriver {
 #endif // ifndef USE_PACOSS
     }
 
-    void parseRegularizedParameter(const char *input, FVEC *reg) {
-        stringstream ss(input);
-        string s;
-        int    i = 0;
-        float  temp;
-
-        while (getline(ss, s, ' ')) {
-            temp      = ::atof(s.c_str());
-            (*reg)(i) = temp;
-            i++;
-        }
-    }
-
     void parseCommandLine() {
         int opt, long_index;
 
@@ -294,63 +281,6 @@ class DistNMFDriver {
         this->m_regH          = arma::zeros<FVEC>(2);
         this->m_num_k_blocks  = 1;
 
-        while ((opt = getopt_long(this->m_argc, this->m_argv,
-                                  "a:i:e:k:m:n:o:t:s:", distnmfopts,
-                                  &long_index)) != -1) {
-            switch (opt) {
-                case 'a':
-                    this->m_nmfalgo = static_cast<distalgotype>(atoi(optarg));
-                    break;
-                case 'i': {
-                    std::string temp = std::string(optarg);
-                    this->m_Afile_name = temp;
-                    break;
-                }
-                case 'e':
-                    this->m_compute_error = atoi(optarg);
-                    break;
-                case 'k':
-                    this->m_k = atoi(optarg);
-                    break;
-                case 'm':
-                    this->m_globalm = atoi(optarg);
-                    break;
-                case 'n':
-                    this->m_globaln = atoi(optarg);
-                    break;
-                case 'o': {
-                    std::string temp = std::string(optarg);
-                    this->m_outputfile_name = temp;
-                    break;
-                }
-                case 's':
-                    this->m_sparsity = atof(optarg);
-                    break;
-                case 't':
-                    this->m_num_it = atoi(optarg);
-                    break;
-                case PROCROWS:
-                    this->m_pr = atoi(optarg);
-                    break;
-                case PROCCOLS:
-                    this->m_pc = atoi(optarg);
-                    break;
-                case REGWFLAG:
-                    parseRegularizedParameter(optarg, &this->m_regW);
-                    break;
-                case REGHFLAG:
-                    parseRegularizedParameter(optarg, &this->m_regH);
-                    break;
-                case NUMKBLOCKS:
-                    this->m_num_k_blocks = atoi(optarg);
-                    break;
-                default:
-                    cout << "failed while processing argument:" << optarg
-                         << std::endl;
-                    print_usage();
-                    exit(EXIT_FAILURE);
-            }
-        }
 
         if (this->m_nmfalgo == NAIVEANLSBPP) {
             this->m_distio = ONED_DOUBLE;

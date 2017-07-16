@@ -29,15 +29,21 @@ class Tensor {
     const unsigned int rand_seed;
 
   public:
-    Tensor(const UVEC& i_dimensions, float *i_data = NULL):
+    Tensor(const UVEC& i_dimensions):
         m_dimensions(i_dimensions),
         m_order(i_dimensions.n_rows),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
         m_data = new float[this->m_numel];
-        if (i_data != NULL) {
-            memcpy(this->m_data, i_data, sizeof(float)*this->m_numel);
-        }
+        randu();
+    }
+    Tensor(const UVEC& i_dimensions, float *i_data):
+        m_dimensions(i_dimensions),
+        m_order(i_dimensions.n_rows),
+        m_numel(arma::prod(i_dimensions)),
+        rand_seed(103) {
+        m_data = new float[this->m_numel];
+        memcpy(this->m_data, i_data, sizeof(float)*this->m_numel);
     }
     ~Tensor() {
         delete m_data;
@@ -76,10 +82,20 @@ class Tensor {
         }
     }
 
+    void randu() {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0, 1);
+        for (int i = 0; i < this->m_numel; i++) {
+            m_data[i] = dis(gen);
+        }
+    }
+
     // size of krp must be product of all dimensions leaving out nxk
     // o_mttkrp will be of size dimension[n]xk
     // implementation of mttkrp from tensor toolbox
-    void mttkrp(const int i_n, const FMAT& i_krp, FMAT *o_mttkrp) {
+    // const at the end as this does not change any local data.
+    void mttkrp(const int i_n, const FMAT& i_krp, FMAT *o_mttkrp) const {
         (*o_mttkrp).zeros();
         if (i_n == 0) {
             //if n == 1
@@ -154,7 +170,7 @@ class Tensor {
 
     void print() const {
         for (int i = 0; i < this->m_numel; i++) {
-            cout << i << " : " << this->m_data[i] << endl;
+            std::cout << i << " : " << this->m_data[i] << std::endl;
         }
     }
     double norm() const {

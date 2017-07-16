@@ -29,13 +29,7 @@ include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
 find_package(MPI REQUIRED)
 
-message(STATUS "   Boost_FOUND = ${Boost_FOUND}"   )
 message(STATUS " MPI_CXX_FOUND = ${MPI_CXX_FOUND}" )
-
-if(MKL_FOUND)
-  add_definitions(-DMKL_FOUND=1)
-  set(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
-endif()
 
 if(MPI_CXX_FOUND)
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MPI_CXX_LIBRARIES})
@@ -83,11 +77,9 @@ include_directories(
   ${NNLS_SRC}
   if(MPI_CXX_FOUND)
     ${MPI_CXX_INCLUDE_PATH}
-  endif()
-  ${Boost_INCLUDE_DIR}
+  endif()  
   ${MKL_INCLUDE_DIR}
 )
-
 
 if(CMAKE_WITH_PACOSS)
   link_directories(
