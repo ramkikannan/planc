@@ -31,9 +31,13 @@ class HALSNMF: public NMF<T> {
     }
   public:
     HALSNMF(const T &A, int lowrank): NMF<T>(A, lowrank) {
+        this->normalize_by_W();
+        allocateMatrices();
     }
     HALSNMF(const T &A, const FMAT &llf, const FMAT &rlf) :
         NMF<T>(A, llf, rlf) {
+        this->normalize_by_W();
+        allocateMatrices();
     }
     void computeNMF() {
         int currentIteration = 0;
@@ -42,12 +46,6 @@ class HALSNMF: public NMF<T> {
         INFO << "computed transpose At=" << PRINTMATINFO(this->At) << std::endl;
         while (currentIteration < this->num_iterations()) {
             tic();
-            // update W;
-            tic();
-            AH = this->A * this->H;
-            HtH = this->H.t() * this->H;
-            INFO << "starting W Prereq for " << " took=" << toc()
-                 << PRINTMATINFO(HtH) << PRINTMATINFO(AH) << std::endl;
             // update H
             tic();
             WtA = this->W.t() * this->A;
@@ -58,7 +56,7 @@ class HALSNMF: public NMF<T> {
             tic();
             float normConst;
             FVEC Hx;
-            for (int x = 1; x < this->k; x++) {
+            for (int x = 0; x < this->k; x++) {
                 // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
                 Hx = this->H.col(x) +
                      (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
@@ -71,7 +69,12 @@ class HALSNMF: public NMF<T> {
             INFO << "Completed H ("
                  << currentIteration << "/" << this->num_iterations() << ")"
                  << " time =" << toc() << std::endl;
-            // update W
+            // update W;
+            tic();
+            AH = this->A * this->H;
+            HtH = this->H.t() * this->H;
+            INFO << "starting W Prereq for " << " took=" << toc()
+                 << PRINTMATINFO(HtH) << PRINTMATINFO(AH) << std::endl;
             tic();
             FVEC Wx;
             for (int x = 0; x < this->k; x++) {
@@ -97,7 +100,7 @@ class HALSNMF: public NMF<T> {
                  << " time =" << toc() << std::endl;
             this->computeObjectiveError();
             INFO << "Completed it = " << currentIteration << " HALSERR="
-                 << this->objective_err << std::endl;
+                 << sqrt(this->objective_err) / this->normA << std::endl;
             currentIteration++;
         }
     }
