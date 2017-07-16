@@ -22,13 +22,6 @@ include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 #set(Boost_NO_BOOST_CMAKE TRUE)
 #find_package(Boost REQUIRED)
 
-message(STATUS "   Boost_FOUND = ${Boost_FOUND}"   )
-
-if(MKL_FOUND)
-  add_definitions(-DMKL_FOUND=1)
-  set(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
-endif()
-
 #to build sparse comment or uncomment this line.
 OPTION(CMAKE_BUILD_SPARSE "Build Sparse" OFF)
 if(CMAKE_BUILD_SPARSE)
