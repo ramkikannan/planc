@@ -39,8 +39,8 @@ inline double toc() {
 template <class T> void fixNumericalError(T *X) {
     for (UINT i = 0; i < X->n_rows; i++) {
         for (UINT j = 0; j < X->n_cols; j++) {
-            if ((*X)(i, j) <= EPSILON) {
-                (*X)(i, j) = 0;
+            if ((*X)(i, j) < EPSILON) {
+                (*X)(i, j) = EPSILON;
             }
         }
     }
@@ -238,6 +238,7 @@ void ARMAMKLSCSCMM(const SP_FMAT &mklMat, char transa, const FMAT &Bt,
 * This is an sgemm wrapper for armadillo matrices
 * Something is going crazy with armadillo
 */
+
 void cblas_sgemm(const FMAT &A, const FMAT &B, float *C) {
     UWORD m = A.n_rows;
     UWORD n = B.n_cols;
