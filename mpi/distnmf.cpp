@@ -5,6 +5,7 @@
 #include "distanlsbpp.hpp"
 #include "distmu.hpp"
 #include "disthals.hpp"
+#include "distaoadmm.hpp"
 #include "mpicomm.hpp"
 #include "naiveanlsbpp.hpp"
 #include "utils.hpp"
@@ -386,6 +387,13 @@ class DistNMFDriver {
                 callDistNMF1D<DistNaiveANLSBPP<SP_FMAT> >();
 #else // ifdef BUILD_SPARSE
                 callDistNMF1D<DistNaiveANLSBPP<FMAT> >();
+#endif // ifdef BUILD_SPARSE
+                break;
+            case AOADMM2D:
+#ifdef BUILD_SPARSE
+                callDistNMF2D<DistAOADMM<SP_FMAT> >();
+#else // ifdef BUILD_SPARSE
+                callDistNMF2D<DistAOADMM<FMAT> >();
 #endif // ifdef BUILD_SPARSE
         }
     }
