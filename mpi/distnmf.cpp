@@ -95,7 +95,13 @@ class DistNMFDriver {
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
         MPI_Barrier(MPI_COMM_WORLD);
-        nmfAlgorithm.computeNMF();
+        try {
+            nmfAlgorithm.computeNMF();
+        } catch (std::exception& e)
+        {
+            printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
 
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
@@ -253,7 +259,7 @@ class DistNMFDriver {
 
             if (mpicomm.rank() == 0) printf("NMF took %.3lf secs.\n", temp);
         } catch (std::exception& e) {
-            printf("Failed rank %d\n", mpicomm.rank());
+            printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 #ifndef USE_PACOSS
@@ -346,10 +352,18 @@ class DistNMFDriver {
                     this->m_num_k_blocks = atoi(optarg);
                     break;
                 default:
-                    cout << "failed while processing argument:" << optarg
+                    cout << "failed while processing argument: " << opt
                          << std::endl;
-                    print_usage();
-                    exit(EXIT_FAILURE);
+
+                    // Print Usage and quit
+                    int m_rank;                
+                    MPI_Init(&this->m_argc, &this->m_argv);
+                    MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
+                    if (m_rank == 0) print_usage();
+                    MPI_Barrier(MPI_COMM_WORLD);
+                    MPI_Finalize();
+
+                    return;
             }
         }
 
@@ -407,9 +421,13 @@ public:
     }
 
     void print_usage() {
-        INFO << "for short arguments like -i no equals sign"
-             << "for long arguments like --pr give key=value pair"
-             << "-a 0 for MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP "
+        INFO << std::endl;
+        INFO << "distnmf usage:" << std::endl;
+        INFO << "for short arguments like -i do not use equals sign, eg -t 10"
+             << std::endl
+             << "for long arguments like --pr give key=value pair, eg --pr=4"
+             << std::endl
+             << "algorithm codes 0-MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP"
              << std::endl;
         // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
         INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
@@ -417,15 +435,15 @@ public:
              << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"
              << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
         // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+        INFO << "Usage 2: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i Ainput -t 10 --pr 3 --pc 2"
              << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
         // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+        INFO << "Usage 3: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"
              << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
         // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+        INFO << "Usage 4: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"
              << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
     }
@@ -433,4 +451,5 @@ public:
 
 int main(int argc, char *argv[]) {
     DistNMFDriver dnd(argc, argv);
+    fflush(stdout);
 }

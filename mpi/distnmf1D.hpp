@@ -12,7 +12,7 @@ class DistNMF1D {
  protected:
   INPUTMATTYPE m_Arows;
   INPUTMATTYPE m_Acols;
-  MPICommunicator m_mpicomm;
+  const MPICommunicator& m_mpicomm;
   UWORD m_globalm, m_globaln;
   FMAT m_W, m_H;
   FMAT m_Wt, m_Ht;
