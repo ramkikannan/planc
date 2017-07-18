@@ -5,7 +5,6 @@ This program depends on:
 
 - Armadillo library which can be found at https://arma.sourceforge.net
 - OpenBLAS https://github.com/xianyi/OpenBLAS
-- Boost C++ libraries 1.55 http://www.boost.org/ Set Operations
 
 Once you have installed these libraries set the following environment variables.
 

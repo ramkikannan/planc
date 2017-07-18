@@ -80,7 +80,10 @@ class MPICommunicator {
         if (dimSizes[0]*dimSizes[1] != m_numProcs) {
             if (m_rank == 0) {
                 std::cerr << "Processor grid dimensions do not"
-                          << "multiply to MPI_SIZE" << std::endl;
+                          << "multiply to MPI_SIZE::"
+                          << dimSizes[0] << 'x' << dimSizes[1]
+                          << "::m_numProcs::" << m_numProcs
+                          << std::endl;
             }
             MPI_Barrier(MPI_COMM_WORLD);
             MPI_Abort(MPI_COMM_WORLD, 1);

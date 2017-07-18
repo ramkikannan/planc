@@ -24,28 +24,30 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  std::vector< std::vector<int> > procRowIdxs(procCount);
-  std::vector< std::vector<int> > procColIdxs(procCount);
+  std::vector< std::vector<uint64_t> > procRowIdxs(procCount);
+  std::vector< std::vector<uint64_t> > procColIdxs(procCount);
   std::vector< std::vector<double> > procVals(procCount);
   printf("Partitioning nonzeros and outputting to files...\n");
-  int order, nnz;
-  int rowCount, colCount;
-  fscanf(file, " %d %d", &order, &nnz);
-  fscanf(file, " %d %d", &rowCount, &colCount);
-  int rowsPerProc = rowCount / rowProcCount;
-  int colsPerProc = colCount / colProcCount;
-  printf("Assigning %d rows and %d columns per part.\n", rowsPerProc, colsPerProc);
-  for (int i = 0; i < nnz; i++) {
-    if (i % 100000 == 0 && i > 0) { printf("Processing %d.th nonzero...\n", i); }
+  int order;
+  uint64_t nnz;
+  uint64_t rowCount, colCount;
+  fscanf(file, " %d %ju", &order, &nnz);
+  fscanf(file, " %ju %ju", &rowCount, &colCount);
+  printf("order::%d::nnz::%ju::rowcount::%ju::colcount::%ju\n", order, nnz, rowCount, colCount);
+  uint64_t rowsPerProc = rowCount / rowProcCount;
+  uint64_t colsPerProc = colCount / colProcCount;
+  printf("Assigning %ju rows and %ju columns per part.\n", rowsPerProc, colsPerProc);
+  for (uint64_t i = 0; i < nnz; i++) {
+    if (i % 100000 == 0 && i > 0) { printf("Processing %ju.th nonzero...\n", i); }
     int rowIdx, colIdx;
     double val;
-    fscanf(file, " %d %d %lf", &rowIdx, &colIdx, &val); rowIdx--; colIdx--;
-    int procRowIdx = rowIdx / rowsPerProc;
-    int procColIdx = colIdx / colsPerProc;
+    fscanf(file, " %ju %ju %lf", &rowIdx, &colIdx, &val); rowIdx--; colIdx--;
+    uint64_t procRowIdx = rowIdx / rowsPerProc;
+    uint64_t procColIdx = colIdx / colsPerProc;
     if (procRowIdx >= rowProcCount || procColIdx >= colProcCount) { continue; } // Prune matrix
-    int procIdx = procRowIdx * colProcCount + procColIdx;
-    int localRowIdx = rowIdx % rowsPerProc;
-    int localColIdx = colIdx % colsPerProc;
+    uint64_t procIdx = procRowIdx * colProcCount + procColIdx;
+    uint64_t localRowIdx = rowIdx % rowsPerProc;
+    uint64_t localColIdx = colIdx % colsPerProc;
     procRowIdxs[procIdx].push_back(localRowIdx);
     procColIdxs[procIdx].push_back(localColIdx);
     procVals[procIdx].push_back(val);
@@ -64,8 +66,8 @@ int main(int argc, char **argv)
     auto &curRowIdxs = procRowIdxs[i];
     auto &curColIdxs = procColIdxs[i];
     auto &curVals = procVals[i];
-    for (int j = 0; j < curRowIdxs.size(); j++) {
-      fprintf(file, "%d %d %e\n", curRowIdxs[j], curColIdxs[j], curVals[j]);
+    for (uint64_t j = 0; j < curRowIdxs.size(); j++) {
+      fprintf(file, "%ju %ju %e\n", curRowIdxs[j], curColIdxs[j], curVals[j]);
     }
     fclose(file);
   }
