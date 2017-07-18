@@ -97,8 +97,7 @@ class DistNMFDriver {
         MPI_Barrier(MPI_COMM_WORLD);
         try {
             nmfAlgorithm.computeNMF();
-        } catch (std::exception& e)
-        {
+        } catch (std::exception& e) {
             printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
