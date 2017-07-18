@@ -36,23 +36,17 @@ inline double toc() {
     return rc;
 }
 
-template <class T> void fixNumericalError(T *X) {
-    for (UINT i = 0; i < X->n_rows; i++) {
-        for (UINT j = 0; j < X->n_cols; j++) {
-            if ((*X)(i, j) < EPSILON) {
-                (*X)(i, j) = EPSILON;
-            }
-        }
-    }
+template <class T> void fixNumericalError(T *X, const double prec = EPSILON) {
+    (*X).for_each([&] (typename T::elem_type& val) {
+        val = (val < prec) ? prec : val;
+    } );
 }
 
-template <class T> void fixDecimalPlaces(T *X) {
-    for (UINT i = 0; i < X.n_rows; i++) {
-        for (UINT j = 0; j < X.n_cols; j++) {
-            (*X)(i, j) = floorf(X(i, j) * powersof10[NUMBEROF_DECIMAL_PLACES])
-                         / powersof10[NUMBEROF_DECIMAL_PLACES];
-        }
-    }
+template <class T> void fixDecimalPlaces(T *X,
+                         const int places = NUMBEROF_DECIMAL_PLACES) {
+    (*X).for_each([&] (typename T::elem_type& val) {
+        val = floorf(val * powersof10[places]) / powersof10[places];
+    } );
 }
 
 
