@@ -10,7 +10,7 @@
 #include "utils.hpp"
 
 class DistNMFDriver {
-  private:
+ private:
     int m_argc;
     char **m_argv;
     int m_k;
@@ -20,29 +20,40 @@ class DistNMFDriver {
     int m_num_it;
     int m_pr;
     int m_pc;
+    FVEC m_regW;
+    FVEC m_regH;
     distalgotype m_nmfalgo;
     float m_sparsity;
     iodistributions m_distio;
     uint m_compute_error;
+    int m_num_k_blocks;
     static const int kprimeoffset = 17;
 
     void printConfig() {
-        cout << "a::" << this->m_nmfalgo <<  "::i::" << this->m_Afile_name
+        cout << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
              << "::k::" << this->m_k << "::m::" << this->m_globalm
              << "::n::" << this->m_globaln << "::t::" << this->m_num_it
              << "::pr::" << this->m_pr << "::pc::" << this->m_pc
              << "::error::" << this->m_compute_error
-             << "::distio::" << this->m_distio << endl;
+             << "::distio::" << this->m_distio
+             << "::regW::" << "l2::" << this->m_regW(0)
+             << "::l1::" << this->m_regW(1)
+             << "::regH::" << "l2::" << this->m_regH(0)
+             << "::l1::" << this->m_regH(1)
+             << "::num_k_blocks::" << m_num_k_blocks
+             << std::endl;
     }
+
     template<class NMFTYPE>
     void callDistNMF1D() {
         std::string rand_prefix("rand_");
         MPICommunicator mpicomm(this->m_argc, this->m_argv);
 #ifdef BUILD_SPARSE
         DistIO<SP_FMAT> dio(mpicomm, m_distio);
-#else
+#else  // ifdef BUILD_SPARSE
         DistIO<FMAT> dio(mpicomm, m_distio);
-#endif
+#endif  // ifdef BUILD_SPARSE
+
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_globalm,
                           this->m_globaln, this->m_k, this->m_sparsity,
@@ -51,38 +62,45 @@ class DistNMFDriver {
             dio.readInput(m_Afile_name);
         }
 #ifdef BUILD_SPARSE
-        // SP_FMAT Arows(dio.Arows().row_indices, dio.Arows().col_ptrs,
-        //               dio.Arows().values,
-        //               dio.Arows().n_rows, dio.Arows().n_cols);
-        // SP_FMAT Acols(dio.Acols().row_indices, dio.Acols().col_ptrs,
-        //               dio.Acols().values,
-        //               dio.Acols().n_rows, dio.Acols().n_cols);
         SP_FMAT Arows(dio.Arows());
         SP_FMAT Acols(dio.Acols());
-#else
+#else // ifdef BUILD_SPARSE
         FMAT Arows(dio.Arows());
         FMAT Acols(dio.Acols());
-#endif
+#endif // ifdef BUILD_SPARSE
+
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             this->m_globaln = Arows.n_cols;
             this->m_globalm = Acols.n_rows;
         }
-        INFO << mpicomm.rank() <<  "::Completed generating 1D rand Arows="
+        INFO << mpicomm.rank() << "::Completed generating 1D rand Arows="
              << PRINTMATINFO(Arows) << "::Acols="
-             << PRINTMATINFO(Acols) << endl;
+             << PRINTMATINFO(Acols) << std::endl;
 #ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
-#endif
+#endif // ifdef WRITE_RAND_INPUT
         arma::arma_rng::set_seed(random_sieve(mpicomm.rank() + kprimeoffset));
-        FMAT W = arma::randu<FMAT>(this->m_globalm / mpicomm.size(), this->m_k);
-        FMAT H = arma::randu<FMAT>(this->m_globaln / mpicomm.size(), this->m_k);
+        FMAT W
+            = arma::randu<FMAT>(this->m_globalm / mpicomm.size(), this->m_k);
+        FMAT H
+            = arma::randu<FMAT>(this->m_globaln / mpicomm.size(), this->m_k);
+        sleep(10);
         MPI_Barrier(MPI_COMM_WORLD);
+        memusage(mpicomm.rank(), "b4 constructor ");
         NMFTYPE nmfAlgorithm(Arows, Acols, W, H, mpicomm);
+        sleep(10);
+        memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
         MPI_Barrier(MPI_COMM_WORLD);
-        nmfAlgorithm.computeNMF();
+        try {
+            nmfAlgorithm.computeNMF();
+        } catch (std::exception& e) {
+            printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                             nmfAlgorithm.getRightLowRankFactor(),
@@ -90,26 +108,28 @@ class DistNMFDriver {
         }
     }
 
-    template <class NMFTYPE>
+    template<class NMFTYPE>
     void callDistNMF2D() {
         std::string rand_prefix("rand_");
         MPICommunicator mpicomm(this->m_argc, this->m_argv,
                                 this->m_pr, this->m_pc);
-        if (this->m_pr > 0 && this->m_pc > 0
-                && this->m_pr * this->m_pc != mpicomm.size()) {
-            ERR << "pr*pc is not MPI_SIZE" << endl;
+        if ((this->m_pr > 0) && (this->m_pc > 0)
+            && (this->m_pr * this->m_pc != mpicomm.size())) {
+            ERR << "pr*pc is not MPI_SIZE" << std::endl;
             MPI_Barrier(MPI_COMM_WORLD);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
-#ifdef BUILD_SPARSE
+# ifdef BUILD_SPARSE
         UWORD nnz;
         DistIO<SP_FMAT> dio(mpicomm, m_distio);
+
         if (mpicomm.rank() == 0) {
-            INFO << "sparse case" << endl;
+            INFO << "sparse case" << std::endl;
         }
-#else
+# else // ifdef BUILD_SPARSE
         DistIO<FMAT> dio(mpicomm, m_distio);
-#endif
+# endif // ifdef BUILD_SPARSE
+
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_globalm,
                           this->m_globaln, this->m_k, this->m_sparsity,
@@ -119,170 +139,264 @@ class DistNMFDriver {
         }
 #ifdef BUILD_SPARSE
         // SP_FMAT A(dio.A().row_indices, dio.A().col_ptrs, dio.A().values,
-        //           dio.A().n_rows, dio.A().n_cols);
+        // dio.A().n_rows, dio.A().n_cols);
         SP_FMAT A(dio.A());
-#else
+# else // ifdef BUILD_SPARSE
         FMAT A(dio.A());
-#endif
+# endif // ifdef BUILD_SPARSE
+
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             UWORD localm = A.n_rows;
             UWORD localn = A.n_cols;
-            MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
-                          MPI_SUM, mpicomm.commSubs()[0]);
-            MPI_Allreduce(&localn, &(this->m_globaln), 1, MPI_INT,
-                          MPI_SUM, mpicomm.commSubs()[1]);
+
+            /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
+             *            MPI_SUM, mpicomm.commSubs()[0]);
+             * MPI_Allreduce(&localn, &(this->m_globaln), 1, MPI_INT,
+             *            MPI_SUM, mpicomm.commSubs()[1]);*/
+            this->m_globalm = localm * m_pr;
+            this->m_globaln = localn * m_pc;
         }
-        INFO << mpicomm.rank() <<  "::Completed generating 2D random matrix A="
-             << PRINTMATINFO(A) << endl;
-#ifdef WRITE_RAND_INPUT
+        INFO << mpicomm.rank() << "::Completed generating 2D random matrix A="
+             << PRINTMATINFO(A)
+             << "::globalm::" << this->m_globalm
+             << "::globaln::" << this->m_globaln
+             << std::endl;
+# ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
-#endif
+# endif // ifdef WRITE_RAND_INPUT
+
         // don't worry about initializing with the
         // same matrix as only one of them will be used.
         arma::arma_rng::set_seed(mpicomm.rank());
-        FMAT W = arma::randu<FMAT >(this->m_globalm / mpicomm.size(), this->m_k);
-        FMAT H = arma::randu<FMAT >(this->m_globaln / mpicomm.size(), this->m_k);
+        FMAT W
+            = arma::randu<FMAT>(this->m_globalm / mpicomm.size(), this->m_k);
+        FMAT H
+            = arma::randu<FMAT>(this->m_globaln / mpicomm.size(), this->m_k);
+# ifdef BUILD_SPARSE
+
+        // sometimes for really very large matrices starting w/
+        // rand initialization hurts ANLS BPP running time. For a better
+        // initializer we run couple of iterations of HALS.
+        if (m_nmfalgo == ANLSBPP2D) {
+            DistHALS<SP_FMAT> lrinitializer(A,
+                                            W,
+                                            H,
+                                            mpicomm,
+                                            this->m_num_k_blocks);
+            lrinitializer.num_iterations(4);
+            lrinitializer.algorithm(HALS2D);
+            lrinitializer.computeNMF();
+            W = lrinitializer.getLeftLowRankFactor();
+            H = lrinitializer.getRightLowRankFactor();
+        }
+# endif // ifdef BUILD_SPARSE
+
 #ifdef MPI_VERBOSE
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
-             << PRINTMATINFO(W) << endl;
+             << PRINTMATINFO(W) << std::endl;
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
-             << PRINTMATINFO(H) << endl;
-#endif
+             << PRINTMATINFO(H) << std::endl;
+#endif // ifdef MPI_VERBOSE
         MPI_Barrier(MPI_COMM_WORLD);
-        NMFTYPE nmfAlgorithm(A, W, H, mpicomm);
+        memusage(mpicomm.rank(), "b4 constructor ");
+        // TODO: I was here. Need to modify the reallocations by using localOwnedRowCount instead of m_globalm.
+        NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
+        memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
         nmfAlgorithm.algorithm(this->m_nmfalgo);
+        nmfAlgorithm.regW(this->m_regW);
+        nmfAlgorithm.regH(this->m_regH);
         MPI_Barrier(MPI_COMM_WORLD);
-        nmfAlgorithm.computeNMF();
+        try {
+            mpitic();
+            nmfAlgorithm.computeNMF();
+            double temp = mpitoc();
+
+            if (mpicomm.rank() == 0) printf("NMF took %.3lf secs.\n", temp);
+        } catch (std::exception& e) {
+            printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                             nmfAlgorithm.getRightLowRankFactor(),
                             m_outputfile_name);
         }
     }
-    void print_usage() {
-        INFO << "for short arguments like -i no equals sign"
-             << "for long arguments like --pr give key=value pair"
-             << "-a 0 for MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP " << endl;
-        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i rand_uniform/rand_normal/rand_lowrank "
-             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"  << endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             <<  "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"  << endl;
-    }
-  public:
-    DistNMFDriver(int argc, char *argv[]) {
-        this->m_argc = argc;
-        this->m_argv = argv;
+
+    void parseRegularizedParameter(const char *input, FVEC *reg) {
+        stringstream ss(input);
+        string s;
+        int    i = 0;
+        float  temp;
+
+        while (getline(ss, s, ' ')) {
+            temp      = ::atof(s.c_str());
+            (*reg)(i) = temp;
+            i++;
+        }
     }
 
     void parseCommandLine() {
         int opt, long_index;
-        this->m_nmfalgo = static_cast<distalgotype>(2);  // defaults to ANLS/BPP
-        this->m_k = 20;
-        this->m_Afile_name = "rand";
-        this->m_pr = 0;
-        this->m_pc = 0;
-        this->m_sparsity = 0.01;
-        this->m_num_it = 10;
-        this->m_distio = TWOD;
+
+        this->m_nmfalgo       = static_cast<distalgotype>(2); // defaults to ANLS/BPP
+        this->m_k             = 20;
+        this->m_Afile_name    = "rand";
+        this->m_pr            = 0;
+        this->m_pc            = 0;
+        this->m_sparsity      = 0.01;
+        this->m_num_it        = 10;
+        this->m_distio        = TWOD;
         this->m_compute_error = 0;
+        this->m_regW          = arma::zeros<FVEC>(2);
+        this->m_regH          = arma::zeros<FVEC>(2);
+        this->m_num_k_blocks  = 1;
+
         while ((opt = getopt_long(this->m_argc, this->m_argv,
                                   "a:i:e:k:m:n:o:t:s:", distnmfopts,
                                   &long_index)) != -1) {
             switch (opt) {
-            case 'a' :
-                this->m_nmfalgo = static_cast<distalgotype>(atoi(optarg));
-                break;
-            case 'i' : {
-                std::string temp = std::string(optarg);
-                this->m_Afile_name = temp;
-            }
-            break;
-            case 'e':
-                this->m_compute_error = atoi(optarg);
-                break;
-            case 'k':
-                this->m_k = atoi(optarg);
-                break;
-            case 'm':
-                this->m_globalm = atoi(optarg);
-                break;
-            case 'n':
-                this->m_globaln = atoi(optarg);
-                break;
-            case 'o': {
-                std::string temp = std::string(optarg);
-                this->m_outputfile_name = temp;
-            }
-            break;
-            case 's':
-                this->m_sparsity = atof(optarg);
-                break;
-            case 't':
-                this->m_num_it = atoi(optarg);
-                break;
-            case PROCROWS:
-                this->m_pr = atoi(optarg);
-                break;
-            case PROCCOLS:
-                this->m_pc = atoi(optarg);
-                break;
-            default:
-                cout << "failed while processing argument:" << optarg << endl;
-                print_usage();
-                exit(EXIT_FAILURE);
+                case 'a':
+                    this->m_nmfalgo = static_cast<distalgotype>(atoi(optarg));
+                    break;
+                case 'i': {
+                    std::string temp = std::string(optarg);
+                    this->m_Afile_name = temp;
+                    break;
+                }
+                case 'e':
+                    this->m_compute_error = atoi(optarg);
+                    break;
+                case 'k':
+                    this->m_k = atoi(optarg);
+                    break;
+                case 'm':
+                    this->m_globalm = atoi(optarg);
+                    break;
+                case 'n':
+                    this->m_globaln = atoi(optarg);
+                    break;
+                case 'o': {
+                    std::string temp = std::string(optarg);
+                    this->m_outputfile_name = temp;
+                    break;
+                }
+                case 's':
+                    this->m_sparsity = atof(optarg);
+                    break;
+                case 't':
+                    this->m_num_it = atoi(optarg);
+                    break;
+                case PROCROWS:
+                    this->m_pr = atoi(optarg);
+                    break;
+                case PROCCOLS:
+                    this->m_pc = atoi(optarg);
+                    break;
+                case REGWFLAG:
+                    parseRegularizedParameter(optarg, &this->m_regW);
+                    break;
+                case REGHFLAG:
+                    parseRegularizedParameter(optarg, &this->m_regH);
+                    break;
+                case NUMKBLOCKS:
+                    this->m_num_k_blocks = atoi(optarg);
+                    break;
+                default:
+                    cout << "failed while processing argument: " << opt
+                         << std::endl;
+
+                    // Print Usage and quit
+                    int m_rank;                
+                    MPI_Init(&this->m_argc, &this->m_argv);
+                    MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
+                    if (m_rank == 0) print_usage();
+                    MPI_Barrier(MPI_COMM_WORLD);
+                    MPI_Finalize();
+
+                    return;
             }
         }
+
         if (this->m_nmfalgo == NAIVEANLSBPP) {
             this->m_distio = ONED_DOUBLE;
         } else {
             this->m_distio = TWOD;
         }
-
         printConfig();
+
         switch (this->m_nmfalgo) {
-        case MU2D:
+            case MU2D:
 #ifdef BUILD_SPARSE
-            callDistNMF2D<DistMU<SP_FMAT> >();
-#else
-            callDistNMF2D<DistMU<FMAT> >();
-#endif
-            break;
-        case HALS2D:
+                callDistNMF2D<DistMU<SP_FMAT> >();
+#else // ifdef BUILD_SPARSE
+                callDistNMF2D<DistMU<FMAT> >();
+#endif // ifdef BUILD_SPARSE
+                break;
+            case HALS2D:
 #ifdef BUILD_SPARSE
-            callDistNMF2D<DistHALS<SP_FMAT> >();
-#else
-            callDistNMF2D<DistHALS<FMAT> >();
-#endif
-            break;
-        case ANLSBPP2D:
+                callDistNMF2D<DistHALS<SP_FMAT> >();
+#else // ifdef BUILD_SPARSE
+                callDistNMF2D<DistHALS<FMAT> >();
+#endif // ifdef BUILD_SPARSE
+                break;
+            case ANLSBPP2D:
 #ifdef BUILD_SPARSE
-            callDistNMF2D<DistANLSBPP<SP_FMAT> >();
-#else
-            callDistNMF2D<DistANLSBPP<FMAT> >();
-#endif
-            break;
-        case NAIVEANLSBPP:
+                callDistNMF2D<DistANLSBPP<SP_FMAT> >();
+#else // ifdef BUILD_SPARSE
+                callDistNMF2D<DistANLSBPP<FMAT> >();
+#endif // ifdef BUILD_SPARSE
+                break;
+            case NAIVEANLSBPP:
 #ifdef BUILD_SPARSE
-            callDistNMF1D<DistNaiveANLSBPP<SP_FMAT> >();
-#else
-            callDistNMF1D<DistNaiveANLSBPP<FMAT> >();
-#endif
+                callDistNMF1D<DistNaiveANLSBPP<SP_FMAT> >();
+#else // ifdef BUILD_SPARSE
+                callDistNMF1D<DistNaiveANLSBPP<FMAT> >();
+#endif // ifdef BUILD_SPARSE
+                break;
         }
     }
-};
 
-int main(int argc, char* argv[]) {
+public:
+
+    DistNMFDriver(int argc, char *argv[]) {
+        this->m_argc = argc;
+        this->m_argv = argv;
+        this->parseCommandLine();
+    }
+
+    void print_usage() {
+        INFO << std::endl;
+        INFO << "distnmf usage:" << std::endl;
+        INFO << "for short arguments like -i do not use equals sign, eg -t 10"
+             << std::endl
+             << "for long arguments like --pr give key=value pair, eg --pr=4"
+             << std::endl
+             << "algorithm codes 0-MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP"
+             << std::endl;
+        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
+        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             << "-i rand_uniform/rand_normal/rand_lowrank "
+             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"
+             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
+        INFO << "Usage 2: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             << "-i Ainput -t 10 --pr 3 --pc 2"
+             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
+        INFO << "Usage 3: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"
+             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
+        INFO << "Usage 4: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
+             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"
+             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+    }
+};  // DistNMFDriver
+
+int main(int argc, char *argv[]) {
     DistNMFDriver dnd(argc, argv);
-    dnd.parseCommandLine();
+    fflush(stdout);
 }

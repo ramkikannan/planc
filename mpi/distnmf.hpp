@@ -7,7 +7,6 @@
 #include "nmf.hpp"
 #include "distnmftime.hpp"
 
-
 /*
  * There are totally prxpc process.
  * Each process will hold the following
@@ -23,6 +22,8 @@ template <typename INPUTMATTYPE>
 class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
   const MPICommunicator& m_mpicomm;
+  UWORD m_ownedm;
+  UWORD m_ownedn;
   UWORD m_globalm;
   UWORD m_globaln;
   double m_globalsqnormA;
@@ -42,6 +43,8 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     this->m_globaln = 0;
     MPI_Allreduce(&sqnorma, &(this->m_globalsqnormA), 1, MPI_DOUBLE,
                   MPI_SUM, MPI_COMM_WORLD);
+    this->m_ownedm = this->W.n_rows;
+    this->m_ownedn = this->H.n_rows;
     MPI_Allreduce(&(this->m), &(this->m_globalm), 1, MPI_INT, MPI_SUM,
                   this->m_mpicomm.commSubs()[0]);
     MPI_Allreduce(&(this->n), &(this->m_globaln), 1, MPI_INT, MPI_SUM,

@@ -9,26 +9,27 @@
 // #define _VERBOSE 1;
 // #endif
 
-#define NUM_THREADS 4
-#define CONV_ERR 0.000001
-#define NUM_STATS 9
+#define NUM_THREADS    4
+#define CONV_ERR       0.000001
+#define NUM_STATS      9
 
 
 // #ifndef COLLECTSTATS
 // #define COLLECTSTATS 1
 // #endif
 
-
 // T must be a either an instance of MAT or sp_MAT
-template <class T>
+template<class T>
 class NMF {
-  protected:
+protected:
     // input MATrix of size mxn
     T A;
+
     // low rank factors with size mxk and nxk respectively.
     FMAT W, H;
-    FMAT Winit,Hinit;
+    FMAT Winit, Hinit;
     UINT m, n, k;
+
     /*
      * Collected statistics are
      * iteration Htime Wtime totaltime normH normW densityH densityW relError
@@ -41,14 +42,19 @@ class NMF {
     int m_num_iterations;
     std::string input_file_name;
 
+    // The regularization is a vector of two values. The first value specifies
+    // L2 regularization values and the second is L1 regularization.
+    FVEC m_regW;
+    FVEC m_regH;
+
     void collectStats(int iteration) {
-        this->normW = norm(this->W, "fro");
-        this->normH = norm(this->H, "fro");
+        this->normW = arma::norm(this->W, "fro");
+        this->normH = arma::norm(this->H, "fro");
         UVEC nnz = find(this->W > 0);
         this->densityW = nnz.size() / (this->m * this->k);
         nnz.clear();
-        nnz = find(this->H > 0);
-        this->densityH = nnz.size() / (this->m * this->k);
+        nnz                       = find(this->H > 0);
+        this->densityH            = nnz.size() / (this->m * this->k);
         this->stats(iteration, 4) = this->normH;
         this->stats(iteration, 5) = this->normW;
         this->stats(iteration, 6) = this->densityH;
@@ -56,45 +62,89 @@ class NMF {
         this->stats(iteration, 8) = this->objective_err;
     }
 
-  private:
+    /*
+     * For both L1 and L2 regularizations we only adjust the
+     * HtH or WtW. The regularization is a vector of two values.
+     * The first value specifies L2 regularization values
+     * and the second is L1 regularization.
+     * Mostly we expect
+     */
+    void applyReg(const FVEC& reg, FMAT *AtA) {
+        // Frobenius norm regularization
+        if (reg(0) > 0) {
+            FMAT  identity  = arma::eye<FMAT>(this->k, this->k);
+            float lambda_l2 = reg(0);
+            (*AtA) = (*AtA) + 2 * lambda_l2 * identity;
+        }
+
+        // L1 - norm regularization
+        if (reg(1) > 0) {
+            FMAT  onematrix = arma::ones<FMAT>(this->k, this->k);
+            float lambda_l1 = reg(1);
+            (*AtA) = (*AtA) + 2 * lambda_l1 * onematrix;
+        }
+    }
+
+    void normalize_by_W(){
+        FMAT W_square = arma::pow(this->W, 2);
+        FROWVEC norm2 = arma::sqrt(arma::sum(W_square, 0));
+        for (int i=0; i < this->k; i++){
+            if (norm2(i) > 0){
+                this->W.col(i) = this->W.col(i) / norm2(i);
+                this->H.col(i) = this->H.col(i) * norm2(i);
+            }
+        }
+
+    }
+
+private:
     void otherInitializations() {
         this->stats.zeros();
-        this->cleared = false;
-        this->normA = norm(this->A, "fro");
+        this->cleared          = false;
+        this->normA            = arma::norm(this->A, "fro");
         this->m_num_iterations = 20;
-        this->objective_err = 1000000000000;
+        this->objective_err    = 1000000000000;
         this->stats.resize(m_num_iterations + 1, NUM_STATS);
     }
 
-  public:
-    NMF(const T &input, const unsigned int rank) {
-        this->A = input;
-        this->m = A.n_rows;
-        this->n = A.n_cols;
-        this->k = rank;
-        this->W = arma::randu<FMAT>(m, k);
-        this->H = arma::randu<FMAT>(n, k);
+public:
+    NMF(const T& input, const unsigned int rank) {
+        this->A      = input;
+        this->m      = A.n_rows;
+        this->n      = A.n_cols;
+        this->k      = rank;
+        // prime number closer to W.
+        arma::arma_rng::set_seed(89);        
+        this->W      = arma::randu<FMAT>(m, k);
+        // prime number close to H
+        arma::arma_rng::set_seed(73);
+        this->H      = arma::randu<FMAT>(n, k);
+        this->m_regW = arma::zeros<FVEC>(2);
+        this->m_regH = arma::zeros<FVEC>(2);
+
         // make the random MATrix positive
         // absMAT<FMAT>(W);
         // absMAT<FMAT>(H);
         // other intializations
         this->otherInitializations();
-        cout << "NMF.hpp:constructor NMF(A,k) over!!!" << endl;
     }
-    NMF(const T &input, const FMAT &leftlowrankfactor,
-        const FMAT &rightlowrankfactor) {
+
+    NMF(const T& input, const FMAT& leftlowrankfactor,
+        const FMAT& rightlowrankfactor) {
         assert(leftlowrankfactor.n_cols == rightlowrankfactor.n_cols);
-        this->A = input;
-        this->W = leftlowrankfactor;
-        this->H = rightlowrankfactor;
-        this->Winit = leftlowrankfactor;
-        this->Hinit = rightlowrankfactor;
-        this->m = A.n_rows;
-        this->n = A.n_cols;
-        this->k = W.n_cols;
+        this->A      = input;
+        this->W      = leftlowrankfactor;
+        this->H      = rightlowrankfactor;
+        this->Winit  = this->W;
+        this->Hinit  = this->H;
+        this->m      = A.n_rows;
+        this->n      = A.n_cols;
+        this->k      = W.n_cols;
+        this->m_regW = arma::zeros<FVEC>(2);
+        this->m_regH = arma::zeros<FVEC>(2);
+
         // other initializations
         this->otherInitializations();
-        INFO << "NMF.hpp::constructor over" << endl;
     }
 
     virtual void computeNMF() = 0;
@@ -106,18 +156,19 @@ class NMF {
     FMAT getRightLowRankFactor() {
         return H;
     }
-    /*
-    * A is mxn
-    * Wr is mxk will be overwritten. Must be passed with values of W.
-    * Hr is nxk will be overwritten. Must be passed with values of H.
-    * All MATrices are in row major forMAT
-    * ||A-WH||_F^2 = over all nnz (a_ij - w_i h_j)^2 +
-                 over all zeros (w_i h_j)^2
-               = over all nnz (a_ij - w_i h_j)^2 +
-                 ||WH||_F^2 - over all nnz (w_i h_j)^2
 
-    */
-#ifdef BUILD_SPARSE
+    /*
+     * A is mxn
+     * Wr is mxk will be overwritten. Must be passed with values of W.
+     * Hr is nxk will be overwritten. Must be passed with values of H.
+     * All MATrices are in row major forMAT
+     * ||A-WH||_F^2 = over all nnz (a_ij - w_i h_j)^2 +
+     *           over all zeros (w_i h_j)^2
+     *         = over all nnz (a_ij - w_i h_j)^2 +
+     ||WH||_F^2 - over all nnz (w_i h_j)^2
+     *
+     */
+#if 0
     void computeObjectiveError() {
         // 1. over all nnz (a_ij - w_i h_j)^2
         // 2. over all nnz (w_i h_j)^2
@@ -127,36 +178,39 @@ class NMF {
         // 6. return nnzsse+nnzwh-||RL||_F^2
         tic();
         float nnzsse = 0;
-        float nnzwh = 0;
-        FMAT Rw(this->k, this->k);
-        FMAT Rh(this->k, this->k);
-        FMAT Qw(this->m, this->k);
-        FMAT Qh(this->n, this->k);
-        FMAT RwRh(this->k, this->k);
+        float nnzwh  = 0;
+        FMAT  Rw(this->k, this->k);
+        FMAT  Rh(this->k, this->k);
+        FMAT  Qw(this->m, this->k);
+        FMAT  Qh(this->n, this->k);
+        FMAT  RwRh(this->k, this->k);
+
         // #pragma omp parallel for reduction (+ : nnzsse,nnzwh)
         for (UWORD jj = 1; jj <= this->A.n_cols; jj++) {
-            UWORD startIdx = this->A.col_ptrs[jj - 1];
-            UWORD endIdx = this->A.col_ptrs[jj];
-            UWORD col = jj - 1;
+            UWORD startIdx  = this->A.col_ptrs[jj - 1];
+            UWORD endIdx    = this->A.col_ptrs[jj];
+            UWORD col       = jj - 1;
             float nnzssecol = 0;
-            float nnzwhcol = 0;
+            float nnzwhcol  = 0;
+
             for (UWORD ii = startIdx; ii < endIdx; ii++) {
-                UWORD row = this->A.row_indices[ii];
+                UWORD row     = this->A.row_indices[ii];
                 float tempsum = 0;
+
                 for (UWORD kk = 0; kk < k; kk++) {
                     tempsum += (this->W(row, kk) * this->H(col, kk));
                 }
-                nnzwhcol += tempsum * tempsum;
+                nnzwhcol  += tempsum * tempsum;
                 nnzssecol += (this->A.values[ii] - tempsum)
                              * (this->A.values[ii] - tempsum);
             }
             nnzsse += nnzssecol;
-            nnzwh += nnzwhcol;
+            nnzwh  += nnzwhcol;
         }
         qr_econ(Qw, Rw, this->W);
         qr_econ(Qh, Rh, this->H);
         RwRh = Rw * Rh.t();
-        float normWH = norm(RwRh, "fro");
+        float normWH = arma::norm(RwRh, "fro");
         Rw.clear();
         Rh.clear();
         Qw.clear();
@@ -165,28 +219,64 @@ class NMF {
         INFO << "error compute time " << toc() << endl;
         float fastErr = sqrt(nnzsse + (normWH * normWH - nnzwh));
         this->objective_err = fastErr;
+
         // return (fastErr);
     }
-#else
+
+#else // ifdef BUILD_SPARSE
     void computeObjectiveError() {
         // (init.norm_A)^2 - 2*trace(H'*(A'*W))+trace((W'*W)*(H*H'))
         FMAT WtW = this->W.t() * this->W;
         FMAT HtH = this->H.t() * this->H;
         FMAT AtW = this->A.t() * this->W;
-        this->objective_err = this->normA * this->normA
-                              - 2 * trace(this->H.t() * AtW) + trace(WtW * HtH);
+
+        double sqnormA  = this->normA * this->normA;
+        double TrHtAtW  = arma::trace(this->H.t() * AtW);
+        double TrWtWHtH = arma::trace(WtW * HtH);
+
+        this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
     }
-#endif
-    void computeObjectiveError(const T &At, const FMAT &WtW, const FMAT &HtH) {
+
+#endif // ifdef BUILD_SPARSE
+    void computeObjectiveError(const T& At, const FMAT& WtW,
+                               const FMAT& HtH) {
         FMAT AtW = At * this->W;
-        this->objective_err = this->normA * this->normA
-                              - 2 * trace(this->H.t() * AtW) + trace(WtW * HtH);
+
+        double sqnormA  = this->normA * this->normA;
+        double TrHtAtW  = arma::trace(this->H.t() * AtW);
+        double TrWtWHtH = arma::trace(WtW * HtH);
+
+        this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
     }
-    void num_iterations(const int it) {this->m_num_iterations = it;}
-    const int num_iterations() const {return m_num_iterations;}
+
+    void num_iterations(const int it) {
+        this->m_num_iterations = it;
+    }
+
+    void regW(const FVEC& iregW) {
+        this->m_regW = iregW;
+    }
+
+    void regH(const FVEC& iregH) {
+        this->m_regH = iregH;
+    }
+
+    FVEC regW() {
+        return this->m_regW;
+    }
+
+    FVEC regH() {
+        return this->m_regH;
+    }
+
+    const int num_iterations() const {
+        return m_num_iterations;
+    }
+
     ~NMF() {
         clear();
     }
+
     void clear() {
         if (!this->cleared) {
             this->A.clear();

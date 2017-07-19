@@ -36,23 +36,17 @@ inline double toc() {
     return rc;
 }
 
-template <class T> void fixNumericalError(T *X) {
-    for (UINT i = 0; i < X->n_rows; i++) {
-        for (UINT j = 0; j < X->n_cols; j++) {
-            if ((*X)(i, j) <= EPSILON) {
-                (*X)(i, j) = 0;
-            }
-        }
-    }
+template <class T> void fixNumericalError(T *X, const double prec = EPSILON) {
+    (*X).for_each([&] (typename T::elem_type& val) {
+        val = (val < prec) ? prec : val;
+    } );
 }
 
-template <class T> void fixDecimalPlaces(T *X) {
-    for (UINT i = 0; i < X.n_rows; i++) {
-        for (UINT j = 0; j < X.n_cols; j++) {
-            (*X)(i, j) = floorf(X(i, j) * powersof10[NUMBEROF_DECIMAL_PLACES])
-                         / powersof10[NUMBEROF_DECIMAL_PLACES];
-        }
-    }
+template <class T> void fixDecimalPlaces(T *X,
+                         const int places = NUMBEROF_DECIMAL_PLACES) {
+    (*X).for_each([&] (typename T::elem_type& val) {
+        val = floorf(val * powersof10[places]) / powersof10[places];
+    } );
 }
 
 
@@ -142,7 +136,7 @@ void printVector(const std::vector<T> &x) {
     for (int i = 0; i < x.size(); i++) {
         INFO << x[i] << ' ';
     }
-    INFO << endl;
+    INFO << std::endl;
 }
 
 /*
@@ -190,13 +184,13 @@ double computeObjectiveError(const INPUTTYPE &A,
     qr_econ(Qw, Rw, W);
     qr_econ(Qh, Rh, H);
     RwRh = Rw * Rh.t();
-    double normWH = norm(RwRh, "fro");
+    double normWH = arma::norm(RwRh, "fro");
     Rw.clear();
     Rh.clear();
     Qw.clear();
     Qh.clear();
     RwRh.clear();
-    INFO << "error compute time " << toc() << endl;
+    INFO << "error compute time " << toc() << std::endl;
     double fastErr = sqrt(nnzsse + (normWH * normWH - nnzwh));
     return (fastErr);
 }
@@ -238,6 +232,7 @@ void ARMAMKLSCSCMM(const SP_FMAT &mklMat, char transa, const FMAT &Bt,
 * This is an sgemm wrapper for armadillo matrices
 * Something is going crazy with armadillo
 */
+
 void cblas_sgemm(const FMAT &A, const FMAT &B, float *C) {
     UWORD m = A.n_rows;
     UWORD n = B.n_cols;

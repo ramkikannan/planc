@@ -15,11 +15,8 @@
 #include <set>
 #include <algorithm>
 #include <iomanip>
-#include <boost/range/algorithm/set_algorithm.hpp>
 #include "ActiveSetNNLS.hpp"
 #include "SortBooleanMatrix.hpp"
-
-using namespace boost;
 
 template <class MATTYPE, class VECTYPE>
 class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
@@ -79,9 +76,15 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
             STDVEC Vs;
             V1 = find(this->x(F) < 0);
             V2 = find(y(G) < 0);
-            boost::set_union(arma::conv_to<STDVEC>::from(F(V1)),
-                             arma::conv_to<STDVEC>::from(G(V2)),
-                             std::inserter(Vs, Vs.begin()));
+
+            STDVEC Fv1 = arma::conv_to<STDVEC>::from(F(V1));
+            STDVEC Gv2 = arma::conv_to<STDVEC>::from(G(V2));
+            std::set_union(Fv1.begin(),
+                           Fv1.end(),
+                           Gv2.begin(),
+                           Gv2.end(),
+                           std::inserter(Vs, Vs.begin()));
+
             UVEC V = arma::conv_to<UVEC>::from(Vs);
 #ifdef _VERBOSE
             INFO << "xf<0 : " << V1.size() << endl << V1;
@@ -222,9 +225,15 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
             INFO << "Y(Gv)<0 : " << V2.size() << endl << V2;
 #endif
             STDVEC Vs;
-            boost::set_union(arma::conv_to<STDVEC>::from(Fv(V1)),
-                             arma::conv_to<STDVEC>::from(Gv(V2)),
-                             std::inserter(Vs, Vs.begin()));
+
+            STDVEC Fvv1 = arma::conv_to<STDVEC>::from(Fv(V1));
+            STDVEC Gvv2 = arma::conv_to<STDVEC>::from(Gv(V2));
+            std::set_union(Fvv1.begin(),
+                           Fvv1.end(),
+                           Gvv2.begin(),
+                           Gvv2.end(),
+                           std::inserter(Vs, Vs.begin()));
+
             UVEC VIdx = arma::conv_to<UVEC>::from(Vs);
             if (VIdx.empty()) {
 #ifdef _VERBOSE
@@ -343,12 +352,12 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                  << " : r=" << this->r << " :p=" << this->p
                  << " :q=" << this->q << endl;
             std::ostringstream fileName, fileName2;
-            int temp = rand_r();
+            int temp = rand();
             fileName << "errinputmatrix" << temp;
-            INFO << "input file matrix " << fileName << endl;
+            INFO << "input file matrix " << fileName.str() << endl;
             this->CtC.save(fileName.str());
             fileName2 << "errrhsmatrix" << temp;
-            INFO << "rhs file matrix " << fileName2 << endl;
+            INFO << "rhs file matrix " << fileName2.str() << endl;
             this->CtB.save(fileName2.str());
             sleep(60);
             exit(EXIT_FAILURE);
@@ -456,14 +465,17 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
     void fixAllSets(UVEC &F, UVEC &G, UVEC &V, STDVEC &allIdxs) {
         // G = (G-V) union (V intersection F)
         std::set<int> temp1, temp2;
-        boost::set_difference(arma::conv_to<STDVEC>::from(G),
-                              arma::conv_to<STDVEC>::from(V),
-                              std::inserter(temp1, temp1.begin()));
-        boost::set_intersection(arma::conv_to<STDVEC>::from(V),
-                                arma::conv_to<STDVEC>::from(F),
-                                std::inserter(temp2, temp2.begin()));
+        STDVEC vecG = arma::conv_to<STDVEC>::from(G);
+        STDVEC vecV = arma::conv_to<STDVEC>::from(V);
+        STDVEC vecF = arma::conv_to<STDVEC>::from(F);
+        std::set_difference(vecG.begin(), vecG.end(), vecV.begin(), vecV.end(),
+                            std::inserter(temp1, temp1.begin()));
+        std::set_intersection(vecV.begin(), vecV.end(), vecF.begin(), vecF.end(),
+                              std::inserter(temp2, temp2.begin()));
         STDVEC Gs;
-        boost::set_union(temp1, temp2, std::inserter(Gs, Gs.begin()));
+        std::set_union(temp1.begin(), temp1.end(), 
+                       temp2.begin(), temp2.end(),
+                       std::inserter(Gs, Gs.begin()));
         G = arma::conv_to<UVEC>::from(Gs);
 
 
@@ -475,9 +487,9 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
         //       std::set<int> temp1, temp2, temp3, temp4;
         STDVEC newF;
         //       // std library didn't work. Hence used boost.
-        boost::set_difference(allIdxs,
-                              Gs,
-                              std::inserter(newF, newF.begin()));
+        std::set_difference(allIdxs.begin(), allIdxs.end(),
+                            Gs.begin(), Gs.end(),
+                            std::inserter(newF, newF.begin()));
         //       boost::set_intersection(arma::conv_to<STDVEC>::from(V),
         //               arma::conv_to<STDVEC>::from(G),
         //               std::inserter(temp2, temp2.begin()));

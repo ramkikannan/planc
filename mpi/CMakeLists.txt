@@ -6,7 +6,12 @@ set(ARMA_USE_WRAPPER true)
 
 # the settings below will be automatically configured by the rest of this script
 
+# set(ARMADILLO_LIB_DIR /home/okaya/armadillo-6.600.5/install/usr/lib)
+
 project(DISTNMF CXX)
+
+OPTION(CMAKE_IGNORE_MKL "Build ignoring MKL" OFF)
+
 set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
 set(NNLS_SRC ${DISTNMF_SOURCE_DIR}/../nnls/)
 message(STATUS "DISTNMF_SOURCE_DIR =  ${DISTNMF_SOURCE_DIR}")
@@ -15,22 +20,16 @@ message(STATUS "NMFLIB_COMMON =  ${NMFLIB_COMMON}")
 include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
 #BOOST package needed for activeset NNLS
-set(BOOST false)
+#set(BOOST false)
 #As advised by Wlliam Renaud note dated 4/22. There is an issue on Rhea
 #in which the system boost is found before the version in modules.
 #Ignore system boost and use module system boost
-set(Boost_NO_BOOST_CMAKE TRUE)
-find_package(Boost REQUIRED)
+#set(Boost_NO_BOOST_CMAKE TRUE)
+#find_package(Boost REQUIRED)
 
 find_package(MPI REQUIRED)
 
-message(STATUS "   Boost_FOUND = ${Boost_FOUND}"   )
 message(STATUS " MPI_CXX_FOUND = ${MPI_CXX_FOUND}" )
-
-if(MKL_FOUND)
-  add_definitions(-DMKL_FOUND=1)
-  set(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
-endif()
 
 if(MPI_CXX_FOUND)
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MPI_CXX_LIBRARIES})
@@ -66,13 +65,14 @@ include_directories(
   ${NNLS_SRC}
   if(MPI_CXX_FOUND)
     ${MPI_CXX_INCLUDE_PATH}
-  endif()
-  ${Boost_INCLUDE_DIR}
+  endif()  
   ${MKL_INCLUDE_DIR}
 )
 
 add_executable(distnmf
   distnmf.cpp
 )
+
+add_definitions(-std=c++11 -w)
 
 target_link_libraries(distnmf ${NMFLIB_LIBS})

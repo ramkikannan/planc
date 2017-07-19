@@ -22,22 +22,22 @@ enum algotype {MU_NMF, HALS_NMF, BPP_NMF};
 #include <iostream>
 #include <armadillo>
 
-using namespace std;
+// using namespace std;
 
 #ifndef ERR
-#define ERR cerr
+#define ERR std::cerr
 #endif
 
 #ifndef WARN
-#define WARN cerr
+#define WARN std::cerr
 #endif
 
 #ifndef INFO
-#define INFO cout
+#define INFO std::cout
 #endif
 
 #ifndef OUTPUT
-#define OUTPUT cout
+#define OUTPUT std::cout
 #endif
 
 #define EPSILON_1EMINUS16 0.00000000000000001
@@ -55,7 +55,6 @@ using namespace std;
 #define UVEC    arma::uvec
 #define UWORD   arma::uword
 #define VEC     arma::vec
-
 
 //#define PRINTMATINFO(A) \
 "::"#A"::" << (A).n_rows << "x" << (A).n_cols << "::norm::" << norm((A),"fro")
@@ -82,23 +81,27 @@ int random_sieve(const int);
 // NMFLibrary algotype lowrank Afile WInitfile HInitfile WoutputFile HoutputFile numIteration
 #define WINITFLAG 1000
 #define HINITFLAG 1001
+#define REGWFLAG  1002
+#define REGHFLAG  1003
 
 struct option nmfopts[] = {
-  {"input",   optional_argument, 0, 'i'},
-  {"algo",  optional_argument, 0, 'a'},
+  {"input",       required_argument, 0, 'i'},
+  {"algo",        required_argument, 0, 'a'},
   {"lowrank",     optional_argument, 0, 'k'},
-  {"iter",   optional_argument,       0, 't'},
-  {"rows",   optional_argument,       0, 'm'},
-  {"columns",   optional_argument,       0, 'n'},
-  {"winit",   optional_argument,       0, WINITFLAG},
-  {"hinit",   optional_argument,       0, HINITFLAG},
-  {"wout",   optional_argument,       0, 'w'},
-  {"hout",   optional_argument,       0, 'h'},
+  {"iter",        optional_argument, 0, 't'},
+  {"rows",        optional_argument, 0, 'm'},
+  {"columns",     optional_argument, 0, 'n'},
+  {"winit",       optional_argument, 0, WINITFLAG},
+  {"hinit",       optional_argument, 0, HINITFLAG},
+  {"wout",        optional_argument, 0, 'w'},
+  {"hout",        optional_argument, 0, 'h'},
+  {"regw",        optional_argument, 0, REGWFLAG},
+  {"regh",        optional_argument, 0, REGHFLAG},
   {0,         0,                 0,  0 }
 };
 
 template<typename FVT>
-inline void fillVector(const FVT value, vector<FVT> *a) {
+inline void fillVector(const FVT value, std::vector<FVT> *a) {
   for (int ii = 0; ii < a->size(); ii++) {
     (*a)[ii] = value;
   }

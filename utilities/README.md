@@ -24,3 +24,14 @@ the .xml file into a .txt file that contains one question every line. This can t
 consumed into mangodb or use some python scripting tool to build the sparse bag of words 
 matrix. The sparse bag of words matrix can be uniformly split using the splitfiles utility
 explained above. 
+
+5. shufflesparsemm.py shuffles the sparse matrix in coordinate format for load balancing.
+It permutes both the rows and the columns of the matrix. It can be run as 
+
+````
+python shufflesparsemm.py -i inputfile -o outputfile
+````
+
+Once completed running it generates three files. Shuffled matrix file and the
+outputfile_rowperm as the row permutation indexes and the outputfile_colperm as
+col permutation indexes

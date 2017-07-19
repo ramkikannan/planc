@@ -20,14 +20,14 @@ class MPICommunicator {
     MPI_Comm* m_commSubs;
     void printConfig() {
         if (rank() == 0) {
-            INFO << "successfully setup MPI communicators" << endl;
-            INFO << "size=" << size() << endl;
-            INFO << "rowsize=" << m_row_size << ":pr=" << m_pr << endl;
-            INFO << "colsize=" << m_col_size << ":pc=" << m_pc << endl;
+            INFO << "successfully setup MPI communicators" << std::endl;
+            INFO << "size=" << size() << std::endl;
+            INFO << "rowsize=" << m_row_size << ":pr=" << m_pr << std::endl;
+            INFO << "colsize=" << m_col_size << ":pc=" << m_pc << std::endl;
         }
         MPI_Barrier(MPI_COMM_WORLD);
-        cout << ":rank=" << rank() << ":row_rank=" <<
-             row_rank() << ":colrank" << col_rank() << endl;
+        INFO << ":rank=" << rank() << ":row_rank=" <<
+             row_rank() << ":colrank" << col_rank() << std::endl;
     }
 
   public:
@@ -64,7 +64,10 @@ class MPICommunicator {
         if (dimSizes[0]*dimSizes[1] != m_numProcs) {
             if (m_rank == 0) {
                 std::cerr << "Processor grid dimensions do not"
-                          << "multiply to MPI_SIZE" << std::endl;
+                          << "multiply to MPI_SIZE::"
+                          << dimSizes[0] << 'x' << dimSizes[1]
+                          << "::m_numProcs::" << m_numProcs
+                          << std::endl;
             }
             MPI_Barrier(MPI_COMM_WORLD);
             MPI_Abort(MPI_COMM_WORLD, 1);

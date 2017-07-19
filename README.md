@@ -35,3 +35,9 @@ Also, partial funding for this work was provided by AFOSR Grant FA9550-13-1-0100
 The United States Government retains and the publisher, by accepting the article for publication, acknowledges that the United States Government retains a non-exclusive, paid-up, irrevocable, world-wide license to publish or reproduce the published form of this manuscript, or allow others to do so, for United States Government purposes. The Department of Energy will provide public access to these results of federally sponsored research in accordance with the DOE Public Access Plan http://energy.gov/downloads/doepublic-access-plan. 
 
 Any opinions, findings and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the USDOE, NERSC, AFOSR, NSF or DARPA.
+
+Version 0.5
+===========
+* Support for L1 and L2 regularization
+* Removed boost and mkl requirements. Works on Cray systems such as EOS and Titan as well
+* Bug fixes on error computation

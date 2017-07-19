@@ -5,7 +5,6 @@ This program depends on:
 
 - Armadillo library which can be found at https://arma.sourceforge.net
 - OpenBLAS https://github.com/xianyi/OpenBLAS
-- Boost C++ libraries 1.55 http://www.boost.org/ Set Operations
 
 Once you have installed these libraries set the following environment variables.
 
@@ -30,6 +29,10 @@ Run cmake with -DCMAKE_BUILD_SPARSE=1
 Sparse Debug build
 ------------------
 Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
+
+Building on Cray-EOS/Titan
+-----------------------
+CC=CC CXX=CC cmake ~/nmflibrary/mpi/ -DCMAKE_IGNORE_MKL=1
 
 Intel MKL vs Openblas
 =====================
