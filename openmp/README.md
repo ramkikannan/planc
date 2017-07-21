@@ -30,6 +30,10 @@ Sparse Debug build
 ------------------
 Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
+Building on Cray-EOS/Titan
+-----------------------
+CC=CC CXX=CC cmake ~/nmflibrary/mpi/ -DCMAKE_IGNORE_MKL=1
+
 Intel MKL vs Openblas
 =====================
 - ````export LD_LIBRARY_PATH=MKL_LIB path````
