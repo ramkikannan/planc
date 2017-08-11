@@ -224,6 +224,7 @@ class BPPNMF: public NMF<T> {
                  << sqrt(this->objective_err)/this->normA << std::endl;
             currentIteration++;
         }
+        this->normalize_by_W();
 #ifdef COLLECTSTATS
         this->collectStats(currentIteration);
         INFO << "NMF Statistics:" << std::endl << this->stats << std::endl;

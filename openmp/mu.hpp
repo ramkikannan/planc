@@ -77,6 +77,7 @@ class MUNMF: public NMF<T> {
                  << sqrt(this->objective_err)/this->normA << std::endl;
             currentIteration++;
         }
+        this->normalize_by_W();
     }
     ~MUNMF() {
         freeMatrices();
