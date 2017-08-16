@@ -50,6 +50,7 @@ enum algotype {MU_NMF, HALS_NMF, BPP_NMF};
 #define FMAT    arma::fmat
 #define MAT     arma::mat
 #define FROWVEC arma::frowvec
+#define ROWVEC arma::rowvec
 #define FVEC    arma::fvec
 #define SP_FMAT arma::sp_fmat
 #define UVEC    arma::uvec

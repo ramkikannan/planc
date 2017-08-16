@@ -12,10 +12,10 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
                std::string WinitFileName, std::string HinitFileName,
                std::string WfileName, std::string HfileName, int numIt) {
 #ifdef BUILD_SPARSE
-    SP_FMAT A;
+    SP_MAT A;
     UWORD nnz;
 #else
-    FMAT A;
+    MAT A;
 #endif
     double t1, t2;
     if (!AfileName.empty()) {
@@ -33,13 +33,13 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
 #endif
     } else {
 #ifdef BUILD_SPARSE
-        A = arma::sprandu<SP_FMAT>(m, n, 0.001);
+        A = arma::sprandu<SP_MAT>(m, n, 0.001);
 #else
-        A = arma::randu<FMAT>(m, n);
+        A = arma::randu<MAT>(m, n);
 #endif
         INFO << "generated random matrix A=" << PRINTMATINFO(A) << std::endl;
     }
-    FMAT W, H;
+    MAT W, H;
     if (!WinitFileName.empty()) {
         INFO << "Winitfilename = " << WinitFileName << std::endl;
         W.load(WinitFileName, arma::raw_ascii);
@@ -84,15 +84,15 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
 }
 #ifdef BUILD_SPARSE
 void incrementalGraph(std::string AfileName, std::string WfileName) {
-    SP_FMAT A;
+    SP_MAT A;
     UWORD m, n, nnz;
     A.load(AfileName, arma::coord_ascii);
     INFO << "Loaded input matrix A=" << PRINTMATINFO(A) << std::endl;
-    FMAT W, H;
+    MAT W, H;
     W.load(WfileName, arma::raw_ascii);
     INFO << "Loaded input matrix W=" << PRINTMATINFO(W) << std::endl;
     H.ones(A.n_cols, W.n_cols);
-    BPPNMF<SP_FMAT > bppnmf(A, W, H);
+    BPPNMF<SP_MAT > bppnmf(A, W, H);
     H = bppnmf.solveScalableNNLS();
     OUTPUT << H << std::endl;
 }
@@ -173,28 +173,28 @@ void parseCommandLineandCallNMF(int argc, char *argv[]) {
     switch (nmfalgo) {
     case MU_NMF:
 #ifdef BUILD_SPARSE
-        NMFDriver<MUNMF<SP_FMAT > >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<MUNMF<SP_MAT > >(lowRank, m, n, AfileName, WInitfileName,
                                    HInitfileName, WfileName, HfileName, numIt);
 #else
-        NMFDriver<MUNMF<FMAT > >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<MUNMF<MAT > >(lowRank, m, n, AfileName, WInitfileName,
                                 HInitfileName, WfileName, HfileName, numIt);
 #endif
         break;
     case HALS_NMF:
 #ifdef BUILD_SPARSE
-        NMFDriver<HALSNMF<SP_FMAT > >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<HALSNMF<SP_MAT > >(lowRank, m, n, AfileName, WInitfileName,
                                      HInitfileName, WfileName, HfileName, numIt);
 #else
-        NMFDriver<HALSNMF<FMAT > >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<HALSNMF<MAT > >(lowRank, m, n, AfileName, WInitfileName,
                                   HInitfileName, WfileName, HfileName, numIt);
 #endif
         break;
     case BPP_NMF:
 #ifdef BUILD_SPARSE
-        NMFDriver<BPPNMF<SP_FMAT > >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<BPPNMF<SP_MAT > >(lowRank, m, n, AfileName, WInitfileName,
                                     HInitfileName, WfileName, HfileName, numIt);
 #else
-        NMFDriver<BPPNMF<FMAT > >(lowRank, m, n, AfileName, WInitfileName,
+        NMFDriver<BPPNMF<MAT > >(lowRank, m, n, AfileName, WInitfileName,
                                  HInitfileName, WfileName, HfileName, numIt);
 #endif
         break;

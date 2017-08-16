@@ -74,9 +74,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     w_init = mxGetPr(w_in_m);
     h_init = mxGetPr(h_in_m);
 
-    FMAT A = arma::zeros<FMAT>(arows, acols);
-    FMAT W = arma::zeros<FMAT>(wrows, wcols);
-    FMAT H = arma::zeros<FMAT>(acols, wcols);
+    MAT A = arma::zeros<FMAT>(arows, acols);
+    MAT W = arma::zeros<FMAT>(wrows, wcols);
+    MAT H = arma::zeros<FMAT>(acols, wcols);
 
     matlab2arma<FMAT>(arows, acols, a, &A);
     std::cout << "copied matlab2arma A::" << arma::norm(A, "fro") << std::endl;
@@ -89,9 +89,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     nmfAlgorithm.computeNMF();
 
 
-    arma2matlab<FMAT>(wrows, wcols, nmfAlgorithm.getLeftLowRankFactor(),
+    arma2matlab<MAT>(wrows, wcols, nmfAlgorithm.getLeftLowRankFactor(),
                       mxGetPr(w_out_m));
-    arma2matlab<FMAT>(acols, wcols, nmfAlgorithm.getRightLowRankFactor(),
+    arma2matlab<MAT>(acols, wcols, nmfAlgorithm.getRightLowRankFactor(),
                       mxGetPr(h_out_m));
     /*std::cout << "A::" <<std::endl << A;
     std::cout << "W::" << std::endl << W;
@@ -100,9 +100,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     std::cout << "HtH::" << std::endl << H.t()*H;
     std::cout << "AtW::" << std::endl << A.t()*W;
     std::cout << "AH::" << std::endl << A*H;*/
-    arma2matlab<FMAT>(wcols, wcols, W.t()*W, mxGetPr(wtw_out_m));
-    arma2matlab<FMAT>(wcols, wcols, H.t()*H, mxGetPr(hth_out_m));
-    arma2matlab<FMAT>(arows, wcols, A * H, mxGetPr(ah_out_m));
-    arma2matlab<FMAT>(acols, wcols, A.t()*W, mxGetPr(atw_out_m));
+    arma2matlab<MAT>(wcols, wcols, W.t()*W, mxGetPr(wtw_out_m));
+    arma2matlab<MAT>(wcols, wcols, H.t()*H, mxGetPr(hth_out_m));
+    arma2matlab<MAT>(arows, wcols, A * H, mxGetPr(ah_out_m));
+    arma2matlab<MAT>(acols, wcols, A.t()*W, mxGetPr(atw_out_m));
     return;
 }

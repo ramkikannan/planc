@@ -21,13 +21,13 @@
 // T must be a either an instance of MAT or sp_MAT
 template<class T>
 class NMF {
-protected:
+  protected:
     // input MATrix of size mxn
     T A;
 
     // low rank factors with size mxk and nxk respectively.
-    FMAT W, H;
-    FMAT Winit, Hinit;
+    MAT W, H;
+    MAT Winit, Hinit;
     UINT m, n, k;
 
     /*
@@ -41,6 +41,8 @@ protected:
     bool cleared;
     int m_num_iterations;
     std::string input_file_name;
+    MAT errMtx; // used for error computation.
+    T A_err_sub_mtx; // used for error computation.
 
     // The regularization is a vector of two values. The first value specifies
     // L2 regularization values and the second is L1 regularization.
@@ -69,27 +71,27 @@ protected:
      * and the second is L1 regularization.
      * Mostly we expect
      */
-    void applyReg(const FVEC& reg, FMAT *AtA) {
+    void applyReg(const FVEC& reg, MAT *AtA) {
         // Frobenius norm regularization
         if (reg(0) > 0) {
-            FMAT  identity  = arma::eye<FMAT>(this->k, this->k);
+            MAT  identity  = arma::eye<MAT>(this->k, this->k);
             float lambda_l2 = reg(0);
             (*AtA) = (*AtA) + 2 * lambda_l2 * identity;
         }
 
         // L1 - norm regularization
         if (reg(1) > 0) {
-            FMAT  onematrix = arma::ones<FMAT>(this->k, this->k);
+            MAT  onematrix = arma::ones<MAT>(this->k, this->k);
             float lambda_l1 = reg(1);
             (*AtA) = (*AtA) + 2 * lambda_l1 * onematrix;
         }
     }
 
-    void normalize_by_W(){
-        FMAT W_square = arma::pow(this->W, 2);
-        FROWVEC norm2 = arma::sqrt(arma::sum(W_square, 0));
-        for (int i=0; i < this->k; i++){
-            if (norm2(i) > 0){
+    void normalize_by_W() {
+        MAT W_square = arma::pow(this->W, 2);
+        ROWVEC norm2 = arma::sqrt(arma::sum(W_square, 0));
+        for (int i = 0; i < this->k; i++) {
+            if (norm2(i) > 0) {
                 this->W.col(i) = this->W.col(i) / norm2(i);
                 this->H.col(i) = this->H.col(i) * norm2(i);
             }
@@ -97,7 +99,7 @@ protected:
 
     }
 
-private:
+  private:
     void otherInitializations() {
         this->stats.zeros();
         this->cleared          = false;
@@ -107,30 +109,30 @@ private:
         this->stats.resize(m_num_iterations + 1, NUM_STATS);
     }
 
-public:
+  public:
     NMF(const T& input, const unsigned int rank) {
         this->A      = input;
         this->m      = A.n_rows;
         this->n      = A.n_cols;
         this->k      = rank;
         // prime number closer to W.
-        arma::arma_rng::set_seed(89);        
-        this->W      = arma::randu<FMAT>(m, k);
+        arma::arma_rng::set_seed(89);
+        this->W      = arma::randu<MAT>(m, k);
         // prime number close to H
         arma::arma_rng::set_seed(73);
-        this->H      = arma::randu<FMAT>(n, k);
+        this->H      = arma::randu<MAT>(n, k);
         this->m_regW = arma::zeros<FVEC>(2);
         this->m_regH = arma::zeros<FVEC>(2);
 
         // make the random MATrix positive
-        // absMAT<FMAT>(W);
-        // absMAT<FMAT>(H);
+        // absMAT<MAT>(W);
+        // absMAT<MAT>(H);
         // other intializations
         this->otherInitializations();
     }
 
-    NMF(const T& input, const FMAT& leftlowrankfactor,
-        const FMAT& rightlowrankfactor) {
+    NMF(const T& input, const MAT& leftlowrankfactor,
+        const MAT& rightlowrankfactor) {
         assert(leftlowrankfactor.n_cols == rightlowrankfactor.n_cols);
         this->A      = input;
         this->W      = leftlowrankfactor;
@@ -149,11 +151,11 @@ public:
 
     virtual void computeNMF() = 0;
 
-    FMAT getLeftLowRankFactor() {
+    MAT getLeftLowRankFactor() {
         return W;
     }
 
-    FMAT getRightLowRankFactor() {
+    MAT getRightLowRankFactor() {
         return H;
     }
 
@@ -179,11 +181,11 @@ public:
         tic();
         float nnzsse = 0;
         float nnzwh  = 0;
-        FMAT  Rw(this->k, this->k);
-        FMAT  Rh(this->k, this->k);
-        FMAT  Qw(this->m, this->k);
-        FMAT  Qh(this->n, this->k);
-        FMAT  RwRh(this->k, this->k);
+        MAT  Rw(this->k, this->k);
+        MAT  Rh(this->k, this->k);
+        MAT  Qw(this->m, this->k);
+        MAT  Qh(this->n, this->k);
+        MAT  RwRh(this->k, this->k);
 
         // #pragma omp parallel for reduction (+ : nnzsse,nnzwh)
         for (UWORD jj = 1; jj <= this->A.n_cols; jj++) {
@@ -216,19 +218,114 @@ public:
         Qw.clear();
         Qh.clear();
         RwRh.clear();
-        INFO << "error compute time " << toc() << endl;
+        INFO << "error compute time " << toc() << std::endl;
         float fastErr = sqrt(nnzsse + (normWH * normWH - nnzwh));
         this->objective_err = fastErr;
 
         // return (fastErr);
     }
 
-#else // ifdef BUILD_SPARSE
+#else  // ifdef BUILD_SPARSE
     void computeObjectiveError() {
         // (init.norm_A)^2 - 2*trace(H'*(A'*W))+trace((W'*W)*(H*H'))
-        FMAT WtW = this->W.t() * this->W;
-        FMAT HtH = this->H.t() * this->H;
-        FMAT AtW = this->A.t() * this->W;
+        // MAT WtW = this->W.t() * this->W;
+        // MAT HtH = this->H.t() * this->H;
+        // MAT AtW = this->A.t() * this->W;
+
+        // double sqnormA  = this->normA * this->normA;
+        // double TrHtAtW  = arma::trace(this->H.t() * AtW);
+        // double TrWtWHtH = arma::trace(WtW * HtH);
+
+        // this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
+#ifdef _VERBOSE
+        INFO << "Entering computeObjectiveError A="
+             << this->A.n_rows << "x" << this->A.n_cols
+             << " W = " << this->W.n_rows << "x" << this->W.n_cols
+             << " H=" << this->H.n_rows << "x" << this->H.n_cols << std::endl;
+#endif
+        tic();
+        // always restrict the errMtx size to fit it in memory 
+        // and doesn't occupy much space.
+        // For eg., the max we can have only 3 x 10^6 elements.
+        // The number of columns must be chosen appropriately.
+        UWORD PER_SPLIT = std::ceil((3 * 1e6) / A.n_rows);
+        // UWORD PER_SPLIT = 1;
+        // always colSplit. Row split is really slow as the matrix is col major always
+        bool colSplit = true;
+        // if (this->A.n_rows > PER_SPLIT || this->A.n_cols > PER_SPLIT) {
+        uint numSplits = 1;
+        MAT Ht = this->H.t();
+        if (this->A.n_cols > PER_SPLIT) {
+            // if (this->A.n_cols < this->A.n_rows)
+            //     colSplit = false;
+            if (colSplit)
+                numSplits = A.n_cols / PER_SPLIT;
+            else
+                numSplits = A.n_rows / PER_SPLIT;
+            // #ifdef _VERBOSE
+        } else {
+            PER_SPLIT = A.n_cols;
+            numSplits = 1;
+        }
+#ifdef _VERBOSE
+        INFO << "PER_SPLIT = " << PER_SPLIT
+             << "numSplits = " << numSplits << std::endl;
+#endif
+        // #endif
+        VEC splitErr = arma::zeros<VEC>(numSplits + 1);
+        // allocate one and never allocate again.
+        if (colSplit && errMtx.n_rows == 0 && errMtx.n_cols == 0) {
+            errMtx = arma::zeros<MAT>(A.n_rows, PER_SPLIT);
+            A_err_sub_mtx = arma::zeros<T>(A.n_rows, PER_SPLIT);
+        } else {
+            errMtx = arma::zeros<MAT>(PER_SPLIT, A.n_cols);
+            A_err_sub_mtx = arma::zeros<T>(PER_SPLIT, A.n_cols);
+        }
+        for (int i = 0; i <= numSplits; i++) {
+            UWORD beginIdx = i * PER_SPLIT;
+            UWORD endIdx = (i + 1) * PER_SPLIT - 1;
+            if (colSplit) {
+                if (endIdx > A.n_cols)
+                    endIdx = A.n_cols - 1;
+                if (beginIdx < endIdx) {
+#ifdef _VERBOSE
+                    INFO << "beginIdx=" << beginIdx
+                         << " endIdx= " << endIdx << std::endl;
+                    INFO << "Ht = " << Ht.n_rows << "x" << Ht.n_cols
+                         << std::endl;
+
+#endif
+                    errMtx = W * Ht.cols(beginIdx, endIdx);
+                    A_err_sub_mtx = A.cols(beginIdx, endIdx);
+                } else if (beginIdx == endIdx && beginIdx < A.n_cols) {
+                    errMtx = W * Ht.col(beginIdx);
+                    A_err_sub_mtx = A.col(beginIdx);
+                }
+            } else {
+                if (endIdx > A.n_rows)
+                    endIdx = A.n_rows - 1;
+#ifdef _VERBOSE
+                INFO << "beginIdx=" << beginIdx
+                     << " endIdx= " << endIdx << std::endl;
+#endif
+                if (beginIdx < endIdx) {
+                    A_err_sub_mtx = A.rows(beginIdx, endIdx);
+                    errMtx = W.rows(beginIdx, endIdx) * Ht;
+                }
+            }
+            A_err_sub_mtx -= errMtx;
+            A_err_sub_mtx %= A_err_sub_mtx;
+            splitErr(i) = arma::accu(A_err_sub_mtx);
+        }
+        double err_time = toc();
+        INFO << "err compute time::" << err_time << std::endl;
+        this->objective_err = arma::sum(splitErr);
+    }
+
+#endif  // ifdef BUILD_SPARSE
+    void computeObjectiveError(const T & At, const MAT & WtW,
+                               const MAT & HtH) {
+        MAT AtW = At * this->W;
 
         double sqnormA  = this->normA * this->normA;
         double TrHtAtW  = arma::trace(this->H.t() * AtW);
@@ -237,27 +334,16 @@ public:
         this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
     }
 
-#endif // ifdef BUILD_SPARSE
-    void computeObjectiveError(const T& At, const FMAT& WtW,
-                               const FMAT& HtH) {
-        FMAT AtW = At * this->W;
-
-        double sqnormA  = this->normA * this->normA;
-        double TrHtAtW  = arma::trace(this->H.t() * AtW);
-        double TrWtWHtH = arma::trace(WtW * HtH);
-
-        this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
-    }
 
     void num_iterations(const int it) {
         this->m_num_iterations = it;
     }
 
-    void regW(const FVEC& iregW) {
+    void regW(const FVEC & iregW) {
         this->m_regW = iregW;
     }
 
-    void regH(const FVEC& iregH) {
+    void regH(const FVEC & iregH) {
         this->m_regH = iregH;
     }
 
@@ -283,6 +369,10 @@ public:
             this->W.clear();
             this->H.clear();
             this->stats.clear();
+            if (errMtx.n_rows != 0 && errMtx.n_cols != 0) {
+                errMtx.clear();
+                A_err_sub_mtx.clear();
+            }
             this->cleared = true;
         }
     }

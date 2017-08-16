@@ -12,7 +12,6 @@
 #ifdef MKL_FOUND
 #include <mkl.h>
 #else
-#include <lapacke.h>
 #include <cblas.h>
 #endif
 
@@ -120,11 +119,11 @@ template <class T> void randNMF(const UWORD m, const UWORD n,
     A = &temp;
 #else
     srand(RAND_SEED);
-    FMAT W = 10 * arma::randu<FMAT >(m, k);
-    FMAT H = 10 * arma::randu<FMAT >(n, k);
+    MAT W = 10 * arma::randu<MAT >(m, k);
+    MAT H = 10 * arma::randu<MAT >(n, k);
     if (sparsity < 1) {
-        makeSparse<FMAT>(sparsity, &W);
-        makeSparse<FMAT>(sparsity, &H);
+        makeSparse<MAT>(sparsity, &W);
+        makeSparse<MAT>(sparsity, &H);
     }
     T temp = ceil(W * trans(H));
     A = &temp;
@@ -155,8 +154,8 @@ double computeObjectiveError(const INPUTTYPE &A,
     UWORD m = A.n_rows;
     UWORD n = A.n_cols;
     tic();
-    float nnzsse = 0;
-    float nnzwh = 0;
+    double nnzsse = 0;
+    double nnzwh = 0;
     LRTYPE Rw(k, k);
     LRTYPE Rh(k, k);
     LRTYPE Qw(m, k);
@@ -167,11 +166,11 @@ double computeObjectiveError(const INPUTTYPE &A,
         UWORD startIdx = A.col_ptrs[jj - 1];
         UWORD endIdx = A.col_ptrs[jj];
         UWORD col = jj - 1;
-        float nnzssecol = 0;
-        float nnzwhcol = 0;
+        double nnzssecol = 0;
+        double nnzwhcol = 0;
         for (UWORD ii = startIdx; ii < endIdx; ii++) {
             UWORD row = A.row_indices[ii];
-            float tempsum = 0;
+            double tempsum = 0;
             for (UWORD kk = 0; kk < k; kk++) {
                 tempsum += (W(row, kk) * H(col, kk));
             }
@@ -203,27 +202,27 @@ double computeObjectiveError(const INPUTTYPE &A,
 * Once you receive Ct, transpose again to print
 * C using arma
 */
-void ARMAMKLSCSCMM(const SP_FMAT &mklMat, char transa, const FMAT &Bt,
-                   float *Ct) {
+void ARMAMKLSCSCMM(const SP_MAT &mklMat, char transa, const MAT &Bt,
+                   double *Ct) {
     MKL_INT m, k, n, nnz;
     m = static_cast<MKL_INT>(mklMat.n_rows);
     k = static_cast<MKL_INT>(mklMat.n_cols);
     n = static_cast<MKL_INT>(Bt.n_rows);
-    // FMAT B = B.t();
+    // MAT B = B.t();
     // C = alpha * A * B + beta * C;
     // mkl_?cscmm - https://software.MKL_INTel.com/en-us/node/468598
     // char transa = 'N';
-    float alpha = 1.0;
-    float beta = 0.0;
+    double alpha = 1.0;
+    double beta = 0.0;
     char* matdescra = "GUNC";
     MKL_INT ldb = n;
     MKL_INT ldc = n;
     MKL_INT* pntrb = (MKL_INT *)(mklMat.col_ptrs);
     MKL_INT* pntre = pntrb + 1;
-    mkl_scscmm(&transa, &m, &n, &k, &alpha, matdescra,
+    mkl_dcscmm(&transa, &m, &n, &k, &alpha, matdescra,
                mklMat.values, (MKL_INT *)mklMat.row_indices,
                pntrb, pntre,
-               (float *)(Bt.memptr()), &ldb,
+               (double *)(Bt.memptr()), &ldb,
                &beta, Ct, &ldc);
 }
 #endif
@@ -233,13 +232,13 @@ void ARMAMKLSCSCMM(const SP_FMAT &mklMat, char transa, const FMAT &Bt,
 * Something is going crazy with armadillo
 */
 
-void cblas_sgemm(const FMAT &A, const FMAT &B, float *C) {
+void cblas_sgemm(const MAT &A, const MAT &B, double *C) {
     UWORD m = A.n_rows;
     UWORD n = B.n_cols;
     UWORD k = A.n_cols;
     double alpha = 1.0;
     double beta = 0.0;
-    cblas_sgemm(CblasColMajor,
+    cblas_dgemm(CblasColMajor,
                 CblasNoTrans, CblasNoTrans,
                 m, n, k, alpha, A.memptr(),
                 m, B.memptr(), k, beta, C, m);
