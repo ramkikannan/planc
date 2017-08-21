@@ -11,29 +11,29 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
     MAT tempWtW;
     MAT tempAHtij;
     MAT tempWtAij;
-    FROWVEC localWnorm;
-    FROWVEC Wnorm;
+    ROWVEC localWnorm;
+    ROWVEC Wnorm;
 
     // Dual Variables
-    FMAT U;
-    FMAT Ut;
-    FMAT V;
-    FMAT Vt;
+    MAT U;
+    MAT Ut;
+    MAT V;
+    MAT Vt;
 
     // Auxiliary Variables
-    FMAT Haux;
-    FMAT Htaux;
-    FMAT Waux;
-    FMAT Wtaux;
+    MAT Haux;
+    MAT Htaux;
+    MAT Waux;
+    MAT Wtaux;
 
     // Cholesky Variables
     MAT L;
     MAT Lt;
     MAT tempHtaux;
     MAT tempWtaux;
-    
+
     // Hyperparameters
-    double alpha, beta, tolerance; 
+    double alpha, beta, tolerance;
     int admm_iter;
 
     void allocateMatrices() {
@@ -56,9 +56,9 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
 
         // Auxiliary Variables
         this->Waux.zeros(size(this->W));
-        this->Wtaux = Waux.t();        
+        this->Wtaux = Waux.t();
         this->Haux.zeros(size(this->H));
-        this->Htaux = Haux.t();        
+        this->Htaux = Haux.t();
 
         // Hyperparameters
         alpha = 0.0;
@@ -76,35 +76,37 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
     // updateW given HtH and AHt
     void updateW() {
         // Calculate modified Gram Matrix
-        tempHtH = arma::conv_to<MAT >::from(this->HtH);
+        // tempHtH = arma::conv_to<MAT >::from(this->HtH);
+        tempHtH = this->HtH;
         alpha = trace(tempHtH) / this->k;
         tempHtH.diag() += alpha;
         L = arma::conv_to<MAT >::from(arma::chol(tempHtH, "lower"));
         Lt = L.t();
 
-        bool stop_iter = false;        
+        bool stop_iter = false;
 
         // Start ADMM loop from here
-        for (int i = 0; i < admm_iter && !stop_iter; i++)
-        {
+        for (int i = 0; i < admm_iter && !stop_iter; i++) {
             this->Waux = this->W;
 
-            tempAHtij = arma::conv_to<MAT >::from(this->AHtij);
-            tempAHtij = tempAHtij + (alpha * (this->Wt + this->Ut));        
+            // tempAHtij = arma::conv_to<MAT >::from(this->AHtij);
+            tempAHtij = this->AHtij;
+            tempAHtij = tempAHtij + (alpha * (this->Wt + this->Ut));
 
             // Solve least squares
-            tempWtaux = arma::conv_to<MAT >::from(
-                            arma::solve(arma::trimatl(L), tempAHtij)); 
-            Wtaux = arma::conv_to<FMAT >::from(
-                        arma::solve(arma::trimatu(Lt), tempWtaux)); 
+            // tempWtaux = arma::conv_to<MAT >::from(
+            tempWtaux =  arma::solve(arma::trimatl(L), tempAHtij);
+            Wtaux = arma::conv_to<MAT >::from(
+                        arma::solve(arma::trimatu(Lt), tempWtaux));
 
             // Update W
-            this->Wt = arma::conv_to<FMAT >::from(Wtaux);
-            fixNumericalError<FMAT >(&(this->Wt), EPSILON_1EMINUS16);
+            // this->Wt = arma::conv_to<MAT >::from(Wtaux);
+            this->Wt = Wtaux;
+            fixNumericalError<MAT >(&(this->Wt), EPSILON_1EMINUS16);
             this->Wt = this->Wt - this->Ut;
-            this->Wt.for_each([](FMAT::elem_type& val) {
-                                 val = val > 0.0 ? val : 0.0; 
-                    } );
+            this->Wt.for_each([](MAT::elem_type & val) {
+                val = val > 0.0 ? val : 0.0;
+            } );
             this->W = this->Wt.t();
 
             // Update Dual Variable
@@ -115,13 +117,13 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             double r = norm(this->Wt - this->Wtaux, "fro");
             r *= r;
             double globalr;
-            mpitic();            
+            mpitic();
             MPI_Allreduce (&r, &globalr, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             double temp = mpitoc();
             this->time_stats.communication_duration(temp);
             this->time_stats.allreduce_duration(temp);
-            globalr = sqrt(globalr);      
+            globalr = sqrt(globalr);
 
             double s = norm(this->W - this->Waux, "fro");
             s *= s;
@@ -140,7 +142,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globalnormW = sqrt(globalnormW);
-            
+
             double normU = norm(this->U, "fro");
             normU *= normU;
             double globalnormU;
@@ -151,7 +153,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             globalnormU = sqrt(globalnormU);
 
             if (globalr < (tolerance * globalnormW) && \
-                globals < (tolerance * globalnormU))
+                    globals < (tolerance * globalnormU))
                 stop_iter = true;
         }
     }
@@ -161,32 +163,33 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         tempWtW = arma::conv_to<MAT>::from(this->WtW);
         beta = trace(tempWtW) / this->k;
         tempWtW.diag() += beta;
-        L = arma::conv_to<MAT >::from(arma::chol(tempWtW, "lower"));
-        Lt = L.t();        
+        // L = arma::conv_to<MAT >::from(arma::chol(tempWtW, "lower"));
+        L = arma::chol(tempWtW, "lower");
+        Lt = L.t();
 
         bool stop_iter = false;
 
         // Start ADMM loop from here
-        for (int i = 0; i < admm_iter && !stop_iter; i++)
-        {
-            this->Haux = this->H;           
+        for (int i = 0; i < admm_iter && !stop_iter; i++) {
+            this->Haux = this->H;
 
-            tempWtAij = arma::conv_to<MAT >::from(this->WtAij);
+            // tempWtAij = arma::conv_to<MAT >::from(this->WtAij);
+            tempWtAij = this->WtAij;
             tempWtAij = tempWtAij + (beta * (this->Ht + this->Vt));
 
             // Solve least squares
-            tempHtaux = arma::conv_to<MAT >::from(
-                            arma::solve(arma::trimatl(L), tempWtAij));
-            Htaux = arma::conv_to<FMAT >::from(
-                            arma::solve(arma::trimatu(Lt), tempHtaux));
-
+            // tempHtaux = arma::conv_to<MAT >::from(
+            tempHtaux =  arma::solve(arma::trimatl(L), tempWtAij);
+            // Htaux = arma::conv_to<MAT >::from(
+            Htaux =  arma::solve(arma::trimatu(Lt), tempHtaux);
             // Update H
-            this->Ht = arma::conv_to<FMAT >::from(Htaux);
-            fixNumericalError<FMAT >(&(this->Ht), EPSILON_1EMINUS16);
+            // this->Ht = arma::conv_to<MAT >::from(Htaux);
+            this->Ht = Htaux;
+            fixNumericalError<MAT >(&(this->Ht), EPSILON_1EMINUS16);
             this->Ht = this->Ht - this->Vt;
-            this->Ht.for_each([](FMAT::elem_type& val) { 
-                        val = val > 0.0 ? val : 0.0; 
-                    } );
+            this->Ht.for_each([](MAT::elem_type & val) {
+                val = val > 0.0 ? val : 0.0;
+            } );
             this->H = this->Ht.t();
 
             // Update Dual Variable
@@ -197,13 +200,13 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             double r = norm(this->Ht - this->Htaux, "fro");
             r *= r;
             double globalr;
-            mpitic();            
+            mpitic();
             MPI_Allreduce (&r, &globalr, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             double temp = mpitoc();
             this->time_stats.communication_duration(temp);
             this->time_stats.allreduce_duration(temp);
-            globalr = sqrt(globalr);      
+            globalr = sqrt(globalr);
 
             double s = norm(this->H - this->Haux, "fro");
             s *= s;
@@ -222,7 +225,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globalnormH = sqrt(globalnormH);
-            
+
             double normV = norm(this->V, "fro");
             normV *= normV;
             double globalnormV;
@@ -233,16 +236,16 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             globalnormV = sqrt(globalnormV);
 
             if (globalr < (tolerance * globalnormH) && \
-                globals < (tolerance * globalnormV))
+                    globals < (tolerance * globalnormV))
                 stop_iter = true;
         }
     }
 
   public:
-    DistAOADMM(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-                const FMAT &rightlowrankfactor,
-                const MPICommunicator& communicator,
-                const int numkblks) :
+    DistAOADMM(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
+               const MAT &rightlowrankfactor,
+               const MPICommunicator& communicator,
+               const int numkblks) :
         DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                                 rightlowrankfactor, communicator, numkblks) {
         localWnorm.zeros(this->k);

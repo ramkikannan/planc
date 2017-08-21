@@ -24,7 +24,7 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
         INFO << "Successfully loaded the input matrix" << std::endl;
 #else
         tic();
-        A.load(AfileName, arma::raw_ascii);
+        A.load(AfileName);
         t2 = toc();
         INFO << "Successfully loaded dense input matrix. A=" << PRINTMATINFO(A)
              << " took=" << t2 << std::endl;
@@ -42,12 +42,12 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
     MAT W, H;
     if (!WinitFileName.empty()) {
         INFO << "Winitfilename = " << WinitFileName << std::endl;
-        W.load(WinitFileName, arma::raw_ascii);
+        W.load(WinitFileName);
         INFO << "Loaded W." << PRINTMATINFO(W) << std::endl;
     }
     if (!HinitFileName.empty()) {
         INFO << "HInitfilename=" << HinitFileName << std::endl;
-        H.load(HinitFileName, arma::raw_ascii);
+        H.load(HinitFileName);
         INFO << "Loaded H." << PRINTMATINFO(H) << std::endl;
     }
     if (!WinitFileName.empty()) {
@@ -86,10 +86,10 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
 void incrementalGraph(std::string AfileName, std::string WfileName) {
     SP_MAT A;
     UWORD m, n, nnz;
-    A.load(AfileName, arma::coord_ascii);
+    A.load(AfileName);
     INFO << "Loaded input matrix A=" << PRINTMATINFO(A) << std::endl;
     MAT W, H;
-    W.load(WfileName, arma::raw_ascii);
+    W.load(WfileName);
     INFO << "Loaded input matrix W=" << PRINTMATINFO(W) << std::endl;
     H.ones(A.n_cols, W.n_cols);
     BPPNMF<SP_MAT > bppnmf(A, W, H);

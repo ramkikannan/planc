@@ -35,7 +35,7 @@ inline double toc() {
     return rc;
 }
 
-template <class T> void fixNumericalError(T *X, const double prec = EPSILON) {
+template <class T> void fixNumericalError(T *X, const double prec = EPSILON_1EMINUS16) {
     (*X).for_each([&] (typename T::elem_type& val) {
         val = (val < prec) ? prec : val;
     } );

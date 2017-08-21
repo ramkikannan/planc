@@ -10,30 +10,19 @@ using namespace std;
 template<class INPUTMATTYPE>
 class DistANLSBPP : public DistAUNMF<INPUTMATTYPE>{
  private:
-  MAT tempHtH;
-  MAT tempWtW;
-  MAT tempAHtij;
-  MAT tempWtAij;
-  FROWVEC localWnorm;
-  FROWVEC Wnorm;
+  ROWVEC localWnorm;
+  ROWVEC Wnorm;
 
   void allocateMatrices() {
-    this->tempHtH.zeros(this->k, this->k);
-    this->tempWtW.zeros(this->k, this->k);
-    this->tempAHtij.zeros(size(this->AHtij));
-    this->tempWtAij.zeros(size(this->WtAij));
   }
 
  protected:
   // updateW given HtH and AHt
   void updateW() {
-    tempHtH   = arma::conv_to<MAT>::from(this->HtH);
-    tempAHtij = arma::conv_to<MAT>::from(this->AHtij);
-    DISTPRINTINFO(PRINTMATINFO(tempAHtij));
-    BPPNNLS<MAT, VEC> subProblem(tempHtH, tempAHtij, true);
+    BPPNNLS<MAT, VEC> subProblem(this->HtH, this->AHtij, true);
     subProblem.solveNNLS();
-    this->Wt = arma::conv_to<FMAT>::from(subProblem.getSolutionMatrix());
-    fixNumericalError<FMAT>(&(this->Wt));
+    this->Wt = subProblem.getSolutionMatrix();
+    fixNumericalError<MAT>(&(this->Wt));
     this->W = this->Wt.t();
 
     // localWnorm = sum(this->W % this->W);
@@ -50,19 +39,16 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE>{
 
   // updateH given WtW and WtA
   void updateH() {
-    tempWtW   = arma::conv_to<MAT>::from(this->WtW);
-    tempWtAij = arma::conv_to<MAT>::from(this->WtAij);
-    DISTPRINTINFO(PRINTMATINFO(tempWtAij));
-    BPPNNLS<MAT, VEC> subProblem1(tempWtW, tempWtAij, true);
+    BPPNNLS<MAT, VEC> subProblem1(this->WtW, this->WtAij, true);
     subProblem1.solveNNLS();
-    this->Ht = arma::conv_to<FMAT>::from(subProblem1.getSolutionMatrix());
-    fixNumericalError<FMAT>(&(this->Ht));
+    this->Ht = subProblem1.getSolutionMatrix();
+    fixNumericalError<MAT>(&(this->Ht));
     this->H = this->Ht.t();
   }
 
  public:
-  DistANLSBPP(const INPUTMATTYPE& input, const FMAT& leftlowrankfactor,
-              const FMAT& rightlowrankfactor,
+  DistANLSBPP(const INPUTMATTYPE& input, const MAT& leftlowrankfactor,
+              const MAT& rightlowrankfactor,
               const MPICommunicator& communicator,
               const int numkblks) :
     DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
