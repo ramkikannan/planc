@@ -16,16 +16,16 @@ namespace PLANC {
  */
 
 // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-extern "C" void sgemm_(const char*, const char*, const int*,
-                       const int*, const int*, const float*, const float*, const int*,
-                       const float*, const int*, const float*, float*, const int*);
+extern "C" void dgemm_(const char*, const char*, const int*,
+                       const int*, const int*, const double*, const double*, const int*,
+                       const double*, const int*, const double*, double*, const int*);
 
 class Tensor {
   private:
     const int m_order;
     const UVEC m_dimensions;
     const UWORD m_numel;
-    float* m_data;
+    double* m_data;
     const unsigned int rand_seed;
 
   public:
@@ -34,16 +34,16 @@ class Tensor {
         m_order(i_dimensions.n_rows),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
-        m_data = new float[this->m_numel];
+        m_data = new double[this->m_numel];
         randu();
     }
-    Tensor(const UVEC& i_dimensions, float *i_data):
+    Tensor(const UVEC& i_dimensions, double *i_data):
         m_dimensions(i_dimensions),
         m_order(i_dimensions.n_rows),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
-        m_data = new float[this->m_numel];
-        memcpy(this->m_data, i_data, sizeof(float)*this->m_numel);
+        m_data = new double[this->m_numel];
+        memcpy(this->m_data, i_data, sizeof(double)*this->m_numel);
     }
     ~Tensor() {
         delete m_data;
@@ -51,7 +51,7 @@ class Tensor {
 
     int order() const {return m_order;}
     UVEC dimensions() const {return m_dimensions;}
-    float* data() const {return m_data;}
+    double* data() const {return m_data;}
     int numel() const {return m_numel;}
 
     UWORD dimensions_leave_out_one(int i_n) const {
@@ -67,8 +67,8 @@ class Tensor {
     void rand() {
         for (UWORD i = 0; i < this->m_numel; i++) {
             unsigned int *temp = const_cast<unsigned int *>(&rand_seed);
-            this->m_data[i] = static_cast <float> (rand_r(temp))
-                              / static_cast <float> (RAND_MAX);
+            this->m_data[i] = static_cast <double> (rand_r(temp))
+                              / static_cast <double> (RAND_MAX);
         }
     }
 
@@ -95,7 +95,7 @@ class Tensor {
     // o_mttkrp will be of size dimension[n]xk
     // implementation of mttkrp from tensor toolbox
     // const at the end as this does not change any local data.
-    void mttkrp(const int i_n, const FMAT& i_krp, FMAT *o_mttkrp) const {
+    void mttkrp(const int i_n, const MAT& i_krp, MAT *o_mttkrp) const {
         (*o_mttkrp).zeros();
         if (i_n == 0) {
             //if n == 1
@@ -123,10 +123,10 @@ class Tensor {
             int lda = m;
             int ldb = k;
             int ldc = m;
-            float alpha = 1;
-            float beta = 0;
+            double alpha = 1;
+            double beta = 0;
             // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-            sgemm_(&transa, &transb, &m, &n, &k, &alpha, this->m_data,
+            dgemm_(&transa, &transb, &m, &n, &k, &alpha, this->m_data,
                    &lda, i_krp.memptr(), &ldb, &beta, o_mttkrp->memptr() , &ldc);
         } else  {
             int ncols = 1;
@@ -152,17 +152,17 @@ class Tensor {
                 int lda = k; // not sure. could be m. higher confidence on k.
                 int ldb = i_krp.n_rows;
                 int ldc = m;
-                float alpha = 1;
-                float beta = (i == 0) ? 0 : 1;
-                float *A = this->m_data + i * k * m;
-                float *B = const_cast<float *>(i_krp.memptr()) + i * k;
+                double alpha = 1;
+                double beta = (i == 0) ? 0 : 1;
+                double *A = this->m_data + i * k * m;
+                double *B = const_cast<double *>(i_krp.memptr()) + i * k;
 
                 // for KRP move ncols*lowrankk
                 // for tensor X move as n_cols*blas_n
                 // For output matrix don't move anything as beta=1;
                 // for reference from gram while moving input tensor like Y->data()+i*nrows*ncols
                 // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-                sgemm_(&transa, &transb, &m, &n, &k, &alpha, A,
+                dgemm_(&transa, &transb, &m, &n, &k, &alpha, A,
                        &lda, B , &ldb, &beta, (*o_mttkrp).memptr() , &ldc);
             }
         }

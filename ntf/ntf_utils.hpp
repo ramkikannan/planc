@@ -9,7 +9,7 @@
 // A is of size m x k
 // B is of size n x k
 // Returns C of size mn x k
-void khatrirao(const FMAT &i_A, const FMAT &i_B, FMAT *o_C) {
+void khatrirao(const MAT &i_A, const MAT &i_B, MAT *o_C) {
     assert(i_A.n_cols == i_B.n_cols);
     FVEC acol = arma::zeros<FVEC>(i_A.n_rows);
     FVEC bcol = arma::zeros<FVEC>(i_B.n_rows);
@@ -29,8 +29,8 @@ inline void kronecker(const FVEC &i_acol, const FVEC &i_bcol, FVEC *o_c) {
 }
 
 void mttkrp(const int i_n, PLANC::Tensor& X,
-            PLANC::NCPFactors& i_F, FMAT *o_mttkrp) {
-    FMAT krp = i_F.krp_leave_out_one(i_n);    
+            PLANC::NCPFactors& i_F, MAT *o_mttkrp) {
+    MAT krp = i_F.krp_leave_out_one(i_n);    
     X.mttkrp(i_n, krp, o_mttkrp);
 }
 

@@ -14,45 +14,57 @@
 namespace PLANC {
 
 class NCPFactors {
-    FMAT *ncp_factors;
+    MAT *ncp_factors;
     int m_order;
     int m_k;
     UVEC m_dimensions;
+    MAT lambda;
+
+    //normalize the factors of a matrix
+
+    void normalize(int order){        
+        for (int i=0; i < this->m_k; i++){
+            lambda(order,i) = arma::norm(this->ncp_factors[order].col(i));
+            this->ncp_factors[order].col(i) /= lambda(order, i);
+        }
+    }
+
   public:
 
     //constructors
     NCPFactors(const UVEC i_dimensions, const int i_k, bool trans = false)
         : m_dimensions(i_dimensions) {
         this->m_order = i_dimensions.n_rows;
-        ncp_factors = new FMAT[this->m_order];
+        ncp_factors = new MAT[this->m_order];
         this->m_k = i_k;
         UWORD numel = arma::prod(this->m_dimensions);
         for (int i = 0; i < this->m_order; i++) {
-            // ncp_factors[i] = arma::randu<FMAT>(i_dimensions[i], this->m_k);
+            // ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             if (trans) {
-                ncp_factors[i] = arma::randu<FMAT>(this->m_k, i_dimensions[i]);
+                ncp_factors[i] = arma::randu<MAT>(this->m_k, i_dimensions[i]);
 
             } else {
-                //ncp_factors[i] = arma::randi<FMAT>(i_dimensions[i], this->m_k,
+                //ncp_factors[i] = arma::randi<MAT>(i_dimensions[i], this->m_k,
                 //                                   arma::distr_param(0, numel));
-                ncp_factors[i] = arma::randu<FMAT>(i_dimensions[i], this->m_k);
+                ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             }
         }
+        lambda = arma::ones<MAT>(this->m_order, this->k);
     }
     // getters
     int rank() const {return m_k;}
     UVEC dimensions() const {return m_dimensions;}
-    FMAT& factor(const int i_n) const {return ncp_factors[i_n];}
+    MAT& factor(const int i_n) const {return ncp_factors[i_n];}
 
     // setters
-    void set(const int i_n, const FMAT &i_factor) {
+    void set(const int i_n, const MAT &i_factor) {
         assert(i_factor.size() == this->ncp_factors[i_n].size());
         this->ncp_factors[i_n] = i_factor;
     }
 
     //compute gram of all local factors
-    void gram(FMAT *o_UtU) {
-        FMAT currentGram(this->m_k, this->m_k);
+    void gram(MAT *o_UtU) {
+        MAT currentGram(this->m_k, this->m_k);
         for (int i = 0; i < this->m_order; i++) {
             currentGram = ncp_factors[i].t() * ncp_factors[i];
             (*o_UtU) = (*o_UtU) % currentGram;
@@ -61,19 +73,19 @@ class NCPFactors {
 
     // find the hadamard product of all the factor grams
     // except the n. This is equation 50 of the JGO paper.
-    void gram_leave_out_one(const int i_n, FMAT *o_UtU) {
-        FMAT currentGram(this->m_k, this->m_k);
-        (*o_UtU) = arma::ones<FMAT>(this->m_k, this->m_k);
+    void gram_leave_out_one(const int i_n, MAT *o_UtU) {
+        MAT currentGram(this->m_k, this->m_k);
+        (*o_UtU) = arma::ones<MAT>(this->m_k, this->m_k);
         for (int i = 0; i < this->m_order && i != i_n; i++) {
             currentGram = ncp_factors[i].t() * ncp_factors[i];
             (*o_UtU) = (*o_UtU) % currentGram;
         }
     }
 
-    FMAT krp_leave_out_one(const int i_n) {
+    MAT krp_leave_out_one(const int i_n) {
         UWORD krpsize = arma::prod(this->m_dimensions);
         krpsize /= this->m_dimensions[i_n];
-        FMAT krp(krpsize, this->m_k);
+        MAT krp(krpsize, this->m_k);
         krp_leave_out_one(i_n, &krp);
         return krp;
     }
@@ -84,7 +96,7 @@ class NCPFactors {
     // reverse. Hence assuming the same. The order of the computation
     // is same a tensor tool box.
     // size of krp must be product of all dimensions leaving out nxk
-    void krp_leave_out_one(const int i_n, FMAT *o_krp) {
+    void krp_leave_out_one(const int i_n, MAT *o_krp) {
         // matorder = length(A):-1:1;
         // Always krp for mttkrp is computed in
         // reverse. Hence assuming the same.
@@ -116,9 +128,9 @@ class NCPFactors {
             // prev_nrows = current_nrows;
             // rightkrp.n_rows;
             // we are populating column by column
-            FMAT& rightkrp = ncp_factors[matorder[i]];
+            MAT& rightkrp = ncp_factors[matorder[i]];
             for (int j = 0; j < this->m_k; j++) {
-                FVEC krpcol = (*o_krp)(arma::span(0, current_nrows), j);
+                VEC krpcol = (*o_krp)(arma::span(0, current_nrows), j);
                 // krpcol.each_rows*rightkrp.col(i);
                 for (int k = 0; k < rightkrp.n_rows; k++) {
                     (*o_krp)(arma::span(k * krpcol.n_rows, (k + 1)*krpcol.n_rows - 1), j) = krpcol * rightkrp(k, j);
@@ -138,10 +150,10 @@ class NCPFactors {
 //     P(:,n) = ab(:);
 // end
         for (int n = 0; n < this->m_k; n++) {
-            FMAT ab = ncp_factors[matorder[0]].col(n);
+            MAT ab = ncp_factors[matorder[0]].col(n);
             for (int i = 1; i < this->m_order - 1; i++) {
-                FVEC oldabvec = arma::vectorise(ab);
-                FVEC currentvec = ncp_factors[matorder[i]].col(n);
+                VEC oldabvec = arma::vectorise(ab);
+                VEC currentvec = ncp_factors[matorder[i]].col(n);
                 ab.clear();
                 ab = currentvec * oldabvec.t();
             }
@@ -152,16 +164,17 @@ class NCPFactors {
     Tensor rankk_tensor() {
         UWORD krpsize = arma::prod(this->m_dimensions);
         krpsize /= this->m_dimensions[0];
-        FMAT krpleavingzero = arma::zeros<FMAT>(krpsize, this->m_k);
+        MAT krpleavingzero = arma::zeros<MAT>(krpsize, this->m_k);
         krp_leave_out_one(0, &krpleavingzero);
-        FMAT lowranktensor(this->m_dimensions[0], krpsize);
+        MAT lowranktensor(this->m_dimensions[0], krpsize);
         lowranktensor = this->ncp_factors[0] * krpleavingzero.t();
         Tensor rc(this->m_dimensions, lowranktensor.memptr());
         return rc;
     }
 
     void print() {
-        std::cout << "order::" << this->m_order << "::k::" << this->m_k;
+        std::cout << "order::" << this->m_order << "::k::" << this->m_k << std::endl;
+        std::cout << "lambda::" << this->arma::prod(this->lambda) << std::endl;        
         std::cout << "::dims::"  << std::endl << this->m_dimensions << std::endl;
         for (int i = 0; i < this->m_order; i++) {
             std::cout << i << "th factor" << std::endl << "=============" << std::endl;
@@ -175,6 +188,11 @@ class NCPFactors {
     void trans(NCPFactors &factor_t) {
         for (int i = 0; i < this->m_order; i++) {
             factor_t.set(i, this->ncp_factors[i].t());
+        }
+    }
+    void normalize(){
+        for(int i=0; i < this->m_order; i++){
+            normalize(i);
         }
     }
 }; // NCPFactors

@@ -17,10 +17,10 @@ class AUNTF {
     const Tensor &m_input_tensor;
     NCPFactors m_ncp_factors;
     int m_num_it;
-    FMAT gram_without_one;
+    MAT gram_without_one;
     const int m_low_rank_k;
-    FMAT *ncp_krp;
-    FMAT *ncp_mttkrp;
+    MAT *ncp_krp;
+    MAT *ncp_mttkrp;
     const ntfalgo m_updalgo;
     LUC *m_luc;
     Tensor *lowranktensor;
@@ -31,13 +31,13 @@ class AUNTF {
         m_input_tensor(i_tensor),
         m_low_rank_k(i_k),
         m_updalgo(i_algo) {
-        gram_without_one = arma::zeros<FMAT>(i_k, i_k);
-        ncp_mttkrp = new FMAT[i_tensor.order()];
-        ncp_krp = new FMAT[i_tensor.order()];
+        gram_without_one = arma::zeros<MAT>(i_k, i_k);
+        ncp_mttkrp = new MAT[i_tensor.order()];
+        ncp_krp = new MAT[i_tensor.order()];
         for (int i = 0; i < i_tensor.order(); i++) {
             UWORD current_size = TENSOR_NUMEL / TENSOR_DIM[i];
-            ncp_krp[i] = arma::zeros <FMAT>(current_size, i_k);
-            ncp_mttkrp[i] = arma::zeros<FMAT>(TENSOR_DIM[i], i_k);
+            ncp_krp[i] = arma::zeros <MAT>(current_size, i_k);
+            ncp_mttkrp[i] = arma::zeros<MAT>(TENSOR_DIM[i], i_k);
         }
         lowranktensor = new Tensor(i_tensor.dimensions());
         m_luc = new LUC(m_updalgo);
@@ -51,7 +51,7 @@ class AUNTF {
                 m_ncp_factors.gram_leave_out_one(j, &gram_without_one);
                 m_ncp_factors.krp_leave_out_one(j, &ncp_krp[j]);
                 m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp[j]);
-                FMAT factor = m_luc->update(gram_without_one,
+                MAT factor = m_luc->update(gram_without_one,
                                             ncp_mttkrp[j].t());
                 m_ncp_factors.set(j, factor.t());
             }
@@ -63,9 +63,9 @@ class AUNTF {
         // current low rank tensor
         // UWORD krpsize = arma::prod(this->m_dimensions);
         // krpsize /= this->m_dimensions[0];
-        // FMAT krpleavingzero = arma::zeros<FMAT>(krpsize, this->m_k);
+        // MAT krpleavingzero = arma::zeros<MAT>(krpsize, this->m_k);
         // krp_leave_out_one(0, &krpleavingzero);
-        // FMAT lowranktensor(this->m_dimensions[0], krpsize);
+        // MAT lowranktensor(this->m_dimensions[0], krpsize);
         // lowranktensor = this->ncp_factors[0] * trans(krpleavingzero);
 
         // compute current low rank tensor as above.
