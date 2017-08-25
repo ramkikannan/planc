@@ -271,7 +271,6 @@ class DistNMFDriver {
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 #ifndef USE_PACOSS
-
         if (!m_outputfile_name.empty()) {
             dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                             nmfAlgorithm.getRightLowRankFactor(),

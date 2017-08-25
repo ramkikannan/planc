@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   printf("Assigning %ju rows and %ju columns per part.\n", rowsPerProc, colsPerProc);
   for (uint64_t i = 0; i < nnz; i++) {
     if (i % 100000 == 0 && i > 0) { printf("Processing %ju.th nonzero...\n", i); }
-    int rowIdx, colIdx;
+    uint64_t rowIdx, colIdx;
     double val;
     fscanf(file, "%" SCNu64, &rowIdx);
     fscanf(file, "%" SCNu64, &colIdx);

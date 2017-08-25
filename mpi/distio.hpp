@@ -364,8 +364,8 @@ class DistIO {
         stringstream sw, sh;
         sw << output_file_name << "_W_" << MPI_SIZE << "_" << MPI_RANK;
         sh << output_file_name << "_H_" << MPI_SIZE << "_" << MPI_RANK;
-        W.save(sw, arma::raw_ascii);
-        H.save(sh, arma::raw_ascii);
+        W.save(sw.str(), arma::raw_ascii);
+        H.save(sh.str(), arma::raw_ascii);
     }
     void writeRandInput() {
         std::string file_name("Arnd");
