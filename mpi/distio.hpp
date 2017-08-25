@@ -64,15 +64,15 @@ class DistIO {
         } else if (type == "normal") {
             (*X).sprandn((*X).n_rows, (*X).n_cols, sparsity);
         }
-        SP_FMAT::iterator start_it = (*X).begin();
-        SP_FMAT::iterator end_it = (*X).end();
-        for (SP_FMAT::iterator it = start_it; it != end_it; ++it) {
-            float currentValue = (*it);
+        SP_MAT::iterator start_it = (*X).begin();
+        SP_MAT::iterator end_it = (*X).end();
+        for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
+            double currentValue = (*it);
             (*it) = ceil(kalpha * currentValue + kbeta);
             if ((*it) < 0) (*it) = kbeta;
         }
         // for (uint i=0; i<(*X).n_nonzero;i++){
-        //     float currentValue = (*X).values[i];
+        //     double currentValue = (*X).values[i];
         //     currentValue *= kalpha;
         //     currentValue += kbeta;
         //     currentValue = ceil(currentValue);
@@ -137,34 +137,34 @@ class DistIO {
         // all machines will generate same Wrnd and Hrnd
         // at all times.
         arma::arma_rng::set_seed(kW_seed_idx);
-        FMAT Wrnd(m, k);
+        MAT Wrnd(m, k);
         Wrnd.randu();
-        FMAT Hrnd(k, n);
+        MAT Hrnd(k, n);
         Hrnd.randu();
 #ifdef BUILD_SPARSE
-        SP_FMAT::iterator start_it = (*X).begin();
-        SP_FMAT::iterator end_it = (*X).end();
-        float tempVal = 0.0;
-        for (SP_FMAT::iterator it = start_it; it != end_it; ++it) {
-            FVEC Wrndi = vectorise(Wrnd.row(start_row + it.row()));
-            FVEC Hrndj = Hrnd.col(start_col + it.col());
+        SP_MAT::iterator start_it = (*X).begin();
+        SP_MAT::iterator end_it = (*X).end();
+        double tempVal = 0.0;
+        for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
+            VEC Wrndi = vectorise(Wrnd.row(start_row + it.row()));
+            VEC Hrndj = Hrnd.col(start_col + it.col());
             tempVal =  dot(Wrndi, Hrndj);
             (*it) = ceil(kalpha * tempVal + kbeta);
         }
 #else
-        FMAT templr;
+        MAT templr;
         if ((*X).n_cols == n) {  // ONED_ROW
-            FMAT myWrnd = Wrnd.rows(start_row, end_row);
+            MAT myWrnd = Wrnd.rows(start_row, end_row);
             templr =  myWrnd * Hrnd;
         } else if ((*X).n_rows == m) {  // ONED_COL
-            FMAT myHcols = Hrnd.cols(start_col, end_col);
+            MAT myHcols = Hrnd.cols(start_col, end_col);
             templr = Wrnd * myHcols;
         } else if ((*X).n_rows == (m / MPI_SIZE) &&
                    (*X).n_cols == (n / MPI_SIZE) ||
                    ((*X).n_rows == (m / this->m_mpicomm.pr()) &&
                     (*X).n_cols == (n / this->m_mpicomm.pc()))) {
-            FMAT myWrnd = Wrnd.rows(start_row, end_row);
-            FMAT myHcols = Hrnd.cols(start_col, end_col);
+            MAT myWrnd = Wrnd.rows(start_row, end_row);
+            MAT myHcols = Hrnd.cols(start_col, end_col);
             templr = myWrnd * myHcols;
         }
         (*X) = ceil(kalpha * templr + kbeta);
@@ -181,11 +181,11 @@ class DistIO {
         int my_rows = A.n_rows;
         int my_cols = A.n_cols;
         bool last_exist = false;
-        float my_min_value = 0.0;
+        double my_min_value = 0.0;
         if (A.n_nonzero > 0) {
             my_min_value = A.min();
         }
-        float overall_min;
+        double overall_min;
         MPI_Allreduce(&my_rows, &max_rows, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
         MPI_Allreduce(&my_cols, &max_cols, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
         MPI_Allreduce(&my_min_value, &overall_min, 1, MPI_INT,
@@ -197,9 +197,9 @@ class DistIO {
         // criteria
         UWORD my_correct_nnz = 0;
         if (A.n_nonzero > 0) {
-            SP_FMAT::iterator start_it = A.begin();
-            SP_FMAT::iterator end_it = A.end();
-            for (SP_FMAT::iterator it = start_it; it != end_it; ++it) {
+            SP_MAT::iterator start_it = A.begin();
+            SP_MAT::iterator end_it = A.end();
+            for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
                 if (it.row() < max_rows && it.col() < max_cols) {
                     my_correct_nnz++;
                 }
@@ -223,14 +223,14 @@ class DistIO {
                       << "::my_nnz::" << A.n_nonzero
                       << "::my_correct_nnz::" << my_correct_nnz);
         arma::umat locs;
-        FVEC vals;
+        VEC vals;
         locs = arma::zeros<arma::umat>(2, my_correct_nnz);
-        vals = arma::zeros<FVEC>(my_correct_nnz);
+        vals = arma::zeros<VEC>(my_correct_nnz);
         if (A.n_nonzero > 0) {
-            SP_FMAT::iterator start_it = A.begin();
-            SP_FMAT::iterator end_it = A.end();
-            float idx = 0;
-            for (SP_FMAT::iterator it = start_it; it != end_it; ++it) {
+            SP_MAT::iterator start_it = A.begin();
+            SP_MAT::iterator end_it = A.end();
+            double idx = 0;
+            for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
                 if (it.row() < max_rows && it.col() < max_cols) {
                     locs(0, idx) = it.row();
                     locs(1, idx) = it.col();
@@ -247,7 +247,7 @@ class DistIO {
             locs(1, my_correct_nnz - 1) = max_cols - 1;
             vals(my_correct_nnz - 1) = overall_min;
         }
-        SP_FMAT A_new(locs, vals);
+        SP_MAT A_new(locs, vals);
         A.clear();
         A = A_new;
     }
@@ -317,7 +317,7 @@ class DistIO {
                 m_Arows.load(sr.str(), arma::coord_ascii);
                 uniform_dist_matrix(m_Arows);
 #else
-                m_Arows.load(sr.str(), arma::raw_ascii);
+                m_Arows.load(sr.str());
 #endif
             }
             if (m_distio == ONED_COL || m_distio == ONED_DOUBLE) {
@@ -326,7 +326,7 @@ class DistIO {
                 m_Acols.load(sc.str(), arma::coord_ascii);
                 uniform_dist_matrix(m_Acols);
 #else
-                m_Acols.load(sc.str(), arma::raw_ascii);
+                m_Acols.load(sc.str());
 #endif
                 m_Acols = m_Acols.t();
             }
@@ -334,38 +334,38 @@ class DistIO {
                 //sr << file_name << "_" << MPI_SIZE << "_" << MPI_RANK;
                 sr << file_name << MPI_RANK;
 #ifdef BUILD_SPARSE
-                FMAT temp_ijv;
+                MAT temp_ijv;
                 temp_ijv.load(sr.str(), arma::raw_ascii);
                 if (temp_ijv.n_rows > 0 && temp_ijv.n_cols > 0) {
                     arma::umat idxs(2, temp_ijv.n_rows);
-                    FMAT vals(2, temp_ijv.n_rows);
-                    FMAT idxs_only = temp_ijv.cols(0, 1);
+                    MAT vals(2, temp_ijv.n_rows);
+                    MAT idxs_only = temp_ijv.cols(0, 1);
                     idxs = arma::conv_to<arma::umat>::from(idxs_only);
                     arma::umat idxst = idxs.t();
                     vals = temp_ijv.col(2);
-                    SP_FMAT temp_spfmat(idxst, vals);
-                    m_A = temp_spfmat;
+                    SP_MAT temp_spmat(idxst, vals);
+                    m_A = temp_spmat;
                 } else {
                     arma::umat idxs = arma::zeros<arma::umat>(2,1);
-                    FVEC vals = arma::zeros<FVEC>(1);
-                    SP_FMAT temp_spfmat(idxs,vals);
-                    m_A = temp_spfmat;
+                    VEC vals = arma::zeros<VEC>(1);
+                    SP_MAT temp_spmat(idxs,vals);
+                    m_A = temp_spmat;
                 }
                 // m_A.load(sr.str(), arma::coord_ascii);
                 uniform_dist_matrix(m_A);
 #else
-                m_A.load(sr.str(), arma::raw_ascii);
+                m_A.load(sr.str());
 #endif
             }
         }
     }
-    void writeOutput(const FMAT & W, const FMAT & H,
+    void writeOutput(const MAT & W, const MAT & H,
                      const std::string & output_file_name) {
         stringstream sw, sh;
         sw << output_file_name << "_W_" << MPI_SIZE << "_" << MPI_RANK;
         sh << output_file_name << "_H_" << MPI_SIZE << "_" << MPI_RANK;
-        W.save(sw, arma::raw_ascii);
-        H.save(sh, arma::raw_ascii);
+        W.save(sw.str(), arma::raw_ascii);
+        H.save(sh.str(), arma::raw_ascii);
     }
     void writeRandInput() {
         std::string file_name("Arnd");
@@ -412,14 +412,14 @@ class DistIO {
 void testDistIO(char argc, char *argv[]) {
     MPICommunicator mpicomm(argc, argv);
 #ifdef BUILD_SPARSE
-    DistIO<SP_FMAT> dio(mpicomm, ONED_DOUBLE);
+    DistIO<SP_MAT> dio(mpicomm, ONED_DOUBLE);
 #else
-    DistIO<FMAT> dio(mpicomm, ONED_DOUBLE);
+    DistIO<MAT> dio(mpicomm, ONED_DOUBLE);
 #endif
     dio.readInput("rand", 12, 9, 0.5);
     cout << "Arows:" << mpicomm.rank() << endl
-         << arma::conv_to<FMAT >::from(dio.Arows()) << endl;
+         << arma::conv_to<MAT >::from(dio.Arows()) << endl;
     cout << "Acols:" << mpicomm.rank() << endl
-         << arma::conv_to<FMAT >::from(dio.Acols()) << endl;
+         << arma::conv_to<MAT >::from(dio.Acols()) << endl;
 }
 #endif  // MPI_DISTIO_HPP_

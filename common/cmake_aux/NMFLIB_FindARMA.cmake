@@ -46,20 +46,20 @@ if(MKL_FOUND)
   #https://software.intel.com/en-us/forums/intel-math-kernel-library/topic/737425
   #overriding MKL_LIBRARIES and CXX flags
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMKL_ILP64 -m64")
-  set(MKL_LIBRARIES "-Wl,--start-group ${MKL_ROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKL_ROOT}/lib/intel64/libmkl_gnu_thread.a ${MKL_ROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl")
+  #set(MKL_LIBRARIES "-Wl,--start-group ${MKL_ROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKL_ROOT}/lib/intel64/libmkl_gnu_thread.a ${MKL_ROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl")
+  set(MKL_LIBRARIES "-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lmkl_intel_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl") 
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MKL_LIBRARIES})
 else()
-
   if(OpenBLAS_FOUND AND BLAS_FOUND)
     message(STATUS "")
     message(STATUS "*** WARNING: found both OpenBLAS and BLAS. BLAS will not be used")
   endif()
 
   if(OpenBLAS_FOUND)
-
     set(NMFLIB_USE_BLAS true)      
     set(NMFLIB_LIBS ${NMFLIB_LIBS} ${OpenBLAS_LIBRARIES})
-
+    get_filename_component(OPENBLAS_DIR ${OpenBLAS_LIBRARIES} DIRECTORY)
+    set(OPENBLAS_INCLUDE_DIR ${OPENBLAS_DIR}/../include)
   else()
 
     if(BLAS_FOUND)

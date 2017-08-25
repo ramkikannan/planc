@@ -7,8 +7,8 @@
 template<class INPUTMATTYPE>
 class DistHALS : public DistAUNMF<INPUTMATTYPE>{
  private:
-  FMAT HWtW;
-  FMAT WHtH;
+  MAT HWtW;
+  MAT WHtH;
 
  protected:
   // emulating Jingu's code
@@ -26,12 +26,12 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE>{
     for (int i = 0; i < this->k; i++) {
       // W(:,i) = max(W(:,i) * HHt_reg(i,i) + AHt(:,i) - W *
       // HHt_reg(:,i),epsilon);
-      FVEC updWi = this->W.col(i) * this->HtH(i, i)
+      VEC updWi = this->W.col(i) * this->HtH(i, i)
                    + ((this->AHtij.row(i)).t() - this->W * this->HtH.col(i));
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("b4 fixNumericalError::" << endl <<  updWi);
 #endif  // ifdef MPI_VERBOSE
-      fixNumericalError<FVEC>(&updWi);
+      fixNumericalError<VEC>(&updWi);
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("after fixNumericalError::" << endl << updWi);
 #endif  // ifdef MPI_VERBOSE
@@ -64,24 +64,36 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE>{
     // Here ij is the element of H matrix.
     for (int i = 0; i < this->k; i++) {
       // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
-      FVEC updHi = this->H.col(i) +
+      VEC updHi = this->H.col(i) +
                    ((this->WtAij.row(i)).t() - this->H * this->WtW.col(i));
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("b4 fixNumericalError::" << endl << updHi);
 #endif // ifdef MPI_VERBOSE
-      fixNumericalError<FVEC>(&updHi);
+      fixNumericalError<VEC>(&updHi);
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("after fixNumericalError::" << endl << updHi);
 #endif // ifdef MPI_VERBOSE
-      this->H.col(i) = updHi;
+      double normHi = arma::norm(updHi, 2);
+      normHi *= normHi;
+      double globalnormHi;
+      mpitic();
+      MPI_Allreduce(&normHi, &globalnormHi, 1, MPI_DOUBLE,
+                    MPI_SUM, MPI_COMM_WORLD);
+      double temp = mpitoc();
+      this->time_stats.communication_duration(temp);
+      this->time_stats.allreduce_duration(temp);
+
+      if (globalnormHi > 0) {
+        this->H.col(i) = updHi;
+      }
     }
     this->Ht = this->H.t();
   }
 
 public:
 
-  DistHALS(const INPUTMATTYPE& input, const FMAT& leftlowrankfactor,
-           const FMAT& rightlowrankfactor,
+  DistHALS(const INPUTMATTYPE& input, const MAT& leftlowrankfactor,
+           const MAT& rightlowrankfactor,
            const MPICommunicator& communicator,
            const int numkblks) :
     DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,

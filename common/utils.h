@@ -41,6 +41,7 @@ enum algotype {MU_NMF, HALS_NMF, BPP_NMF};
 
 #define EPSILON_1EMINUS16 0.00000000000000001
 #define EPSILON 0.000001
+#define EPSILON_1EMINUS12 1e-12
 #define NUMBEROF_DECIMAL_PLACES 12
 #define RAND_SEED 100
 #define RAND_SEED_SPARSE 100
@@ -49,8 +50,10 @@ enum algotype {MU_NMF, HALS_NMF, BPP_NMF};
 #define FMAT    arma::fmat
 #define MAT     arma::mat
 #define FROWVEC arma::frowvec
+#define ROWVEC arma::rowvec
 #define FVEC    arma::fvec
 #define SP_FMAT arma::sp_fmat
+#define SP_MAT arma::sp_mat
 #define UVEC    arma::uvec
 #define UWORD   arma::uword
 #define VEC     arma::vec

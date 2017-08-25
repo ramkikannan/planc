@@ -5,7 +5,7 @@
 // #define MPI_VERBOSE       1
 // #define WRITE_RAND_INPUT  1
 
-enum distalgotype {MU2D, HALS2D, ANLSBPP2D, NAIVEANLSBPP};
+enum distalgotype {MU2D, HALS2D, ANLSBPP2D, NAIVEANLSBPP, AOADMM2D};
 
 // ONED_DOUBLE for naive ANLS-BPP
 // TWOD for HPC-NMF

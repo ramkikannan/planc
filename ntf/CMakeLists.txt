@@ -48,6 +48,7 @@ include_directories(
   ${NNLS_SRC}
   ${Boost_INCLUDE_DIR}
   ${MKL_INCLUDE_DIR}
+  ${OPENBLAS_INCLUDE_DIR}
 )
 
 # add_executable(ntf

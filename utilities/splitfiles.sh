@@ -12,7 +12,7 @@ rm -rf $outputdir
 mkdir $outputdir
 #------------------------------
 #row split
-split -a 3 -l ${numLines} $1 $outputdir/Arows_${numCores}_
+split -a 3 -d -l ${numLines} $1 $outputdir/Arows_${numCores}_
 
 #rename the file suffixes with numbers
 i=0
@@ -27,7 +27,7 @@ totalLines=$(wc -l < $2)
 numLines=$(( $totalLines / $numCores ))
 #------------------------------
 #row split
-split -a 3 -l ${numLines} $2 $outputdir/Acols_${numCores}_
+split -a 3 -d -l ${numLines} $2 $outputdir/Acols_${numCores}_
 
 #rename the file suffixes with numbers
 i=0

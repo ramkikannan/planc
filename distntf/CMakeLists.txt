@@ -59,11 +59,10 @@ include_directories(
   ${DISTNMF_SOURCE_DIR}
   ${NMFLIB_COMMON}
   ${NNLS_SRC}
-  if(MPI_CXX_FOUND)
-    ${MPI_CXX_INCLUDE_PATH}
-  endif()
+  ${MPI_CXX_INCLUDE_PATH}
   ${Boost_INCLUDE_DIR}
   ${MKL_INCLUDE_DIR}
+  ${OPENBLAS_INCLUDE_DIR}
 )
 
 add_executable(distnmf

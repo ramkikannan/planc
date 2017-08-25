@@ -5,10 +5,10 @@
 
 template<class INPUTMATTYPE>
 class DistMU : public DistAUNMF<INPUTMATTYPE>{
-  FMAT HWtW;
-  FMAT WHtH;
-  FROWVEC localWnorm;
-  FROWVEC Wnorm;
+  MAT HWtW;
+  MAT WHtH;
+  ROWVEC localWnorm;
+  ROWVEC Wnorm;
 
  protected:
   // update W given HtH and AHt
@@ -60,7 +60,7 @@ class DistMU : public DistAUNMF<INPUTMATTYPE>{
     DISTPRINTINFO("::HWtW::" << endl << HWtW);
 #endif  // ifdef MPI_VERBOSE
 
-    // fixNumericalError<FMAT>(&this->H);
+    // fixNumericalError<MAT>(&this->H);
     DISTPRINTINFO("MU::updateH::WtW::" << PRINTMATINFO(this->WtW)                  \
                                        << "::HWtW::" << PRINTMATINFO(HWtW)         \
                                        << "::WtAij::" << PRINTMATINFO(this->WtAij) \
@@ -73,8 +73,8 @@ class DistMU : public DistAUNMF<INPUTMATTYPE>{
   }
 
  public:
-  DistMU(const INPUTMATTYPE& input, const FMAT& leftlowrankfactor,
-         const FMAT& rightlowrankfactor, const MPICommunicator& communicator,
+  DistMU(const INPUTMATTYPE& input, const MAT& leftlowrankfactor,
+         const MAT& rightlowrankfactor, const MPICommunicator& communicator,
          const int numkblks) :
     DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                             rightlowrankfactor, communicator, numkblks) {

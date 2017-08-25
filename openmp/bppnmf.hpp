@@ -23,17 +23,17 @@ class BPPNMF: public NMF<T> {
     MAT giventGiven;
     // designed as if W is given and H is found.
     // The transpose is the other problem.
-    void updateOtherGivenOneMultipleRHS(const T &input, const FMAT &given,
-                                        char worh, FMAT *othermat) {
+    void updateOtherGivenOneMultipleRHS(const T &input, const MAT &given,
+                                        char worh, MAT *othermat) {
         double t1, t2;
         UINT numThreads = (input.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
         tic();
-        FMAT givent = given.t();
+        MAT givent = given.t();
         MAT  giventInput(this->k, input.n_cols);
         // This is WtW
-        giventGiven = arma::conv_to<MAT >::from(givent * given);
+        giventGiven = givent * given;
         // This is WtA
-        giventInput = arma::conv_to<MAT >::from(givent * input);
+        giventInput = givent * input;
         givent.clear();
         t2 = toc();
         INFO << "starting " << worh << ". Prereq for " << worh
@@ -75,12 +75,10 @@ class BPPNMF: public NMF<T> {
                      << " num_iterations()=" << numIter << std::endl;
 #endif
                 if (spanStart == spanEnd) {
-                    FROWVEC solVec = arma::conv_to<FROWVEC>::from(
-                                         subProblem->getSolutionVector().t());
+                    ROWVEC solVec = subProblem->getSolutionVector().t();
                     (*othermat).row(i) = solVec;
                 } else {  // if (spanStart < spanEnd)
-                    (*othermat).rows(spanStart, spanEnd) = arma::conv_to<FMAT >::from(
-                            subProblem->getSolutionMatrix().t());
+                    (*othermat).rows(spanStart, spanEnd) = subProblem->getSolutionMatrix().t();
                 }
                 subProblem->clear();
                 delete subProblem;
@@ -95,7 +93,7 @@ class BPPNMF: public NMF<T> {
     BPPNMF(T A, int lowrank): NMF<T>(A, lowrank) {
         giventGiven = arma::zeros<MAT >(lowrank, lowrank);
     }
-    BPPNMF(const T A, const FMAT &llf, const FMAT &rlf) : NMF<T>(A, llf, rlf) {
+    BPPNMF(const T A, const MAT &llf, const MAT &rlf) : NMF<T>(A, llf, rlf) {
     }
     void computeNMFSingleRHS() {
         int currentIteration = 0;
@@ -107,9 +105,9 @@ class BPPNMF: public NMF<T> {
             this->collectStats(currentIteration);
 #endif
             // solve for H given W;
-            FMAT Wt = this->W.t();
-            MAT WtW = arma::conv_to<MAT >::from(Wt * this->W);
-            MAT WtA = arma::conv_to<MAT >::from(Wt * this->A);
+            MAT Wt = this->W.t();
+            MAT WtW = Wt * this->W;
+            MAT WtA = Wt * this->A;
             Wt.clear();
             {
                 #pragma omp parallel for
@@ -127,7 +125,7 @@ class BPPNMF: public NMF<T> {
 #ifdef _VERBOSE
                     INFO << subProblemforH->getSolutionVector();
 #endif
-                    this->H.row(i) = arma::conv_to<FVEC>::from(subProblemforH->getSolutionVector().t());
+                    this->H.row(i) = subProblemforH->getSolutionVector().t();
                     INFO << "Comp H(" << i << "/" << this->n << ") of it="
                          << currentIteration << " time taken=" << t2
                          << " num_iterations()=" << numIter << std::endl;
@@ -141,9 +139,9 @@ class BPPNMF: public NMF<T> {
                 // clear previous allocations.
                 WtW.clear();
                 WtA.clear();
-                FMAT Ht = this->H.t();
-                MAT HtH = arma::conv_to<MAT >::from(Ht * this->H);
-                MAT HtAt = arma::conv_to<MAT >::from(Ht * At);
+                MAT Ht = this->H.t();
+                MAT HtH = Ht * this->H;
+                MAT HtAt = Ht * At;
                 Ht.clear();
                 // solve for W given H;
                 #pragma omp parallel for
@@ -161,7 +159,7 @@ class BPPNMF: public NMF<T> {
                     INFO << subProblemforW->getSolutionVector();
 #endif
 
-                    this->W.row(i) = arma::conv_to<FVEC>::from(subProblemforW->getSolutionVector().t());
+                    this->W.row(i) = subProblemforW->getSolutionVector().t();
                     INFO << "Comp W(" << i << "/" << this->n << ") of it="
                          << currentIteration << " time taken=" << t2
                          << " num_iterations()=" << numIter << std::endl;
@@ -184,11 +182,13 @@ class BPPNMF: public NMF<T> {
         // this->objective_err;
 #endif
         this->At = this->A.t();  // do it once
+#ifdef BUILD_SPARSE
         // run hals once to get proper initializations
         HALSNMF<T> tempHals(this->A, this->W, this->H);
         tempHals.num_iterations(2);
         this->W = tempHals.getLeftLowRankFactor();
         this->H = tempHals.getRightLowRankFactor();
+#endif
         INFO << PRINTMATINFO(this->At);
 #ifdef BUILD_SPARSE
         INFO << " nnz = " << this->At.n_nonzero << std::endl;
@@ -217,10 +217,12 @@ class BPPNMF: public NMF<T> {
 #endif
             INFO << "completed it=" << currentIteration << " time taken = "
                  << this->stats(currentIteration + 1, 3) << std::endl;
-            INFO << "error:it = " << currentIteration << "bpperr ="
-                 << this->objective_err << std::endl;
+            this->computeObjectiveError();
+            INFO << "error:it = " << currentIteration << " bpperr ="
+                 << sqrt(this->objective_err) / this->normA << std::endl;
             currentIteration++;
         }
+        this->normalize_by_W();
 #ifdef COLLECTSTATS
         this->collectStats(currentIteration);
         INFO << "NMF Statistics:" << std::endl << this->stats << std::endl;
@@ -236,7 +238,7 @@ class BPPNMF: public NMF<T> {
      * in BPPNNLS.hpp. It will take some time to refactor this.
      * Given, A and W, solve for H.
      */
-    FMAT solveScalableNNLS() {
+    MAT solveScalableNNLS() {
         updateOtherGivenOneMultipleRHS(this->A, this->W, 'H', &(this->H));
         return this->H;
     }

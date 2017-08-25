@@ -26,8 +26,8 @@ class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
   const MPICommunicator& m_mpicomm;
 #ifdef USE_PACOSS
-  Pacoss_Communicator<float> *m_rowcomm;
-  Pacoss_Communicator<float> *m_colcomm;
+  Pacoss_Communicator<double> *m_rowcomm;
+  Pacoss_Communicator<double> *m_colcomm;
 #endif
   UWORD m_ownedm;
   UWORD m_ownedn;
@@ -37,12 +37,12 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   DistNMFTime time_stats;
   uint m_compute_error;
   distalgotype m_algorithm;
-  FROWVEC localWnorm;
-  FROWVEC Wnorm;
+  ROWVEC localWnorm;
+  ROWVEC Wnorm;
 
  public:
-  DistNMF(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-          const FMAT &rightlowrankfactor, const MPICommunicator& communicator):
+  DistNMF(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
+          const MAT &rightlowrankfactor, const MPICommunicator& communicator):
     NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
     m_mpicomm(communicator), time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     double sqnorma = this->normA * this->normA;
@@ -73,8 +73,8 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   }
 
 #ifdef USE_PACOSS
-  void set_rowcomm(Pacoss_Communicator<float> *rowcomm) { this->m_rowcomm = rowcomm; }
-  void set_colcomm(Pacoss_Communicator<float> *colcomm) { this->m_colcomm = colcomm; }
+  void set_rowcomm(Pacoss_Communicator<double> *rowcomm) { this->m_rowcomm = rowcomm; }
+  void set_colcomm(Pacoss_Communicator<double> *colcomm) { this->m_colcomm = colcomm; }
 #endif
   const int globalm() const {return m_globalm;}
   const int globaln() const {return m_globaln;}
@@ -99,13 +99,13 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   void normalize_by_W() {
     localWnorm = sum(this->W % this->W);
     mpitic();
-    MPI_Allreduce(localWnorm.memptr(), Wnorm.memptr(), this->k, MPI_FLOAT,
+    MPI_Allreduce(localWnorm.memptr(), Wnorm.memptr(), this->k, MPI_DOUBLE,
                   MPI_SUM, MPI_COMM_WORLD);
     double temp = mpitoc();
     this->time_stats.allgather_duration(temp);
     for (int i = 0; i < this->k; i++) {
       if (Wnorm(i) > 1) {
-        float norm_const = sqrt(Wnorm(i));
+        double norm_const = sqrt(Wnorm(i));
         this->W.col(i) = this->W.col(i) / norm_const;
         this->H.col(i) = norm_const * this->H.col(i);
       }

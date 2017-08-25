@@ -7,20 +7,20 @@ class HALSNMF: public NMF<T> {
     // Not happy with this design. However to avoid computing At again and again
     // making this as private variable.
     T At;
-    FMAT WtW;
-    FMAT HtH;
-    FMAT WtA;
-    FMAT AH;
+    MAT WtW;
+    MAT HtH;
+    MAT WtA;
+    MAT AH;
 
     /*
      * Collected statistics are
      * iteration Htime Wtime totaltime normH normW densityH densityW relError
      */
     void allocateMatrices() {
-        WtW = arma::zeros<FMAT >(this->k, this->k);
-        HtH = arma::zeros<FMAT >(this->k, this->k);
-        WtA = arma::zeros<FMAT >(this->n, this->k);
-        AH = arma::zeros<FMAT >(this->m, this->k);
+        WtW = arma::zeros<MAT >(this->k, this->k);
+        HtH = arma::zeros<MAT >(this->k, this->k);
+        WtA = arma::zeros<MAT >(this->n, this->k);
+        AH = arma::zeros<MAT >(this->m, this->k);
     }
     void freeMatrices() {
         this->At.clear();
@@ -31,9 +31,13 @@ class HALSNMF: public NMF<T> {
     }
   public:
     HALSNMF(const T &A, int lowrank): NMF<T>(A, lowrank) {
+        this->normalize_by_W();
+        allocateMatrices();
     }
-    HALSNMF(const T &A, const FMAT &llf, const FMAT &rlf) :
+    HALSNMF(const T &A, const MAT &llf, const MAT &rlf) :
         NMF<T>(A, llf, rlf) {
+        this->normalize_by_W();
+        allocateMatrices();
     }
     void computeNMF() {
         int currentIteration = 0;
@@ -50,13 +54,13 @@ class HALSNMF: public NMF<T> {
                  << PRINTMATINFO(WtW) << PRINTMATINFO(WtA) << std::endl;
             // to avoid divide by zero error.
             tic();
-            float normConst;
-            FVEC Hx;
+            double normConst;
+            VEC Hx;
             for (int x = 0; x < this->k; x++) {
                 // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
                 Hx = this->H.col(x) +
                      (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
-                fixNumericalError<FVEC>(&Hx);
+                fixNumericalError<VEC>(&Hx);
                 normConst = norm(Hx);
                 if (normConst != 0) {
                     this->H.col(x) = Hx;
@@ -72,14 +76,14 @@ class HALSNMF: public NMF<T> {
             INFO << "starting W Prereq for " << " took=" << toc()
                  << PRINTMATINFO(HtH) << PRINTMATINFO(AH) << std::endl;
             tic();
-            FVEC Wx;
+            VEC Wx;
             for (int x = 0; x < this->k; x++) {
                 // FVEC Wx = W(:,x) + (AHt(:,x)-W*HHt(:,x))/HHtDiag(x);
 
                 // W(:,i) = W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i);
                 Wx = (this->W.col(x) * HtH(x, x)) +
                      (((AH.col(x))) - (this->W * (HtH.col(x))));
-                fixNumericalError<FVEC>(&Wx);
+                fixNumericalError<VEC>(&Wx);
                 normConst = norm(Wx);
                 if (normConst != 0) {
                     Wx = Wx / normConst;
@@ -97,7 +101,7 @@ class HALSNMF: public NMF<T> {
                  << " time =" << toc() << std::endl;
             this->computeObjectiveError();
             INFO << "Completed it = " << currentIteration << " HALSERR="
-                 << this->objective_err << std::endl;
+                 << sqrt(this->objective_err) / this->normA << std::endl;
             currentIteration++;
         }
     }
