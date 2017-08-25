@@ -22,9 +22,9 @@ class NCPFactors {
 
     //normalize the factors of a matrix
 
-    void normalize(int order){        
-        for (int i=0; i < this->m_k; i++){
-            lambda(order,i) = arma::norm(this->ncp_factors[order].col(i));
+    void normalize(int order) {
+        for (int i = 0; i < this->m_k; i++) {
+            lambda(order, i) = arma::norm(this->ncp_factors[order].col(i));
             this->ncp_factors[order].col(i) /= lambda(order, i);
         }
     }
@@ -49,7 +49,7 @@ class NCPFactors {
                 ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             }
         }
-        lambda = arma::ones<MAT>(this->m_order, this->k);
+        lambda = arma::ones<MAT>(this->m_order, this->m_k);
     }
     // getters
     int rank() const {return m_k;}
@@ -174,7 +174,7 @@ class NCPFactors {
 
     void print() {
         std::cout << "order::" << this->m_order << "::k::" << this->m_k << std::endl;
-        std::cout << "lambda::" << this->arma::prod(this->lambda) << std::endl;        
+        std::cout << "lambda::" << arma::prod(this->lambda) << std::endl;
         std::cout << "::dims::"  << std::endl << this->m_dimensions << std::endl;
         for (int i = 0; i < this->m_order; i++) {
             std::cout << i << "th factor" << std::endl << "=============" << std::endl;
@@ -190,8 +190,8 @@ class NCPFactors {
             factor_t.set(i, this->ncp_factors[i].t());
         }
     }
-    void normalize(){
-        for(int i=0; i < this->m_order; i++){
+    void normalize() {
+        for (int i = 0; i < this->m_order; i++) {
             normalize(i);
         }
     }

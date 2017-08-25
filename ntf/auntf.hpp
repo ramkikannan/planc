@@ -73,9 +73,9 @@ class AUNTF {
         // gemm of krpleavingzero and zeroth factor
         // cblas_sgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa,
         // const CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n,
-        // const MKL_INT k, const float alpha, const float * a,
-        // const MKL_INT lda, const float * b, const MKL_INT ldb,
-        // const float beta, float * c, const MKL_INT ldc);
+        // const MKL_INT k, const double alpha, const double * a,
+        // const MKL_INT lda, const double * b, const MKL_INT ldb,
+        // const double beta, double * c, const MKL_INT ldc);
         // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
         char transa = 'T';
         char transb = 'N';
@@ -85,9 +85,9 @@ class AUNTF {
         int lda = m_ncp_factors.factor(0).n_rows;
         int ldb = m_ncp_factors.factor(0).n_cols;
         int ldc = m_ncp_factors.factor(0).n_rows;
-        float alpha = 1;
-        float beta = 1;
-        sgemm_(&transa, &transb, &m, &n, &k, &alpha, m_ncp_factors.factor(0).memptr(),
+        double alpha = 1;
+        double beta = 1;
+        dgemm_(&transa, &transb, &m, &n, &k, &alpha, m_ncp_factors.factor(0).memptr(),
                &lda, ncp_krp[0].memptr() , &ldb, &beta, lowranktensor->data() , &ldc);
         double err = m_input_tensor.err(*lowranktensor);
         return err;

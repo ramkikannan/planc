@@ -18,20 +18,20 @@ int main(int argc, char* argv[]) {
     }
     // dimensions(3) = 6;
     PLANC::NCPFactors cpfactors(dimensions, atoi(argv[1]));
-    cpfactor.normalize();
+    cpfactors.normalize();
     cpfactors.print();
     PLANC::Tensor my_tensor = cpfactors.rankk_tensor();
     PLANC::ntfalgo ntfupdalgo = PLANC::NTF_BPP;
     PLANC::AUNTF auntf(my_tensor, atoi(argv[2]), ntfupdalgo);
     auntf.computeNTF();
     PLANC::NCPFactors solution = auntf.ncp_factors();
-    // std::cout << "input factors::" << std::endl;
-    // for (int i = 0; i < test_order; i++) {
-    //     std::cout << cpfactors.factor(i);
-    // }
-    // std::cout << "output factors::" << std::endl;
-    // for (int i = 0; i < test_order; i++) {
-    //     std::cout << solution.factor(i);
-    // }
+    std::cout << "input factors::" << std::endl;
+    for (int i = 0; i < test_order; i++) {
+        std::cout << cpfactors.factor(i);
+    }
+    std::cout << "output factors::" << std::endl;
+    for (int i = 0; i < test_order; i++) {
+        std::cout << solution.factor(i);
+    }
     solution.print();
 }
