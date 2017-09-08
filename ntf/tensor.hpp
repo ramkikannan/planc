@@ -24,11 +24,11 @@ class Tensor {
   private:
     const int m_order;
     const UVEC m_dimensions;
-    const UWORD m_numel;
-    double* m_data;
+    const UWORD m_numel;    
     const unsigned int rand_seed;
 
   public:
+    double* m_data;
     Tensor(const UVEC& i_dimensions):
         m_dimensions(i_dimensions),
         m_order(i_dimensions.n_rows),
@@ -50,8 +50,7 @@ class Tensor {
     }
 
     int order() const {return m_order;}
-    UVEC dimensions() const {return m_dimensions;}
-    double* data() const {return m_data;}
+    UVEC dimensions() const {return m_dimensions;}    
     int numel() const {return m_numel;}
 
     UWORD dimensions_leave_out_one(int i_n) const {
@@ -183,7 +182,7 @@ class Tensor {
         double norm_fro = 0;
         double err_diff;
         for (int i = 0; i < this->m_numel; i++) {
-            err_diff = this->m_data[i] - (b.data())[i];
+            err_diff = this->m_data[i] - b.m_data[i];
             norm_fro += err_diff * err_diff;
         }
         return norm_fro;

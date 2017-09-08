@@ -38,7 +38,7 @@ message(STATUS "CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
 message(STATUS "CMAKE_REQUIRED_INCLUDES   = ${CMAKE_REQUIRED_INCLUDES}"  )
 
 message(STATUS "*** libraries:")
-message(STATUS "*** NTFLIB_LIBS = ${NTFLIB_LIBS}")
+message(STATUS "*** NTFLIB_LIBS = ${NTFLIB_LIBS} ${NMFLIB_LIBS}")
 
 include_directories(
   ${ARMADILLO_INCLUDE_DIR}
@@ -60,4 +60,4 @@ add_executable(ntf
 ntf.cpp
 )
 
-target_link_libraries(ntf ${NTFLIB_LIBS})
+target_link_libraries(ntf ${NTFLIB_LIBS} ${NMFLIB_LIBS})

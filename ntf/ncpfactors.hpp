@@ -76,9 +76,11 @@ class NCPFactors {
     void gram_leave_out_one(const int i_n, MAT *o_UtU) {
         MAT currentGram(this->m_k, this->m_k);
         (*o_UtU) = arma::ones<MAT>(this->m_k, this->m_k);
-        for (int i = 0; i < this->m_order && i != i_n; i++) {
-            currentGram = ncp_factors[i].t() * ncp_factors[i];
-            (*o_UtU) = (*o_UtU) % currentGram;
+        for (int i = 0; i < this->m_order; i++) {
+            if (i != i_n) {
+                currentGram = ncp_factors[i].t() * ncp_factors[i];
+                (*o_UtU) = (*o_UtU) % currentGram;
+            }
         }
     }
 

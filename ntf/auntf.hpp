@@ -1,10 +1,14 @@
-#ifndef NTF_AUNTF_HPP
-#define NTF_AUNTF_HPP
+/* Copyright Ramakrishnan Kannan 2017 */
+
+#ifndef NTF_AUNTF_HPP_
+#define NTF_AUNTF_HPP_
 
 #include <armadillo>
+#include <cblas.h>
 #include "luc.hpp"
 #include "ntf_utils.h"
 #include "tensor.hpp"
+
 
 namespace PLANC {
 
@@ -12,6 +16,19 @@ namespace PLANC {
 #define TENSOR_NUMEL (m_input_tensor.numel())
 
 
+// #ifndef NTF_VERBOSE
+// #define NTF_VERBOSE 1
+// #endif
+
+// extern "C" void cblas_dgemm_(const CBLAS_LAYOUT Layout,
+//                              const CBLAS_TRANSPOSE transa,
+//                              const CBLAS_TRANSPOSE transb,
+//                              const int m, const int n,
+//                              const int k, const double alpha,
+//                              const double *a, const int lda,
+//                              const double *b, const int ldb,
+//                              const double beta, double *c,
+//                              const int ldc);
 class AUNTF {
   private:
     const Tensor &m_input_tensor;
@@ -47,16 +64,34 @@ class AUNTF {
     void num_it(const int i_n) { this->m_num_it = i_n;}
     void computeNTF() {
         for (int i = 0; i < m_num_it; i++) {
+            INFO << "iter::" << i << std::endl;
             for (int j = 0; j < this->m_input_tensor.order(); j++) {
                 m_ncp_factors.gram_leave_out_one(j, &gram_without_one);
+#ifdef NTF_VERBOSE
+                INFO << "gram_without_" << j << "::"
+                     << arma::cond(gram_without_one) << std::endl
+                     << gram_without_one << std::endl;
+#endif
                 m_ncp_factors.krp_leave_out_one(j, &ncp_krp[j]);
+#ifdef NTF_VERBOSE
+                INFO << "krp_leave_out_" << j << std::endl
+                     << ncp_krp[j] << std::endl;
+#endif
                 m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp[j]);
+#ifdef NTF_VERBOSE
+                INFO << "mttkrp for factor" << j << std::endl
+                     << ncp_mttkrp[j] << std::endl;
+#endif
                 MAT factor = m_luc->update(gram_without_one,
-                                            ncp_mttkrp[j].t());
+                                           ncp_mttkrp[j].t());
                 m_ncp_factors.set(j, factor.t());
             }
-            std::cout << "error at it::" << i << "::"
-                      << computeObjectiveError() << std::endl;
+            INFO << "error at it::" << i << "::"
+                 << computeObjectiveError() << std::endl;
+#ifdef NTF_VERBOSE
+            INFO << "ncp factors" << std::endl;
+            m_ncp_factors.print();
+#endif
         }
     }
     double computeObjectiveError() {
@@ -70,28 +105,39 @@ class AUNTF {
 
         // compute current low rank tensor as above.
         m_ncp_factors.krp_leave_out_one(0, &ncp_krp[0]);
-        // gemm of krpleavingzero and zeroth factor
-        // cblas_sgemm (const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa,
-        // const CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n,
-        // const MKL_INT k, const double alpha, const double * a,
-        // const MKL_INT lda, const double * b, const MKL_INT ldb,
-        // const double beta, double * c, const MKL_INT ldc);
-        // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-        char transa = 'T';
-        char transb = 'N';
+        // cblas_dgemm_(const CBLAS_LAYOUT Layout,
+        //              const CBLAS_TRANSPOSE transa,
+        //              const CBLAS_TRANSPOSE transb,
+        //              const MKL_INT m, const MKL_INT n,
+        //              const MKL_INT k, const double alpha,
+        //              const double * a, const MKL_INT lda,
+        //              const double * b, const MKL_INT ldb,
+        //              const double beta, double * c,
+        //              const MKL_INT ldc);
+        // char transa = 'T';
+        // char transb = 'N';
         int m = m_ncp_factors.factor(0).n_rows;
-        int n = ncp_krp[0].n_cols;
+        int n = ncp_krp[0].n_rows;
         int k = m_ncp_factors.factor(0).n_cols;
-        int lda = m_ncp_factors.factor(0).n_rows;
-        int ldb = m_ncp_factors.factor(0).n_cols;
-        int ldc = m_ncp_factors.factor(0).n_rows;
+        int lda = m;
+        int ldb = n;
+        int ldc = m;
         double alpha = 1;
-        double beta = 1;
-        dgemm_(&transa, &transb, &m, &n, &k, &alpha, m_ncp_factors.factor(0).memptr(),
-               &lda, ncp_krp[0].memptr() , &ldb, &beta, lowranktensor->data() , &ldc);
-        double err = m_input_tensor.err(*lowranktensor);
+        double beta = 0;
+        // double *output_tensor = new double[ldc * n];
+        cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans,
+                     m, n, k, alpha,
+                     m_ncp_factors.factor(0).memptr(),
+                     lda, ncp_krp[0].memptr() , ldb, beta,
+                     lowranktensor->m_data , ldc);
+        // INFO << "lowrank tensor::" << std::endl;
+        // lowranktensor->print();
+        // for (int i=0; i < ldc*n; i++){
+        //     INFO << i << ":" << output_tensor[i] << std::endl;
+        // }
+        double err = m_input_tensor.err(*lowranktensor);        
         return err;
     }
 };  // class AUNTF
 }  // namespace PLANC
-#endif  // NTF_AUNTF_HPP
+#endif  // NTF_AUNTF_HPP_
