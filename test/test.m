@@ -1,11 +1,11 @@
-%A=randn(5000,4000);
-%W_init=randn(5000, 20);
-%H_init=randn(20,4000);
-A=rand(50000,40000);
-W_init = rand(50000,20);
-H_init=rand(20,40000);
-matinit.W=single(W_init);
-matinit.H=single(H_init);
+A=randn(5000,4000);
+W_init=randn(5000, 20);
+H_init=randn(20,4000);
+%A=rand(50000,40000);
+%W_init = rand(50000,20);
+%H_init=rand(20,40000);
+matinit.W=W_init;
+matinit.H=H_init;
 echo on;
 norm(A,'fro')
 norm(matinit.W,'fro')

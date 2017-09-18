@@ -41,8 +41,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     mxArray *w_out_m, *h_out_m, *wtw_out_m, *hth_out_m, *ah_out_m, *atw_out_m;
     const mwSize *dims;
     double *a, *w_init, *h_init;
-    int dimx, dimy, numdims;
-    int i, j;
+    int numdims;    
     int num_iterations;
 
     // associate inputs
@@ -74,17 +73,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     w_init = mxGetPr(w_in_m);
     h_init = mxGetPr(h_in_m);
 
-    MAT A = arma::zeros<FMAT>(arows, acols);
-    MAT W = arma::zeros<FMAT>(wrows, wcols);
-    MAT H = arma::zeros<FMAT>(acols, wcols);
+    MAT A = arma::zeros<MAT>(arows, acols);
+    MAT W = arma::zeros<MAT>(wrows, wcols);
+    MAT H = arma::zeros<MAT>(acols, wcols);
 
-    matlab2arma<FMAT>(arows, acols, a, &A);
+    matlab2arma<MAT>(arows, acols, a, &A);
     std::cout << "copied matlab2arma A::" << arma::norm(A, "fro") << std::endl;
-    matlab2arma<FMAT>(wrows, wcols, w_init, &W);
+    matlab2arma<MAT>(wrows, wcols, w_init, &W);
     std::cout << "copied matlab2arma W::" << norm(W, "fro") << std::endl;
-    matlab2arma<FMAT>(acols, wcols, h_init, &H);
+    matlab2arma<MAT>(acols, wcols, h_init, &H);
     std::cout << "copied matlab2arma H::" << norm(H, "fro") << std::endl;
-    BPPNMF<FMAT> nmfAlgorithm(A, W, H);
+    BPPNMF<MAT> nmfAlgorithm(A, W, H);
     nmfAlgorithm.num_iterations(num_iterations);
     nmfAlgorithm.computeNMF();
 
