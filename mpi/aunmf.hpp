@@ -25,39 +25,41 @@ template <class INPUTMATTYPE>
 class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     // needed in derived algorithms to
     // call BPP routines
- protected:
-    FMAT HtH;       // H is of size (globaln/p)*k;
-    FMAT WtW;       // W is of size (globaln/p)*k;
-    FMAT AHtij;     // AHtij is of size k*(globalm/p)
-    FMAT WtAij;     // WtAij is of size k*(globaln/p)
-    FMAT Wt;        // Wt is of size k*(globalm/p)
-    FMAT Ht;        // Ht is of size k*(globaln/p)
+  protected:
+    MAT HtH;       // H is of size (globaln/p)*k;
+    MAT WtW;       // W is of size (globaln/p)*k;
+    MAT AHtij;     // AHtij is of size k*(globalm/p)
+    MAT WtAij;     // WtAij is of size k*(globaln/p)
+    MAT Wt;        // Wt is of size k*(globalm/p)
+    MAT Ht;        // Ht is of size k*(globaln/p)
 
     virtual void updateW() = 0;
     virtual void updateH() = 0;
 
- private:
+  private:
     // Things needed while solving for W
-    FMAT localHtH;          // H is of size (globaln/p)*k;
-    FMAT Hjt, Hj;           // Hj is of size n*k;
-    FMAT AijHj, AijHjt;     // AijHj is of size m*k;
+    MAT localHtH;          // H is of size (globaln/p)*k;
+    MAT Hjt, Hj;           // Hj is of size n*k;
+    MAT AijHj, AijHjt;     // AijHj is of size m*k;
     INPUTMATTYPE A_ij_t;    // n*m
     // Things needed while solving for H
-    FMAT localWtW;          // W is of size (globalm/p)*k;
-    FMAT Wit, Wi;           // Wi is of size m*k;
-    FMAT WitAij, AijWit;    // WijtAij is of size k*n;
+    MAT localWtW;          // W is of size (globalm/p)*k;
+    MAT Wit, Wi;           // Wi is of size m*k;
+    MAT WitAij, AijWit;    // WijtAij is of size k*n;
 
     // needed for error computation
-    FMAT prevH;     // used for error computation
-    FMAT prevHtH;   // used for error computation
-    FMAT WtAijH;  // global k*k matrix.
-    FMAT localWtAijH;  // local k*k matrix
+    MAT prevH;     // used for error computation
+    MAT prevHtH;   // used for error computation
+    MAT WtAijH;  // global k*k matrix.
+    MAT localWtAijH;  // local k*k matrix
+    MAT errMtx;
+    MAT A_errMtx;
 
     // needed for block implementation to save memory
-    FMAT Ht_blk;
-    FMAT AHtij_blk;
-    FMAT Wt_blk;
-    FMAT WtAij_blk;
+    MAT Ht_blk;
+    MAT AHtij_blk;
+    MAT Wt_blk;
+    MAT WtAij_blk;
 
     std::vector<int> recvWtAsize;
     std::vector<int> recvAHsize;
@@ -111,6 +113,10 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
             printVector<int>(recvWtAsize);
         }
 #endif
+        if (this->is_compute_error()) {
+            errMtx.zeros(this->m, this->n);
+            A_errMtx.zeros(this->m, this->n);
+        }
     }
 
     void freeMatrices() {
@@ -140,11 +146,15 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         AHtij_blk.clear();
         Wt_blk.clear();
         WtAij_blk.clear();
+        if (this->is_compute_error()) {
+            errMtx.clear();
+            A_errMtx.clear();
+        }
     }
 
- public:
-    DistAUNMF(const INPUTMATTYPE &input, const FMAT &leftlowrankfactor,
-              const FMAT &rightlowrankfactor,
+  public:
+    DistAUNMF(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
+              const MAT &rightlowrankfactor,
               const MPICommunicator& communicator,
               const int numkblks):
         DistNMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor,
@@ -184,13 +194,21 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         }
     }
     void distWtABlock() {
+#ifdef USE_PACOSS
+        // Perform expand communication using Pacoss.
+        memcpy(Wit.memptr(), Wt_blk.memptr(), Wt_blk.n_rows * Wt_blk.n_cols * sizeof(Wt_blk[0]));
+        MPITIC;
+        this->m_rowcomm->expCommBegin(Wit.memptr(), this->perk);
+        this->m_rowcomm->expCommFinish(Wit.memptr(), this->perk);
+#else
         int sendcnt = (this->globalm() / MPI_SIZE) * this->perk;
         int recvcnt = (this->globalm() / MPI_SIZE) * this->perk;
         Wit.zeros();
         MPITIC;  // allgather WtA
-        MPI_Allgather(Wt_blk.memptr(), sendcnt, MPI_FLOAT,
-                      Wit.memptr(), recvcnt, MPI_FLOAT,
+        MPI_Allgather(Wt_blk.memptr(), sendcnt, MPI_DOUBLE,
+                      Wit.memptr(), recvcnt, MPI_DOUBLE,
                       this->m_mpicomm.commSubs()[1]);
+#endif
         double temp = MPITOC;   // allgather WtA
         PRINTROOT("n::" << this->n << "::k::" << this->k \
                   << PRINTMATINFO(Wt) << PRINTMATINFO(Wit));
@@ -222,12 +240,21 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         this->time_stats.compute_duration(temp);
         this->time_stats.mm_duration(temp);
         this->reportTime(temp, "WtA::");
+#ifdef USE_PACOSS
+        // Perform fold communication using Pacoss.
+        MPITIC;
+        this->m_colcomm->foldCommBegin(WitAij.memptr(), this->perk);
+        this->m_colcomm->foldCommFinish(WitAij.memptr(), this->perk);
+        temp = MPITOC;
+        memcpy(WtAij_blk.memptr(), WitAij.memptr(), WtAij_blk.n_rows * WtAij_blk.n_cols * sizeof(WtAij_blk[0]));
+#else
         WtAij_blk.zeros();
         MPITIC;  // reduce_scatter WtA
         MPI_Reduce_scatter(this->WitAij.memptr(), this->WtAij_blk.memptr(),
-                           &(this->recvWtAsize[0]), MPI_FLOAT, MPI_SUM,
+                           &(this->recvWtAsize[0]), MPI_DOUBLE, MPI_SUM,
                            this->m_mpicomm.commSubs()[0]);;
         temp = MPITOC;  // reduce_scatter WtA
+#endif
         this->time_stats.communication_duration(temp);
         this->time_stats.reducescatter_duration(temp);
     }
@@ -259,13 +286,21 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         DISTPRINTINFO("distAH::" << "::H::" \
                       << this->H.n_rows << "x" << this->H.n_cols);
         */
+#ifdef USE_PACOSS
+        // Perform expand communication using Pacoss.
+        memcpy(Hjt.memptr(), Ht_blk.memptr(), Ht_blk.n_rows * Ht_blk.n_cols * sizeof(Ht_blk[0]));
+        MPITIC;
+        this->m_colcomm->expCommBegin(Hjt.memptr(), this->perk);
+        this->m_colcomm->expCommFinish(Hjt.memptr(), this->perk);
+#else
         int sendcnt = (this->globaln() / MPI_SIZE) * this->perk;
         int recvcnt = (this->globaln() / MPI_SIZE) * this->perk;
         Hjt.zeros();
         MPITIC;  // allgather AH
-        MPI_Allgather(this->Ht_blk.memptr(), sendcnt, MPI_FLOAT,
-                      this->Hjt.memptr(), recvcnt, MPI_FLOAT,
+        MPI_Allgather(this->Ht_blk.memptr(), sendcnt, MPI_DOUBLE,
+                      this->Hjt.memptr(), recvcnt, MPI_DOUBLE,
                       this->m_mpicomm.commSubs()[0]);
+#endif
         PRINTROOT("n::" << this->n << "::k::" << this->k \
                   << PRINTMATINFO(Ht) << PRINTMATINFO(Hjt));
         double temp = MPITOC;  // allgather AH
@@ -298,12 +333,21 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         this->time_stats.compute_duration(temp);
         this->time_stats.mm_duration(temp);
         this->reportTime(temp, "AH::");
+#ifdef USE_PACOSS
+        // Perform fold communication using Pacoss.
+        MPITIC;
+        this->m_rowcomm->foldCommBegin(AijHjt.memptr(), this->perk);
+        this->m_rowcomm->foldCommFinish(AijHjt.memptr(), this->perk);
+        temp = MPITOC;
+        memcpy(AHtij_blk.memptr(), AijHjt.memptr(), AHtij_blk.n_rows * AHtij_blk.n_cols * sizeof(AHtij_blk[0]));
+#else
         AHtij_blk.zeros();
         MPITIC;  // reduce_scatter AH
         MPI_Reduce_scatter(this->AijHjt.memptr(), this->AHtij_blk.memptr(),
-                           &(this->recvAHsize[0]), MPI_FLOAT, MPI_SUM,
+                           &(this->recvAHsize[0]), MPI_DOUBLE, MPI_SUM,
                            this->m_mpicomm.commSubs()[1]);;
         temp = MPITOC;  // reduce_scatter AH
+#endif
         this->time_stats.communication_duration(temp);
         this->time_stats.reducescatter_duration(temp);
     }
@@ -314,7 +358,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
      * WtW of size k*k is symmetric. So not to worry
      * about column/row major formats.
      */
-    void distInnerProduct(const FMAT &X, FMAT *XtX) {
+    void distInnerProduct(const MAT &X, MAT *XtX) {
         // each process computes its own kxk matrix
         MPITIC;  // gram
         localWtW = X.t() * X;
@@ -333,7 +377,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         }
         MPITIC;  // allreduce gram
         MPI_Allreduce(localWtW.memptr(), (*XtX).memptr(), this->k * this->k,
-                      MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+                      MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         temp = MPITOC;  // allreduce gram
         this->time_stats.communication_duration(temp);
         this->time_stats.allreduce_duration(temp);
@@ -345,7 +389,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     */
     void computeNMF() {
         PRINTROOT("computeNMF started");
-        
+
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->A));
 #endif
@@ -423,7 +467,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
             }
             this->time_stats.duration(MPITOC);  // total_d W&H
             if (iter > 0 && this->is_compute_error()) {
-                this->computeError(iter);
+                this->computeError2(iter);
                 PRINTROOT("it=" << iter << "::algo::" << this->m_algorithm \
                           << "::k::" << this->k \
                           << "::err::" << sqrt(this->objective_err) \
@@ -478,7 +522,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
         MPITIC;  // coommunication error
         MPI_Allreduce(this->localWtAijH.memptr(), this->WtAijH.memptr(),
                       this->k * this->k,
-                      MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+                      MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         temp = MPITOC;  // communication error
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(WtAijH));
@@ -490,6 +534,29 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
                   << "::tWtAijH::" << 2 * tWtAijh \
                   << "::tWtWHtH::" << tWtWHtH);
         this->objective_err = this->m_globalsqnormA - 2 * tWtAijh + tWtWHtH;
+    }
+    /*
+     * Compute error the old-fashioned way
+     */
+    void computeError2(const int it) {
+        double local_sqerror = 0.0;
+        double rowcolerr = 0.0;
+        PRINTROOT("::it=" << it << "::Calling compute error 2");
+        MPITIC;
+        // DISTPRINTINFO("::norm(Wi,fro)::" << norm(this->Wit, "fro") << "::norm(Hjt, fro)::" << norm(this->Hjt, "fro"));
+        this->Wi = this->Wit.t();
+        errMtx = this->Wi * this->Hjt;
+        A_errMtx = this->A - errMtx;
+        local_sqerror = norm(A_errMtx, "fro");
+        local_sqerror *= local_sqerror;
+        double temp = MPITOC;
+        this->time_stats.err_compute_duration(temp);
+        // DISTPRINTINFO("::it=" << it << "::local_sqerror::" << local_sqerror);
+        MPITIC;
+        MPI_Allreduce(&local_sqerror, &this->objective_err, 1, MPI_DOUBLE,
+                      MPI_SUM, MPI_COMM_WORLD);
+        temp = MPITOC;
+        this->time_stats.err_communication_duration(temp);
     }
 };
 #endif  // MPI_AUNMF_HPP_

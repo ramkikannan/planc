@@ -10,13 +10,11 @@ using namespace std;
 
 template<class INPUTMATTYPE>
 class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
-    FMAT HtH, WtW;
-    FMAT AcolstW, ArowsH;
-    FMAT ArowsHt, AcolstWt;
-    // need double precision for nnls
-    MAT tempHtH, tempArowsH, tempWtW, tempAcolstW;
-    FROWVEC localWnorm;
-    FROWVEC Wnorm;
+    MAT HtH, WtW;
+    MAT AcolstW, ArowsH;
+    MAT ArowsHt, AcolstWt;
+    ROWVEC localWnorm;
+    ROWVEC Wnorm;
 
     void printConfig() {
         PRINTROOT("NAIVEANLSBPP constructor completed::" << "::A::" \
@@ -27,21 +25,17 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
 
   public:
     DistNaiveANLSBPP(const INPUTMATTYPE &Arows, const INPUTMATTYPE &Acols,
-                     const FMAT &leftlowrankfactor, const FMAT &rightlowrankfactor,
+                     const MAT &leftlowrankfactor, const MAT &rightlowrankfactor,
                      const MPICommunicator& communicator):
         DistNMF1D<INPUTMATTYPE>(Arows, Acols, leftlowrankfactor,
                                 rightlowrankfactor, communicator) {
         // allocate memory for matrices
         HtH.zeros(this->m_k, this->m_k);
         WtW.zeros(this->m_k, this->m_k);
-        tempHtH.zeros(this->m_k, this->m_k);
-        tempWtW.zeros(this->m_k, this->m_k);
         AcolstW.zeros(this->globaln() / this->m_mpicomm.size(), this->m_k);
         AcolstWt.zeros(this->m_k, this->globaln() / this->m_mpicomm.size());
-        tempAcolstW.zeros(this->globalm() / this->m_mpicomm.size(), this->m_k);
         ArowsH.zeros(this->globalm() / this->m_mpicomm.size(), this->m_k);
         ArowsHt.zeros(this->m_k, this->globalm() / this->m_mpicomm.size());
-        tempArowsH.zeros(this->globalm() / this->m_mpicomm.size(), this->m_k);
         localWnorm.zeros(this->m_k);
         Wnorm.zeros(this->m_k);
         PRINTROOT("NAIVEANLSBPP Constructor completed");
@@ -107,14 +101,12 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                 this->time_stats.mm_duration(tempTime);
                 this->reportTime(tempTime, "::AcolstW::");
                 mpitic();  // nnlsH
-                tempWtW = arma::conv_to<MAT >::from(WtW);
-                tempAcolstW = arma::conv_to<MAT >::from(trans(AcolstW));
-                DISTPRINTINFO(PRINTMATINFO(tempWtW));
-                DISTPRINTINFO(PRINTMATINFO(tempAcolstW));
-                BPPNNLS<MAT, VEC > subProblem2(tempWtW, tempAcolstW, true);
+                DISTPRINTINFO(PRINTMATINFO(WtW));
+                DISTPRINTINFO(PRINTMATINFO(AcolstW));
+                BPPNNLS<MAT, VEC > subProblem2(WtW, AcolstW, true);
                 subProblem2.solveNNLS();
-                this->m_Ht = arma::conv_to<FMAT >::from(subProblem2.getSolutionMatrix());
-                fixNumericalError<FMAT >(&(this->m_Ht));
+                this->m_Ht = subProblem2.getSolutionMatrix();
+                fixNumericalError<MAT >(&(this->m_Ht));
                 DISTPRINTINFO("OptimizeBlock::NNLS::" << PRINTMATINFO(this->m_Ht));
 #ifdef MPI_VERBOSE
                 DISTPRINTINFO(PRINTMAT(this->m_Ht));
@@ -164,14 +156,10 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
                 this->time_stats.mm_duration(tempTime);
                 this->reportTime(tempTime, "::ArowsH::");
                 mpitic();  // nnlsW
-                tempHtH = arma::conv_to<MAT >::from(HtH);
-                tempArowsH = arma::conv_to<MAT >::from(trans(ArowsH));
-                DISTPRINTINFO(PRINTMATINFO(tempHtH));
-                DISTPRINTINFO(PRINTMATINFO(tempArowsH));
-                BPPNNLS<MAT, VEC > subProblem1(tempHtH, tempArowsH, true);
+                BPPNNLS<MAT, VEC > subProblem1(HtH, ArowsH, true);
                 subProblem1.solveNNLS();
-                this->m_Wt = arma::conv_to<FMAT >::from(subProblem1.getSolutionMatrix());
-                fixNumericalError<FMAT >(&(this->m_Wt));
+                this->m_Wt = subProblem1.getSolutionMatrix();
+                fixNumericalError<MAT >(&(this->m_Wt));
                 DISTPRINTINFO("OptimizeBlock::NNLS::" << PRINTMATINFO(this->m_Wt));
 #ifdef MPI_VERBOSE
                 DISTPRINTINFO(PRINTMAT(this->m_Wt));

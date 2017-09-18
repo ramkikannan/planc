@@ -57,10 +57,10 @@ else()
   endif()
 
   if(OpenBLAS_FOUND)
-
     set(NMFLIB_USE_BLAS true)      
     set(NMFLIB_LIBS ${NMFLIB_LIBS} ${OpenBLAS_LIBRARIES})
-
+    get_filename_component(OPENBLAS_DIR ${OpenBLAS_LIBRARIES} DIRECTORY)
+    set(OPENBLAS_INCLUDE_DIR ${OPENBLAS_DIR}/../include)
   else()
 
     if(BLAS_FOUND)

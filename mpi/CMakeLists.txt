@@ -46,6 +46,15 @@ if(CMAKE_WITH_BARRIER_TIMING)
   add_definitions(-D__WITH__BARRIER__TIMING__=1)
 endif()
 
+OPTION(CMAKE_BUILD_PACOSS "Build with PACOSS" OFF)
+if(CMAKE_WITH_PACOSS)
+  add_definitions(-DUSE_PACOSS=1)
+  set(PACOSS_DIR ${DISTNMF_SOURCE_DIR}/../pacoss)
+  set(PACOSS_INCLUDE_DIR ${DISTNMF_SOURCE_DIR}/../pacoss/src) 
+  set(PACOSS_INCLUDE_DIR ${PACOSS_INCLUDE_DIR} ${DISTNMF_SOURCE_DIR}/../tmpi/src)
+  set(PACOSS_LIB_DIR ${DISTNMF_SOURCE_DIR}/../pacoss/lib)
+endif()
+
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0")
 
 message(STATUS "CMAKE_CXX_FLAGS           = ${CMAKE_CXX_FLAGS}"          )
@@ -58,16 +67,22 @@ message(STATUS "*** NMFLIB_LIBS = ${NMFLIB_LIBS}")
 message(STATUS "")
 
 include_directories(
+  ${PACOSS_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
   ${DISTNMF_SOURCE_DIR}
   ${NMFLIB_COMMON}
   ${NNLS_SRC}
-  if(MPI_CXX_FOUND)
-    ${MPI_CXX_INCLUDE_PATH}
-  endif()  
+  ${MPI_CXX_INCLUDE_PATH}
   ${MKL_INCLUDE_DIR}
+  ${OPENBLAS_INCLUDE_DIR}
 )
+
+if(CMAKE_WITH_PACOSS)
+  link_directories(
+    ${PACOSS_LIB_DIR}  
+  )
+endif()
 
 add_executable(distnmf
   distnmf.cpp
@@ -75,4 +90,8 @@ add_executable(distnmf
 
 add_definitions(-std=c++11 -w)
 
-target_link_libraries(distnmf ${NMFLIB_LIBS})
+if(CMAKE_WITH_PACOSS)
+  target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss)
+else()
+  target_link_libraries(distnmf ${NMFLIB_LIBS})
+endif()
