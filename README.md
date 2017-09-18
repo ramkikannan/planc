@@ -3,7 +3,7 @@ Distributed NMF Library
 
 In this repository, we offer both MPI and OPENMP implementation for MU, HALS and ANLS/BPP based NMF algorithms. This can run off the shelf as well easy to integrate in other source code. 
 These are very highly tuned NMF algorithms to work on super computers. We have tested
-this software in [NERSC] (http://www.nersc.gov/users/computational-systems/edison/) as well [OLCF](https://www.olcf.ornl.gov/) cluster. The openmp implementation is tested on
+this software in [NERSC](http://www.nersc.gov/users/computational-systems/edison/) as well [OLCF](https://www.olcf.ornl.gov/) cluster. The openmp implementation is tested on
 many different linux variants with intel processors. The library works well for both sparse and dense matrix.
 If you use this code, kindly cite the following papers appropriately.
 
@@ -35,6 +35,10 @@ Also, partial funding for this work was provided by AFOSR Grant FA9550-13-1-0100
 The United States Government retains and the publisher, by accepting the article for publication, acknowledges that the United States Government retains a non-exclusive, paid-up, irrevocable, world-wide license to publish or reproduce the published form of this manuscript, or allow others to do so, for United States Government purposes. The Department of Energy will provide public access to these results of federally sponsored research in accordance with the DOE Public Access Plan http://energy.gov/downloads/doepublic-access-plan. 
 
 Any opinions, findings and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the USDOE, NERSC, AFOSR, NSF or DARPA.
+
+Version 0.51
+===========
+* Moved from Single precision to double precision
 
 Version 0.5
 ===========
