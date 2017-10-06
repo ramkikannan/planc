@@ -54,6 +54,10 @@ For W matrix row major ordering. That is., W_0, W_1, .., W_p
 For H matrix column major ordering. That is., for 6 processes
 with pr=3, pc=2, interpret as H_0, H_2, H_4, H_1, H_3, H_5
 
+Running
+=======
+mpirun -np 16 ./distnmf -a [0/1/2/3] -i rand_[lowrank/uniform] -d "rows cols" -p "pr pc" -r "W_l2 W_l1 H_l2 H_l0" -k 20 -t 20 -e 1
+
 Citation:
 =========
 

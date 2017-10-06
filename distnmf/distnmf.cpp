@@ -9,6 +9,7 @@
 #include "mpicomm.hpp"
 #include "naiveanlsbpp.hpp"
 #include "utils.hpp"
+#include "parsecommandline.hpp"
 
 class DistNMFDriver {
   private:
@@ -23,7 +24,7 @@ class DistNMFDriver {
     int m_pc;
     FVEC m_regW;
     FVEC m_regH;
-    distalgotype m_nmfalgo;
+    algotype m_nmfalgo;
     double m_sparsity;
     iodistributions m_distio;
     uint m_compute_error;
@@ -65,10 +66,10 @@ class DistNMFDriver {
 #ifdef BUILD_SPARSE
         SP_MAT Arows(dio.Arows());
         SP_MAT Acols(dio.Acols());
-#else // ifdef BUILD_SPARSE
+#else  // ifdef BUILD_SPARSE
         MAT Arows(dio.Arows());
         MAT Acols(dio.Acols());
-#endif // ifdef BUILD_SPARSE
+#endif  // ifdef BUILD_SPARSE
 
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             this->m_globaln = Arows.n_cols;
@@ -79,7 +80,7 @@ class DistNMFDriver {
              << PRINTMATINFO(Acols) << std::endl;
 #ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
-#endif // ifdef WRITE_RAND_INPUT
+#endif  // ifdef WRITE_RAND_INPUT
         arma::arma_rng::set_seed(random_sieve(mpicomm.rank() + kprimeoffset));
         MAT W = arma::randu<MAT>(this->m_globalm / mpicomm.size(), this->m_k);
         MAT H = arma::randu<MAT>(this->m_globaln / mpicomm.size(), this->m_k);
@@ -143,7 +144,7 @@ class DistNMFDriver {
         for (Pacoss_Int i = 0; i < values.size(); i++) values[i] = ss._val[i];
         SP_MAT A(locations, values); A.resize(
             rowcomm->localRowCount(), colcomm->localRowCount());
-#else // ifdef USE_PACOSS
+#else  // ifdef USE_PACOSS
 
         if ((this->m_pr > 0) && (this->m_pc > 0)
                 && (this->m_pr * this->m_pc != mpicomm.size())) {
@@ -158,9 +159,9 @@ class DistNMFDriver {
         if (mpicomm.rank() == 0) {
             INFO << "sparse case" << std::endl;
         }
-# else // ifdef BUILD_SPARSE
+# else   // ifdef BUILD_SPARSE
         DistIO<MAT> dio(mpicomm, m_distio);
-# endif // ifdef BUILD_SPARSE. One outstanding PACOSS
+# endif  // ifdef BUILD_SPARSE. One outstanding PACOSS
 
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_globalm,
@@ -173,9 +174,9 @@ class DistNMFDriver {
         // SP_MAT A(dio.A().row_indices, dio.A().col_ptrs, dio.A().values,
         // dio.A().n_rows, dio.A().n_cols);
         SP_MAT A(dio.A());
-# else // ifdef BUILD_SPARSE
+# else  // ifdef BUILD_SPARSE
         MAT A(dio.A());
-# endif // ifdef BUILD_SPARSE. One outstanding PACOSS
+# endif  // ifdef BUILD_SPARSE. One outstanding PACOSS
 
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             UWORD localm = A.n_rows;
@@ -204,35 +205,35 @@ class DistNMFDriver {
 #ifdef USE_PACOSS
         MAT W = arma::randu<MAT>(rowcomm->localOwnedRowCount(), this->m_k);
         MAT H = arma::randu<MAT>(colcomm->localOwnedRowCount(), this->m_k);
-#else // ifdef USE_PACOSS
+#else  // ifdef USE_PACOSS
         MAT W = arma::randu<MAT>(this->m_globalm / mpicomm.size(), this->m_k);
         MAT H = arma::randu<MAT>(this->m_globaln / mpicomm.size(), this->m_k);
-#endif // ifdef USE_PACOSS
+#endif  // ifdef USE_PACOSS
         // sometimes for really very large matrices starting w/
         // rand initialization hurts ANLS BPP running time. For a better
         // initializer we run couple of iterations of HALS.
 #ifdef BUILD_SPARSE
-        if (m_nmfalgo == ANLSBPP2D) {
+        if (m_nmfalgo == ANLSBPP) {
             DistHALS<SP_MAT> lrinitializer(A,
                                            W,
                                            H,
                                            mpicomm,
                                            this->m_num_k_blocks);
             lrinitializer.num_iterations(4);
-            lrinitializer.algorithm(HALS2D);
+            lrinitializer.algorithm(HALS);
             lrinitializer.computeNMF();
             W = lrinitializer.getLeftLowRankFactor();
             H = lrinitializer.getRightLowRankFactor();
         }
 #else
-        if (m_nmfalgo == ANLSBPP2D) {
+        if (m_nmfalgo == ANLSBPP) {
             DistHALS<MAT> lrinitializer(A,
                                         W,
                                         H,
                                         mpicomm,
                                         this->m_num_k_blocks);
             lrinitializer.num_iterations(4);
-            lrinitializer.algorithm(HALS2D);
+            lrinitializer.algorithm(HALS);
             lrinitializer.computeNMF();
             W = lrinitializer.getLeftLowRankFactor();
             H = lrinitializer.getRightLowRankFactor();
@@ -244,7 +245,7 @@ class DistNMFDriver {
              << PRINTMATINFO(W) << std::endl;
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
              << PRINTMATINFO(H) << std::endl;
-#endif // ifdef MPI_VERBOSE
+#endif  // ifdef MPI_VERBOSE
         MPI_Barrier(MPI_COMM_WORLD);
         memusage(mpicomm.rank(), "b4 constructor ");
         // TODO: I was here. Need to modify the reallocations by using localOwnedRowCount instead of m_globalm.
@@ -252,7 +253,7 @@ class DistNMFDriver {
 #ifdef USE_PACOSS
         nmfAlgorithm.set_rowcomm(rowcomm);
         nmfAlgorithm.set_colcomm(colcomm);
-#endif // ifdef USE_PACOSS
+#endif  // ifdef USE_PACOSS
         memusage(mpicomm.rank(), "after constructor ");
         nmfAlgorithm.num_iterations(this->m_num_it);
         nmfAlgorithm.compute_error(this->m_compute_error);
@@ -276,7 +277,7 @@ class DistNMFDriver {
                             nmfAlgorithm.getRightLowRankFactor(),
                             m_outputfile_name);
         }
-#endif // ifndef USE_PACOSS
+#endif  // ifndef USE_PACOSS
     }
 
     void parseRegularizedParameter(const char *input, FVEC *reg) {
@@ -292,85 +293,22 @@ class DistNMFDriver {
         }
     }
     void parseCommandLine() {
-        int opt, long_index;
-
-        this->m_nmfalgo       = static_cast<distalgotype>(2); // defaults to ANLS/BPP
-        this->m_k             = 20;
-        this->m_Afile_name    = "rand";
-        this->m_pr            = 0;
-        this->m_pc            = 0;
-        this->m_sparsity      = 0.01;
-        this->m_num_it        = 10;
+        PLANC::ParseCommandLine pc(this->m_argc, this->m_argv);
+        pc.parseplancopts();
+        this->m_nmfalgo       = pc.nmfalgo();
+        this->m_k             = pc.lowrankk();
+        this->m_Afile_name    = pc.input_file_name();
+        this->m_pr            = pc.pr();
+        this->m_pc            = pc.pc();
+        this->m_sparsity      = pc.sparsity();
+        this->m_num_it        = pc.iterations();
         this->m_distio        = TWOD;
-        this->m_compute_error = 0;
-        this->m_regW          = arma::zeros<FVEC>(2);
-        this->m_regH          = arma::zeros<FVEC>(2);
+        this->m_regW          = pc.regW();
+        this->m_regH          = pc.regH();
         this->m_num_k_blocks  = 1;
-        while ((opt = getopt_long(this->m_argc, this->m_argv,
-                                  "a:i:e:k:m:n:o:t:s:", distnmfopts,
-                                  &long_index)) != -1) {
-            switch (opt) {
-            case 'a':
-                this->m_nmfalgo = static_cast<distalgotype>(atoi(optarg));
-                break;
-            case 'i': {
-                std::string temp = std::string(optarg);
-                this->m_Afile_name = temp;
-                break;
-            }
-            case 'e':
-                this->m_compute_error = atoi(optarg);
-                break;
-            case 'k':
-                this->m_k = atoi(optarg);
-                break;
-            case 'm':
-                this->m_globalm = atoi(optarg);
-                break;
-            case 'n':
-                this->m_globaln = atoi(optarg);
-                break;
-            case 'o': {
-                std::string temp = std::string(optarg);
-                this->m_outputfile_name = temp;
-                break;
-            }
-            case 's':
-                this->m_sparsity = atof(optarg);
-                break;
-            case 't':
-                this->m_num_it = atoi(optarg);
-                break;
-            case PROCROWS:
-                this->m_pr = atoi(optarg);
-                break;
-            case PROCCOLS:
-                this->m_pc = atoi(optarg);
-                break;
-            case REGWFLAG:
-                parseRegularizedParameter(optarg, &this->m_regW);
-                break;
-            case REGHFLAG:
-                parseRegularizedParameter(optarg, &this->m_regH);
-                break;
-            case NUMKBLOCKS:
-                this->m_num_k_blocks = atoi(optarg);
-                break;
-            default:
-                cout << "failed while processing argument: " << opt
-                     << std::endl;
-
-                // Print Usage and quit
-                int m_rank;
-                MPI_Init(&this->m_argc, &this->m_argv);
-                MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
-                if (m_rank == 0) print_usage();
-                MPI_Barrier(MPI_COMM_WORLD);
-                MPI_Finalize();
-
-                return;
-            }
-        }
+        this->m_globalm       = pc.globalm();
+        this->m_globaln       = pc.globaln();
+        this->m_compute_error = pc.compute_error();
         if (this->m_nmfalgo == NAIVEANLSBPP) {
             this->m_distio = ONED_DOUBLE;
         } else {
@@ -379,45 +317,44 @@ class DistNMFDriver {
         printConfig();
 
         switch (this->m_nmfalgo) {
-        case MU2D:
+        case MU:
 #ifdef BUILD_SPARSE
             callDistNMF2D<DistMU<SP_MAT> >();
-#else // ifdef BUILD_SPARSE
+#else  // ifdef BUILD_SPARSE
             callDistNMF2D<DistMU<MAT> >();
-#endif // ifdef BUILD_SPARSE
+#endif  // ifdef BUILD_SPARSE
             break;
-        case HALS2D:
+        case HALS:
 #ifdef BUILD_SPARSE
             callDistNMF2D<DistHALS<SP_MAT> >();
-#else // ifdef BUILD_SPARSE
+#else  // ifdef BUILD_SPARSE
             callDistNMF2D<DistHALS<MAT> >();
-#endif // ifdef BUILD_SPARSE
+#endif  // ifdef BUILD_SPARSE
             break;
-        case ANLSBPP2D:
+        case ANLSBPP:
 #ifdef BUILD_SPARSE
             callDistNMF2D<DistANLSBPP<SP_MAT> >();
-#else // ifdef BUILD_SPARSE
+#else  // ifdef BUILD_SPARSE
             callDistNMF2D<DistANLSBPP<MAT> >();
-#endif // ifdef BUILD_SPARSE
+#endif  // ifdef BUILD_SPARSE
             break;
         case NAIVEANLSBPP:
 #ifdef BUILD_SPARSE
             callDistNMF1D<DistNaiveANLSBPP<SP_MAT> >();
-#else // ifdef BUILD_SPARSE
+#else  // ifdef BUILD_SPARSE
             callDistNMF1D<DistNaiveANLSBPP<MAT> >();
-#endif // ifdef BUILD_SPARSE
+#endif  // ifdef BUILD_SPARSE
             break;
-        case AOADMM2D:
+        case AOADMM:
 #ifdef BUILD_SPARSE
             callDistNMF2D<DistAOADMM<SP_MAT> >();
-#else // ifdef BUILD_SPARSE
+#else  // ifdef BUILD_SPARSE
             callDistNMF2D<DistAOADMM<MAT> >();
-#endif // ifdef BUILD_SPARSE
+#endif  // ifdef BUILD_SPARSE
         }
     }
 
   public:
-
     DistNMFDriver(int argc, char *argv[]) {
         this->m_argc = argc;
         this->m_argv = argv;
@@ -431,7 +368,7 @@ class DistNMFDriver {
              << std::endl
              << "for long arguments like --pr give key=value pair, eg --pr=4"
              << std::endl
-             << "algorithm codes 0-MU2D, 1-HALS2D, 2-ANLSBPP2D, 3-NAIVEANLSBPP"
+             << "algorithm codes 0-MU2D, 1-HALS, 2-ANLSBPP2D, 3-NAIVEANLSBPP"
              << std::endl;
         // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
         INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"

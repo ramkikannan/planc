@@ -5,8 +5,6 @@
 #include "bppnnls.hpp"
 #include "aunmf.hpp"
 
-using namespace std;
-
 template<class INPUTMATTYPE>
 class DistANLSBPP : public DistAUNMF<INPUTMATTYPE>{
  private:

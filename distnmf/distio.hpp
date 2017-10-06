@@ -9,8 +9,6 @@
 #include "mpicomm.hpp"
 #include "distutils.hpp"
 
-using namespace std;
-
 /*
  * File name formats
  * A is the filename
@@ -267,7 +265,7 @@ class DistIO {
                    UWORD pr = 0, UWORD pc = 0) {
         // INFO << "readInput::" << file_name << "::" << distio << "::"
         //     << m << "::" << n << "::" << pr << "::" << pc
-        //     << "::" << this->MPI_RANK << "::" << this->m_mpicomm.size() << endl;
+        //     << "::" << this->MPI_RANK << "::" << this->m_mpicomm.size() << std::endl;
         std::string rand_prefix("rand_");
         if (!file_name.compare(0, rand_prefix.size(), rand_prefix)) {
             std::string type = file_name.substr(rand_prefix.size());
@@ -310,7 +308,7 @@ class DistIO {
                 break;
             }
         } else {
-            stringstream sr, sc;
+            std::stringstream sr, sc;
             if (m_distio == ONED_ROW || m_distio == ONED_DOUBLE) {
                 sr << file_name << "rows_" << MPI_SIZE << "_" << MPI_RANK;
 #ifdef BUILD_SPARSE
@@ -361,7 +359,7 @@ class DistIO {
     }
     void writeOutput(const MAT & W, const MAT & H,
                      const std::string & output_file_name) {
-        stringstream sw, sh;
+        std::stringstream sw, sh;
         sw << output_file_name << "_W_" << MPI_SIZE << "_" << MPI_RANK;
         sh << output_file_name << "_H_" << MPI_SIZE << "_" << MPI_RANK;
         W.save(sw.str(), arma::raw_ascii);
@@ -369,7 +367,7 @@ class DistIO {
     }
     void writeRandInput() {
         std::string file_name("Arnd");
-        stringstream sr, sc;
+        std::stringstream sr, sc;
         if (m_distio == TWOD) {
             sr << file_name << "_" << MPI_SIZE << "_" << MPI_RANK;
             DISTPRINTINFO("Writing rand input file " << sr.str() \
@@ -417,9 +415,9 @@ void testDistIO(char argc, char *argv[]) {
     DistIO<MAT> dio(mpicomm, ONED_DOUBLE);
 #endif
     dio.readInput("rand", 12, 9, 0.5);
-    cout << "Arows:" << mpicomm.rank() << endl
-         << arma::conv_to<MAT >::from(dio.Arows()) << endl;
-    cout << "Acols:" << mpicomm.rank() << endl
-         << arma::conv_to<MAT >::from(dio.Acols()) << endl;
+    INFO << "Arows:" << mpicomm.rank() << std::endl
+         << arma::conv_to<MAT >::from(dio.Arows()) << std::endl;
+    INFO << "Acols:" << mpicomm.rank() << std::endl
+         << arma::conv_to<MAT >::from(dio.Acols()) << std::endl;
 }
 #endif  // MPI_DISTIO_HPP_

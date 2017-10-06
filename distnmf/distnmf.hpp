@@ -36,7 +36,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   double m_globalsqnormA;
   DistNMFTime time_stats;
   uint m_compute_error;
-  distalgotype m_algorithm;
+  algotype m_algorithm;
   ROWVEC localWnorm;
   ROWVEC Wnorm;
 
@@ -81,7 +81,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   const double globalsqnorma() const {return m_globalsqnormA;}
   void compute_error(const uint &ce) {this->m_compute_error = ce;}
   const bool is_compute_error() const {return (this->m_compute_error);}
-  void algorithm(distalgotype dat) {this->m_algorithm = dat;}
+  void algorithm(algotype dat) {this->m_algorithm = dat;}
   void reportTime(const double temp, const std::string &reportstring) {
     double mintemp, maxtemp, sumtemp;
     MPI_Allreduce(&temp, &maxtemp, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);

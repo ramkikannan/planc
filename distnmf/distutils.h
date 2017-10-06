@@ -5,7 +5,7 @@
 // #define MPI_VERBOSE       1
 // #define WRITE_RAND_INPUT  1
 
-enum distalgotype {MU2D, HALS2D, ANLSBPP2D, NAIVEANLSBPP, AOADMM2D};
+// enum distalgotype {MU2D, HALS2D, ANLSBPP2D, NAIVEANLSBPP, AOADMM2D};
 
 // ONED_DOUBLE for naive ANLS-BPP
 // TWOD for HPC-NMF
@@ -25,13 +25,13 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 // #define PRINTROOT(MSG) 
 #define PRINTROOT(MSG) if (ISROOT) INFO << "::" << __PRETTY_FUNCTION__ \
                                        << "::" << __LINE__ \
-                                       << "::" << MSG << endl;
+                                       << "::" << MSG << std::endl;
 #define DISTPRINTINFO(MSG) INFO << MPI_RANK << "::" << __PRETTY_FUNCTION__ \
                                 << "::" << __LINE__ \
-                                << "::" << MSG << endl;
+                                << "::" << MSG << std::endl;
 
 #define PRINTTICTOCTOP if (ISROOT) INFO << "tictoc::" << tictoc_stack.top() \
-                                         << endl;
+                                         << std::endl;
 
 #endif  // MPI_DISTUTILS_H_
 

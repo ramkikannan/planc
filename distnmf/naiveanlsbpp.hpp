@@ -5,9 +5,6 @@
 #include "distnmf1D.hpp"
 #include "bppnnls.hpp"
 
-
-using namespace std;
-
 template<class INPUTMATTYPE>
 class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
     MAT HtH, WtW;
