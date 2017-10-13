@@ -8,7 +8,7 @@
 // #endif
 
 
-enum algotype {MU_NMF, HALS_NMF, BPP_NMF};
+enum algotype {MU_NMF, HALS_NMF, BPP_NMF, AOADMM_NMF};
 
 // #if !defined(ARMA_64BIT_WORD)
 #define ARMA_64BIT_WORD
