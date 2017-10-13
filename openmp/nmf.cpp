@@ -4,6 +4,7 @@
 #include "utils.hpp"
 #include "hals.hpp"
 #include "mu.hpp"
+#include "aoadmm.hpp"
 #include <string>
 #include <omp.h>
 
@@ -195,6 +196,15 @@ void parseCommandLineandCallNMF(int argc, char *argv[]) {
                                     HInitfileName, WfileName, HfileName, numIt);
 #else
         NMFDriver<BPPNMF<MAT > >(lowRank, m, n, AfileName, WInitfileName,
+                                 HInitfileName, WfileName, HfileName, numIt);
+#endif
+        break;
+    case AOADMM_NMF:
+#ifdef BUILD_SPARSE
+        NMFDriver<AOADMMNMF<SP_MAT > >(lowRank, m, n, AfileName, WInitfileName,
+                                    HInitfileName, WfileName, HfileName, numIt);
+#else
+        NMFDriver<AOADMMNMF<MAT > >(lowRank, m, n, AfileName, WInitfileName,
                                  HInitfileName, WfileName, HfileName, numIt);
 #endif
         break;

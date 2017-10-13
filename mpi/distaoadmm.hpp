@@ -79,6 +79,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         // tempHtH = arma::conv_to<MAT >::from(this->HtH);
         tempHtH = this->HtH;
         alpha = trace(tempHtH) / this->k;
+        alpha = alpha > 0 ? alpha : 0.01;
         tempHtH.diag() += alpha;
         L = arma::conv_to<MAT >::from(arma::chol(tempHtH, "lower"));
         Lt = L.t();
@@ -162,6 +163,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         // Calculate the Gram Matrix
         tempWtW = arma::conv_to<MAT>::from(this->WtW);
         beta = trace(tempWtW) / this->k;
+        beta = beta > 0 ? beta : 0.01; 
         tempWtW.diag() += beta;
         // L = arma::conv_to<MAT >::from(arma::chol(tempWtW, "lower"));
         L = arma::chol(tempWtW, "lower");
