@@ -72,22 +72,10 @@ void incrementalGraph(std::string AfileName, std::string WfileName) {
     OUTPUT << H << std::endl;
 }
 #endif
-void print_usage() {
-    cout << "Usage1 : NMFLibrary --algo=[0/1/2] --lowrank=20 "
-         << "--input=filename --iter=20" << std::endl;
-    cout << "Usage2 : NMFLibrary --algo=[0/1/2] --lowrank=20 "
-         << "--rows=20000 --columns=10000 --iter=20" << std::endl;
-    cout << "Usage3 : NMFLibrary --algo=[0/1/2] --lowrank=20 "
-         <<  "--input=filename  --winit=filename --hinit=filename "
-         <<   "--iter=20" << std::endl;
-    cout << "Usage4 : --algo=[0/1/2] --lowrank=20 "
-         << "--input=filename --winit=filename --hinit=filename "
-         << "--w=woutputfilename --h=outputfilename --iter=20" << std::endl;
-    cout << "Usage5: NMFLibrary --input=filename" << std::endl;
-}
 void parseCommandLineandCallNMF(int argc, char *argv[]) {
     PLANC::ParseCommandLine pc(argc, argv);
     pc.parseplancopts();
+    pc.printconfig();
     switch (pc.nmfalgo()) {
     case MU:
 #ifdef BUILD_SPARSE

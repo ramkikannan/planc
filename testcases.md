@@ -8,14 +8,14 @@ Openmp:
 
 MPI Sparse:
 ==========
-1. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  --pr=4 --pc=4 -e 1 -a 0 -s 0.01
-2. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  --pr=4 --pc=4 -e 1 -a 1 -s 0.01
-3. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  --pr=4 --pc=4 -e 1 -a 2 -s 0.01
+1. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  -p "4 4" -e 1 -a 0 -s 0.01
+2. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  -p "4 4" -e 1 -a 1 -s 0.01
+3. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  -p "4 4" -e 1 -a 2 -s 0.01
 
 MPI Dense:
 ==========
-1. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  --pr=4 --pc=4 -e 1 -a 0
-2. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  --pr=4 --pc=4 -e 1 -a 1 
-3. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  --pr=4 --pc=4 -e 1 -a 2 
+1. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  -p "4 4" -e 1 -a 0
+2. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  -p "4 4" -e 1 -a 1 
+3. mpirun -np 16 ./distnmf -d "2000 2000" -k 50 -t 10 -i rand_lowrank  -p "4 4" -e 1 -a 2 
 
 

@@ -28,8 +28,8 @@ inline void kronecker(const VEC &i_acol, const VEC &i_bcol, VEC *o_c) {
     }
 }
 
-void mttkrp(const int i_n, PLANC::Tensor& X,
-            PLANC::NCPFactors& i_F, MAT *o_mttkrp) {
+void mttkrp(const int i_n, planc::Tensor& X,
+            planc::NCPFactors& i_F, MAT *o_mttkrp) {
     MAT krp = i_F.krp_leave_out_one(i_n);    
     X.mttkrp(i_n, krp, o_mttkrp);
 }

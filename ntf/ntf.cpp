@@ -1,52 +1,39 @@
+#include "utils.h"
 #include <armadillo>
 #include <iostream>
 #include "ntf_utils.hpp"
 #include "ncpfactors.hpp"
 #include "tensor.hpp"
 #include "auntf.hpp"
-#include "ntf_utils.h"
+#include "parsecommandline.hpp"
 
-// ntf input_order input_low_rank_k output_low_rank_k num_iterations
-
-void parseDimensions(const char *input, UVEC *dim) {
-    stringstream ss(input);
-    string s;
-    int i = 0;
-    float temp;
-    while (getline(ss, s, ' ')) {
-        temp = ::atof(s.c_str());
-        (*dim)(i) = temp;
-        i++;
-    }
-}
+// ntf -d "2 3 4 5" -k 5 -t 20
 
 int main(int argc, char* argv[]) {
-    int test_order = atoi(argv[1]);
+    planc::ParseCommandLine pc(argc, argv);
+    int test_modes = pc.num_modes();
     // int low_rank = 1;
-    UVEC dimensions(test_order);
-    MAT *mttkrps = new MAT[test_order];
-    // UVEC dimensions(4);
-    parseDimensions(argv[2], &dimensions);
-    // dimensions(3) = 6;
-    PLANC::NCPFactors cpfactors(dimensions, atoi(argv[3]));
+    UVEC dimensions(test_modes);
+    MAT *mttkrps = new MAT[test_modes];
+    planc::NCPFactors cpfactors(pc.dimensions(), pc.lowrankk());
     cpfactors.normalize();
     cpfactors.print();
-    PLANC::Tensor my_tensor = cpfactors.rankk_tensor();
-    PLANC::ntfalgo ntfupdalgo = PLANC::NTF_BPP;
-    PLANC::AUNTF auntf(my_tensor, atoi(argv[4]), ntfupdalgo);
+    planc::Tensor my_tensor = cpfactors.rankk_tensor();
+    algotype ntfupdalgo = pc.lucalgo();
+    planc::AUNTF auntf(my_tensor, pc.lowrankk(), ntfupdalgo);
     std::cout << "init factors" << std::endl << "--------------" << std::endl;
     auntf.ncp_factors().print();
     // std::cout << "input tensor" << std::endl << "--------------" << std::endl;
     // my_tensor.print();
-    auntf.num_it(atoi(argv[5]));
+    auntf.num_it(pc.iterations());
     auntf.computeNTF();
-    PLANC::NCPFactors solution = auntf.ncp_factors();
+    planc::NCPFactors solution = auntf.ncp_factors();
     // std::cout << "input factors::" << std::endl;
-    // for (int i = 0; i < test_order; i++) {
+    // for (int i = 0; i < test_modes; i++) {
     //     std::cout << cpfactors.factor(i);
     // }
     // std::cout << "output factors::" << std::endl;
-    // for (int i = 0; i < test_order; i++) {
+    // for (int i = 0; i < test_modes; i++) {
     //     std::cout << solution.factor(i);
     // }
     solution.normalize();

@@ -2,24 +2,26 @@
 #ifndef DISTNTF_DISTNTFMPICOMM_HPP_
 #define DISTNTF_DISTNTFMPICOMM_HPP_
 
-#define MPI_CART_DIMS m_proc_grid_dims.n_rows
+#define MPI_CART_DIMS m_proc_grids.n_rows
 
 #include <mpi.h>
 #include <vector>
 #include "distntfutils.hpp"
-namespace PLANC {
+namespace planc {
 
 class NTFMPICommunicator {
   private:
     int m_global_rank;
     int m_num_procs;
-    UVEC m_proc_grid_dims;
+    UVEC m_proc_grids;
     MPI_Comm m_cart_comm;
     // for mode communicators (*,...,p_n,...,*)
     MPI_Comm* m_fiber_comm;
     // all communicators other than the given mode.
     // (p1,p2,...,p_n-1,*,p_n,...,p_M)
     MPI_Comm* m_slice_comm;
+    UVEC m_fiber_ranks;
+    UVEC m_slice_ranks;
 
     void printConfig() {
         if (rank() == 0) {
@@ -28,20 +30,17 @@ class NTFMPICommunicator {
 
         }
         MPI_Barrier(MPI_COMM_WORLD);
-        cout << ":rank=" << rank() << ":row_rank=" <<
-             row_rank() << ":colrank" << col_rank() << endl;
     }
 
   public:
     NTFMPICommunicator(int argc, char *argv[],
-                       const UVEC &i_dims,
-                       const MPI_Comm& comm) :
-        m_proc_grid_dims(i_dims) {
+                       const UVEC &i_dims) :
+        m_proc_grids(i_dims) {
         // Get the number of MPI processes
         MPI_Init(&argc, &argv);
         MPI_Comm_rank(MPI_COMM_WORLD, &m_global_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &m_num_procs);
-        if (m_num_procs != arma::prod(m_proc_grid_dims)) {
+        if (m_num_procs != arma::prod(m_proc_grids)) {
             ERR << "number of mpi process and process grid doesn't match";
             MPI_Barrier(MPI_COMM_WORLD);
             MPI_Abort(MPI_COMM_WORLD, 1);
@@ -51,7 +50,7 @@ class NTFMPICommunicator {
         UVEC periods = arma::ones<UVEC>(MPI_CART_DIMS);
         int reorder = 0;
         MPI_Cart_create(comm, MPI_CART_DIMS,
-                        m_proc_grid_dims.memptr(), periods.memptr(),
+                        m_proc_grids.memptr(), periods.memptr(),
                         reorder, &m_cart_comm);
 
         // Allocate memory for subcommunicators
@@ -60,16 +59,25 @@ class NTFMPICommunicator {
 
         // Get the subcommunicators
         UVEC remainDims = arma::zeros<UVEC>(MPI_CART_DIMS);
+        // initialize the fiber ranks
+        m_slice_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
+        int slice_rank;
         for (int i = 0; i < MPI_CART_DIMS; i++) {
             remainDims[i] = 1;
             MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_slice_comm[i]));
             remainDims[i] = 0;
+            MPI_Comm_rank(m_slice_comm[i], &fiber_rank);
+            m_slice_ranks[i] = slice_rank;
         }
         remainDims = 1;
+        m_fiber_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
+        int fiber_rank;
         for (int i = 0; i < ndims; i++) {
             remainDims[i] = 0;
             MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_fiber_comm[i]));
             remainDims[i] = 1;
+            MPI_Comm_rank(m_fiber_comm[i], &fiber_rank);
+            m_fiber_ranks[i] = fiber_rank;
         }
     }
 
@@ -103,6 +111,10 @@ class NTFMPICommunicator {
         MPI_Comm_size(m_slice_comm[d], &n_procs);
         return n_procs;
     }
+    int fiber_rank(int i){return m_fiber_ranks[i];}
+    int slice_rank(int i){return m_slice_ranks[i];}
+    UVEC proc_grids(){return this->m_proc_grids;}
 };
-}  // namespace PLANC
+
+}  // namespace planc
 #endif  // DISTNTF_DISTNTFMPICOMM_HPP_

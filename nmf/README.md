@@ -4,7 +4,8 @@ Install Instructions
 This program depends on:
 
 - Armadillo library which can be found at https://arma.sourceforge.net
-- OpenBLAS https://github.com/xianyi/OpenBLAS
+- OpenBLAS https://github.com/xianyi/OpenBLAS. If building with OpenBLAS
+and mkl is discoverable by cmake, use -DCMAKE_IGNORE_MKL=1. 
 
 Once you have installed these libraries set the following environment variables.
 
@@ -52,10 +53,10 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MKL_LIB
 Command Line options
 ====================
 
-The single alphabet is called short option and the string equivalent is called long option. 
-For eg., "input" is the long equivalent of short option 'i'. Typically long option is passed
-with "--algo=3" and short option with "-a 0". The following is the brief description of 
-the various command line options. 
+The single alphabet is called short option and the string equivalent is called
+long option. For eg., "input" is the long equivalent of short option 'i'. 
+Typically long option is passed with "--algo=3" and short option with "-a 0".
+The following is the brief description of  the various command line options. 
 
 * {"input",'i'} - Either it can be a path to a sparse/dense 
 matrix file or synthetically generate matrix. If this 
@@ -66,31 +67,24 @@ option is not passed, we generate synthetic matrix.
   2 - ANLS/BPP implementation  
 * {"lowrank",'k'} - Low rank 'k'. 
 * {"iter",'t'} - Number of iterations
-* {"rows",'m'} - This is applicable only for synthetic matrices. 
-* {"columns",'n'} - This is applicable only for synthetic matrices. 
-* {'w'} - File name to dump W 
-* {'h'} - File name to dump H matrix. 
+* {"dimensions",'d'} - This is applicable only for synthetic matrices. It takes
+ space separated dimensions as string. For eg., "21000 16000" means 21000 rows 
+ and 16000 columns.
+* {'o'} - File name to dump W and H. _w and _h will be appended to distinguish
+ W and H matrix.  
 * {"sparsity",'s'} - Density for the synthetic sparse matrix. 
-* {'winit'} - Initialization file for W matrix. 
-* {'hinit'} - Initialization file for H matrix. 
-winit and hinit Will be useful when you want to benchmark
-multiple algorithms from same starting point.
 
 Few usage examples are
 Usage 1 : Sparse/Dense NMF for an input file with lowrank k=20 for 20 iterations.  
 ````NMFLibrary --algo=[0/1/2] --lowrank=20 --input=filename --iter=20 ````
 
 Usage 2 : Sparse/Dense synthetic NMF for a 20000x10000 matrix
-````NMFLibrary --algo=[0/1/2] --lowrank=20 --rows=20000 --columns=10000 --iter=20 ````
+````NMFLibrary --algo=[0/1/2] --lowrank=20 -p "20000 10000" --iter=20 ````
 
 Usage3 : Sparse/Dense NMF for an input file with lowrank k=20 for 20 iterations starting
-from the initialization matrix defined in winit and hinit
-````NMFLibrary --algo=[0/1/2] --lowrank=20 --input=filename  --winit=filename --hinit=filename --iter=20 ````
-
-Usage4 : Sparse/Dense NMF for an input file with lowrank k=20 for 20 iterations starting
 from the initialization matrix defined in winit and hinit. Finally, it dumps the output
 W and H in the specified file
-```` NMFLibrary --algo=[0/1/2] --lowrank=20 --input=filename --winit=filename --hinit=filename --w=woutputfilename --h=outputfilename --iter=20 ````
+````NMFLibrary --algo=[0/1/2] --lowrank=20 --input=filename --winit=filename --hinit=filename --w=woutputfilename --h=outputfilename --iter=20````
 
 Citation
 ========

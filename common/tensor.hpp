@@ -5,8 +5,9 @@
 
 #include <armadillo>
 #include <random>
+#include <type_traits>
 
-namespace PLANC {
+namespace planc {
 /*
  * Data is stored such that the unfolding \f$Y_0\f$ is column
  * major.  This means the flattening \f$Y_{N-1}\f$ is row-major,
@@ -22,16 +23,16 @@ extern "C" void dgemm_(const char*, const char*, const int*,
 
 class Tensor {
   private:
-    const int m_order;
+    const int m_modes;
     const UVEC m_dimensions;
-    const UWORD m_numel;    
+    const UWORD m_numel;
     const unsigned int rand_seed;
 
   public:
     double* m_data;
     Tensor(const UVEC& i_dimensions):
         m_dimensions(i_dimensions),
-        m_order(i_dimensions.n_rows),
+        m_modes(i_dimensions.n_rows),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
         m_data = new double[this->m_numel];
@@ -39,7 +40,7 @@ class Tensor {
     }
     Tensor(const UVEC& i_dimensions, double *i_data):
         m_dimensions(i_dimensions),
-        m_order(i_dimensions.n_rows),
+        m_modes(i_dimensions.n_rows),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
         m_data = new double[this->m_numel];
@@ -49,8 +50,9 @@ class Tensor {
         delete m_data;
     }
 
-    int order() const {return m_order;}
-    UVEC dimensions() const {return m_dimensions;}    
+    int modes() const {return m_modes;}
+    UVEC dimensions() const {return m_dimensions;}
+    int dimension(int i) const {return m_dimensions[i];}
     int numel() const {return m_numel;}
 
     UWORD dimensions_leave_out_one(int i_n) const {
@@ -89,7 +91,6 @@ class Tensor {
             m_data[i] = dis(gen);
         }
     }
-
     // size of krp must be product of all dimensions leaving out nxk
     // o_mttkrp will be of size dimension[n]xk
     // implementation of mttkrp from tensor toolbox
@@ -138,7 +139,7 @@ class Tensor {
             }
 
             // Count the number of matrices
-            for (int i = i_n + 1; i < this->m_order; i++) {
+            for (int i = i_n + 1; i < this->m_modes; i++) {
                 nmats *= this->m_dimensions[i];
             }
             // For each matrix...
@@ -187,7 +188,40 @@ class Tensor {
         }
         return norm_fro;
     }
-};
-} // end of namespace PLANC
+    template <typename NumericType>
+    void scale(NumericType n) {
+        // static_assert(std::is_arithmetic<NumericType>::value,
+        //               "NumericType for scale operation must be numeric");
+        for (int i = 0; i < this->m_numel; i++) {
+            this->m_data[i] = this->m_data[i]*scale;
+        }
+    }
+    template <typename NumericType>
+    void shift(NumericType n) {
+        // static_assert(std::is_arithmetic<NumericType>::value,
+        //               "NumericType for shift operation must be numeric");
+        for (int i = 0; i < this->m_numel; i++) {
+            this->m_data[i] = this->m_data[i]+scale;
+        }
+    }
+    template <typename NumericType>
+    void bound(NumericType min, NumericType max) {
+        // static_assert(std::is_arithmetic<NumericType>::value,
+        //               "NumericType for bound operation must be numeric");
+        for (int i = 0; i < this->m_numel; i++) {
+            if (this->m_data[i] < min) this->m_data[i] = min;
+            if (this->m_data[i] > max) this->m_data[i] = max;
+        }
+    }
+    template <typename NumericType>
+    void lower_bound(NumericType min) {
+        // static_assert(std::is_arithmetic<NumericType>::value,
+        //               "NumericType for bound operation must be numeric");
+        for (int i = 0; i < this->m_numel; i++) {
+            if (this->m_data[i] < min) this->m_data[i] = min;            
+        }
+    }
+};  // class Tensor
+}  // namespace planc
 
 #endif  // NTF_TENSOR_HPP_

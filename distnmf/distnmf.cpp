@@ -31,21 +31,6 @@ class DistNMFDriver {
     int m_num_k_blocks;
     static const int kprimeoffset = 17;
 
-    void printConfig() {
-        cout << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
-             << "::k::" << this->m_k << "::m::" << this->m_globalm
-             << "::n::" << this->m_globaln << "::t::" << this->m_num_it
-             << "::pr::" << this->m_pr << "::pc::" << this->m_pc
-             << "::error::" << this->m_compute_error
-             << "::distio::" << this->m_distio
-             << "::regW::" << "l2::" << this->m_regW(0)
-             << "::l1::" << this->m_regW(1)
-             << "::regH::" << "l2::" << this->m_regH(0)
-             << "::l1::" << this->m_regH(1)
-             << "::num_k_blocks::" << m_num_k_blocks
-             << std::endl;
-    }
-
     template<class NMFTYPE>
     void callDistNMF1D() {
         std::string rand_prefix("rand_");
@@ -279,19 +264,6 @@ class DistNMFDriver {
         }
 #endif  // ifndef USE_PACOSS
     }
-
-    void parseRegularizedParameter(const char *input, FVEC *reg) {
-        stringstream ss(input);
-        string s;
-        int    i = 0;
-        double  temp;
-
-        while (getline(ss, s, ' ')) {
-            temp      = ::atof(s.c_str());
-            (*reg)(i) = temp;
-            i++;
-        }
-    }
     void parseCommandLine() {
         PLANC::ParseCommandLine pc(this->m_argc, this->m_argv);
         pc.parseplancopts();
@@ -314,7 +286,7 @@ class DistNMFDriver {
         } else {
             this->m_distio = TWOD;
         }
-        printConfig();
+        pc.printConfig();
 
         switch (this->m_nmfalgo) {
         case MU:
@@ -359,34 +331,6 @@ class DistNMFDriver {
         this->m_argc = argc;
         this->m_argv = argv;
         this->parseCommandLine();
-    }
-
-    void print_usage() {
-        INFO << std::endl;
-        INFO << "distnmf usage:" << std::endl;
-        INFO << "for short arguments like -i do not use equals sign, eg -t 10"
-             << std::endl
-             << "for long arguments like --pr give key=value pair, eg --pr=4"
-             << std::endl
-             << "algorithm codes 0-MU2D, 1-HALS, 2-ANLSBPP2D, 3-NAIVEANLSBPP"
-             << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i rand_uniform/rand_normal/rand_lowrank "
-             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
-        INFO << "Usage 2: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
-        INFO << "Usage 3: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
-        INFO << "Usage 4: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
     }
 };
 

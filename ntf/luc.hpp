@@ -6,11 +6,11 @@
 #include "nnls.hpp"
 #include "bppnnls.hpp"
 
-namespace PLANC {
+namespace planc {
 class LUC {
   private:
     // create variable required for your local function.
-    const ntfalgo m_updalgo;
+    const algotype m_updalgo;
 
     MAT updateBPP(const MAT &gram, const MAT &rhs) {
         MAT nnlsgram;
@@ -20,11 +20,11 @@ class LUC {
         return subProblem.getSolutionMatrix();        
     }
   public:
-    explicit LUC(const ntfalgo algo): m_updalgo(algo) {}
+    explicit LUC(const algotype algo): m_updalgo(algo) {}
     MAT update(const MAT &gram, const MAT &rhs) {
         MAT rc;
         switch (m_updalgo) {
-        case NTF_BPP:
+        case ANLSBPP:
             rc = updateBPP(gram, rhs);
             break;
         default:
@@ -34,5 +34,5 @@ class LUC {
     }
 };  // LUC
 
-}  // PLANC
+}  // planc
 #endif  // NTF_LUC_HPP_

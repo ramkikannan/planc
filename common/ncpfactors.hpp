@@ -8,37 +8,36 @@
 
 // ncp_factors contains the factors of the ncp
 // every ith factor is of size n_i * k
-// number of factors is called as order of the tensor
+// number of factors is called as mode of the tensor
 // all idxs are zero idx.
 
-namespace PLANC {
+namespace planc {
 
 class NCPFactors {
     MAT *ncp_factors;
-    int m_order;
+    int m_modes;
     int m_k;
     UVEC m_dimensions;
     MAT lambda;
 
     //normalize the factors of a matrix
 
-    void normalize(int order) {
+    void normalize(int mode) {
         for (int i = 0; i < this->m_k; i++) {
-            lambda(order, i) = arma::norm(this->ncp_factors[order].col(i));
-            this->ncp_factors[order].col(i) /= lambda(order, i);
+            lambda(mode, i) = arma::norm(this->ncp_factors[mode].col(i));
+            this->ncp_factors[mode].col(i) /= lambda(mode, i);
         }
     }
 
   public:
-
     //constructors
     NCPFactors(const UVEC i_dimensions, const int i_k, bool trans = false)
         : m_dimensions(i_dimensions) {
-        this->m_order = i_dimensions.n_rows;
-        ncp_factors = new MAT[this->m_order];
+        this->m_modes = i_dimensions.n_rows;
+        ncp_factors = new MAT[this->m_modes];
         this->m_k = i_k;
         UWORD numel = arma::prod(this->m_dimensions);
-        for (int i = 0; i < this->m_order; i++) {
+        for (int i = 0; i < this->m_modes; i++) {
             // ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             if (trans) {
                 ncp_factors[i] = arma::randu<MAT>(this->m_k, i_dimensions[i]);
@@ -49,12 +48,13 @@ class NCPFactors {
                 ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             }
         }
-        lambda = arma::ones<MAT>(this->m_order, this->m_k);
+        lambda = arma::ones<MAT>(this->m_modes, this->m_k);
     }
     // getters
     int rank() const {return m_k;}
     UVEC dimensions() const {return m_dimensions;}
     MAT& factor(const int i_n) const {return ncp_factors[i_n];}
+    int modess(){return m_modes;}
 
     // setters
     void set(const int i_n, const MAT &i_factor) {
@@ -65,7 +65,7 @@ class NCPFactors {
     //compute gram of all local factors
     void gram(MAT *o_UtU) {
         MAT currentGram(this->m_k, this->m_k);
-        for (int i = 0; i < this->m_order; i++) {
+        for (int i = 0; i < this->m_modes; i++) {
             currentGram = ncp_factors[i].t() * ncp_factors[i];
             (*o_UtU) = (*o_UtU) % currentGram;
         }
@@ -76,7 +76,7 @@ class NCPFactors {
     void gram_leave_out_one(const int i_n, MAT *o_UtU) {
         MAT currentGram(this->m_k, this->m_k);
         (*o_UtU) = arma::ones<MAT>(this->m_k, this->m_k);
-        for (int i = 0; i < this->m_order; i++) {
+        for (int i = 0; i < this->m_modes; i++) {
             if (i != i_n) {
                 currentGram = ncp_factors[i].t() * ncp_factors[i];
                 (*o_UtU) = (*o_UtU) % currentGram;
@@ -102,10 +102,10 @@ class NCPFactors {
         // matorder = length(A):-1:1;
         // Always krp for mttkrp is computed in
         // reverse. Hence assuming the same.
-        UVEC matorder = arma::zeros<UVEC>(this->m_order - 1);
+        UVEC matorder = arma::zeros<UVEC>(this->m_modes - 1);
         int current_ncols = this->m_k;
         int j = 0;
-        for (int i = this->m_order - 1; i >= 0; i--) {
+        for (int i = this->m_modes - 1; i >= 0; i--) {
             if (i != i_n ) {
                 matorder(j++) = i;
             }
@@ -123,7 +123,7 @@ class NCPFactors {
         /*UWORD current_nrows = ncp_factors[matorder(0)].n_rows - 1;
         (*o_krp).rows(0, current_nrows) = ncp_factors[matorder(0)];
         // this is factor by factor
-        for (int i = 1; i < this->m_order - 1; i++) {
+        for (int i = 1; i < this->m_modes - 1; i++) {
             // remember always krp in reverse order.
             // That is if A krp B krp C, we compute as
             // C krp B krp A.
@@ -153,7 +153,7 @@ class NCPFactors {
 // end
         for (int n = 0; n < this->m_k; n++) {
             MAT ab = ncp_factors[matorder[0]].col(n);
-            for (int i = 1; i < this->m_order - 1; i++) {
+            for (int i = 1; i < this->m_modes - 1; i++) {
                 VEC oldabvec = arma::vectorise(ab);
                 VEC currentvec = ncp_factors[matorder[i]].col(n);
                 ab.clear();
@@ -174,11 +174,15 @@ class NCPFactors {
         return rc;
     }
 
+    void printinfo() {
+        INFO << "modes::" << this->m_modes << "::k::" << this->m_k << std::endl;
+        INFO << "lambda::" << arma::prod(this->lambda) << std::endl;
+        INFO << "::dims::"  << std::endl << this->m_dimensions << std::endl;
+    }
+
     void print() {
-        std::cout << "order::" << this->m_order << "::k::" << this->m_k << std::endl;
-        std::cout << "lambda::" << arma::prod(this->lambda) << std::endl;
-        std::cout << "::dims::"  << std::endl << this->m_dimensions << std::endl;
-        for (int i = 0; i < this->m_order; i++) {
+        printinfo();
+        for (int i = 0; i < this->m_modes; i++) {
             std::cout << i << "th factor" << std::endl << "=============" << std::endl;
             std::cout << this->ncp_factors[i];
         }
@@ -188,16 +192,16 @@ class NCPFactors {
         std::cout << this->ncp_factors[i_n];
     }
     void trans(NCPFactors &factor_t) {
-        for (int i = 0; i < this->m_order; i++) {
+        for (int i = 0; i < this->m_modes; i++) {
             factor_t.set(i, this->ncp_factors[i].t());
         }
     }
     void normalize() {
-        for (int i = 0; i < this->m_order; i++) {
+        for (int i = 0; i < this->m_modes; i++) {
             normalize(i);
         }
     }
 }; // NCPFactors
-}  // PLANC
+}  // planc
 
 #endif  //  NTF_CPFACTORS_HPP_

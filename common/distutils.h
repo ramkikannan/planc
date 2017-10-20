@@ -16,6 +16,8 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 #define MPI_RANK this->m_mpicomm.rank()
 #define MPI_ROW_RANK this->m_mpicomm.row_rank()
 #define MPI_COL_RANK this->m_mpicomm.col_rank()
+#define MPI_FIBER_RANK((i)) this->m_mpicomm.fiber_rank(i)
+#define MPI_SLICE_RANK((i)) this->m_mpicomm.slice_rank(i)
 #define NUMROWPROCS this->m_mpicomm.pr()
 #define NUMCOLPROCS this->m_mpicomm.pc()
 

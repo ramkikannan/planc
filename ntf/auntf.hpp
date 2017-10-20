@@ -5,12 +5,12 @@
 
 #include <armadillo>
 #include <cblas.h>
+#include "tensor.hpp"
+#include "ncpfactors.hpp"
 #include "luc.hpp"
 #include "ntf_utils.h"
-#include "tensor.hpp"
 
-
-namespace PLANC {
+namespace planc {
 
 #define TENSOR_DIM (m_input_tensor.dimensions())
 #define TENSOR_NUMEL (m_input_tensor.numel())
@@ -31,32 +31,32 @@ namespace PLANC {
 //                              const int ldc);
 class AUNTF {
   private:
-    const Tensor &m_input_tensor;
-    NCPFactors m_ncp_factors;
+    const planc::Tensor &m_input_tensor;
+    planc::NCPFactors m_ncp_factors;
     int m_num_it;
     MAT gram_without_one;
     const int m_low_rank_k;
     MAT *ncp_krp;
     MAT *ncp_mttkrp;
-    const ntfalgo m_updalgo;
+    const algotype m_updalgo;
     LUC *m_luc;
-    Tensor *lowranktensor;
+    planc::Tensor *lowranktensor;
 
   public:
-    AUNTF(const Tensor &i_tensor, const int i_k, ntfalgo i_algo) :
-        m_ncp_factors(i_tensor.dimensions(), i_k),
+    AUNTF(const planc::Tensor &i_tensor, const int i_k, algotype i_algo) :
         m_input_tensor(i_tensor),
+        m_ncp_factors(i_tensor.dimensions(), i_k),
         m_low_rank_k(i_k),
         m_updalgo(i_algo) {
         gram_without_one = arma::zeros<MAT>(i_k, i_k);
-        ncp_mttkrp = new MAT[i_tensor.order()];
-        ncp_krp = new MAT[i_tensor.order()];
-        for (int i = 0; i < i_tensor.order(); i++) {
+        ncp_mttkrp = new MAT[i_tensor.modes()];
+        ncp_krp = new MAT[i_tensor.modes()];
+        for (int i = 0; i < i_tensor.modes(); i++) {
             UWORD current_size = TENSOR_NUMEL / TENSOR_DIM[i];
             ncp_krp[i] = arma::zeros <MAT>(current_size, i_k);
             ncp_mttkrp[i] = arma::zeros<MAT>(TENSOR_DIM[i], i_k);
         }
-        lowranktensor = new Tensor(i_tensor.dimensions());
+        lowranktensor = new planc::Tensor(i_tensor.dimensions());
         m_luc = new LUC(m_updalgo);
         m_num_it = 20;
     }
@@ -65,7 +65,7 @@ class AUNTF {
     void computeNTF() {
         for (int i = 0; i < m_num_it; i++) {
             INFO << "iter::" << i << std::endl;
-            for (int j = 0; j < this->m_input_tensor.order(); j++) {
+            for (int j = 0; j < this->m_input_tensor.modes(); j++) {
                 m_ncp_factors.gram_leave_out_one(j, &gram_without_one);
 #ifdef NTF_VERBOSE
                 INFO << "gram_without_" << j << "::"
@@ -126,18 +126,18 @@ class AUNTF {
         double beta = 0;
         // double *output_tensor = new double[ldc * n];
         cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans,
-                     m, n, k, alpha,
-                     m_ncp_factors.factor(0).memptr(),
-                     lda, ncp_krp[0].memptr() , ldb, beta,
-                     lowranktensor->m_data , ldc);
+                    m, n, k, alpha,
+                    m_ncp_factors.factor(0).memptr(),
+                    lda, ncp_krp[0].memptr() , ldb, beta,
+                    lowranktensor->m_data , ldc);
         // INFO << "lowrank tensor::" << std::endl;
         // lowranktensor->print();
         // for (int i=0; i < ldc*n; i++){
         //     INFO << i << ":" << output_tensor[i] << std::endl;
         // }
-        double err = m_input_tensor.err(*lowranktensor);        
+        double err = m_input_tensor.err(*lowranktensor);
         return err;
     }
 };  // class AUNTF
-}  // namespace PLANC
+}  // namespace planc
 #endif  // NTF_AUNTF_HPP_

@@ -8,14 +8,14 @@
 #include <string>
 #include <armadillo>
 
-namespace PLANC {
+namespace planc {
 class ParseCommandLine {
   private:
     int m_argc;
     char **m_argv;
 
     // common to all algorithms.
-    algotype m_nmfalgo;
+    algotype m_lucalgo;
     bool m_compute_error;
     int m_num_it;
     int m_num_k_blocks;
@@ -89,7 +89,7 @@ class ParseCommandLine {
         this->m_num_k_blocks = 1;
         this->m_k = 20;
         this->m_num_it = 20;
-        this->m_nmfalgo = ANLSBPP;
+        this->m_lucalgo = ANLSBPP;
         this->m_compute_error = 0;
     }
 
@@ -100,7 +100,7 @@ class ParseCommandLine {
                                   &long_index)) != -1) {
             switch (opt) {
             case 'a':
-                this->m_nmfalgo = static_cast<algotype>(atoi(optarg));
+                this->m_lucalgo = static_cast<algotype>(atoi(optarg));
                 break;
             case 'e':
                 this->m_compute_error = atoi(optarg);
@@ -153,7 +153,7 @@ class ParseCommandLine {
     }
 
     void printConfig() {
-        std::cout << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
+        std::cout << "a::" << this->m_lucalgo << "::i::" << this->m_Afile_name
              << "::k::" << this->m_k << "::m::" << this->m_globalm
              << "::n::" << this->m_globaln << "::t::" << this->m_num_it
              << "::pr::" << this->m_pr << "::pc::" << this->m_pc
@@ -181,20 +181,20 @@ class ParseCommandLine {
         // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
         INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i rand_uniform/rand_normal/rand_lowrank "
-             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+             << "-d \"21600 14400\" -t 10 -p \"3 2\" "
+             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
         // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
         INFO << "Usage 2: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+             << "-i Ainput -t 10 -p \"3 2\" "
+             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
         // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
         INFO << "Usage 3: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+             << "-i Ainput -o nmfoutput -t 10 -p \"3 2\" "
+             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
         // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
         INFO << "Usage 4: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
+             << "-i Ainput -o nmfoutput -t 10 -p \"3 2\" --sparsity=0.3"
+             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
     }
 
     UWORD lowrankk() {return m_k;}
@@ -202,7 +202,7 @@ class ParseCommandLine {
     UWORD globaln() {return m_globaln;}
     FVEC regW() {return m_regW;}
     FVEC regH() {return m_regH;}
-    algotype nmfalgo() {return m_nmfalgo;}
+    algotype lucalgo() {return m_lucalgo;}
     UVEC processor_grids() {return m_proc_grids;}
     FVEC regularizers() {return m_regularizers;}
     UVEC dimensions() {return m_dimensions;}
@@ -213,12 +213,11 @@ class ParseCommandLine {
     std::string output_file_name() {return m_outputfile_name;}
     int pr() {return m_pr;}
     int pc() {return m_pc;}
+    int num_modes() {return m_num_modes;}
     bool compute_error() {return m_compute_error;}
 
 };  // ParseCommandLine
-
-
-}  // PLANC
+}  // planc
 
 
 #endif  // COMMON_PARSE_COMMAND_LINE_HPP_
