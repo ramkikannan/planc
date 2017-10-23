@@ -20,6 +20,7 @@
 // #define PROCROWS        2002
 // #define PROCCOLS        2003
 #define NUMKBLOCKS      2004
+#define NORMALIZATION   2005
 
 // enum factorizationtype{FT_NMF, FT_DISTNMF, FT_NTF, FT_DISTNTF};
 
@@ -74,13 +75,14 @@ struct option plancopts[] = {
     {"dimensions",    required_argument, 0, 'd'},
     {"error",         optional_argument, 0, 'e'},
     {"input",         required_argument, 0, 'i'},
-    {"lowrank",       required_argument, 0, 'k'},
-    {"output",        optional_argument, 0, 'o'},
+    {"lowrank",       required_argument, 0, 'k'},    
+    {"output",        optional_argument, 0, 'o'},    
     {"processors",    optional_argument, 0, 'p'},
     {"regularizer",   optional_argument, 0, 'r'},
     {"sparsity",      optional_argument, 0, 's'},
     {"iter",          optional_argument, 0, 't'},
-    {"numkblocks",  optional_argument, 0, NUMKBLOCKS},
+    {"numkblocks",    optional_argument, 0, NUMKBLOCKS},
+    {"normalization", optional_argument, 0, NORMALIZATION}, 
     {0,             0,                 0,  0 }
 };
 

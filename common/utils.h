@@ -15,6 +15,12 @@ enum algotype {
     AOADMM
 };
 
+enum normtype {
+	NONE, 
+	L2NORM,
+	MAXNORM
+};
+
 // #if !defined(ARMA_64BIT_WORD)
 #define ARMA_64BIT_WORD
 #define ARMA_DONT_USE_WRAPPER

@@ -88,6 +88,53 @@ class DistIO {
         (*X).elem(find((*X) < 0)).zeros();
 #endif
     }
+
+    /* normalization */
+    void normalize(normtype i_normtype) {
+        ROWVEC globalnormA = arma::zeros<ROWVEC>(m_A.n_cols);
+        ROWVEC normc = arma::zeros<ROWVEC>(m_A.n_cols);
+        MATTYPE normmat = arma::zeros <MATTYPE>(m_A.n_rows, m_A.n_cols);
+        switch (m_distio) {
+        case ONED_ROW:
+            if (i_normtype == L2) {
+                normc = arma::sum(arma::square(m_A));
+                MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
+                              MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+            } else if (i_normtype == MAX) {
+                normc = arma::max(m_A);
+                MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
+                              MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+            }
+
+            break;
+        case ONED_COL:
+        case ONED_DOUBLE:
+            if (i_normtype == L2) {
+                globalnormA = arma::sum(arma::square(m_Arows));
+            } else if (i_normtype == MAX) {
+                globalnormA = arma::max(arma::square(m_Arows));
+            }
+            break;
+        case TWOD:
+            if (i_normtype == L2) {
+                normc = arma::sum(arma::square(m_A));
+                MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
+                              MPI_DOUBLE, MPI_SUM, this->m_mpicomm.commSubs()[1]);
+            } else if (i_normtype == MAX) {
+                normc = arma::max(m_A);
+                MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
+                              MPI_DOUBLE, MPI_SUM, this->m_mpicomm.commSubs()[1]);
+            }
+            break;
+        default :
+            INFO << "cannot normalize" << std::endl;
+
+        }
+        normmat = arma::repmat(globalnormA, m_A.n_rows, 1);
+        m_A /= normmat;
+    }
+
     /*
     * Uses the pattern from the input matrix X but
     * the value is computed as low rank.
@@ -262,7 +309,7 @@ class DistIO {
      */
     void readInput(const std::string file_name,
                    UWORD m = 0, UWORD n = 0, UWORD k = 0, double sparsity = 0,
-                   UWORD pr = 0, UWORD pc = 0) {
+                   UWORD pr = 0, UWORD pc = 0, normtype i_normalization = NONE) {
         // INFO << "readInput::" << file_name << "::" << distio << "::"
         //     << m << "::" << n << "::" << pr << "::" << pc
         //     << "::" << this->MPI_RANK << "::" << this->m_mpicomm.size() << std::endl;
@@ -344,9 +391,9 @@ class DistIO {
                     SP_MAT temp_spmat(idxst, vals);
                     m_A = temp_spmat;
                 } else {
-                    arma::umat idxs = arma::zeros<arma::umat>(2,1);
+                    arma::umat idxs = arma::zeros<arma::umat>(2, 1);
                     VEC vals = arma::zeros<VEC>(1);
-                    SP_MAT temp_spmat(idxs,vals);
+                    SP_MAT temp_spmat(idxs, vals);
                     m_A = temp_spmat;
                 }
                 // m_A.load(sr.str(), arma::coord_ascii);
@@ -355,6 +402,9 @@ class DistIO {
                 m_A.load(sr.str());
 #endif
             }
+        }
+        if (i_normalization != NONE){
+            normalize(i_normalization);
         }
     }
     void writeOutput(const MAT & W, const MAT & H,

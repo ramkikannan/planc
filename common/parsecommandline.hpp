@@ -16,6 +16,7 @@ class ParseCommandLine {
 
     // common to all algorithms.
     algotype m_lucalgo;
+    normtype m_input_normalization;
     bool m_compute_error;
     int m_num_it;
     int m_num_k_blocks;
@@ -91,6 +92,7 @@ class ParseCommandLine {
         this->m_num_it = 20;
         this->m_lucalgo = ANLSBPP;
         this->m_compute_error = 0;
+        this->m_input_normalization = NONE;
     }
 
     void parseplancopts() {
@@ -132,9 +134,17 @@ class ParseCommandLine {
             case NUMKBLOCKS:
                 this->m_num_k_blocks = atoi(optarg);
                 break;
+            case NORMALIZATION:
+                std::string temp = std::string(optarg);
+                if (temp.compare("l2") == 0) {
+                    this->m_input_normalization = L2;
+                } else if (temp.compare("max") == 0) {
+                    this->m_input_normalization = MAX;
+                }
+                break;
             default:
                 std::cout << "failed while processing argument:" << optarg
-                     << std::endl;
+                          << std::endl;
                 print_usage();
                 exit(EXIT_FAILURE);
             }
@@ -154,19 +164,20 @@ class ParseCommandLine {
 
     void printConfig() {
         std::cout << "a::" << this->m_lucalgo << "::i::" << this->m_Afile_name
-             << "::k::" << this->m_k << "::m::" << this->m_globalm
-             << "::n::" << this->m_globaln << "::t::" << this->m_num_it
-             << "::pr::" << this->m_pr << "::pc::" << this->m_pc
-             << "::error::" << this->m_compute_error             
-             << "::regW::" << "l2::" << this->m_regW(0)
-             << "::l1::" << this->m_regW(1)
-             << "::regH::" << "l2::" << this->m_regH(0)
-             << "::l1::" << this->m_regH(1)
-             << "::num_k_blocks::" << m_num_k_blocks
-             << "::dimensions::" << this->m_dimensions
-             << "::procs::" << this->m_proc_grids
-             << "::regularizers::" << this->m_regularizers
-             << std::endl;
+                  << "::k::" << this->m_k << "::m::" << this->m_globalm
+                  << "::n::" << this->m_globaln << "::t::" << this->m_num_it
+                  << "::pr::" << this->m_pr << "::pc::" << this->m_pc
+                  << "::error::" << this->m_compute_error
+                  << "::regW::" << "l2::" << this->m_regW(0)
+                  << "::l1::" << this->m_regW(1)
+                  << "::regH::" << "l2::" << this->m_regH(0)
+                  << "::l1::" << this->m_regH(1)
+                  << "::num_k_blocks::" << m_num_k_blocks
+                  << "::dimensions::" << this->m_dimensions
+                  << "::procs::" << this->m_proc_grids
+                  << "::regularizers::" << this->m_regularizers
+                  << "::input normalization::" << this->m_input_normalization
+                  << std::endl;
     }
 
     void print_usage() {
@@ -182,19 +193,21 @@ class ParseCommandLine {
         INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i rand_uniform/rand_normal/rand_lowrank "
              << "-d \"21600 14400\" -t 10 -p \"3 2\" "
-             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
+             << "--normalization \"l2\" "
+             << "-r \"0.0001 0 0 0.0001\" " << std::endl;
         // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
         INFO << "Usage 2: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i Ainput -t 10 -p \"3 2\" "
-             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
+             << "--normalization \"max\" "
+             << "-r \"0.0001 0 0 0.0001\" " << std::endl;
         // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
         INFO << "Usage 3: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i Ainput -o nmfoutput -t 10 -p \"3 2\" "
-             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
+             << "-r \"0.0001 0 0 0.0001\" " << std::endl;
         // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
         INFO << "Usage 4: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
              << "-i Ainput -o nmfoutput -t 10 -p \"3 2\" --sparsity=0.3"
-             << "-r \"0.0001 0 0 0.0001\" "<< std::endl;
+             << "-r \"0.0001 0 0 0.0001\" " << std::endl;
     }
 
     UWORD lowrankk() {return m_k;}
@@ -215,6 +228,7 @@ class ParseCommandLine {
     int pc() {return m_pc;}
     int num_modes() {return m_num_modes;}
     bool compute_error() {return m_compute_error;}
+    normtype input_normalization() {return this->m_input_normalization;}
 
 };  // ParseCommandLine
 }  // planc

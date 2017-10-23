@@ -30,6 +30,7 @@ class DistNMFDriver {
     uint m_compute_error;
     int m_num_k_blocks;
     static const int kprimeoffset = 17;
+    normtype m_input_normalization;
 
     template<class NMFTYPE>
     void callDistNMF1D() {
@@ -44,7 +45,7 @@ class DistNMFDriver {
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_globalm,
                           this->m_globaln, this->m_k, this->m_sparsity,
-                          this->m_pr, this->m_pc);
+                          this->m_pr, this->m_pc, this->m_input_normalization);
         } else {
             dio.readInput(m_Afile_name);
         }
@@ -151,7 +152,7 @@ class DistNMFDriver {
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_globalm,
                           this->m_globaln, this->m_k, this->m_sparsity,
-                          this->m_pr, this->m_pc);
+                          this->m_pr, this->m_pc, this->m_input_normalization);
         } else {
             dio.readInput(m_Afile_name);
         }
@@ -204,19 +205,6 @@ class DistNMFDriver {
                                            H,
                                            mpicomm,
                                            this->m_num_k_blocks);
-            lrinitializer.num_iterations(4);
-            lrinitializer.algorithm(HALS);
-            lrinitializer.computeNMF();
-            W = lrinitializer.getLeftLowRankFactor();
-            H = lrinitializer.getRightLowRankFactor();
-        }
-#else
-        if (m_nmfalgo == ANLSBPP) {
-            DistHALS<MAT> lrinitializer(A,
-                                        W,
-                                        H,
-                                        mpicomm,
-                                        this->m_num_k_blocks);
             lrinitializer.num_iterations(4);
             lrinitializer.algorithm(HALS);
             lrinitializer.computeNMF();
@@ -286,6 +274,7 @@ class DistNMFDriver {
         } else {
             this->m_distio = TWOD;
         }
+        this->m_input_normalization = pc.input_normalization();
         pc.printConfig();
 
         switch (this->m_nmfalgo) {
