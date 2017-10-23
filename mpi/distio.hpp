@@ -90,6 +90,62 @@ class DistIO {
         (*X).elem(find((*X) < 0)).zeros();
 #endif
     }
+    /* l2 normalize */
+    void l2normalize() {
+        ROWVEC globalnormA = arma::zeros<ROWVEC>(m_A.n_cols);
+        ROWVEC normc = arma::zeros<ROWVEC>(m_A.n_cols);
+        MATTYPE normmat = arma::zeros <MATTYPE>(m_A.n_rows, m_A.n_cols);
+        switch (m_distio) {
+        case ONED_ROW:
+            normc = arma::sum(arma::square(m_A));
+            MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
+                          MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+            break;
+        case ONED_COL:
+        case ONED_DOUBLE:
+            globalnormA = arma::sum(arma::square(m_Arows));
+            break;
+        case TWOD:
+            normc = arma::sum(arma::square(m_A));
+            MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
+                          MPI_DOUBLE, MPI_SUM, this->m_mpicomm.commSubs()[1]);
+            break;
+        default :
+            INFO << "cannot normalize" << std::endl;
+
+        }
+        normmat = arma::repmat(globalnormA, m_A.n_rows, 1);
+        m_A /= normmat;
+    }
+
+        /* max normalize */
+    void max_normalize() {
+        ROWVEC globalnormA = arma::zeros<ROWVEC>(m_A.n_cols);
+        ROWVEC max_col = arma::zeros<ROWVEC>(m_A.n_cols);
+        MATTYPE normmat = arma::zeros <MATTYPE>(m_A.n_rows, m_A.n_cols);
+        switch (m_distio) {
+        case ONED_ROW:
+            max_col = arma::max(m_A);
+            MPI_Allreduce(max_col.memptr(), globalnormA.memptr(), m_A.n_cols,
+                          MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+            break;
+        case ONED_COL:
+        case ONED_DOUBLE:
+            globalnormA = arma::max(m_Arows);
+            break;
+        case TWOD:
+            max_col = arma::max(m_A);
+            MPI_Allreduce(max_col.memptr(), globalnormA.memptr(), m_A.n_cols,
+                          MPI_DOUBLE, MPI_MAX, this->m_mpicomm.commSubs()[1]);
+            break;
+        default :
+            INFO << "cannot normalize" << std::endl;
+
+        }
+        normmat = arma::repmat(globalnormA, m_A.n_rows, 1);
+        m_A /= normmat;
+    }
+
     /*
     * Uses the pattern from the input matrix X but
     * the value is computed as low rank.
@@ -346,9 +402,9 @@ class DistIO {
                     SP_MAT temp_spmat(idxst, vals);
                     m_A = temp_spmat;
                 } else {
-                    arma::umat idxs = arma::zeros<arma::umat>(2,1);
+                    arma::umat idxs = arma::zeros<arma::umat>(2, 1);
                     VEC vals = arma::zeros<VEC>(1);
-                    SP_MAT temp_spmat(idxs,vals);
+                    SP_MAT temp_spmat(idxs, vals);
                     m_A = temp_spmat;
                 }
                 // m_A.load(sr.str(), arma::coord_ascii);
@@ -358,6 +414,7 @@ class DistIO {
 #endif
             }
         }
+        max_normalize();
     }
     void writeOutput(const MAT & W, const MAT & H,
                      const std::string & output_file_name) {
