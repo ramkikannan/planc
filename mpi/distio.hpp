@@ -118,7 +118,8 @@ class DistIO {
         m_A /= normmat;
     }
 
-        /* max normalize */
+/* max normalize */
+ #ifndef BUILD_SPARSE        
     void max_normalize() {
         ROWVEC globalnormA = arma::zeros<ROWVEC>(m_A.n_cols);
         ROWVEC max_col = arma::zeros<ROWVEC>(m_A.n_cols);
@@ -145,7 +146,7 @@ class DistIO {
         normmat = arma::repmat(globalnormA, m_A.n_rows, 1);
         m_A /= normmat;
     }
-
+#endif
     /*
     * Uses the pattern from the input matrix X but
     * the value is computed as low rank.
@@ -414,7 +415,9 @@ class DistIO {
 #endif
             }
         }
+#ifndef BUILD_SPARSE
         max_normalize();
+#endif
     }
     void writeOutput(const MAT & W, const MAT & H,
                      const std::string & output_file_name) {
