@@ -118,8 +118,8 @@ class DistIO {
         m_A /= normmat;
     }
 
-/* max normalize */
- #ifndef BUILD_SPARSE        
+    /* max normalize */
+#ifndef BUILD_SPARSE
     void max_normalize() {
         ROWVEC globalnormA = arma::zeros<ROWVEC>(m_A.n_cols);
         ROWVEC max_col = arma::zeros<ROWVEC>(m_A.n_cols);
@@ -239,74 +239,88 @@ class DistIO {
         int my_cols = A.n_cols;
         bool last_exist = false;
         double my_min_value = 0.0;
-        if (A.n_nonzero > 0) {
-            my_min_value = A.min();
-        }
         double overall_min;
+        UWORD my_correct_nnz = 0;
+        if (A.n_nonzero > 0) {
+            my_min_value = A.values[0];
+        }        
         MPI_Allreduce(&my_rows, &max_rows, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
         MPI_Allreduce(&my_cols, &max_cols, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-        MPI_Allreduce(&my_min_value, &overall_min, 1, MPI_INT,
-                      MPI_MIN, MPI_COMM_WORLD);
         //choose max rows and max cols nicely
         max_rows -= (max_rows % m_mpicomm.pr());
         max_cols -= (max_cols % m_mpicomm.pc());
         // count the number of nnz's that satisfies this
         // criteria
-        UWORD my_correct_nnz = 0;
-        if (A.n_nonzero > 0) {
-            SP_MAT::iterator start_it = A.begin();
-            SP_MAT::iterator end_it = A.end();
-            for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
-                if (it.row() < max_rows && it.col() < max_cols) {
-                    my_correct_nnz++;
-                }
-                if (it.row() == max_rows - 1 && it.col() == max_cols - 1) {
-                    last_exist = true;
+        try {
+            if (A.n_nonzero > 0) {
+                SP_MAT::iterator start_it = A.begin();
+                SP_MAT::iterator end_it = A.end();
+                for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
+                    if (it.row() < max_rows && it.col() < max_cols) {
+                        my_correct_nnz++;
+                        if (*it !=0 && my_min_value < *it){
+                            my_min_value = *it;
+                        }
+                    }
+                    if (it.row() == max_rows - 1 && it.col() == max_cols - 1) {
+                        last_exist = true;
+                    }
                 }
             }
-        }
-        if (!last_exist) {
-            my_correct_nnz++;
-        }
+            if (!last_exist) {
+                my_correct_nnz++;
+            }
 
-        if (A.n_nonzero == 0) {
-            my_correct_nnz++;
-        }
-        DISTPRINTINFO("max_rows::" << max_rows
-                      << "::max_cols::" << max_cols
-                      << "::my_rows::" << my_rows
-                      << "::my_cols::" << my_cols
-                      << "::last_exist::" << last_exist
-                      << "::my_nnz::" << A.n_nonzero
-                      << "::my_correct_nnz::" << my_correct_nnz);
-        arma::umat locs;
-        VEC vals;
-        locs = arma::zeros<arma::umat>(2, my_correct_nnz);
-        vals = arma::zeros<VEC>(my_correct_nnz);
-        if (A.n_nonzero > 0) {
-            SP_MAT::iterator start_it = A.begin();
-            SP_MAT::iterator end_it = A.end();
-            double idx = 0;
-            for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
-                if (it.row() < max_rows && it.col() < max_cols) {
-                    locs(0, idx) = it.row();
-                    locs(1, idx) = it.col();
-                    vals(idx++) = *it;
-                }
+            if (A.n_nonzero == 0) {
+                my_correct_nnz++;
             }
-        } else {
-            locs(0, 0) = 0;
-            locs(1, 0) = 0;
-            vals(0) = overall_min;
+            MPI_Allreduce(&my_min_value, &overall_min, 1, MPI_INT,
+                          MPI_MIN, MPI_COMM_WORLD);
+            arma::umat locs;
+            VEC vals;
+            DISTPRINTINFO("max_rows::" << max_rows
+                          << "::max_cols::" << max_cols
+                          << "::my_rows::" << my_rows
+                          << "::my_cols::" << my_cols
+                          << "::last_exist::" << last_exist
+                          << "::my_nnz::" << A.n_nonzero
+                          << "::my_correct_nnz::" << my_correct_nnz);
+            locs = arma::zeros<arma::umat>(2, my_correct_nnz);
+            vals = arma::zeros<VEC>(my_correct_nnz);
+            if (A.n_nonzero > 0) {
+                SP_MAT::iterator start_it = A.begin();
+                SP_MAT::iterator end_it = A.end();
+                double idx = 0;
+                for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
+                    if (it.row() < max_rows && it.col() < max_cols) {
+                        locs(0, idx) = it.row();
+                        locs(1, idx) = it.col();
+                        vals(idx++) = *it;
+                    }
+                }
+            } else {
+                locs(0, 0) = 0;
+                locs(1, 0) = 0;
+                vals(0) = overall_min;
+            }
+            if (A.n_nonzero > 0 && !last_exist) {
+                locs(0, my_correct_nnz - 1) = max_rows - 1;
+                locs(1, my_correct_nnz - 1) = max_cols - 1;
+                vals(my_correct_nnz - 1) = overall_min;
+            }
+            SP_MAT A_new(locs, vals);
+            A.clear();
+            A = A_new;
+        } catch (const std::exception& e) {
+            DISTPRINTINFO(e.what()
+                          << "max_rows::" << max_rows
+                          << "::max_cols::" << max_cols
+                          << "::my_rows::" << my_rows
+                          << "::my_cols::" << my_cols
+                          << "::last_exist::" << last_exist
+                          << "::my_nnz::" << A.n_nonzero
+                          << "::my_correct_nnz::" << my_correct_nnz);
         }
-        if (!last_exist) {
-            locs(0, my_correct_nnz - 1) = max_rows - 1;
-            locs(1, my_correct_nnz - 1) = max_cols - 1;
-            vals(my_correct_nnz - 1) = overall_min;
-        }
-        SP_MAT A_new(locs, vals);
-        A.clear();
-        A = A_new;
     }
 #endif
   public:
@@ -394,10 +408,9 @@ class DistIO {
                 MAT temp_ijv;
                 temp_ijv.load(sr.str(), arma::raw_ascii);
                 if (temp_ijv.n_rows > 0 && temp_ijv.n_cols > 0) {
-                    arma::umat idxs(2, temp_ijv.n_rows);
                     MAT vals(2, temp_ijv.n_rows);
                     MAT idxs_only = temp_ijv.cols(0, 1);
-                    idxs = arma::conv_to<arma::umat>::from(idxs_only);
+                    arma::umat idxs = arma::conv_to<arma::umat>::from(idxs_only);
                     arma::umat idxst = idxs.t();
                     vals = temp_ijv.col(2);
                     SP_MAT temp_spmat(idxst, vals);

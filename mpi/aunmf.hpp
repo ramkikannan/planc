@@ -71,6 +71,13 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     void allocateMatrices() {
         // collective call related initializations.
         // These initialization are for solving W.
+        DISTPRINTINFO("k::" << this->k
+            << "::perk::" << this->perk
+            << "::localm::" << this->m
+            << "::localn::" << this->n
+            << "::globalm::" << this->globalm()
+            << "::globaln::" << this->globaln()
+            << "::MPI_SIZE::" << MPI_SIZE);
         HtH.zeros(this->k, this->k);
         localHtH.zeros(this->k, this->k);
         Hj.zeros(this->n, this->perk);
@@ -113,10 +120,12 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
             printVector<int>(recvWtAsize);
         }
 #endif
+#ifndef BUILD_SPARSE
         if (this->is_compute_error()) {
             errMtx.zeros(this->m, this->n);
             A_errMtx.zeros(this->m, this->n);
         }
+#endif
     }
 
     void freeMatrices() {
@@ -467,7 +476,12 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
             }
             this->time_stats.duration(MPITOC);  // total_d W&H
             if (iter > 0 && this->is_compute_error()) {
+#ifdef BUILD_SPARSE
+                this->computeError(iter);
+#else
                 this->computeError2(iter);
+#endif
+
                 PRINTROOT("it=" << iter << "::algo::" << this->m_algorithm \
                           << "::k::" << this->k \
                           << "::err::" << sqrt(this->objective_err) \

@@ -30,8 +30,8 @@ class DistNMFDriver {
     int m_num_k_blocks;
     static const int kprimeoffset = 17;
 
-    void printConfig() {
-        cout << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
+    void printConfig() {        
+        cout  << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
              << "::k::" << this->m_k << "::m::" << this->m_globalm
              << "::n::" << this->m_globaln << "::t::" << this->m_num_it
              << "::pr::" << this->m_pr << "::pc::" << this->m_pc
@@ -41,7 +41,7 @@ class DistNMFDriver {
              << "::l1::" << this->m_regW(1)
              << "::regH::" << "l2::" << this->m_regH(0)
              << "::l1::" << this->m_regH(1)
-             << "::num_k_blocks::" << m_num_k_blocks
+             << "::num_k_blocks::" << this->m_num_k_blocks
              << std::endl;
     }
 
@@ -187,12 +187,7 @@ class DistNMFDriver {
              *            MPI_SUM, mpicomm.commSubs()[1]);*/
             this->m_globalm = localm * m_pr;
             this->m_globaln = localn * m_pc;
-        }
-        INFO << mpicomm.rank() << "::Completed generating 2D matrix A="
-             << PRINTMATINFO(A)
-             << "::globalm::" << this->m_globalm
-             << "::globaln::" << this->m_globaln
-             << std::endl;
+        }        
 # ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
 #endif  // ifdef WRITE_RAND_INPUT
@@ -297,7 +292,7 @@ class DistNMFDriver {
         this->m_num_k_blocks  = 1;
 
         while ((opt = getopt_long(this->m_argc, this->m_argv,
-                                  "a:i:e:k:m:n:o:t:s:", distnmfopts,
+                                  "a:i:e:k:m:n:o:t:s::", distnmfopts,
                                   &long_index)) != -1) {
             switch (opt) {
             case 'a':

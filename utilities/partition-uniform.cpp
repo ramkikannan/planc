@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     auto &curColIdxs = procColIdxs[i];
     auto &curVals = procVals[i];
     for (uint64_t j = 0; j < curRowIdxs.size(); j++) {
-      fprintf(file, "%" PRIu64 "%" PRIu64 "%e\n", curRowIdxs[j], curColIdxs[j], curVals[j]);
+      fprintf(file, "%" PRIu64 " %" PRIu64 " %e\n", curRowIdxs[j], curColIdxs[j], curVals[j]);
     }
     fclose(file);
   }

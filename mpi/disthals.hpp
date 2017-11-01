@@ -6,10 +6,6 @@
 
 template<class INPUTMATTYPE>
 class DistHALS : public DistAUNMF<INPUTMATTYPE>{
- private:
-  MAT HWtW;
-  MAT WHtH;
-
  protected:
   // emulating Jingu's code
   // https://github.com/kimjingu/nonnegfac-matlab/blob/master/nmf.m
@@ -97,8 +93,6 @@ public:
            const int numkblks) :
     DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                             rightlowrankfactor, communicator, numkblks) {
-    WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);
-    HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
   }
 };
 
