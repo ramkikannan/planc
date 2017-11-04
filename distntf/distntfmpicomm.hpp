@@ -6,7 +6,7 @@
 
 #include <mpi.h>
 #include <vector>
-#include "distntfutils.hpp"
+#include "distntfutils.h"
 namespace planc {
 
 class NTFMPICommunicator {
@@ -25,8 +25,8 @@ class NTFMPICommunicator {
 
     void printConfig() {
         if (rank() == 0) {
-            INFO << "successfully setup MPI communicators" << endl;
-            INFO << "size=" << size() << endl;
+            INFO << "successfully setup MPI communicators" << std::endl;
+            INFO << "size=" << size() << std::endl;
 
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -40,6 +40,7 @@ class NTFMPICommunicator {
         MPI_Init(&argc, &argv);
         MPI_Comm_rank(MPI_COMM_WORLD, &m_global_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &m_num_procs);
+        int grid_count = m_proc_grids[0];
         if (m_num_procs != arma::prod(m_proc_grids)) {
             ERR << "number of mpi process and process grid doesn't match";
             MPI_Barrier(MPI_COMM_WORLD);
@@ -47,10 +48,13 @@ class NTFMPICommunicator {
             exit(-1);
         }
         // Create a virtual topology MPI communicator
-        UVEC periods = arma::ones<UVEC>(MPI_CART_DIMS);
+        std::vector<int> periods(MPI_CART_DIMS);
+        std::vector<int> m_proc_grids_vec = arma::conv_to<std::vector<int>>
+                                            ::from(m_proc_grids);
+        for (int i = 0; i < MPI_CART_DIMS; i++) periods[i] = 1;
         int reorder = 0;
-        MPI_Cart_create(comm, MPI_CART_DIMS,
-                        m_proc_grids.memptr(), periods.memptr(),
+        MPI_Cart_create(MPI_COMM_WORLD, MPI_CART_DIMS,
+                        &m_proc_grids_vec[0], &periods[0],
                         reorder, &m_cart_comm);
 
         // Allocate memory for subcommunicators
@@ -58,26 +62,26 @@ class NTFMPICommunicator {
         m_slice_comm = new MPI_Comm[MPI_CART_DIMS];
 
         // Get the subcommunicators
-        UVEC remainDims = arma::zeros<UVEC>(MPI_CART_DIMS);
+        std::vector<int> remainDims(MPI_CART_DIMS);
         // initialize the fiber ranks
         m_slice_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
-        int slice_rank;
+        int current_slice_rank;
         for (int i = 0; i < MPI_CART_DIMS; i++) {
             remainDims[i] = 1;
-            MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_slice_comm[i]));
+            MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_slice_comm[i]));
             remainDims[i] = 0;
-            MPI_Comm_rank(m_slice_comm[i], &fiber_rank);
-            m_slice_ranks[i] = slice_rank;
+            MPI_Comm_rank(m_slice_comm[i], &current_slice_rank);
+            m_slice_ranks[i] = current_slice_rank;
         }
-        remainDims = 1;
+        for (int i = 0; i < remainDims.size(); i++) remainDims[i] = 1;
         m_fiber_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
-        int fiber_rank;
-        for (int i = 0; i < ndims; i++) {
+        int current_fiber_rank;
+        for (int i = 0; i < MPI_CART_DIMS; i++) {
             remainDims[i] = 0;
-            MPI_Cart_sub(m_cart_comm, remainDims.memptr(), &(m_fiber_comm[i]));
+            MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_fiber_comm[i]));
             remainDims[i] = 1;
-            MPI_Comm_rank(m_fiber_comm[i], &fiber_rank);
-            m_fiber_ranks[i] = fiber_rank;
+            MPI_Comm_rank(m_fiber_comm[i], &current_fiber_rank);
+            m_fiber_ranks[i] = current_fiber_rank;
         }
     }
 
@@ -97,23 +101,26 @@ class NTFMPICommunicator {
     }
 
     const MPI_Comm& cart_comm() const {return m_cart_comm;}
-    void coordinates(UVEC *o_c) const {
-        MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, coords->memptr());
+    void coordinates(int *o_c) const {
+        MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, o_c);
     }
-    const MPI_Comm& fiber(const int i) const {return m_fiber_comm[d];}
-    const MPI_Comm& slice(const int i) const {return m_slice_comm[d];}
-    int rank(const UVEC &i_coords) const {
-        MPI_Cart_rank(m_cart_comm, coords->memptr(), &rank);
+    const MPI_Comm& fiber(const int i) const {return m_fiber_comm[i];}
+    const MPI_Comm& slice(const int i) const {return m_slice_comm[i];}
+    int rank(const int *i_coords) const {
+        int my_rank;
+        MPI_Cart_rank(m_cart_comm, i_coords, &my_rank);
+        return my_rank;
     }
     int size() const {return m_num_procs;}
     int size(const int i_d) const {
         int n_procs;
-        MPI_Comm_size(m_slice_comm[d], &n_procs);
+        MPI_Comm_size(m_slice_comm[i_d], &n_procs);
         return n_procs;
     }
-    int fiber_rank(int i){return m_fiber_ranks[i];}
-    int slice_rank(int i){return m_slice_ranks[i];}
-    UVEC proc_grids(){return this->m_proc_grids;}
+    int fiber_rank(int i) {return m_fiber_ranks[i];}
+    int slice_rank(int i) {return m_slice_ranks[i];}
+    UVEC proc_grids() {return this->m_proc_grids;}
+    int rank() {return m_global_rank;}
 };
 
 }  // namespace planc

@@ -2,7 +2,7 @@
 #ifndef DISTNTF_DISTNTFTIME_HPP_
 #define DISTNTF_DISTNTFTIME_HPP_
 
-namespace PLANC {
+namespace plan {
 class DistNTFTime {
   private:
     double m_duration;
@@ -24,12 +24,21 @@ class DistNTFTime {
         m_duration(d), m_compute_duration(compute_d),
         m_communication_duration(communication_d),
         m_err_compute_duration(err_comp),
-        m_err_communication_duration(err_comm) {}
+        m_err_communication_duration(err_comm) {
+        m_allgather_duration        = 0; 
+        m_allreduce_duration        = 0;
+        m_reducescatter_duration    = 0;
+        m_gram_duration             = 0;
+        m_krp_duration              = 0;
+        m_mttkrp_duration           = 0;
+        m_nnls_duration             = 0;            
+        m_trans_duration            = 0;
+    }
     DistNTFTime(double d,
                 double compute_d, double communication_d, double trans_d,
                 double allgather_d, double allreduce_d,
                 double reducescatter_d,
-                double gram_d, double krp_d double mttkrp_d,
+                double gram_d, double krp_d, double mttkrp_d,
                 double nnls_d, double err_comp, double err_comm)
         : m_duration(d), m_compute_duration(compute_d),
           m_trans_duration(trans_d), m_communication_duration(communication_d),
@@ -45,7 +54,7 @@ class DistNTFTime {
                 double nnls_d, double err_comp, double err_comm)
         : m_duration(d), m_compute_duration(compute_d),
           m_communication_duration(communication_d),
-          m_gram_duration(gram_d), m_krp_d(krp_d), m_mttkrp_duration(mttkrp_d),
+          m_gram_duration(gram_d), m_krp_duration(krp_d), m_mttkrp_duration(mttkrp_d),
           m_nnls_duration(nnls_d),
           m_err_compute_duration(err_comp),
           m_err_communication_duration(err_comm) {}
@@ -66,7 +75,7 @@ class DistNTFTime {
     const double err_communication_duration() const {
         return m_err_communication_duration;
     }
-    const double m_trans_duration const {return m_trans_duration;}
+    const double trans_duration() const {return m_trans_duration;}
     void duration(double d) {m_duration += d;}
     void compute_duration(double d) {m_compute_duration += d;}
     void communication_duration(double d) {m_communication_duration += d;}
@@ -77,13 +86,13 @@ class DistNTFTime {
     void krp_duration(double d) {m_krp_duration += d;}
     void mttkrp_duration(double d) {m_mttkrp_duration += d;}
     void nnls_duration(double d) {m_nnls_duration += d;}
-    void trans_duration(double d){m_trans_duration += d;}
+    void trans_duration(double d) {m_trans_duration += d;}
     void err_compute_duration(double d) {m_err_compute_duration += d;}
     void err_communication_duration(double d) {
         m_err_communication_duration += d;
     }
 
 };
-}  // namespace PLANC
+}  // namespace planc
 
 #endif  // DISTNTF_DISTNTFTIME_HPP_

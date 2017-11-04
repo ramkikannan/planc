@@ -6,10 +6,10 @@ set(ARMA_USE_WRAPPER true)
 
 # the settings below will be automatically configured by the rest of this script
 
-project(DISTNMF CXX)
-set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
-set(NNLS_SRC ${DISTNMF_SOURCE_DIR}/../nnls/)
-message(STATUS "DISTNMF_SOURCE_DIR =  ${DISTNMF_SOURCE_DIR}")
+project(DISTNTF CXX)
+set(NMFLIB_COMMON ${DISTNTF_SOURCE_DIR}/../common)
+set(NNLS_SRC ${DISTNTF_SOURCE_DIR}/../nnls/)
+message(STATUS "DISTNTF_SOURCE_DIR =  ${DISTNTF_SOURCE_DIR}")
 message(STATUS "NMFLIB_COMMON =  ${NMFLIB_COMMON}")
 
 include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
@@ -56,7 +56,7 @@ message(STATUS "")
 include_directories(
   ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
-  ${DISTNMF_SOURCE_DIR}
+  ${DISTNTF_SOURCE_DIR}
   ${NMFLIB_COMMON}
   ${NNLS_SRC}
   ${MPI_CXX_INCLUDE_PATH}
@@ -65,8 +65,8 @@ include_directories(
   ${OPENBLAS_INCLUDE_DIR}
 )
 
-add_executable(distnmf
+add_executable(distntf
   distntf.cpp
 )
 
-target_link_libraries(distnmf ${NMFLIB_LIBS})
+target_link_libraries(distntf ${NMFLIB_LIBS})

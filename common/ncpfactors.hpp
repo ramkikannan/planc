@@ -54,7 +54,7 @@ class NCPFactors {
     int rank() const {return m_k;}
     UVEC dimensions() const {return m_dimensions;}
     MAT& factor(const int i_n) const {return ncp_factors[i_n];}
-    int modess(){return m_modes;}
+    int modes(){return m_modes;}
 
     // setters
     void set(const int i_n, const MAT &i_factor) {

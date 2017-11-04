@@ -5,7 +5,7 @@
 #include "distutils.h"
 
 namespace PLANC {
-enum distntfalgotype {NTF_MU, NTF_HALS, NTF_BPP};;
+enum distntfalgotype {NTF_MU, NTF_HALS, NTF_BPP};
 
 }  // namespace PLANC
 #endif  // DISTNTF_DISTNTFUTILS_H_

@@ -134,14 +134,16 @@ class ParseCommandLine {
             case NUMKBLOCKS:
                 this->m_num_k_blocks = atoi(optarg);
                 break;
-            case NORMALIZATION:
-                std::string temp = std::string(optarg);
-                if (temp.compare("l2") == 0) {
-                    this->m_input_normalization = L2;
-                } else if (temp.compare("max") == 0) {
-                    this->m_input_normalization = MAX;
+            case NORMALIZATION: 
+                {
+                    std::string temp = std::string(optarg);
+                    if (temp.compare("l2") == 0) {
+                        this->m_input_normalization = normtype::L2NORM;
+                    } else if (temp.compare("max") == 0) {
+                        this->m_input_normalization = normtype::MAXNORM;
+                    }
                 }
-                break;
+            break;
             default:
                 std::cout << "failed while processing argument:" << optarg
                           << std::endl;

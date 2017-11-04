@@ -26,7 +26,7 @@ class DistNTF {
     static const int kprimeoffset = 17;
 
     void printConfig() {
-        cout << "a::" << this->m_ntfalgo << "::i::" << this->m_Afile_name
+        std::cout << "a::" << this->m_ntfalgo << "::i::" << this->m_Afile_name
              << "::k::" << this->m_k << "::dims::" << this->m_global_dims
              << "::t::" << this->m_num_it
              << "::proc_grids::" << this->m_proc_grids
@@ -97,18 +97,6 @@ class DistNTF {
         }
     }
 
-    void parseRegularizedParameter(const char *input, FVEC *reg) {
-        stringstream ss(input);
-        string s;
-        int    i = 0;
-        double  temp;
-
-        while (getline(ss, s, ' ')) {
-            temp      = ::atof(s.c_str());
-            (*reg)(i) = temp;
-            i++;
-        }
-    }
     void parseCommandLine() {
         PLANC::ParseCommandLine pc(this->m_argc, this->m_argv);
         pc.parseplancopts();
@@ -140,33 +128,6 @@ class DistNTF {
         this->parseCommandLine();
     }
 
-    void print_usage() {
-        INFO << std::endl;
-        INFO << "distnmf usage:" << std::endl;
-        INFO << "for short arguments like -i do not use equals sign, eg -t 10"
-             << std::endl
-             << "for long arguments like --pr give key=value pair, eg --pr=4"
-             << std::endl
-             << "algorithm codes 0-MU2D, 1-HALS, 2-ANLSBPP2D, 3-NAIVEANLSBPP"
-             << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank m n numIteration pr pc
-        INFO << "Usage 1: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i rand_uniform/rand_normal/rand_lowrank "
-             << "-m 21600 -n 14400 -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank AfileName numIteration pr pc
-        INFO << "Usage 2: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc
-        INFO << "Usage 3: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
-        // mpirun -np 12 distnmf algotype lowrank Afile nmfoutput numIteration pr pc s
-        INFO << "Usage 4: mpirun -np 6 distnmf -a 0/1/2/3 -k 50"
-             << "-i Ainput -o nmfoutput -t 10 --pr 3 --pc 2 --sparsity=0.3"
-             << "--regW=\"0.0001 0\" --regH=\"0 0.0001\"" << std::endl;
-    }
 };
 
 int main(int argc, char *argv[]) {

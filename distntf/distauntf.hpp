@@ -2,9 +2,9 @@
 #define DISTNTF_DISTAUNTF_HPP
 
 #include <armadillo>
-#include "updatealgos.hpp"
 #include "ntf_utils.h"
 #include "luc.hpp"
+#include "distntftime.hpp"
 
 /*
 * Tensor A of size is M1 x M2 x... x Mn is distributed among
@@ -32,18 +32,18 @@ class DistAUNTF {
     NCPFactors m_gathered_ncp_factors;
     NCPFactors m_gathered_ncp_factors_t;
     // mttkrp related variables
-    FMAT *ncp_krp;
-    FMAT *ncp_mttkrp;
-    FMAT *ncp_local_mttkrp_t;
+    MAT *ncp_krp;
+    MAT *ncp_mttkrp;
+    MAT *ncp_local_mttkrp_t;
     // gram related variables.
-    FMAT factor_local_grams;  // U in the algorithm.
-    FMAT *factor_global_grams;  // G in the algorithm
-    FMAT global_gram;  // hadamard of the global_grams
+    MAT factor_local_grams;  // U in the algorithm.
+    MAT *factor_global_grams;  // G in the algorithm
+    MAT global_gram;  // hadamard of the global_grams
 
     // NTF related variable.
     const int m_low_rank_k;
     const int m_modes;
-    const distntfalgotype m_updalgo;
+    const algotype m_updalgo;
     const UVEC m_global_dims;
     const UVEC m_factor_local_dims;
     int m_num_it;
@@ -64,7 +64,7 @@ class DistAUNTF {
 
     // computing error related;
     double m_global_sqnorm_A;
-    MAT hadamard_all_grams
+    MAT hadamard_all_grams;
 
 
     // do the local syrk only for the current updated factor
@@ -84,7 +84,7 @@ class DistAUNTF {
         mpitic();  // allreduce gram
         MPI_Allreduce(factor_local_grams.memptr(),
                       factor_global_grams[current_mode].memptr(),
-                      this->k * this->k, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+                      this->m_low_rank_k * this->m_low_rank_k, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 #ifdef __WITH__BARRIER__TIMING__
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -99,13 +99,15 @@ class DistAUNTF {
     void applyReg(float lambda_l2, float lambda_l1, MAT *AtA) {
         // Frobenius norm regularization
         if (lambda_l2 > 0) {
-            MAT  identity  = arma::eye<MAT>(this->k, this->k);
+            MAT  identity  = arma::eye<MAT>(this->m_low_rank_k,
+                                            this->m_low_rank_k);
             (*AtA) = (*AtA) + 2 * lambda_l2 * identity;
         }
 
         // L1 - norm regularization
         if (lambda_l1 > 0) {
-            MAT  onematrix = arma::ones<MAT>(this->k, this->k);
+            MAT  onematrix = arma::ones<MAT>(this->m_low_rank_k,
+                                             this->m_low_rank_k);
             (*AtA) = (*AtA) + 2 * lambda_l1 * onematrix;
         }
     }
@@ -145,7 +147,8 @@ class DistAUNTF {
         this->time_stats.allgather_duration(temp);
         // keep gather_ncp_factors_t consistent.
         mpitic();  // transpose tic
-        m_gathered_ncp_factors.set(current_mode, m_gathered_ncp_factors_t.t());
+        m_gathered_ncp_factors.set(current_mode,
+                                   m_gathered_ncp_factors_t.factor(current_mode).t());
         temp = mpitoc();
         this->time_stats.compute_duration(temp);
         this->time_stats.trans_duration(temp);
@@ -155,7 +158,7 @@ class DistAUNTF {
         mpitic();
         m_gathered_ncp_factors.krp_leave_out_one(current_mode,
                 &ncp_krp[current_mode]);
-        temp = mpitoc();
+        double temp = mpitoc();
         this->time_stats.compute_duration(temp);
         this->time_stats.krp_duration(temp);
         m_input_tensor.mttkrp(current_mode, &ncp_krp[current_mode],
@@ -164,7 +167,8 @@ class DistAUNTF {
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
         mpitic();  // reduce_scatter mttkrp
-        MPI_Reduce_scatter(ncp_mttkrp.memptr(), ncp_local_mttkrp_t.memptr(),
+        MPI_Reduce_scatter(ncp_mttkrp[current_mode].memptr(),
+                           ncp_local_mttkrp_t[current_mode].memptr(),
                            this->recvmttkrpsize[current_mode].memptr(),
                            MPI_FLOAT, MPI_SUM,
                            this->m_mpicomm.slice(current_mode));
@@ -175,21 +179,20 @@ class DistAUNTF {
 
     void allocateMatrices() {
         //allocate matrices.
-        ncp_krp = new FMAT[m_modes];
-        ncp_mttkrp = new FMAT[m_modes];
-        ncp_local_mttkrp_t = new FMAT[m_modes];
+        ncp_krp = new MAT[m_modes];
+        ncp_mttkrp = new MAT[m_modes];
+        ncp_local_mttkrp_t = new MAT[m_modes];
         recvmttkrpsize = new UVEC[m_modes];
-        factor_local_grams = new FMAT[m_modes];
-        factor_global_grams = new FMAT[m_modes];
-        factor_local_grams = arma::zeros<FMAT>(i_k, i_k);
-
+        factor_local_grams = arma::zeros<MAT>(this->m_low_rank_k, this->m_low_rank_k);
+        factor_global_grams = new MAT[m_modes];
         for (int i = 0; i < m_modes; i++) {
             UWORD current_size = TENSOR_NUMEL - TENSOR_DIM[i];
-            ncp_krp[i] = arma::zeros <FMAT>(current_size, i_k);
-            ncp_mttkrp[i] = arma::zeros<FMAT>(TENSOR_DIM[i], i_k);
-            ncp_local_mttkrp_t = arma::zeros<FMAT>(m_local_ncp_factors.factor(i).size());
-            recvmttkrpsize[i] = arma::UVEC(TENSOR_DIM[i] * i_k);
-            factor_global_grams[i] = arma::zeros<FMAT>(i_k, i_k);
+            ncp_krp[i] = arma::zeros <MAT>(current_size, this->m_low_rank_k);
+            ncp_mttkrp[i] = arma::zeros<MAT>(TENSOR_DIM[i], this->m_low_rank_k);
+            ncp_local_mttkrp_t[i] = arma::zeros<MAT>(m_local_ncp_factors.factor(i).size());
+            recvmttkrpsize[i] = arma::UVEC(TENSOR_DIM[i] * this->m_low_rank_k);
+            factor_global_grams[i] = arma::zeros<MAT>(this->m_low_rank_k,
+                                     this->m_low_rank_k);
         }
         if (m_compute_error) {
             hadamard_all_grams = arma::ones<MAT>(this->m_low_rank_k,
@@ -198,17 +201,17 @@ class DistAUNTF {
     }
 
   public:
-    DistAUNTF(const Tensor &i_tensor, const int i_k, ntfalgo i_algo,
+    DistAUNTF(const Tensor &i_tensor, const int i_k, algotype i_algo,
               const UVEC &i_global_dims,
               const NTFMPICommunicator &i_mpicomm) :
-        m_input_tensor(i_tensor.dimensions(), i_tensor.data()),
+        m_input_tensor(i_tensor.dimensions(), i_tensor.m_data),
         m_low_rank_k(i_k),
         m_updalgo(i_algo),
         m_mpicomm(i_mpicomm),
         m_modes(m_input_tensor.modes()),
         m_global_dims(i_global_dims),
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
-        this->num_it = 30;
+        this->m_num_it = 30;
 
         //local factors.
         arma::arma_rng::set_seed(mpicomm.rank());
@@ -245,8 +248,8 @@ class DistAUNTF {
                 // line 11 of the algorithm
                 gram_hadamard(current_mode);
                 // line 12 of the algorithm
-                FMAT factor = m_luc_ntf_update.update(m_updalgo, global_gram,
-                                     ncp_local_mttkrp_t[current_mode]);
+                MAT factor = m_luc_ntf_update.update(m_updalgo, global_gram,
+                                                     ncp_local_mttkrp_t[current_mode]);
                 m_local_ncp_factors_t.set(current_mode, factor);
                 m_local_ncp_factors.set(current_mode, factor.t());
                 // line 13 and 14
@@ -272,6 +275,6 @@ class DistAUNTF {
                         - 2 * all_model_error;
         return relerror;
     }
-}  // class DistAUNTF
+};  // class DistAUNTF
 }  // namespace PLANC
 #endif  // DISTNTF_DISTAUNTF_HPP

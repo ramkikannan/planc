@@ -16,9 +16,9 @@ enum algotype {
 };
 
 enum normtype {
-	NONE, 
-	L2NORM,
-	MAXNORM
+    NONE,
+    L2NORM,
+    MAXNORM
 };
 
 // #if !defined(ARMA_64BIT_WORD)
@@ -76,7 +76,7 @@ enum normtype {
 
 #define PRINTMAT(A) PRINTMATINFO((A)) << endl << (A)
 
-           typedef std::vector<int> STDVEC;
+typedef std::vector<int> STDVEC;
 typedef unsigned int UINT;
 typedef unsigned long ULONG;
 

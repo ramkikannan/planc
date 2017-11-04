@@ -50,6 +50,24 @@ class Tensor {
         delete m_data;
     }
 
+    //copy constructor
+    Tensor(const Tensor &src) {
+        if (this->m_numel > 0 && this->m_data != NULL) {
+            if (this->m_numel == src.numel()) {
+                memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
+            } else {
+                if (this->m_data != NULL) free(this->m_data);
+                this->m_numel = src.numel();
+                m_data = new double[this->m_numel];
+                memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
+            }
+        } else {
+            this->m_numel = src.numel();
+            m_data = new double[this->m_numel];
+            memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
+        }
+    }
+
     int modes() const {return m_modes;}
     UVEC dimensions() const {return m_dimensions;}
     int dimension(int i) const {return m_dimensions[i];}
@@ -189,19 +207,19 @@ class Tensor {
         return norm_fro;
     }
     template <typename NumericType>
-    void scale(NumericType n) {
+    void scale(NumericType scale) {
         // static_assert(std::is_arithmetic<NumericType>::value,
         //               "NumericType for scale operation must be numeric");
         for (int i = 0; i < this->m_numel; i++) {
-            this->m_data[i] = this->m_data[i]*scale;
+            this->m_data[i] = this->m_data[i] * scale;
         }
     }
     template <typename NumericType>
-    void shift(NumericType n) {
+    void shift(NumericType scale) {
         // static_assert(std::is_arithmetic<NumericType>::value,
         //               "NumericType for shift operation must be numeric");
         for (int i = 0; i < this->m_numel; i++) {
-            this->m_data[i] = this->m_data[i]+scale;
+            this->m_data[i] = this->m_data[i] + scale;
         }
     }
     template <typename NumericType>
@@ -218,7 +236,7 @@ class Tensor {
         // static_assert(std::is_arithmetic<NumericType>::value,
         //               "NumericType for bound operation must be numeric");
         for (int i = 0; i < this->m_numel; i++) {
-            if (this->m_data[i] < min) this->m_data[i] = min;            
+            if (this->m_data[i] < min) this->m_data[i] = min;
         }
     }
 };  // class Tensor
