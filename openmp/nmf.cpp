@@ -213,5 +213,10 @@ void parseCommandLineandCallNMF(int argc, char *argv[]) {
 
 
 int main(int argc, char* argv[]) {
-    parseCommandLineandCallNMF(argc, argv);
+    try {
+        parseCommandLineandCallNMF(argc, argv);
+    } catch(const std::exception &e){
+        INFO << "Exception with stack trace " << std::endl;
+        INFO << e.what();
+    }
 }
