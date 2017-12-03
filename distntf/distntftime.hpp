@@ -2,7 +2,7 @@
 #ifndef DISTNTF_DISTNTFTIME_HPP_
 #define DISTNTF_DISTNTFTIME_HPP_
 
-namespace plan {
+namespace planc {
 class DistNTFTime {
   private:
     double m_duration;

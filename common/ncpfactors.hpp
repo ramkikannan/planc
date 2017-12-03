@@ -31,8 +31,8 @@ class NCPFactors {
 
   public:
     //constructors
-    NCPFactors(const UVEC i_dimensions, const int i_k, bool trans = false)
-        : m_dimensions(i_dimensions) {
+    NCPFactors(const UVEC &i_dimensions, const int &i_k, bool trans = false) {
+        this->m_dimensions = i_dimensions;
         this->m_modes = i_dimensions.n_rows;
         ncp_factors = new MAT[this->m_modes];
         this->m_k = i_k;

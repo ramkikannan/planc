@@ -117,10 +117,10 @@ class NTFMPICommunicator {
         MPI_Comm_size(m_slice_comm[i_d], &n_procs);
         return n_procs;
     }
-    int fiber_rank(int i) {return m_fiber_ranks[i];}
-    int slice_rank(int i) {return m_slice_ranks[i];}
-    UVEC proc_grids() {return this->m_proc_grids;}
-    int rank() {return m_global_rank;}
+    int fiber_rank(int i) const {return m_fiber_ranks[i];}
+    int slice_rank(int i)const {return m_slice_ranks[i];}
+    UVEC proc_grids() const {return this->m_proc_grids;}
+    int rank() const {return m_global_rank;}
 };
 
 }  // namespace planc

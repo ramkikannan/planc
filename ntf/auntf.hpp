@@ -57,7 +57,7 @@ class AUNTF {
             ncp_mttkrp[i] = arma::zeros<MAT>(TENSOR_DIM[i], i_k);
         }
         lowranktensor = new planc::Tensor(i_tensor.dimensions());
-        m_luc = new LUC(m_updalgo);
+        m_luc = new LUC();
         m_num_it = 20;
     }
     NCPFactors ncp_factors() const {return m_ncp_factors;}
@@ -82,7 +82,7 @@ class AUNTF {
                 INFO << "mttkrp for factor" << j << std::endl
                      << ncp_mttkrp[j] << std::endl;
 #endif
-                MAT factor = m_luc->update(gram_without_one,
+                MAT factor = m_luc->update(m_updalgo, gram_without_one,
                                            ncp_mttkrp[j].t());
                 m_ncp_factors.set(j, factor.t());
             }

@@ -23,13 +23,18 @@ extern "C" void dgemm_(const char*, const char*, const int*,
 
 class Tensor {
   private:
-    const int m_modes;
-    const UVEC m_dimensions;
-    const UWORD m_numel;
-    const unsigned int rand_seed;
+    int m_modes;
+    UVEC m_dimensions;
+    UWORD m_numel;
+    unsigned int rand_seed;
 
   public:
     double* m_data;
+    Tensor(){
+        this->m_modes = 0;        
+        this->m_numel = 0;
+        this->m_data = NULL;
+    }  
     Tensor(const UVEC& i_dimensions):
         m_dimensions(i_dimensions),
         m_modes(i_dimensions.n_rows),

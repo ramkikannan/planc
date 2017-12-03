@@ -10,18 +10,15 @@ namespace planc {
 class LUC {
   private:
     // create variable required for your local function.
-    const algotype m_updalgo;
-
     MAT updateBPP(const MAT &gram, const MAT &rhs) {
         MAT nnlsgram;
         MAT nnlsrhs;
         BPPNNLS<MAT, VEC > subProblem(gram, rhs, true);
         subProblem.solveNNLS();
-        return subProblem.getSolutionMatrix();        
+        return subProblem.getSolutionMatrix();
     }
   public:
-    explicit LUC(const algotype algo): m_updalgo(algo) {}
-    MAT update(const MAT &gram, const MAT &rhs) {
+    MAT update(algotype m_updalgo, const MAT &gram, const MAT &rhs) {
         MAT rc;
         switch (m_updalgo) {
         case ANLSBPP:

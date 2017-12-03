@@ -27,25 +27,26 @@ class DistNTF {
 
     void printConfig() {
         std::cout << "a::" << this->m_ntfalgo << "::i::" << this->m_Afile_name
-             << "::k::" << this->m_k << "::dims::" << this->m_global_dims
-             << "::t::" << this->m_num_it
-             << "::proc_grids::" << this->m_proc_grids
-             << "::error::" << this->m_compute_error
-             << "::regs::" << this->m_regs
-             << "::num_k_blocks::" << m_num_k_blocks
-             << std::endl;
+                  << "::k::" << this->m_k << "::dims::" << this->m_global_dims
+                  << "::t::" << this->m_num_it
+                  << "::proc_grids::" << this->m_proc_grids
+                  << "::error::" << this->m_compute_error
+                  << "::regs::" << this->m_regs
+                  << "::num_k_blocks::" << m_num_k_blocks
+                  << std::endl;
     }
 
     void callDistNTF() {
         std::string rand_prefix("rand_");
         planc::NTFMPICommunicator mpicomm(this->m_argc, this->m_argv,
                                           this->m_global_dims);
-        planc::DistNTFIO<planc::Tensor> dio(mpicomm);
+        planc::DistNTFIO dio(mpicomm);
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
-            dio.readInput(m_Afile_name, this->m_global_dims, this->m_k,
-                          this->m_sparsity, this->m_proc_grids);
+            dio.readInput(m_Afile_name, this->m_global_dims, this->m_proc_grids,
+                          this->m_k,
+                          this->m_sparsity);
         } else {
-            dio.readInput(m_Afile_name);
+            // dio.readInput(m_Afile_name);
         }
         planc::Tensor A(dio.A());
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
@@ -76,8 +77,13 @@ class DistNTF {
         memusage(mpicomm.rank(), "b4 constructor ");
         // TODO: I was here. Need to modify the reallocations by
         // using localOwnedRowCount instead of m_globalm.
+        // DistAUNTF(const Tensor &i_tensor, const int i_k, algotype i_algo,
+        //   const UVEC &i_global_dims,
+        //   const UVEC &i_local_dims,
+        //   const NTFMPICommunicator &i_mpicomm)
         planc::DistAUNTF ntfsolver(A, this->m_k, this->m_ntfalgo,
-                                   this->m_global_dims, mpicomm);
+                                   this->m_global_dims, A.dimensions(),
+                                   mpicomm);
 
 
         memusage(mpicomm.rank(), "after constructor ");
@@ -98,7 +104,7 @@ class DistNTF {
     }
 
     void parseCommandLine() {
-        PLANC::ParseCommandLine pc(this->m_argc, this->m_argv);
+        planc::ParseCommandLine pc(this->m_argc, this->m_argv);
         pc.parseplancopts();
         this->m_ntfalgo       = pc.lucalgo();
         this->m_k             = pc.lowrankk();
@@ -106,17 +112,10 @@ class DistNTF {
         this->m_proc_grids    = pc.processor_grids();
         this->m_sparsity      = pc.sparsity();
         this->m_num_it        = pc.iterations();
-        this->m_distio        = TWOD;
-        this->m_regW          = pc.regW();
-        this->m_regH          = pc.regH();
         this->m_num_k_blocks  = 1;
+        this->m_regs          = pc.regularizers();
         this->m_global_dims   = pc.dimensions();
         this->m_compute_error = pc.compute_error();
-        if (this->m_ntfalgo == NAIVEANLSBPP) {
-            this->m_distio = ONED_DOUBLE;
-        } else {
-            this->m_distio = TWOD;
-        }
         printConfig();
         callDistNTF();
     }
