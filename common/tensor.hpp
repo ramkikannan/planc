@@ -52,7 +52,7 @@ class Tensor {
         memcpy(this->m_data, i_data, sizeof(double)*this->m_numel);
     }
     ~Tensor() {
-        delete m_data;
+        delete[] m_data;
     }
 
     //copy constructor
@@ -114,6 +114,7 @@ class Tensor {
             m_data[i] = dis(gen);
         }
     }
+
     // size of krp must be product of all dimensions leaving out nxk
     // o_mttkrp will be of size dimension[n]xk
     // implementation of mttkrp from tensor toolbox

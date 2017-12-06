@@ -18,25 +18,25 @@ class NCPFactors {
     int m_modes;
     int m_k;
     UVEC m_dimensions;
-    MAT lambda;
-
+    MAT m_lambda; //size is modes x k
     //normalize the factors of a matrix
+    bool freed_ncp_factors;
 
     void normalize(int mode) {
         for (int i = 0; i < this->m_k; i++) {
-            lambda(mode, i) = arma::norm(this->ncp_factors[mode].col(i));
-            this->ncp_factors[mode].col(i) /= lambda(mode, i);
+            m_lambda(mode, i) = arma::norm(this->ncp_factors[mode].col(i));
+            this->ncp_factors[mode].col(i) /= m_lambda(mode, i);
         }
     }
 
   public:
     //constructors
-    NCPFactors(const UVEC &i_dimensions, const int &i_k, bool trans = false) {
+    NCPFactors(const UVEC &i_dimensions, const int &i_k, bool trans) {
         this->m_dimensions = i_dimensions;
         this->m_modes = i_dimensions.n_rows;
         ncp_factors = new MAT[this->m_modes];
         this->m_k = i_k;
-        UWORD numel = arma::prod(this->m_dimensions);
+        UWORD numel = arma::prod(this->m_dimensions);        
         for (int i = 0; i < this->m_modes; i++) {
             // ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             if (trans) {
@@ -48,13 +48,47 @@ class NCPFactors {
                 ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             }
         }
-        lambda = arma::ones<MAT>(this->m_modes, this->m_k);
+        m_lambda = arma::ones<MAT>(this->m_modes, this->m_k);
+        freed_ncp_factors = false;
     }
+    //copy constructor
+    /*NCPFactors(const NCPFactors &src) {
+        m_dimensions = src.dimensions();
+        m_modes = src.modes();
+        m_lambda = src.lambda();
+        m_k = src.rank();        
+        if (ncp_factors == NULL) {
+        	ncp_factors = new MAT[this->m_modes];
+            for (int i = 0; i < this->m_modes; i++) {
+                ncp_factors[i] = arma::randu<MAT>(this->m_dimensions[i],
+                                                  this->m_k);
+            }
+        }
+        for (int i = 0; i < this->m_modes; i++) {
+        	if (ncp_factors[i].n_elem == 0) {
+        		ncp_factors[i] = arma::zeros<MAT>(src.factor(i).n_rows, 
+        			src.factor(i).n_cols);
+        	}        		
+            ncp_factors[i] = src.factor(i);
+        }
+    }*/
+
+    ~NCPFactors(){
+    	/*for (int i=0; i < this->m_modes; i++){
+    		ncp_factors[i].clear();            
+    	}*/
+        if (!freed_ncp_factors){
+            delete[] ncp_factors;
+            freed_ncp_factors = true;
+        }        
+    }
+
     // getters
     int rank() const {return m_k;}
     UVEC dimensions() const {return m_dimensions;}
     MAT& factor(const int i_n) const {return ncp_factors[i_n];}
-    int modes(){return m_modes;}
+    int modes() const {return m_modes;}
+    MAT lambda() const {return m_lambda;}
 
     // setters
     void set(const int i_n, const MAT &i_factor) {
@@ -162,6 +196,36 @@ class NCPFactors {
             (*o_krp).col(n) = arma::vectorise(ab);
         }
     }
+
+    void krp(const UVEC i_modes, MAT *o_krp) {
+        // matorder = length(A):-1:1;
+        // Always krp for mttkrp is computed in
+        // reverse. Hence assuming the same.
+        UVEC matorder = arma::zeros<UVEC>(i_modes.n_rows - 1);
+        int current_ncols = this->m_k;
+        int j = 0;
+        for (int i = i_modes.n_rows - 1; i >= 0; i--) {
+            matorder(j++) = i_modes[i];
+        }
+#ifdef NTF_VERBOSE
+        INFO << "::" << __PRETTY_FUNCTION__
+             << "::" << __LINE__
+             << "::matorder::" << matorder << std::endl;
+#endif
+        (*o_krp).zeros();
+        for (int n = 0; n < this->m_k; n++) {
+            MAT ab = ncp_factors[matorder[0]].col(n);
+            for (int i = 1; i < i_modes.n_rows - 1; i++) {
+                VEC oldabvec = arma::vectorise(ab);
+                VEC currentvec = ncp_factors[matorder[i]].col(n);
+                ab.clear();
+                ab = currentvec * oldabvec.t();
+            }
+            (*o_krp).col(n) = arma::vectorise(ab);
+        }
+    }
+
+
 // caller must free
     Tensor rankk_tensor() {
         UWORD krpsize = arma::prod(this->m_dimensions);
@@ -176,7 +240,7 @@ class NCPFactors {
 
     void printinfo() {
         INFO << "modes::" << this->m_modes << "::k::" << this->m_k << std::endl;
-        INFO << "lambda::" << arma::prod(this->lambda) << std::endl;
+        INFO << "lambda::" << arma::prod(this->m_lambda) << std::endl;
         INFO << "::dims::"  << std::endl << this->m_dimensions << std::endl;
     }
 

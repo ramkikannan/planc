@@ -22,7 +22,7 @@ enum normtype {
 };
 
 // #if !defined(ARMA_64BIT_WORD)
-#define ARMA_64BIT_WORD
+// #define ARMA_64BIT_WORD
 #define ARMA_DONT_USE_WRAPPER
 #define ARMA_USE_BLAS
 #define ARMA_USE_LAPACK

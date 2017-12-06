@@ -42,6 +42,7 @@ include_directories(
   ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
   ${NMF_SOURCE_DIR}
+  ${NMF_SOURCE_DIR}/../
   ${NMFLIB_COMMON}
   ${NNLS_SRC}
   ${Boost_INCLUDE_DIR}

@@ -9,6 +9,7 @@
 #include "ncpfactors.hpp"
 #include "luc.hpp"
 #include "ntf_utils.h"
+#include "dimtree/kobydt.hpp"
 
 namespace planc {
 
@@ -41,11 +42,12 @@ class AUNTF {
     const algotype m_updalgo;
     LUC *m_luc;
     planc::Tensor *lowranktensor;
+    KobyDimensionTree *kdt;
 
   public:
     AUNTF(const planc::Tensor &i_tensor, const int i_k, algotype i_algo) :
         m_input_tensor(i_tensor),
-        m_ncp_factors(i_tensor.dimensions(), i_k),
+        m_ncp_factors(i_tensor.dimensions(), i_k, false),
         m_low_rank_k(i_k),
         m_updalgo(i_algo) {
         gram_without_one = arma::zeros<MAT>(i_k, i_k);
@@ -59,8 +61,23 @@ class AUNTF {
         lowranktensor = new planc::Tensor(i_tensor.dimensions());
         m_luc = new LUC();
         m_num_it = 20;
+        INFO << "Init factors for NCP" << std::endl << "======================";
+        m_ncp_factors.print();
+        kdt = new KobyDimensionTree(m_input_tensor, m_ncp_factors,
+                                    m_input_tensor.modes() / 2);
     }
-    NCPFactors ncp_factors() const {return m_ncp_factors;}
+    ~AUNTF(){
+        for (int i=0; i < m_input_tensor.modes(); i++){
+            ncp_krp[i].clear();
+            ncp_mttkrp[i].clear();
+        }
+        delete[] ncp_krp;
+        delete[] ncp_mttkrp;
+        delete m_luc;
+        delete kdt;
+        delete lowranktensor;        
+    }
+    NCPFactors& ncp_factors(){return m_ncp_factors;}
     void num_it(const int i_n) { this->m_num_it = i_n;}
     void computeNTF() {
         for (int i = 0; i < m_num_it; i++) {
@@ -77,6 +94,7 @@ class AUNTF {
                 INFO << "krp_leave_out_" << j << std::endl
                      << ncp_krp[j] << std::endl;
 #endif
+                // kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp[j].memptr());
                 m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp[j]);
 #ifdef NTF_VERBOSE
                 INFO << "mttkrp for factor" << j << std::endl
@@ -84,7 +102,12 @@ class AUNTF {
 #endif
                 MAT factor = m_luc->update(m_updalgo, gram_without_one,
                                            ncp_mttkrp[j].t());
+#ifdef NTF_VERBOSE
+                INFO << "iter::" << i << "::factor:: " << j << std::endl
+                     << factor << std::endl;
+#endif
                 m_ncp_factors.set(j, factor.t());
+                kdt->set_factor(factor.memptr(), j);
             }
             INFO << "error at it::" << i << "::"
                  << computeObjectiveError() << std::endl;

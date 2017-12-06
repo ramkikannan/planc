@@ -11,23 +11,24 @@
 
 int main(int argc, char* argv[]) {
     planc::ParseCommandLine pc(argc, argv);
+    pc.parseplancopts();
     int test_modes = pc.num_modes();
     // int low_rank = 1;
     UVEC dimensions(test_modes);
     MAT *mttkrps = new MAT[test_modes];
-    planc::NCPFactors cpfactors(pc.dimensions(), pc.lowrankk());
+    planc::NCPFactors cpfactors(pc.dimensions(), pc.lowrankk(), false);
     cpfactors.normalize();
     cpfactors.print();
     planc::Tensor my_tensor = cpfactors.rankk_tensor();
     algotype ntfupdalgo = pc.lucalgo();
     planc::AUNTF auntf(my_tensor, pc.lowrankk(), ntfupdalgo);
     std::cout << "init factors" << std::endl << "--------------" << std::endl;
-    auntf.ncp_factors().print();
+    auntf.ncp_factors().print();    
     // std::cout << "input tensor" << std::endl << "--------------" << std::endl;
     // my_tensor.print();
     auntf.num_it(pc.iterations());
     auntf.computeNTF();
-    planc::NCPFactors solution = auntf.ncp_factors();
+    auntf.ncp_factors().print();
     // std::cout << "input factors::" << std::endl;
     // for (int i = 0; i < test_modes; i++) {
     //     std::cout << cpfactors.factor(i);
@@ -36,6 +37,5 @@ int main(int argc, char* argv[]) {
     // for (int i = 0; i < test_modes; i++) {
     //     std::cout << solution.factor(i);
     // }
-    solution.normalize();
-    solution.print();
+    // solution.normalize();    
 }
