@@ -50,6 +50,7 @@ class AUNTF {
         m_ncp_factors(i_tensor.dimensions(), i_k, false),
         m_low_rank_k(i_k),
         m_updalgo(i_algo) {
+        m_ncp_factors.normalize();
         gram_without_one = arma::zeros<MAT>(i_k, i_k);
         ncp_mttkrp = new MAT[i_tensor.modes()];
         ncp_krp = new MAT[i_tensor.modes()];
@@ -66,8 +67,8 @@ class AUNTF {
         kdt = new KobyDimensionTree(m_input_tensor, m_ncp_factors,
                                     m_input_tensor.modes() / 2);
     }
-    ~AUNTF(){
-        for (int i=0; i < m_input_tensor.modes(); i++){
+    ~AUNTF() {
+        for (int i = 0; i < m_input_tensor.modes(); i++) {
             ncp_krp[i].clear();
             ncp_mttkrp[i].clear();
         }
@@ -75,9 +76,9 @@ class AUNTF {
         delete[] ncp_mttkrp;
         delete m_luc;
         delete kdt;
-        delete lowranktensor;        
+        delete lowranktensor;
     }
-    NCPFactors& ncp_factors(){return m_ncp_factors;}
+    NCPFactors& ncp_factors() {return m_ncp_factors;}
     void num_it(const int i_n) { this->m_num_it = i_n;}
     void computeNTF() {
         for (int i = 0; i < m_num_it; i++) {
@@ -94,8 +95,8 @@ class AUNTF {
                 INFO << "krp_leave_out_" << j << std::endl
                      << ncp_krp[j] << std::endl;
 #endif
-                // kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp[j].memptr());
-                m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp[j]);
+                kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp[j].memptr());
+                // m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp[j]);
 #ifdef NTF_VERBOSE
                 INFO << "mttkrp for factor" << j << std::endl
                      << ncp_mttkrp[j] << std::endl;
@@ -107,10 +108,14 @@ class AUNTF {
                      << factor << std::endl;
 #endif
                 m_ncp_factors.set(j, factor.t());
+                if (j == 0) {
+                    INFO << "error at it::" << i << "::"
+                         << computeObjectiveError() << std::endl;
+                }
+                m_ncp_factors.normalize(j);
+                factor = m_ncp_factors.factor(j).t();
                 kdt->set_factor(factor.memptr(), j);
             }
-            INFO << "error at it::" << i << "::"
-                 << computeObjectiveError() << std::endl;
 #ifdef NTF_VERBOSE
             INFO << "ncp factors" << std::endl;
             m_ncp_factors.print();

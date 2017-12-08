@@ -14,13 +14,7 @@ message(STATUS "NMFLIB_COMMON =  ${NMFLIB_COMMON}")
 
 include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
-#BOOST package needed for activeset NNLS
-#set(BOOST false)
-#As advised by Wlliam Renaud note dated 4/22. There is an issue on Rhea
-#in which the system boost is found before the version in modules.
-#Ignore system boost and use module system boost
-#set(Boost_NO_BOOST_CMAKE TRUE)
-#find_package(Boost REQUIRED)
+add_definitions(-DMPI_DISTNTF=1)
 
 find_package(MPI REQUIRED)
 
@@ -30,19 +24,6 @@ message(STATUS " MPI_CXX_FOUND = ${MPI_CXX_FOUND}" )
 if(MPI_CXX_FOUND)
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MPI_CXX_LIBRARIES})
 endif()
-
-#to build sparse comment or uncomment this line.
-OPTION(CMAKE_BUILD_SPARSE "Build Sparse" OFF)
-if(CMAKE_BUILD_SPARSE)
-  add_definitions(-DBUILD_SPARSE=1)
-endif()
-
-OPTION(CMAKE_WITH_BARRIER_TIMING "Barrier placed to collect time" ON)
-if(CMAKE_WITH_BARRIER_TIMING)
-  add_definitions(-D__WITH__BARRIER__TIMING__=1)
-endif()
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0")
 
 message(STATUS "CMAKE_CXX_FLAGS           = ${CMAKE_CXX_FLAGS}"          )
 message(STATUS "CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")

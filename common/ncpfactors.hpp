@@ -5,6 +5,9 @@
 #include <cassert>
 #include "utils.h"
 #include "tensor.hpp"
+#ifdef MPI_DISTNTF
+#include <mpi.h>
+#endif
 
 // ncp_factors contains the factors of the ncp
 // every ith factor is of size n_i * k
@@ -18,16 +21,9 @@ class NCPFactors {
     int m_modes;
     int m_k;
     UVEC m_dimensions;
-    MAT m_lambda; //size is modes x k
+    VEC m_lambda;
     //normalize the factors of a matrix
     bool freed_ncp_factors;
-
-    void normalize(int mode) {
-        for (int i = 0; i < this->m_k; i++) {
-            m_lambda(mode, i) = arma::norm(this->ncp_factors[mode].col(i));
-            this->ncp_factors[mode].col(i) /= m_lambda(mode, i);
-        }
-    }
 
   public:
     //constructors
@@ -36,7 +32,7 @@ class NCPFactors {
         this->m_modes = i_dimensions.n_rows;
         ncp_factors = new MAT[this->m_modes];
         this->m_k = i_k;
-        UWORD numel = arma::prod(this->m_dimensions);        
+        UWORD numel = arma::prod(this->m_dimensions);
         for (int i = 0; i < this->m_modes; i++) {
             // ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             if (trans) {
@@ -48,7 +44,7 @@ class NCPFactors {
                 ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             }
         }
-        m_lambda = arma::ones<MAT>(this->m_modes, this->m_k);
+        m_lambda = arma::ones<VEC>(this->m_k);
         freed_ncp_factors = false;
     }
     //copy constructor
@@ -56,31 +52,31 @@ class NCPFactors {
         m_dimensions = src.dimensions();
         m_modes = src.modes();
         m_lambda = src.lambda();
-        m_k = src.rank();        
+        m_k = src.rank();
         if (ncp_factors == NULL) {
-        	ncp_factors = new MAT[this->m_modes];
+            ncp_factors = new MAT[this->m_modes];
             for (int i = 0; i < this->m_modes; i++) {
                 ncp_factors[i] = arma::randu<MAT>(this->m_dimensions[i],
                                                   this->m_k);
             }
         }
         for (int i = 0; i < this->m_modes; i++) {
-        	if (ncp_factors[i].n_elem == 0) {
-        		ncp_factors[i] = arma::zeros<MAT>(src.factor(i).n_rows, 
-        			src.factor(i).n_cols);
-        	}        		
+            if (ncp_factors[i].n_elem == 0) {
+                ncp_factors[i] = arma::zeros<MAT>(src.factor(i).n_rows,
+                    src.factor(i).n_cols);
+            }
             ncp_factors[i] = src.factor(i);
         }
     }*/
 
-    ~NCPFactors(){
-    	/*for (int i=0; i < this->m_modes; i++){
-    		ncp_factors[i].clear();            
-    	}*/
-        if (!freed_ncp_factors){
+    ~NCPFactors() {
+        /*for (int i=0; i < this->m_modes; i++){
+            ncp_factors[i].clear();
+        }*/
+        if (!freed_ncp_factors) {
             delete[] ncp_factors;
             freed_ncp_factors = true;
-        }        
+        }
     }
 
     // getters
@@ -240,7 +236,7 @@ class NCPFactors {
 
     void printinfo() {
         INFO << "modes::" << this->m_modes << "::k::" << this->m_k << std::endl;
-        INFO << "lambda::" << arma::prod(this->m_lambda) << std::endl;
+        INFO << "lambda::" << this->m_lambda << std::endl;
         INFO << "::dims::"  << std::endl << this->m_dimensions << std::endl;
     }
 
@@ -260,11 +256,58 @@ class NCPFactors {
             factor_t.set(i, this->ncp_factors[i].t());
         }
     }
+    // only during initialization. Reset's all lambda.
     void normalize() {
+        double colNorm = 0.0;
+        m_lambda.ones();
         for (int i = 0; i < this->m_modes; i++) {
-            normalize(i);
+            for (int j = 0; j < this->m_k; j++) {
+                colNorm = arma::norm(this->ncp_factors[i].col(j));
+                this->ncp_factors[i].col(j) /= colNorm;
+                m_lambda(j) *= colNorm;
+            }
         }
     }
+    // replaces the existing lambdas
+    void normalize(int mode) {
+        for (int i = 0; i < this->m_k; i++) {
+            m_lambda(i) = arma::norm(this->ncp_factors[mode].col(i));
+            this->ncp_factors[mode].col(i) /= m_lambda(i);
+        }
+    }
+
+#ifdef MPI_DISTNTF
+    // Distribution normalization of factor matrices
+    // To be used for MPI code only
+    void distributed_normalize() {
+        double local_colnorm;
+        double global_colnorm;
+        for (int i = 0; i < this->m_modes; i++) {
+            for (int j = 0; j < this->m_k; j++) {
+                local_colnorm = arma::norm(this->ncp_factors[i].col(j));
+                local_colnorm *= local_colnorm;
+                MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
+                              MPI_COMM_WORLD);
+                global_colnorm = std::sqrt(global_colnorm);
+                this->ncp_factors[i].col(j) /= global_colnorm;
+                m_lambda(j) *= global_colnorm;
+            }
+        }
+    }
+    void distributed_normalize(int mode) {
+        double local_colnorm;
+        double global_colnorm;
+        for (int j = 0; j < this->m_k; j++) {
+            local_colnorm = arma::norm(this->ncp_factors[mode].col(j));
+            local_colnorm *= local_colnorm;
+            MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
+                          MPI_COMM_WORLD);
+            global_colnorm = std::sqrt(global_colnorm);
+            this->ncp_factors[mode].col(j) /= global_colnorm;
+            m_lambda(j) *= global_colnorm;
+        }
+    }
+#endif
 }; // NCPFactors
 }  // planc
 

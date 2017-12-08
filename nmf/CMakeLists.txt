@@ -14,23 +14,6 @@ message(STATUS "NMFLIB_COMMON =  ${NMFLIB_COMMON}")
 
 include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
-#BOOST package needed for activeset NNLS
-#set(BOOST false)
-#As advised by Wlliam Renaud note dated 4/22. There is an issue on Rhea
-#in which the system boost is found before the version in modules.
-#Ignore system boost and use module system boost
-#set(Boost_NO_BOOST_CMAKE TRUE)
-#find_package(Boost REQUIRED)
-
-#to build sparse comment or uncomment this line.
-OPTION(CMAKE_BUILD_SPARSE "Build Sparse" OFF)
-if(CMAKE_BUILD_SPARSE)
-  add_definitions(-DBUILD_SPARSE=1)
-endif()
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-
 message(STATUS "CMAKE_CXX_FLAGS           = ${CMAKE_CXX_FLAGS}"          )
 message(STATUS "CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
 message(STATUS "CMAKE_REQUIRED_INCLUDES   = ${CMAKE_REQUIRED_INCLUDES}"  )

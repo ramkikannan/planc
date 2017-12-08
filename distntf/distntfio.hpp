@@ -25,7 +25,7 @@ namespace planc {
 class DistNTFIO {
   private:
     const NTFMPICommunicator& m_mpicomm;
-    Tensor m_A;
+    Tensor *m_A;
     // don't start getting prime number from 2;
     static const int kPrimeOffset = 10;
     // Hope no one hits on this number.
@@ -42,21 +42,24 @@ class DistNTFIO {
         // start with the same seed_idx with the global dimensions
         // on all the MPI processor.
         arma::arma_rng::set_seed(kW_seed_idx);
-        NCPFactors global_factors(i_global_dims, i_k);
+        NCPFactors global_factors(i_global_dims, i_k, false);
         int tensor_modes = global_factors.modes();
         UVEC local_dims = i_global_dims / this->m_mpicomm.proc_grids();
-        NCPFactors local_factors(local_dims, i_k);
+        NCPFactors local_factors(local_dims, i_k, false);
         UWORD start_row, end_row;
         for (int i = 0; i < local_factors.modes(); i++) {
             start_row = MPI_FIBER_RANK(i) * local_dims(i);
-            end_row = MPI_FIBER_RANK(i + 1) * local_dims(i);
+            end_row = start_row + local_dims(i) - 1;
             local_factors.factor(i) = global_factors.factor(i).rows(start_row, end_row);
         }
-        m_A = local_factors.rankk_tensor();
+        // m_A = local_factors.rankk_tensor();
     }
 
   public:
     explicit DistNTFIO(const NTFMPICommunicator &mpic): m_mpicomm(mpic) {
+    }
+    ~DistNTFIO() {
+        delete this->m_A;
     }
     /*
      * We need m,n,pr,pc only for rand matrices. If otherwise we are
@@ -73,8 +76,7 @@ class DistNTFIO {
         std::string rand_prefix("rand_");
         if (!file_name.compare(0, rand_prefix.size(), rand_prefix)) {
             if (!file_name.compare("rand_uniform")) {
-                Tensor temp(i_global_dims / i_proc_grids);
-                this->m_A = temp;
+                this->m_A = new Tensor(i_global_dims / i_proc_grids);
             } else if (!file_name.compare("rand_lowrank")) {
                 randomLowRank(i_global_dims, k);
             }
@@ -91,8 +93,9 @@ class DistNTFIO {
     }
     void writeRandInput() {
     }
-    const Tensor A() const {return m_A;}
+    const Tensor* A() const {return m_A;}
     const NTFMPICommunicator& mpicomm() const {return m_mpicomm;}
+
 };
 }  // namespace planc
 

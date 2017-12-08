@@ -96,8 +96,8 @@ class NTFMPICommunicator {
                 MPI_Comm_free(m_slice_comm + i);
             }
         }
-        delete m_fiber_comm;
-        delete m_slice_comm;
+        delete[] m_fiber_comm;
+        delete[] m_slice_comm;
     }
 
     const MPI_Comm& cart_comm() const {return m_cart_comm;}

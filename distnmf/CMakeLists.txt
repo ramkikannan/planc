@@ -10,8 +10,6 @@ set(ARMA_USE_WRAPPER true)
 
 project(DISTNMF CXX)
 
-OPTION(CMAKE_IGNORE_MKL "Build ignoring MKL" OFF)
-
 set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
 set(NNLS_SRC ${DISTNMF_SOURCE_DIR}/../nnls/)
 message(STATUS "DISTNMF_SOURCE_DIR =  ${DISTNMF_SOURCE_DIR}")
@@ -33,17 +31,6 @@ message(STATUS " MPI_CXX_FOUND = ${MPI_CXX_FOUND}" )
 
 if(MPI_CXX_FOUND)
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MPI_CXX_LIBRARIES})
-endif()
-
-#to build sparse comment or uncomment this line.
-OPTION(CMAKE_BUILD_SPARSE "Build Sparse" OFF)
-if(CMAKE_BUILD_SPARSE)
-  add_definitions(-DBUILD_SPARSE=1)
-endif()
-
-OPTION(CMAKE_WITH_BARRIER_TIMING "Barrier placed to collect time" ON)
-if(CMAKE_WITH_BARRIER_TIMING)
-  add_definitions(-D__WITH__BARRIER__TIMING__=1)
 endif()
 
 OPTION(CMAKE_BUILD_PACOSS "Build with PACOSS" OFF)

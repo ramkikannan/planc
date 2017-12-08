@@ -27,20 +27,23 @@ class Tensor {
     UVEC m_dimensions;
     UWORD m_numel;
     unsigned int rand_seed;
+    bool freed_on_destruction;
 
   public:
     double* m_data;
-    Tensor(){
-        this->m_modes = 0;        
+    Tensor() {
+        this->m_modes = 0;
         this->m_numel = 0;
         this->m_data = NULL;
-    }  
+        freed_on_destruction = false;
+    }
     Tensor(const UVEC& i_dimensions):
         m_dimensions(i_dimensions),
         m_modes(i_dimensions.n_rows),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
         m_data = new double[this->m_numel];
+        freed_on_destruction = false;
         randu();
     }
     Tensor(const UVEC& i_dimensions, double *i_data):
@@ -50,9 +53,13 @@ class Tensor {
         rand_seed(103) {
         m_data = new double[this->m_numel];
         memcpy(this->m_data, i_data, sizeof(double)*this->m_numel);
+        freed_on_destruction = false;
     }
     ~Tensor() {
-        delete[] m_data;
+        if (!freed_on_destruction) {
+            delete[] m_data;
+            freed_on_destruction = true;
+        }        
     }
 
     //copy constructor
@@ -68,6 +75,9 @@ class Tensor {
             }
         } else {
             this->m_numel = src.numel();
+            this->m_modes = src.modes();
+            this->m_dimensions = src.dimensions();
+            this->rand_seed  = 103;
             m_data = new double[this->m_numel];
             memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
         }

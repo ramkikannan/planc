@@ -39,7 +39,7 @@ class DistNTF {
     void callDistNTF() {
         std::string rand_prefix("rand_");
         planc::NTFMPICommunicator mpicomm(this->m_argc, this->m_argv,
-                                          this->m_global_dims);
+                                          this->m_proc_grids);
         planc::DistNTFIO dio(mpicomm);
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_global_dims, this->m_proc_grids,
@@ -48,7 +48,7 @@ class DistNTF {
         } else {
             // dio.readInput(m_Afile_name);
         }
-        planc::Tensor A(dio.A());
+        planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);        
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             UVEC local_dims = A.dimensions();
             /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
@@ -91,16 +91,16 @@ class DistNTF {
         ntfsolver.compute_error(this->m_compute_error);
         ntfsolver.regularizers(this->m_regs);
         MPI_Barrier(MPI_COMM_WORLD);
-        try {
+        // try {
             mpitic();
             ntfsolver.computeNTF();
             double temp = mpitoc();
 
             if (mpicomm.rank() == 0) printf("NMF took %.3lf secs.\n", temp);
-        } catch (std::exception& e) {
-            printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
+        // } catch (std::exception& e) {
+        //     printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
+        //     MPI_Abort(MPI_COMM_WORLD, 1);
+        // }
     }
 
     void parseCommandLine() {
