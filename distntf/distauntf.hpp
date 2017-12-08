@@ -35,7 +35,7 @@ class DistAUNTF {
     NCPFactors m_gathered_ncp_factors_t;
     // mttkrp related variables
     MAT *ncp_krp;
-    MAT *ncp_mttkrp;
+    MAT *ncp_mttkrp_t;    
     MAT *ncp_local_mttkrp_t;
     // gram related variables.
     MAT factor_local_grams;  // U in the algorithm.
@@ -160,19 +160,21 @@ class DistAUNTF {
         this->time_stats.compute_duration(temp);
         this->time_stats.krp_duration(temp);
         mpitic();
-        kdt->in_order_reuse_MTTKRP(current_mode, ncp_mttkrp[current_mode].memptr());
+        kdt->in_order_reuse_MTTKRP(current_mode, ncp_mttkrp_t[current_mode].memptr(),false);
         // m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
-        //                       &ncp_mttkrp[current_mode]);
+        //                        &ncp_mttkrp_t[current_mode]);
         temp = mpitoc();  // mttkrp
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
-        mpitic();  // reduce_scatter mttkrp
-        MPI_Reduce_scatter(ncp_mttkrp[current_mode].memptr(),
+        DISTPRINTINFO(ncp_mttkrp_t[current_mode]);
+        mpitic();  // reduce_scatter mttkrp        
+        MPI_Reduce_scatter(ncp_mttkrp_t[current_mode].memptr(),
                            ncp_local_mttkrp_t[current_mode].memptr(),
                            &this->recvmttkrpsize[current_mode],
                            MPI_DOUBLE, MPI_SUM,
-                           this->m_mpicomm.slice(current_mode));
+                           this->m_mpicomm.slice(current_mode));        
         temp = mpitoc();  // reduce_scatter mttkrp
+        DISTPRINTINFO(ncp_local_mttkrp_t[current_mode]);
         this->time_stats.communication_duration(temp);
         this->time_stats.reducescatter_duration(temp);
     }
@@ -180,7 +182,7 @@ class DistAUNTF {
     void allocateMatrices() {
         //allocate matrices.
         ncp_krp = new MAT[m_modes];
-        ncp_mttkrp = new MAT[m_modes];
+        ncp_mttkrp_t = new MAT[m_modes];
         ncp_local_mttkrp_t = new MAT[m_modes];
         UVEC temp_recvmttkrpsize = arma::zeros<UVEC>(m_modes);
         factor_local_grams = arma::zeros<MAT>(this->m_low_rank_k, this->m_low_rank_k);
@@ -189,7 +191,7 @@ class DistAUNTF {
         for (int i = 0; i < m_modes; i++) {
             UWORD current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
             ncp_krp[i] = arma::zeros <MAT>(current_size, this->m_low_rank_k);
-            ncp_mttkrp[i] = arma::zeros<MAT>(TENSOR_LOCAL_DIM[i], this->m_low_rank_k);
+            ncp_mttkrp_t[i] = arma::zeros<MAT>(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
             ncp_local_mttkrp_t[i] = arma::zeros<MAT>(m_local_ncp_factors.factor(i).n_cols,
                                     m_local_ncp_factors.factor(i).n_rows);
             temp_recvmttkrpsize[i] = TENSOR_LOCAL_DIM[i] * this->m_low_rank_k;
@@ -290,7 +292,7 @@ class DistAUNTF {
                 }
                 m_local_ncp_factors.set(current_mode, factor.t());
                 m_local_ncp_factors.distributed_normalize(current_mode);
-                factor = m_local_ncp_factors.factor(current_mode);
+                factor = m_local_ncp_factors.factor(current_mode).t();
                 m_local_ncp_factors_t.set(current_mode, factor);
                 // line 13 and 14
                 update_global_gram(current_mode);

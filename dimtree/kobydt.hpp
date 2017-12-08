@@ -117,7 +117,7 @@ class KobyDimensionTree {
     * Return the col major ordered mttkrp
     */
 
-    void in_order_reuse_MTTKRP(int n, double *out) {
+    void in_order_reuse_MTTKRP(int n, double *out, bool colmajor) {
         // ktensor *Y = m_local_Y;
         direction D;
 
@@ -183,7 +183,13 @@ class KobyDimensionTree {
                 multi_TTV_with_KRP_output_FM(::direction::right, projection_Tensor, projection_Ktensor, num_threads);
             }
         }
-        TransposeM(m_local_Y->factors[n], out, m_local_Y->rank, m_local_Y->dims[n]);
+        if (colmajor) {
+            TransposeM(m_local_Y->factors[n], out, m_local_Y->rank, m_local_Y->dims[n]);
+        } else {
+            std::memcpy(out, m_local_Y->factors[n],
+                        sizeof(double)*m_local_Y->rank * m_local_Y->dims[n]);
+        }
+
     }
 };
 

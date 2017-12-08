@@ -234,6 +234,17 @@ class NCPFactors {
         return rc;
     }
 
+    void rankk_tensor(Tensor *out) {
+        UWORD krpsize = arma::prod(this->m_dimensions);
+        krpsize /= this->m_dimensions[0];
+        MAT krpleavingzero = arma::zeros<MAT>(krpsize, this->m_k);
+        krp_leave_out_one(0, &krpleavingzero);
+        MAT lowranktensor(this->m_dimensions[0], krpsize);
+        lowranktensor = this->ncp_factors[0] * krpleavingzero.t();
+        Tensor rc(this->m_dimensions, lowranktensor.memptr());
+        out = &rc;
+    }
+
     void printinfo() {
         INFO << "modes::" << this->m_modes << "::k::" << this->m_k << std::endl;
         INFO << "lambda::" << this->m_lambda << std::endl;
@@ -304,7 +315,7 @@ class NCPFactors {
                           MPI_COMM_WORLD);
             global_colnorm = std::sqrt(global_colnorm);
             this->ncp_factors[mode].col(j) /= global_colnorm;
-            m_lambda(j) *= global_colnorm;
+            m_lambda(j) = global_colnorm;
         }
     }
 #endif

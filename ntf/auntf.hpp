@@ -38,7 +38,7 @@ class AUNTF {
     MAT gram_without_one;
     const int m_low_rank_k;
     MAT *ncp_krp;
-    MAT *ncp_mttkrp;
+    MAT *ncp_mttkrp_t;
     const algotype m_updalgo;
     LUC *m_luc;
     planc::Tensor *lowranktensor;
@@ -52,12 +52,12 @@ class AUNTF {
         m_updalgo(i_algo) {
         m_ncp_factors.normalize();
         gram_without_one = arma::zeros<MAT>(i_k, i_k);
-        ncp_mttkrp = new MAT[i_tensor.modes()];
+        ncp_mttkrp_t = new MAT[i_tensor.modes()];
         ncp_krp = new MAT[i_tensor.modes()];
         for (int i = 0; i < i_tensor.modes(); i++) {
             UWORD current_size = TENSOR_NUMEL / TENSOR_DIM[i];
             ncp_krp[i] = arma::zeros <MAT>(current_size, i_k);
-            ncp_mttkrp[i] = arma::zeros<MAT>(TENSOR_DIM[i], i_k);
+            ncp_mttkrp_t[i] = arma::zeros<MAT>(i_k, TENSOR_DIM[i]);
         }
         lowranktensor = new planc::Tensor(i_tensor.dimensions());
         m_luc = new LUC();
@@ -70,10 +70,10 @@ class AUNTF {
     ~AUNTF() {
         for (int i = 0; i < m_input_tensor.modes(); i++) {
             ncp_krp[i].clear();
-            ncp_mttkrp[i].clear();
+            ncp_mttkrp_t[i].clear();
         }
         delete[] ncp_krp;
-        delete[] ncp_mttkrp;
+        delete[] ncp_mttkrp_t;
         delete m_luc;
         delete kdt;
         delete lowranktensor;
@@ -95,14 +95,14 @@ class AUNTF {
                 INFO << "krp_leave_out_" << j << std::endl
                      << ncp_krp[j] << std::endl;
 #endif
-                kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp[j].memptr());
-                // m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp[j]);
+                kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp_t[j].memptr(), false);
+                // m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp_t[j]);
 #ifdef NTF_VERBOSE
                 INFO << "mttkrp for factor" << j << std::endl
-                     << ncp_mttkrp[j] << std::endl;
+                     << ncp_mttkrp_t[j] << std::endl;
 #endif
                 MAT factor = m_luc->update(m_updalgo, gram_without_one,
-                                           ncp_mttkrp[j].t());
+                                           ncp_mttkrp_t[j]);
 #ifdef NTF_VERBOSE
                 INFO << "iter::" << i << "::factor:: " << j << std::endl
                      << factor << std::endl;

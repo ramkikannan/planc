@@ -51,8 +51,8 @@ class DistNTFIO {
             start_row = MPI_FIBER_RANK(i) * local_dims(i);
             end_row = start_row + local_dims(i) - 1;
             local_factors.factor(i) = global_factors.factor(i).rows(start_row, end_row);
-        }
-        // m_A = local_factors.rankk_tensor();
+        }        
+        local_factors.rankk_tensor(m_A);
     }
 
   public:
