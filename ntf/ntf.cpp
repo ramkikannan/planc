@@ -16,10 +16,12 @@ int main(int argc, char* argv[]) {
     // int low_rank = 1;
     UVEC dimensions(test_modes);
     MAT *mttkrps = new MAT[test_modes];
-    planc::NCPFactors cpfactors(pc.dimensions(), pc.lowrankk(), false);
-    cpfactors.normalize();
-    cpfactors.print();
-    planc::Tensor my_tensor = cpfactors.rankk_tensor();
+    planc::Tensor my_tensor(pc.dimensions());
+    INFO << "A::" << std::endl;
+    my_tensor.print();
+    // planc::NCPFactors cpfactors(pc.dimensions(), pc.lowrankk(), false);
+    // cpfactors.normalize();
+    // cpfactors.print();    
     algotype ntfupdalgo = pc.lucalgo();
     planc::AUNTF auntf(my_tensor, pc.lowrankk(), ntfupdalgo);
     std::cout << "init factors" << std::endl << "--------------" << std::endl;

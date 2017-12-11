@@ -61,7 +61,10 @@ class DistNTF {
              << A.dimensions()
              << "::global dims::" << this->m_global_dims
              << std::endl;
-# ifdef WRITE_RAND_INPUT
+#ifdef DISTNTF_VERBOSE             
+             A.print();
+#endif
+#ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
 #endif  // ifdef WRITE_RAND_INPUT
         // same matrix as only one of them will be used.

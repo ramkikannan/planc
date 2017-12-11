@@ -17,9 +17,9 @@ namespace planc {
 #define TENSOR_NUMEL (m_input_tensor.numel())
 
 
-// #ifndef NTF_VERBOSE
-// #define NTF_VERBOSE 1
-// #endif
+#ifndef NTF_VERBOSE
+#define NTF_VERBOSE 1
+#endif
 
 // extern "C" void cblas_dgemm_(const CBLAS_LAYOUT Layout,
 //                              const CBLAS_TRANSPOSE transa,

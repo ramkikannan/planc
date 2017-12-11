@@ -33,6 +33,7 @@ class NCPFactors {
         ncp_factors = new MAT[this->m_modes];
         this->m_k = i_k;
         UWORD numel = arma::prod(this->m_dimensions);
+        arma::arma_rng::set_seed(103);
         for (int i = 0; i < this->m_modes; i++) {
             // ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
             if (trans) {

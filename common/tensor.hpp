@@ -43,7 +43,7 @@ class Tensor {
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
         m_data = new double[this->m_numel];
-        freed_on_destruction = false;
+        freed_on_destruction = false;        
         randu();
     }
     Tensor(const UVEC& i_dimensions, double *i_data):
@@ -118,7 +118,7 @@ class Tensor {
 
     void randu() {
         std::random_device rd;
-        std::mt19937 gen(rd());
+        std::mt19937 gen(rand_seed);
         std::uniform_real_distribution<> dis(0, 1);
         for (int i = 0; i < this->m_numel; i++) {
             m_data[i] = dis(gen);
