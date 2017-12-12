@@ -92,8 +92,8 @@ class NTFMPICommunicator {
 
         if (!finalized) {
             for (int i = 0; i < MPI_CART_DIMS; i++) {
-                MPI_Comm_free(m_fiber_comm + i);
-                MPI_Comm_free(m_slice_comm + i);
+                MPI_Comm_free(&m_fiber_comm[i]);
+                MPI_Comm_free(&m_slice_comm[i]);
             }
         }
         delete[] m_fiber_comm;

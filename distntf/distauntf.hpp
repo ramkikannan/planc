@@ -172,7 +172,6 @@ class DistAUNTF {
         temp = mpitoc();  // mttkrp
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
-        DISTPRINTINFO(ncp_mttkrp_t[current_mode]);
         mpitic();  // reduce_scatter mttkrp
         MPI_Reduce_scatter(ncp_mttkrp_t[current_mode].memptr(),
                            ncp_local_mttkrp_t[current_mode].memptr(),
@@ -180,7 +179,10 @@ class DistAUNTF {
                            MPI_DOUBLE, MPI_SUM,
                            this->m_mpicomm.slice(current_mode));
         temp = mpitoc();  // reduce_scatter mttkrp
+#ifdef DISTNTF_VERBOSE
+        DISTPRINTINFO(ncp_mttkrp_t[current_mode]);
         DISTPRINTINFO(ncp_local_mttkrp_t[current_mode]);
+#endif
         this->time_stats.communication_duration(temp);
         this->time_stats.reducescatter_duration(temp);
     }
@@ -196,7 +198,7 @@ class DistAUNTF {
         global_gram = arma::ones<MAT>(this->m_low_rank_k, this->m_low_rank_k);
         for (int i = 0; i < m_modes; i++) {
             UWORD current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
-            ncp_krp[i] = arma::zeros <MAT>(current_size, this->m_low_rank_k);
+            ncp_krp[i] = arma::zeros<MAT>(current_size, this->m_low_rank_k);
             ncp_mttkrp_t[i] = arma::zeros<MAT>(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
             ncp_local_mttkrp_t[i] = arma::zeros<MAT>(m_local_ncp_factors.factor(i).n_cols,
                                     m_local_ncp_factors.factor(i).n_rows);
@@ -205,10 +207,19 @@ class DistAUNTF {
                                      this->m_low_rank_k);
         }
         recvmttkrpsize = arma::conv_to<std::vector<int>>::from(temp_recvmttkrpsize);
-        if (m_compute_error) {
-            hadamard_all_grams = arma::ones<MAT>(this->m_low_rank_k,
-                                                 this->m_low_rank_k);
+    }
+
+    void freeMatrices() {
+        for (int i = 0; i < m_modes; i++) {
+            ncp_krp[i].clear();
+            ncp_mttkrp_t[i].clear();
+            ncp_local_mttkrp_t[i].clear();
+            factor_global_grams[i].clear();
         }
+        delete[] ncp_krp;
+        delete[] ncp_mttkrp_t;
+        delete[] ncp_local_mttkrp_t;
+        delete[] factor_global_grams;
     }
 
   public:
@@ -228,6 +239,7 @@ class DistAUNTF {
         m_gathered_ncp_factors(i_tensor.dimensions(), i_k, false),
         m_gathered_ncp_factors_t(i_tensor.dimensions(), i_k, true),
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
+        this->m_compute_error = false;
         this->m_num_it = 30;
         //local factors.
         arma::arma_rng::set_seed(i_mpicomm.rank());
@@ -244,12 +256,19 @@ class DistAUNTF {
                       &this->m_global_sqnorm_A,
                       1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     }
+    ~DistAUNTF() {
+        freeMatrices();
+    }
     void num_iterations(const int i_n) { this->m_num_it = i_n;}
     void regularizers(const FVEC i_regs) {this->m_regularizers = i_regs;}
-    void compute_error(bool i_error) {this->m_compute_error = i_error;}
+    void compute_error(bool i_error) {
+        this->m_compute_error = i_error;
+        hadamard_all_grams = arma::ones<MAT>(this->m_low_rank_k,
+                                             this->m_low_rank_k);
+    }
     void computeNTF() {
-        //initialize everything.
-        //line 3,4,5 of the algorithm
+        // initialize everything.
+        // line 3,4,5 of the algorithm
         for (int i = 1; i < m_modes; i++) {
             update_global_gram(i);
             gather_ncp_factor(i);
@@ -314,7 +333,7 @@ class DistAUNTF {
     }
     double computeError(MAT &unnorm_factor) {
 
-        //rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram * lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;
+        // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram * lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;
         mpitic();
         hadamard_all_grams = global_gram % factor_global_grams[this->m_modes - 1];
         VEC local_lambda = m_local_ncp_factors.lambda();
@@ -340,7 +359,7 @@ class DistAUNTF {
                   << "::global_gram_norm_sq::" << norm_gram * norm_gram
                   << "::model_error::" << 2 * all_model_error << std::endl);
 #endif
-        double relerr = this->m_global_sqnorm_A + norm_gram 
+        double relerr = this->m_global_sqnorm_A + norm_gram
                         - 2 * all_model_error;
         return relerr;
     }
