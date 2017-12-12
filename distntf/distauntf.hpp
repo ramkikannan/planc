@@ -35,7 +35,7 @@ class DistAUNTF {
     NCPFactors m_gathered_ncp_factors_t;
     // mttkrp related variables
     MAT *ncp_krp;
-    MAT *ncp_mttkrp_t;    
+    MAT *ncp_mttkrp_t;
     MAT *ncp_local_mttkrp_t;
     // gram related variables.
     MAT factor_local_grams;  // U in the algorithm.
@@ -141,6 +141,12 @@ class DistAUNTF {
                       // and debugging the code.
                       this->m_mpicomm.slice(current_mode));
         double temp = mpitoc();  // allgather toc
+#ifdef DISTNTF_VERBOSE
+        DISTPRINTINFO("sent local factor::" << std::endl
+                      << m_local_ncp_factors_t.factor(current_mode) << std::endl
+                      << " gathered factor::" << std::endl
+                      << m_gathered_ncp_factors_t.factor(current_mode));
+#endif
         this->time_stats.communication_duration(temp);
         this->time_stats.allgather_duration(temp);
         // keep gather_ncp_factors_t consistent.
@@ -160,19 +166,19 @@ class DistAUNTF {
         this->time_stats.compute_duration(temp);
         this->time_stats.krp_duration(temp);
         mpitic();
-        kdt->in_order_reuse_MTTKRP(current_mode, ncp_mttkrp_t[current_mode].memptr(),false);
-        // m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
-        //                        &ncp_mttkrp_t[current_mode]);
+        // kdt->in_order_reuse_MTTKRP(current_mode, ncp_mttkrp_t[current_mode].memptr(), false);
+        m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
+                              &ncp_mttkrp_t[current_mode]);
         temp = mpitoc();  // mttkrp
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
         DISTPRINTINFO(ncp_mttkrp_t[current_mode]);
-        mpitic();  // reduce_scatter mttkrp        
+        mpitic();  // reduce_scatter mttkrp
         MPI_Reduce_scatter(ncp_mttkrp_t[current_mode].memptr(),
                            ncp_local_mttkrp_t[current_mode].memptr(),
                            &this->recvmttkrpsize[current_mode],
                            MPI_DOUBLE, MPI_SUM,
-                           this->m_mpicomm.slice(current_mode));        
+                           this->m_mpicomm.slice(current_mode));
         temp = mpitoc();  // reduce_scatter mttkrp
         DISTPRINTINFO(ncp_local_mttkrp_t[current_mode]);
         this->time_stats.communication_duration(temp);
@@ -255,11 +261,10 @@ class DistAUNTF {
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO("local factor matrices::");
         this->m_local_ncp_factors.print();
-        DISTPRINTINFO("local factor matrices::");
+        DISTPRINTINFO("local factor matrices transpose::");
         this->m_local_ncp_factors_t.print();
         DISTPRINTINFO("gathered factor matrices::");
-        this->m_gathered_ncp_factors.print();
-        PRINTROOT("global_grams::" << this->global_gram);
+        this->m_gathered_ncp_factors.print();        
 #endif
         for (int current_it = 0; current_it < m_num_it; current_it++) {
             MAT unnorm_factor;
@@ -275,7 +280,7 @@ class DistAUNTF {
                               << this->m_local_ncp_factors.factor(current_mode));
                 DISTPRINTINFO("gathered factor matrix::");
                 this->m_gathered_ncp_factors.print();
-                PRINTROOT("global_grams::" << this->global_gram);
+                PRINTROOT("global_grams::" << std::endl << this->global_gram);
                 DISTPRINTINFO("mttkrp::");
                 this->ncp_local_mttkrp_t[current_mode].print();
 #endif
