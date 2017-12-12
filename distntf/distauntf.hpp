@@ -18,7 +18,7 @@
 * local MTTKRP's are reduced scattered for local NNLS.
 */
 
-#define DISTNTF_VERBOSE 1
+// #define DISTNTF_VERBOSE 1
 
 namespace planc {
 
@@ -166,9 +166,9 @@ class DistAUNTF {
         this->time_stats.compute_duration(temp);
         this->time_stats.krp_duration(temp);
         mpitic();
-        // kdt->in_order_reuse_MTTKRP(current_mode, ncp_mttkrp_t[current_mode].memptr(), false);
-        m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
-                              &ncp_mttkrp_t[current_mode]);
+        kdt->in_order_reuse_MTTKRP(current_mode, ncp_mttkrp_t[current_mode].memptr(), false);
+        // m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
+        //                      &ncp_mttkrp_t[current_mode]);
         temp = mpitoc();  // mttkrp
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
@@ -243,10 +243,6 @@ class DistAUNTF {
         MPI_Allreduce(&normA,
                       &this->m_global_sqnorm_A,
                       1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-        kdt = new KobyDimensionTree(m_input_tensor, m_gathered_ncp_factors,
-                                    m_input_tensor.modes() / 2);
-
     }
     void num_iterations(const int i_n) { this->m_num_it = i_n;}
     void regularizers(const FVEC i_regs) {this->m_regularizers = i_regs;}
@@ -258,13 +254,15 @@ class DistAUNTF {
             update_global_gram(i);
             gather_ncp_factor(i);
         }
+        kdt = new KobyDimensionTree(m_input_tensor, m_gathered_ncp_factors,
+                                    m_input_tensor.modes() / 2);
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO("local factor matrices::");
         this->m_local_ncp_factors.print();
         DISTPRINTINFO("local factor matrices transpose::");
         this->m_local_ncp_factors_t.print();
         DISTPRINTINFO("gathered factor matrices::");
-        this->m_gathered_ncp_factors.print();        
+        this->m_gathered_ncp_factors.print();
 #endif
         for (int current_it = 0; current_it < m_num_it; current_it++) {
             MAT unnorm_factor;
@@ -342,7 +340,7 @@ class DistAUNTF {
                   << "::global_gram_norm_sq::" << norm_gram * norm_gram
                   << "::model_error::" << 2 * all_model_error << std::endl);
 #endif
-        double relerr = this->m_global_sqnorm_A + norm_gram * norm_gram
+        double relerr = this->m_global_sqnorm_A + norm_gram 
                         - 2 * all_model_error;
         return relerr;
     }
