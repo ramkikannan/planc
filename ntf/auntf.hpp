@@ -51,13 +51,13 @@ class AUNTF {
         m_low_rank_k(i_k),
         m_updalgo(i_algo) {
         m_ncp_factors.normalize();
-        gram_without_one = arma::zeros<MAT>(i_k, i_k);
+        gram_without_one.zeros(i_k, i_k);
         ncp_mttkrp_t = new MAT[i_tensor.modes()];
         ncp_krp = new MAT[i_tensor.modes()];
         for (int i = 0; i < i_tensor.modes(); i++) {
             UWORD current_size = TENSOR_NUMEL / TENSOR_DIM[i];
-            ncp_krp[i] = arma::zeros <MAT>(current_size, i_k);
-            ncp_mttkrp_t[i] = arma::zeros<MAT>(i_k, TENSOR_DIM[i]);
+            ncp_krp[i].zeros(current_size, i_k);
+            ncp_mttkrp_t[i].zeros(i_k, TENSOR_DIM[i]);
         }
         lowranktensor = new planc::Tensor(i_tensor.dimensions());
         m_luc = new LUC();
@@ -126,7 +126,7 @@ class AUNTF {
         // current low rank tensor
         // UWORD krpsize = arma::prod(this->m_dimensions);
         // krpsize /= this->m_dimensions[0];
-        // MAT krpleavingzero = arma::zeros<MAT>(krpsize, this->m_k);
+        // MAT krpleavingzero.zeros(krpsize, this->m_k);
         // krp_leave_out_one(0, &krpleavingzero);
         // MAT lowranktensor(this->m_dimensions[0], krpsize);
         // lowranktensor = this->ncp_factors[0] * trans(krpleavingzero);

@@ -192,18 +192,19 @@ class DistAUNTF {
         ncp_krp = new MAT[m_modes];
         ncp_mttkrp_t = new MAT[m_modes];
         ncp_local_mttkrp_t = new MAT[m_modes];
-        UVEC temp_recvmttkrpsize = arma::zeros<UVEC>(m_modes);
-        factor_local_grams = arma::zeros<MAT>(this->m_low_rank_k, this->m_low_rank_k);
         factor_global_grams = new MAT[m_modes];
-        global_gram = arma::ones<MAT>(this->m_low_rank_k, this->m_low_rank_k);
+        UVEC temp_recvmttkrpsize = arma::zeros<UVEC>(m_modes);
+        factor_local_grams.zeros(this->m_low_rank_k, this->m_low_rank_k);
+        global_gram.ones(this->m_low_rank_k, this->m_low_rank_k);
+        UWORD current_size;
         for (int i = 0; i < m_modes; i++) {
             UWORD current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
-            ncp_krp[i] = arma::zeros<MAT>(current_size, this->m_low_rank_k);
-            ncp_mttkrp_t[i] = arma::zeros<MAT>(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
-            ncp_local_mttkrp_t[i] = arma::zeros<MAT>(m_local_ncp_factors.factor(i).n_cols,
+            ncp_krp[i].zeros(current_size, this->m_low_rank_k);
+            ncp_mttkrp_t[i].zeros(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
+            ncp_local_mttkrp_t[i].zeros(m_local_ncp_factors.factor(i).n_cols,
                                     m_local_ncp_factors.factor(i).n_rows);
             temp_recvmttkrpsize[i] = TENSOR_LOCAL_DIM[i] * this->m_low_rank_k;
-            factor_global_grams[i] = arma::zeros<MAT>(this->m_low_rank_k,
+            factor_global_grams[i].zeros(this->m_low_rank_k,
                                      this->m_low_rank_k);
         }
         recvmttkrpsize = arma::conv_to<std::vector<int>>::from(temp_recvmttkrpsize);
