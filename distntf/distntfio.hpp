@@ -43,6 +43,7 @@ class DistNTFIO {
         // on all the MPI processor.
         arma::arma_rng::set_seed(kW_seed_idx);
         NCPFactors global_factors(i_global_dims, i_k, false);
+        global_factors.normalize();
         int tensor_modes = global_factors.modes();
         UVEC local_dims = i_global_dims / this->m_mpicomm.proc_grids();
         NCPFactors local_factors(local_dims, i_k, false);

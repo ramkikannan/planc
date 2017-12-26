@@ -59,7 +59,7 @@ class DistAUNTF {
 
 
     // communication related variables
-    NTFMPICommunicator m_mpicomm;
+    const NTFMPICommunicator &m_mpicomm;
     std::vector<int> recvmttkrpsize;
     // stats
     DistNTFTime time_stats;
@@ -119,12 +119,16 @@ class DistAUNTF {
     */
     void gram_hadamard(int current_mode) {
         global_gram.ones();
+        mpitic();
         for (int i = 0; i < m_modes; i++) {
             if (i != current_mode) {
                 //%= element-wise multiplication
                 global_gram %= factor_global_grams[i];
             }
         }
+        double temp = mpitoc();  // gram
+        this->time_stats.compute_duration(temp);
+        this->time_stats.gram_duration(temp);
     }
 
     // factor matrices all gather only on the current update factor
