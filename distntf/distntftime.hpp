@@ -17,7 +17,7 @@ class DistNTFTime {
     double m_nnls_duration;
     double m_err_compute_duration;
     double m_err_communication_duration;
-    double m_trans_duration;
+    double m_trans_duration;    
   public:
     DistNTFTime(double d, double compute_d, double communication_d,
                 double err_comp, double err_comm):
@@ -25,13 +25,13 @@ class DistNTFTime {
         m_communication_duration(communication_d),
         m_err_compute_duration(err_comp),
         m_err_communication_duration(err_comm) {
-        m_allgather_duration        = 0; 
+        m_allgather_duration        = 0;
         m_allreduce_duration        = 0;
         m_reducescatter_duration    = 0;
         m_gram_duration             = 0;
         m_krp_duration              = 0;
         m_mttkrp_duration           = 0;
-        m_nnls_duration             = 0;            
+        m_nnls_duration             = 0;
         m_trans_duration            = 0;
     }
     DistNTFTime(double d,
@@ -91,7 +91,6 @@ class DistNTFTime {
     void err_communication_duration(double d) {
         m_err_communication_duration += d;
     }
-
 };
 }  // namespace planc
 

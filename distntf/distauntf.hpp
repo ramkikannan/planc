@@ -206,10 +206,10 @@ class DistAUNTF {
             ncp_krp[i].zeros(current_size, this->m_low_rank_k);
             ncp_mttkrp_t[i].zeros(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
             ncp_local_mttkrp_t[i].zeros(m_local_ncp_factors.factor(i).n_cols,
-                                    m_local_ncp_factors.factor(i).n_rows);
+                                        m_local_ncp_factors.factor(i).n_rows);
             temp_recvmttkrpsize[i] = TENSOR_LOCAL_DIM[i] * this->m_low_rank_k;
             factor_global_grams[i].zeros(this->m_low_rank_k,
-                                     this->m_low_rank_k);
+                                         this->m_low_rank_k);
         }
         recvmttkrpsize = arma::conv_to<std::vector<int>>::from(temp_recvmttkrpsize);
     }
@@ -225,6 +225,42 @@ class DistAUNTF {
         delete[] ncp_mttkrp_t;
         delete[] ncp_local_mttkrp_t;
         delete[] factor_global_grams;
+    }
+
+    void reportTime(const double temp, const std::string &reportstring) {
+        double mintemp, maxtemp, sumtemp;
+        MPI_Allreduce(&temp, &maxtemp, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+        MPI_Allreduce(&temp, &mintemp, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+        MPI_Allreduce(&temp, &sumtemp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        PRINTROOT(reportstring \
+                  // << "::dims::" << this->m_global_dims.t() 
+                  << "::k::" << this->m_low_rank_k << "::SIZE::" << MPI_SIZE \
+                  << "::algo::" << this->m_updalgo \
+                  << "::root::" << temp \
+                  << "::min::" << mintemp \
+                  << "::avg::" << (sumtemp) / (MPI_SIZE) \
+                  << "::max::" << maxtemp);
+    }
+
+    void generateReport() {
+        MPI_Barrier(MPI_COMM_WORLD);
+        this->reportTime(this->time_stats.duration(), "total_d");
+        this->reportTime(this->time_stats.communication_duration(), "total_comm");
+        this->reportTime(this->time_stats.compute_duration(), "total_comp");
+        this->reportTime(this->time_stats.allgather_duration(), "total_allgather");
+        this->reportTime(this->time_stats.allreduce_duration(), "total_allreduce");
+        this->reportTime(this->time_stats.reducescatter_duration(),
+                         "total_reducescatter");
+        this->reportTime(this->time_stats.gram_duration(), "total_gram");
+        this->reportTime(this->time_stats.krp_duration(), "total_mttkrp");
+        this->reportTime(this->time_stats.mttkrp_duration(), "total_mttkrp");
+        this->reportTime(this->time_stats.nnls_duration(), "total_nnls");
+        if (this->m_compute_error) {
+            this->reportTime(this->time_stats.err_compute_duration(),
+                             "total_err_compute");
+            this->reportTime(this->time_stats.err_compute_duration(),
+                             "total_err_communication");
+        }
     }
 
   public:
@@ -333,8 +369,8 @@ class DistAUNTF {
                 PRINTROOT("Iter::" << current_it << "::error::" << temp_err);
             }
             PRINTROOT("completed it::" << current_it);
-
         }
+        generateReport();
     }
     double computeError(MAT &unnorm_factor) {
 
