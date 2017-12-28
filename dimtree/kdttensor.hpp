@@ -7,15 +7,15 @@
 * Element wise multiplication between two vectors
 */
 
-void vdMul(int n, double *a, double *b, double *c){
-	for(int i=0; i < n; i++) c[i] = a[i]*b[i];	
+void vdMul(long int n, double *a, double *b, double *c){
+	for(long int i=0; i < n; i++) c[i] = a[i]*b[i];	
 }
 
 /*
-	Prints a matrix in column major order
+	prints a matrix in column major order
 */
-void printM_ColMajor(double* M, int num_cols, int num_rows){
-	int i, j;
+void printM_ColMajor(double* M, long int num_cols, long int num_rows){
+	long int i, j;
 
 	printf("\n");	
 
@@ -32,8 +32,8 @@ void printM_ColMajor(double* M, int num_cols, int num_rows){
 /*
 	Prints a matrix in row major order
 */
-void printM_RowMajor(double* M, int num_cols, int num_rows){
-	int i, j;
+void printM_RowMajor(double* M, long int num_cols, long int num_rows){
+	long int i, j;
 
 	printf("\n");	
 
@@ -48,7 +48,7 @@ void printM_RowMajor(double* M, int num_cols, int num_rows){
 }
 
 void print_Ktensor_RowMajor( ktensor * Y ){
-	int i;
+	long int i;
 
 	printf("=========Ktensor========\n");
 	printf("Rank = %d\n", Y->rank);
@@ -80,8 +80,8 @@ void print_Ktensor_RowMajor( ktensor * Y ){
 	1) T, pointer to the tensor to print
 	2) show_data, flag saying if you want T->data to be printed
 */
-void print_tensor( tensor * T, int show_data ){
-	int i;
+void print_tensor( tensor * T, long int show_data ){
+	long int i;
 	printf("==========Tensor========\n");
 	printf("T->nmodes = %d\n", T->nmodes);
 	printf("T->dims_product = %d\n", T->dims_product);
@@ -101,7 +101,7 @@ void print_tensor( tensor * T, int show_data ){
 /**
 	prints inputs to a cblas_dgemm function call.
 */
-void print_dgemm_inputs( CBLAS_ORDER dgemm_layout, CBLAS_TRANSPOSE transA, CBLAS_TRANSPOSE transB, int m, int n , int k, double alpha, int strideA, int strideB, double beta, int strideC ){
+void print_dgemm_inputs( CBLAS_ORDER dgemm_layout, CBLAS_TRANSPOSE transA, CBLAS_TRANSPOSE transB, long int m, long int n , long int k, double alpha, long int strideA, long int strideB, double beta, long int strideC ){
 	printf("-------------------------------\n");
 	printf("dgemm_inputs :: \n");
 
@@ -141,7 +141,7 @@ void print_dgemm_inputs( CBLAS_ORDER dgemm_layout, CBLAS_TRANSPOSE transA, CBLAS
 /**
 	prints inputs to a cblas_dgemv function call.
 */
-void print_dgemv_inputs( CBLAS_ORDER dgemv_layout, CBLAS_TRANSPOSE transA, int m, int n, double alpha, int T_offset, int tensor_stride, int A_offset, int A_stride, double beta, int output_col_stride, int output_stride){
+void print_dgemv_inputs( CBLAS_ORDER dgemv_layout, CBLAS_TRANSPOSE transA, long int m, long int n, double alpha, long int T_offset, long int tensor_stride, long int A_offset, long int A_stride, double beta, long int output_col_stride, long int output_stride){
 	printf("-------------------------------\n");
 	printf("dgemv_inputs :: \n");
 
@@ -177,9 +177,9 @@ MTTKRP_RowMajor();
 		Description -- reorders the factor matrices for the MTTKRP_RowMajor function. Skips over the nth factor 
 			example skipping over 2 in {0,1,2,3,4}->{0,1,3,4}, also does the Dims.
 */
-void reorder_Factors( ktensor * Y, double ** reordered_Factors, int * reordered_Dims, int n ){
+void reorder_Factors( ktensor * Y, double ** reordered_Factors, long int * reordered_Dims, long int n ){
 
-	int i, j;
+	long int i, j;
 	for( i = 0, j = 0; i < Y->nmodes; i++){
 		if( i != n ){
 			reordered_Factors[j] = Y->factors[i];
@@ -193,9 +193,9 @@ void reorder_Factors( ktensor * Y, double ** reordered_Factors, int * reordered_
 MTTKRP_RowMajor();
 	update_Partial_Hadamards();
 */
-void update_Partial_Hadamards( ktensor * Y, int * indexers, double * partial_Hadamards, double ** reordered_Factors ){
+void update_Partial_Hadamards( ktensor * Y, long int * indexers, double * partial_Hadamards, double ** reordered_Factors ){
 	// check to see where we need to update form
-	int update_from, i;
+	long int update_from, i;
 
 	/*
 		Iterate over the indexers array looking for a non 0.
@@ -255,9 +255,9 @@ void update_Partial_Hadamards( ktensor * Y, int * indexers, double * partial_Had
 	}
 }
 
-void KR_RowMajor( ktensor * Y, double * C, int n ){
+void KR_RowMajor( ktensor * Y, double * C, long int n ){
 
-	int i, j, lF, rF;
+	long int i, j, lF, rF;
 	if( n != Y->nmodes - 1 )
 		lF = Y->nmodes - 1;
 	else
@@ -280,23 +280,23 @@ void KR_RowMajor( ktensor * Y, double * C, int n ){
 	3) n, modes to skip over only used fo the Y->nmodes == 3 case
 */
 
-void Multi_KR_RowMajor( ktensor * Y , double * C, int n ){
+void Multi_KR_RowMajor( ktensor * Y , double * C, long int n ){
 	if( Y->nmodes == 3 ){
 		KR_RowMajor( Y, C, n );
 	}
 	else{
-		int i, j, * indexers, * reordered_Dims;
+		long int i, j, * indexers, * reordered_Dims;
 		double * partial_Hadamards, ** reordered_Factors;
 
 		reordered_Factors 	= (double**)malloc(sizeof(double*)*Y->nmodes-1);
-		reordered_Dims 		= (int*)malloc(sizeof(int)*Y->nmodes-1);
-		indexers 		= (int*)malloc(sizeof(int)*Y->nmodes-1);				//an indexer for each mode-1
+		reordered_Dims 		= (long int*)malloc(sizeof(long int)*Y->nmodes-1);
+		indexers 		= (long int*)malloc(sizeof(long int)*Y->nmodes-1);				//an indexer for each mode-1
 		partial_Hadamards	 = (double*)malloc(sizeof(double)*Y->rank*(Y->nmodes)-3); 		// N-3 extra vectors, for partials
 
 		// reorder the Factors and Dimensions
 		reorder_Factors( Y, reordered_Factors, reordered_Dims, n);
 
-		memset( indexers, 0, sizeof(int)*(Y->nmodes-1) );
+		memset( indexers, 0, sizeof(long int)*(Y->nmodes-1) );
 
 		// initialize the partial_Hadamards to the starting values, i indexes the partial_Hadamards
 		for( i = Y->nmodes-4; i >= 0; i-- ){
@@ -340,8 +340,8 @@ void Multi_KR_RowMajor( ktensor * Y , double * C, int n ){
 }
 
 // you need to include the diagonal
-void Upper_Hadamard_RowMajor( int nRows, int nCols, double * A, double * B, double *C ){
-	int i, j;
+void Upper_Hadamard_RowMajor( long int nRows, long int nCols, double * A, double * B, double *C ){
+	long int i, j;
 
 	for( i = 0; i < nRows; i++ ){
 		for( j = i; j < nCols; j++ ){
@@ -355,7 +355,7 @@ void Upper_Hadamard_RowMajor( int nRows, int nCols, double * A, double * B, doub
 	CompareM() 
 	Description --
 		A function for comparing two matrices to see if they differ significantly in some value.
-		The last intput option is your tollerance for the difference between A[i,j] and B[i,j].
+		The last long intput option is your tollerance for the difference between A[i,j] and B[i,j].
 		if you make it a -1 the matlab eps*100 will be used.
 		1 -> true, 0 -> false
 	Variables -- 
@@ -366,13 +366,13 @@ void Upper_Hadamard_RowMajor( int nRows, int nCols, double * A, double * B, doub
 		eps) the tolerance for differences between A and B
 		
 */
-int CompareM( double * A, double * B, int nRows, int nCols, double eps){
+long int CompareM( double * A, double * B, long int nRows, long int nCols, double eps){
 	if(  eps == -1.0 )
 		eps = 2.220446049250313E-16;
 		eps = eps * 100;
 	double max_dif = eps;
-	int are_same = 1;	// 1 -> true, 0 -> false	
-	for( int i = 0; i < nRows*nCols; i++ ){
+	long int are_same = 1;	// 1 -> true, 0 -> false	
+	for( long int i = 0; i < nRows*nCols; i++ ){
 		if( fabs(A[i] - B[i]) > max_dif ){
 			max_dif = A[i] - B[i];
 			are_same = 0;
@@ -382,7 +382,7 @@ int CompareM( double * A, double * B, int nRows, int nCols, double eps){
 	return are_same;
 }
 
-void MTTKRP_RowMajor( tensor * T, double * K, double * C, int rank, int n){
+void MTTKRP_RowMajor( tensor * T, double * K, double * C, long int rank, long int n){
 
 	if( T == NULL){
 		printf("Tensor pointer is null, error\n");
@@ -409,13 +409,13 @@ void MTTKRP_RowMajor( tensor * T, double * K, double * C, int rank, int n){
 		exit(-6);
 	}
 
-	int i, nDim;
+	long int i, nDim;
 	double alpha, beta;
 
 	
 	if( n == 0 ){
 
-		int ncols = 1;
+		long int ncols = 1;
 
 		ncols = T->dims_product/T->dims[n];
 		alpha = 1.0;
@@ -449,8 +449,8 @@ void MTTKRP_RowMajor( tensor * T, double * K, double * C, int rank, int n){
 		cblas_dgemm( CblasColMajor, CblasNoTrans, CblasTrans, rank, nDim, ncols, alpha, K, rank, T->data, nDim, beta, C, rank); 
 	}
 	else{ 			//	if n != 0 it is not the first dimension, so n is at least 1
-		int nmats = 1;	//	nmats is the number of submatrices to be multiplied
-		int ncols = 1;	//	ncols is the number of columns in a submatrix
+		long int nmats = 1;	//	nmats is the number of submatrices to be multiplied
+		long int ncols = 1;	//	ncols is the number of columns in a submatrix
 		
 		//	calculate the number of columns in the sub-matrix of a matricized tensor
 		for( i = 0; i < n; i++ ){	
@@ -485,7 +485,7 @@ void MTTKRP_RowMajor( tensor * T, double * K, double * C, int rank, int n){
 				7) alpha
 				8) T->data + i*ncols*nDim, ncols*nDim is the size of a submatrix, a submatix is stored in contiguous memory, T->datancols*nDims*i indicates which submatrix we are on, 
 				9) ncols - the distance between rows of a submatrix, but remember its transposed so it could also be thought of as the number distance between columns of a transposed submatrix.
-				10) K+i*ncols - starting point of the khatri rao submatrix
+				10) K+i*ncols - starting polong int of the khatri rao submatrix
 				11) ncols*nmats - the distance between columns of the K  matrix, ncols*nmats is the number of rows in the full K matrix
 				12) beta
 				C) the out put matrix, size nDim by rank
@@ -503,8 +503,8 @@ void MTTKRP_RowMajor( tensor * T, double * K, double * C, int rank, int n){
 	It computes the Hadamards product of n-1 matrices skipping over the nth matrix in the 
 	array of matrices that it is given.
 */
-void MHada_RowMajor( ktensor * Y, double ** SYRKs, double * V, int n ){
-	int i,j,c;	
+void MHada_RowMajor( ktensor * Y, double ** SYRKs, double * V, long int n ){
+	long int i,j,c;	
 	j = 0;
 
 
@@ -517,7 +517,7 @@ void MHada_RowMajor( ktensor * Y, double ** SYRKs, double * V, int n ){
 		if( i == n)	// skip over the nth factor matrix
 			i++;
 		/*
-			For the first round of multiples we just need to copy C into
+			For the first round of multiples we just need to copy C long into
 			V, this avoids having to fill V with any initial values.
 		*/
 
@@ -533,7 +533,7 @@ void MHada_RowMajor( ktensor * Y, double ** SYRKs, double * V, int n ){
 }
 
 void do_SYRKs_RowMajor( ktensor * Y, double ** SYRKs ){
-	int i;
+	long int i;
 	double alpha, beta;
 	alpha = 1.0;
 	beta = 0.0;
@@ -546,7 +546,7 @@ void do_SYRKs_RowMajor( ktensor * Y, double ** SYRKs ){
 /*
 	normalize_Factor_Matrix_RowMajor();
 	Description -- 
-		Takes a ktensor and an int n and normalizes the nth factor matrix. 
+		Takes a ktensor and an long int n and normalizes the nth factor matrix. 
 		This will over write the lambda values of the ktensor with the 	column norms
 		of the nth factor matrix.
 	Variables --
@@ -557,9 +557,9 @@ void do_SYRKs_RowMajor( ktensor * Y, double ** SYRKs ){
 	Notes: ask Grey about the 1.0/Y-labmdas[i] division operation, worrying about divide by 0 errors!
 
 */
-void normalize_Factor_Matrix_RowMajor( ktensor * Y, int n ){
+void normalize_Factor_Matrix_RowMajor( ktensor * Y, long int n ){
 
-	int i;
+	long int i;
 	for( i = 0; i < Y->rank; i++ ){
 			Y->lambdas[i] = cblas_dnrm2( Y->dims[n], Y->factors[n] + i, Y->rank );
 			cblas_dscal( Y->dims[n], 1.0/Y->lambdas[i], Y->factors[n] + i, Y->rank );
@@ -574,7 +574,7 @@ void normalize_Factor_Matrix_RowMajor( ktensor * Y, int n ){
 */
 void normalize_Ktensor_RowMajor( ktensor * Y ){
 
-	int i, j;
+	long int i, j;
 	double l;
 
 	for( i = 0; i < Y->nmodes; i++ ){		// loop over the factor matrices
@@ -616,8 +616,8 @@ void normalize_Ktensor_RowMajor( ktensor * Y ){
 	Notes: Perhaps just store it in the old matrix?
 
 */
-void TransposeM( double * A, double * A_T, int rowsA, int colsA ){
-	int i;
+void TransposeM( double * A, double * A_T, long int rowsA, long int colsA ){
+	long int i;
 	for( i = 0; i < rowsA; i++ ){
 		/*
 			m) copy m items each time
@@ -637,7 +637,7 @@ void TransposeM( double * A, double * A_T, int rowsA, int colsA ){
 		This assumes the intputs are in RowMajor order and returns the matricization in ColumnMajor ordering
 		F_n(KR!=n)^T
 */
-void Full_nMode_Matricization_RowMajor( tensor * T, ktensor * Y, int n ){
+void Full_nMode_Matricization_RowMajor( tensor * T, ktensor * Y, long int n ){
 
 	double * KR, alpha, beta;
 
@@ -657,7 +657,7 @@ void Full_nMode_Matricization_RowMajor( tensor * T, ktensor * Y, int n ){
 	approximation_Error()
 	Computes the norm of a tensor and its current approximation given a KRP and a factor matrix
 */
-double approximation_Error( double * X, double * KR, ktensor * Y, int n ){
+double approximation_Error( double * X, double * KR, ktensor * Y, long int n ){
 	
 	// I think you only wanna do this for n == 0 but idk, you could easily do it for the last one also	
 	double alpha, beta;
@@ -680,7 +680,7 @@ double approximation_Error( double * X, double * KR, ktensor * Y, int n ){
 	5) S, pointer to the storage space for the SYRK of the nth factor matrix
 	6) tensor_norm, the fro norm of the tensor input.
 */
-double CP_ALS_efficient_error_computation( ktensor * Y, int n, double * MTTKRP, double * V, double * S, double tensor_norm ){
+double CP_ALS_efficient_error_computation( ktensor * Y, long int n, double * MTTKRP, double * V, double * S, double tensor_norm ){
 	double dotXY, dotYY, * lambda_array, e;
 	lambda_array = (double *)malloc(sizeof(double)*Y->rank);
 
@@ -708,7 +708,7 @@ double CP_ALS_efficient_error_computation( ktensor * Y, int n, double * MTTKRP, 
 	Does so by forming the explicit approximatino of T form Y
 	subtracting the two matricized tensors and taking the 2norm.
 */
-double CP_ALS_naive_error_computation( tensor * T, ktensor * Y, double * X, double * KRP, int n ){
+double CP_ALS_naive_error_computation( tensor * T, ktensor * Y, double * X, double * KRP, long int n ){
 
 	double e;	
 
@@ -719,13 +719,13 @@ double CP_ALS_naive_error_computation( tensor * T, ktensor * Y, double * X, doub
 	return e;
 }
 
-void dims_check( int * dims, int length){
+void dims_check( long int * dims, long int length){
 	/*
 		This function takes an integer array of dimension and the array's length.
 		All entires in dims should be greater than 0 and length should be 1 or greater.
 	*/
 
-	int i;
+	long int i;
 
 	if( length < 1 ){ printf("From dims_check():: length < 1, Exit(-1)"); exit(-1); }
 	if( dims == NULL ){ printf("From dims_check():: dims == NULL, Exit(-2)"); exit(-2); }
@@ -737,18 +737,18 @@ void dims_check( int * dims, int length){
 /*
 	reoder_Ktensor();
 	Reoders the factor matrices and dimension of a ktensor by removing the nth mode.
-	Only shuffles pointers, no deep copies of factor matrices are made.
+	Only shuffles polong inters, no deep copies of factor matrices are made.
 	1) Y the original ktnensor
 	2) nY the kentsor without the nth mode
 	Example: [0,1,2,3,4], n = 3
 		 [0,1,2,4]
 */
-void reorder_Ktensor( ktensor * Y, ktensor * nY, int n ){
+void reorder_Ktensor( ktensor * Y, ktensor * nY, long int n ){
 	
-	int i, j;
+	long int i, j;
 	nY->nmodes = Y->nmodes - 1;
 	nY->factors = (double **)malloc( sizeof(double*) * nY->nmodes );
-	nY->dims = (int *)malloc( sizeof(int) * nY->nmodes );
+	nY->dims = (long int *)malloc( sizeof(long int) * nY->nmodes );
 	nY->lambdas = (double *)malloc( sizeof(double) * Y->rank );
 	nY->rank = Y->rank;
 	nY->dims_product = Y->dims_product/Y->dims[n];
@@ -768,9 +768,9 @@ void reorder_Ktensor( ktensor * Y, ktensor * nY, int n ){
 	The indeces are in reverse order so as to be in keeping with the reverse order
 	khatri rao product functions used here.
 */
-void compute_KRP_Indices( int j, ktensor * Y, int * indeces ){
+void compute_KRP_Indices( long int j, ktensor * Y, long int * indeces ){
 
-	int i, p;
+	long int i, p;
 	p = Y->dims_product;
 
 	for( i = Y->nmodes-1; i >= 0; i-- ){
@@ -795,17 +795,17 @@ void compute_KRP_Indices( int j, ktensor * Y, int * indeces ){
 	2) number of threads to use
 	3) KRP, output KRP
 */
-void wrapper_Parallel_Multi_revKRP( ktensor * Y, int num_threads, double * KRP ){
+void wrapper_Parallel_Multi_revKRP( ktensor * Y, long int num_threads, double * KRP ){
 
-	int useful_num_threads = num_threads; // The number of threads that shuould be used <= num_threads
+	long int useful_num_threads = num_threads; // The number of threads that shuould be used <= num_threads
 
 	if( Y->dims_product < num_threads )
 		useful_num_threads = Y->dims_product;
 
-	// #pragma omp parallel num_threads(useful_num_threads)
+	#pragma omp parallel num_threads(useful_num_threads)
 	{
-		int thread_id = omp_get_thread_num();
-		int start, end;
+		long int thread_id = omp_get_thread_num();
+		long int start, end;
 
 		compute_Iteration_Space( thread_id, useful_num_threads, Y->dims_product, &start, &end );
 		parallel_Multi_KR_RowMajor( Y, &KRP[start*Y->rank], start, end );
@@ -821,7 +821,7 @@ void wrapper_Parallel_Multi_revKRP( ktensor * Y, int num_threads, double * KRP )
 	Call clean_Up_Gen_Tensor() to free all the memory when finished.
 */
 
-void Gen_Tensor( ktensor * Y, tensor * T, int R, int N, int * D, double noise ){
+void Gen_Tensor( ktensor * Y, tensor * T, long int R, long int N, long int * D, double noise ){
 	/*
 		A function for returning a randomly generated Rank R and N mode tensor
 		this function will allocate all of the memory needed for the tensor
@@ -833,7 +833,7 @@ void Gen_Tensor( ktensor * Y, tensor * T, int R, int N, int * D, double noise ){
 		5) D, the length of the dimensions of the tensor, D is length N
 	*/
 
-	int i, j;
+	long int i, j;
 	double alpha, tensor_norm; // 
 
 	srand(time(NULL));
@@ -841,7 +841,7 @@ void Gen_Tensor( ktensor * Y, tensor * T, int R, int N, int * D, double noise ){
 	// Set up the ktensor Y
 	Y->nmodes 	= N;
 	Y->rank 	= R;
-	Y->dims 	= (int *)malloc(sizeof(int)*Y->nmodes);
+	Y->dims 	= (long int *)malloc(sizeof(long int)*Y->nmodes);
 	Y->factors 	= (double**)malloc(sizeof(double*)*Y->nmodes);
 	for( i = 0; i < Y->nmodes; i++ )
 		Y->dims[i] = D[i];
@@ -859,7 +859,7 @@ void Gen_Tensor( ktensor * Y, tensor * T, int R, int N, int * D, double noise ){
 
 	// Set up the tensor T
 	T->nmodes 	= N;
-	T->dims 	= (int *)malloc(sizeof(int)*Y->nmodes);
+	T->dims 	= (long int *)malloc(sizeof(long int)*Y->nmodes);
 	T->data 	= (double*)malloc(sizeof(double)*Y->dims_product);
 	T->dims_product = Y->dims_product;
 
@@ -912,7 +912,7 @@ void Gen_Tensor( ktensor * Y, tensor * T, int R, int N, int * D, double noise ){
 	parallel_Multi_KR_RowMajor()
 	Computes a RowMajor KPR limited by start and end which are row indeces
 */
-void parallel_Multi_KR_RowMajor( ktensor * Y, double * C, int start, int end){
+void parallel_Multi_KR_RowMajor( ktensor * Y, double * C, long int start, long int end){
 	if( Y->nmodes == 2 ){
 		/*
 			If only 2 factor matrices, then no partials are used call this Function instead
@@ -920,15 +920,15 @@ void parallel_Multi_KR_RowMajor( ktensor * Y, double * C, int start, int end){
 		parallel_KR_RowMajor( Y, C, start, end );
 	}
 	else{
-		int i, j, * indexers, nmodes;
+		long int i, j, * indexers, nmodes;
 		double * partial_Hadamards;
 
 		nmodes = Y->nmodes;
 
-		indexers = (int*)malloc(sizeof(int)*nmodes);					// An indexer for each mode-1
+		indexers = (long int*)malloc(sizeof(long int)*nmodes);					// An indexer for each mode-1
 		partial_Hadamards = (double*)malloc(sizeof(double)*Y->rank*(nmodes)-2); 	// N-3 extra vectors, for storing inermediate hadamard prducts
 
-		memset( indexers, 0, sizeof(int)*(nmodes) );
+		memset( indexers, 0, sizeof(long int)*(nmodes) );
 
 		// Compute the starting indices
 		compute_KRP_Indices( start, Y, indexers );
@@ -974,11 +974,11 @@ void parallel_Multi_KR_RowMajor( ktensor * Y, double * C, int start, int end){
 	parallel_KR_RowMajor();
 	Does the parallel KRP of the factor matrices in the ktensor Y
 */
-void parallel_KR_RowMajor( ktensor * Y, double * C, int start, int end ){
-	int i, j, * indexers, c;
+void parallel_KR_RowMajor( ktensor * Y, double * C, long int start, long int end ){
+	long int i, j, * indexers, c;
 
-	indexers = (int*)malloc(sizeof(int)*Y->nmodes);
-	memset( indexers, 0, sizeof(int)*(Y->nmodes) );
+	indexers = (long int*)malloc(sizeof(long int)*Y->nmodes);
+	memset( indexers, 0, sizeof(long int)*(Y->nmodes) );
 
 	compute_KRP_Indices( start, Y, indexers );
 
@@ -1005,9 +1005,9 @@ void parallel_KR_RowMajor( ktensor * Y, double * C, int start, int end ){
 	free(indexers);
 }
 
-void parallel_update_Partial_Hadamards( ktensor * Y, int * indexers, double * partial_Hadamards ){
-	int update_from, i;
-	int nmodes = Y->nmodes;
+void parallel_update_Partial_Hadamards( ktensor * Y, long int * indexers, double * partial_Hadamards ){
+	long int update_from, i;
+	long int nmodes = Y->nmodes;
 
 	for( i = 0; i < nmodes; i++ ){
 		update_from = i;
@@ -1065,12 +1065,12 @@ void parallel_update_Partial_Hadamards( ktensor * Y, int * indexers, double * pa
 	4) end of the thread's space
 	5) space to distribute
 */
-void compute_Iteration_Space( int thread_id, int num_threads, int iter_space ,int * start, int * end ){
+void compute_Iteration_Space( long int thread_id, long int num_threads, long int iter_space ,long int * start, long int * end ){
 	/**
 		1) b, 		block size
 		2) limit, 	bound on thread_ids who get +1 on block size
 	*/
-	int b, limit;
+	long int b, limit;
 
 	limit = iter_space%num_threads;
 	b = iter_space/num_threads;
@@ -1091,7 +1091,7 @@ void compute_Iteration_Space( int thread_id, int num_threads, int iter_space ,in
 */
 void clean_Up_Gen_Tensor( ktensor * Y, tensor * T ){
 
-	int i;
+	long int i;
 
 	// Ktensor Y memory
 	for( i = 0; i < Y->nmodes; i++ ){
@@ -1113,10 +1113,10 @@ void clean_Up_Gen_Tensor( ktensor * Y, tensor * T ){
 	4) nmodes
 	5) array of dimensions
 */
-void process_inputs( int argc, char *argv[], tensor_inputs * inputs ){
+void process_inputs( long int argc, char *argv[], tensor_inputs * inputs ){
 
-	int i, j = 1;
-	int offset; // 0)program_name 1)rank, 2)num_threads, 3)nmodes, 4) max_iters, 5)eps
+	long int i, j = 1;
+	long int offset; // 0)program_name 1)rank, 2)num_threads, 3)nmodes, 4) max_iters, 5)eps
 
 	inputs->rank 	    = atoi(argv[j++]); 	// 1
 	//inputs->noise = atof(argv[2]);
@@ -1128,7 +1128,7 @@ void process_inputs( int argc, char *argv[], tensor_inputs * inputs ){
 	offset = j;
 
 	printf("N=%d\n",inputs->nmodes);
-	inputs->dims = (int *)malloc( sizeof(int) * inputs->nmodes );
+	inputs->dims = (long int *)malloc( sizeof(long int) * inputs->nmodes );
 	for( i = 0; i < inputs->nmodes; i++ )
 		inputs->dims[i] = atoi(argv[offset+i]);
 
@@ -1167,9 +1167,9 @@ void destroy_inputs( tensor_inputs * inputs ){
 	It takes the left or right factor matrices in relation to some index
 	Mallocs memory that needs to be free'd later on.
 */
-void LR_Ktensor_Reordering_newY( ktensor * Y, ktensor * nY, int n, direction D ){
+void LR_Ktensor_Reordering_newY( ktensor * Y, ktensor * nY, long int n, direction D ){
 
-	int i, jump;
+	long int i, jump;
 
 	if( D == ::direction::left ){
 		nY->nmodes = n;
@@ -1181,7 +1181,7 @@ void LR_Ktensor_Reordering_newY( ktensor * Y, ktensor * nY, int n, direction D )
 	}
 	
 	nY->factors 	= (double **)malloc( sizeof(double*) * nY->nmodes );
-	nY->dims 	= (int *)malloc( sizeof(int) * nY->nmodes );
+	nY->dims 	= (long int *)malloc( sizeof(long int) * nY->nmodes );
 	nY->rank	= Y->rank;
 	nY->lambdas 	= (double *)malloc( sizeof(double) * nY->rank );
 
@@ -1204,9 +1204,9 @@ void LR_Ktensor_Reordering_newY( ktensor * Y, ktensor * nY, int n, direction D )
 
 	
 */
-void LR_Ktensor_Reordering_existingY( ktensor * Y, ktensor * nY, int n, direction D ){
+void LR_Ktensor_Reordering_existingY( ktensor * Y, ktensor * nY, long int n, direction D ){
 
-	int i, jump;
+	long int i, jump;
 
 	if( D == ::direction::left ){
 		nY->nmodes = n;
@@ -1232,9 +1232,9 @@ void LR_Ktensor_Reordering_existingY( ktensor * Y, ktensor * nY, int n, directio
 	Removes a mode from an existing ktensor.
 	Does NOT reset the memory.
 */
-void remove_mode_Ktensor( ktensor * Y, int n ){
+void remove_mode_Ktensor( ktensor * Y, long int n ){
 
-	int i, j;
+	long int i, j;
 
 	if( n < 0 || n >= Y->nmodes ){
 		printf("In remove_mode_Ktensor() invalid value of n == %d\nExit\n", n);
@@ -1258,9 +1258,9 @@ void remove_mode_Ktensor( ktensor * Y, int n ){
 	Destroys a given ktensor object
 	clear_factors, is a flag that whne == 1 will tell the funciton to free the factor matrices also.
 */
-void destruct_Ktensor( ktensor * Y, int clear_factors ){
+void destruct_Ktensor( ktensor * Y, long int clear_factors ){
 	
-	int i;
+	long int i;
 	
 	if( (clear_factors != 0) && (clear_factors != 1) ){ printf("clear_factors argument in destruct_Ktensor() was not 0 or 1. Return. %d\n", clear_factors); return;}
 
@@ -1296,9 +1296,9 @@ void tensor_data_swap( tensor * t1, tensor * t2 ){
 /**
 	
 */
-void LR_tensor_Reduction( tensor * T, tensor * nT, int n, direction D ){
+void LR_tensor_Reduction( tensor * T, tensor * nT, long int n, direction D ){
 
-	int i, jump;
+	long int i, jump;
 
 	if( D == ::direction::left ){
 		jump = 0;
@@ -1325,12 +1325,12 @@ void LR_tensor_Reduction( tensor * T, tensor * nT, int n, direction D ){
 */
 void ktensor_copy_constructor( ktensor * Y, ktensor * nY ){
 
-	int i;
+	long int i;
 
 	nY->nmodes	= Y->nmodes;
 	nY->rank 	= Y->rank;
 
-	nY->dims 	= (int *)malloc(sizeof(int) * nY->nmodes);
+	nY->dims 	= (long int *)malloc(sizeof(long int) * nY->nmodes);
 	nY->factors 	= (double **)malloc( sizeof(double*) * nY->nmodes );
 	nY->lambdas 	= (double *)malloc(sizeof(double) * nY->rank);
 

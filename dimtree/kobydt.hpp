@@ -13,16 +13,16 @@ class KobyDimensionTree {
     tensor * buffer_Tensor;
     ktensor * projection_Ktensor;
     double * col_MTTKRP;
-    int num_threads;
-    int s;
-    int ldp;
-    int rdp;
+    long int num_threads;
+    long int s;
+    long int ldp;
+    long int rdp;
 
 
   public:
     KobyDimensionTree(const planc::Tensor &i_input_tensor,
                       const planc::NCPFactors &i_ncp_factors,
-                      int split_mode) {
+                      long int split_mode) {
         m_local_T = (tensor *) malloc (sizeof * m_local_T);
         m_local_Y = (ktensor *) malloc (sizeof * m_local_Y);
         projection_Tensor = (tensor *) malloc (sizeof * projection_Tensor);
@@ -32,15 +32,15 @@ class KobyDimensionTree {
         m_local_T->nmodes = i_input_tensor.modes();
         m_local_T->dims_product = i_input_tensor.numel();
         m_local_Y->factors = (double **)malloc(sizeof(double*)*m_local_T->nmodes);
-        m_local_Y->dims = (int *)malloc(sizeof(int) * m_local_T->nmodes);
-        m_local_T->dims = (int *)malloc(sizeof(int) * m_local_T->nmodes);
+        m_local_Y->dims = (long int *)malloc(sizeof(long int) * m_local_T->nmodes);
+        m_local_T->dims = (long int *)malloc(sizeof(long int) * m_local_T->nmodes);
         m_local_Y->nmodes = i_ncp_factors.modes();
         m_local_Y->rank = i_ncp_factors.rank();
         ROWVEC temp_vec = arma::prod(i_ncp_factors.lambda());
         m_local_Y->lambdas = temp_vec.memptr();
         m_local_Y->dims_product = arma::prod(i_ncp_factors.dimensions());
 
-        for (int i = 0; i < m_local_T->nmodes; i++) {
+        for (long int i = 0; i < m_local_T->nmodes; i++) {
             m_local_T->dims[i] = i_input_tensor.dimensions()[i];
             m_local_Y->dims[i] = i_input_tensor.dimensions()[i];
             m_local_Y->factors[i] = (double*)malloc(sizeof(double) * i_ncp_factors.rank() * m_local_T->dims[i]);
@@ -60,9 +60,9 @@ class KobyDimensionTree {
         projection_Tensor->nmodes    = m_local_T->nmodes;
         buffer_Tensor->nmodes        = m_local_T->nmodes;
 
-        projection_Tensor->dims  = (int*)malloc(sizeof(int) * m_local_T->nmodes);
-        buffer_Tensor->dims  = (int*)malloc(sizeof(int) * m_local_T->nmodes);
-        for (int i = 0; i < m_local_T->nmodes; i++) {
+        projection_Tensor->dims  = (long int*)malloc(sizeof(long int) * m_local_T->nmodes);
+        buffer_Tensor->dims  = (long int*)malloc(sizeof(long int) * m_local_T->nmodes);
+        for (long int i = 0; i < m_local_T->nmodes; i++) {
             projection_Tensor->dims[i]   = m_local_T->dims[i];
             buffer_Tensor->dims[i]       = m_local_T->dims[i];
         }
@@ -70,21 +70,21 @@ class KobyDimensionTree {
         projection_Tensor->dims_product  = m_local_T->dims_product;
         buffer_Tensor->dims_product  = m_local_T->dims_product;
         ktensor_copy_constructor(m_local_Y, projection_Ktensor);
-        int max_mode = arma::max(i_input_tensor.dimensions());
-        for (int i = 0; i < i_ncp_factors.modes(); i++) {
+        long int max_mode = arma::max(i_input_tensor.dimensions());
+        for (long int i = 0; i < i_ncp_factors.modes(); i++) {
             MAT temp = i_ncp_factors.factor(i).t();
             std::memcpy(m_local_Y->factors[i], temp.memptr(), sizeof(double) * temp.n_rows * temp.n_cols);
         }
         // col_MTTKRP = (double*)malloc(sizeof(double) * m_local_Y->rank * max_mode);
     }
 
-    void set_factor(double *arma_factor_ptr, const int mode) {
+    void set_factor(double *arma_factor_ptr, const long int mode) {
         // TransposeM(arma_factor_ptr, m_local_Y->factors[mode], m_local_Y->dims[mode], m_local_Y->rank);
         std::memcpy(m_local_Y->factors[mode], arma_factor_ptr, sizeof(double)*m_local_Y->dims[mode]*m_local_Y->rank);
     }
 
     ~KobyDimensionTree() {
-        for (int i = 0; i < m_local_T->nmodes; i++) {
+        for (long int i = 0; i < m_local_T->nmodes; i++) {
             free(m_local_Y->factors[i]);
         }
         free(m_local_Y->factors);
@@ -101,10 +101,10 @@ class KobyDimensionTree {
         // free(col_MTTKRP);
     }
 
-    void set_left_right_product(const int i_split_mode) {
+    void set_left_right_product(const long int i_split_mode) {
         ldp = 1;
         rdp = 1;
-        for (int i = 0; i < m_local_T->nmodes; i++) {
+        for (long int i = 0; i < m_local_T->nmodes; i++) {
             if (i <= i_split_mode) {
                 ldp *= m_local_T->dims[i];
             } else {
@@ -117,7 +117,7 @@ class KobyDimensionTree {
     * Return the col major ordered mttkrp
     */
 
-    void in_order_reuse_MTTKRP(int n, double *out, bool colmajor) {
+    void in_order_reuse_MTTKRP(long int n, double *out, bool colmajor) {
         // ktensor *Y = m_local_Y;
         direction D;
 
