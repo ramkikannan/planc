@@ -53,6 +53,7 @@ class DistAUNTF {
     int current_it;
     FVEC m_regularizers;
     bool m_compute_error;
+    bool m_enable_dim_tree;
 
     // update function
     LUC *m_luc_ntf_update;
@@ -170,9 +171,15 @@ class DistAUNTF {
         this->time_stats.compute_duration(temp);
         this->time_stats.krp_duration(temp);
         mpitic();
-        kdt->in_order_reuse_MTTKRP(current_mode, ncp_mttkrp_t[current_mode].memptr(), false);
-        // m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
-        //                      &ncp_mttkrp_t[current_mode]);
+        if (this->m_enable_dim_tree) {
+            kdt->in_order_reuse_MTTKRP(current_mode,
+                                       ncp_mttkrp_t[current_mode].memptr(),
+                                       false);
+        } else {
+            m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
+                                  &ncp_mttkrp_t[current_mode]);
+        }
+
         temp = mpitoc();  // mttkrp
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
@@ -233,7 +240,7 @@ class DistAUNTF {
         MPI_Allreduce(&temp, &mintemp, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
         MPI_Allreduce(&temp, &sumtemp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         PRINTROOT(reportstring \
-                  // << "::dims::" << this->m_global_dims.t() 
+                  // << "::dims::" << this->m_global_dims.t()
                   << "::k::" << this->m_low_rank_k << "::SIZE::" << MPI_SIZE \
                   << "::algo::" << this->m_updalgo \
                   << "::root::" << temp \
@@ -281,6 +288,7 @@ class DistAUNTF {
         m_gathered_ncp_factors_t(i_tensor.dimensions(), i_k, true),
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
         this->m_compute_error = false;
+        this->m_enable_dim_tree = false;
         this->m_num_it = 30;
         //local factors.
         arma::arma_rng::set_seed(i_mpicomm.rank());
@@ -299,6 +307,9 @@ class DistAUNTF {
     }
     ~DistAUNTF() {
         freeMatrices();
+        if (this->m_enable_dim_tree) {
+            delete kdt;
+        }
     }
     void num_iterations(const int i_n) { this->m_num_it = i_n;}
     void regularizers(const FVEC i_regs) {this->m_regularizers = i_regs;}
@@ -307,6 +318,9 @@ class DistAUNTF {
         hadamard_all_grams = arma::ones<MAT>(this->m_low_rank_k,
                                              this->m_low_rank_k);
     }
+    void dim_tree(bool i_dim_tree) {
+        this->m_enable_dim_tree = i_dim_tree;
+    }
     void computeNTF() {
         // initialize everything.
         // line 3,4,5 of the algorithm
@@ -314,8 +328,10 @@ class DistAUNTF {
             update_global_gram(i);
             gather_ncp_factor(i);
         }
-        kdt = new KobyDimensionTree(m_input_tensor, m_gathered_ncp_factors,
-                                    m_input_tensor.modes() / 2);
+        if (this->m_enable_dim_tree) {
+            kdt = new KobyDimensionTree(m_input_tensor, m_gathered_ncp_factors,
+                                        m_input_tensor.modes() / 2);
+        }
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO("local factor matrices::");
         this->m_local_ncp_factors.print();
@@ -361,8 +377,10 @@ class DistAUNTF {
                 update_global_gram(current_mode);
                 // line 15
                 gather_ncp_factor(current_mode);
-                kdt->set_factor(m_gathered_ncp_factors_t.factor(current_mode).memptr(),
-                                current_mode);
+                if (this->m_enable_dim_tree) {
+                    kdt->set_factor(m_gathered_ncp_factors_t.factor(current_mode).memptr(),
+                                    current_mode);
+                }
             }
             if (m_compute_error) {
                 double temp_err = computeError(unnorm_factor);

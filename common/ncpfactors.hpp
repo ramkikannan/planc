@@ -184,8 +184,8 @@ class NCPFactors {
 // end
         for (int n = 0; n < this->m_k; n++) {
             MAT ab = ncp_factors[matorder[0]].col(n);
-            for (int i = 1; i < this->m_modes - 1; i++) {
-                VEC oldabvec = arma::vectorise(ab);
+            for (int i = 1; i < this->m_modes - 1; i++) {                
+                VEC oldabvec = arma::vectorise(ab);                
                 VEC currentvec = ncp_factors[matorder[i]].col(n);
                 ab.clear();
                 ab = currentvec * oldabvec.t();
@@ -224,18 +224,18 @@ class NCPFactors {
 
 
 // caller must free
-    Tensor rankk_tensor() {
-        UWORD krpsize = arma::prod(this->m_dimensions);
-        krpsize /= this->m_dimensions[0];
-        MAT krpleavingzero = arma::zeros<MAT>(krpsize, this->m_k);
-        krp_leave_out_one(0, &krpleavingzero);
-        MAT lowranktensor(this->m_dimensions[0], krpsize);
-        lowranktensor = this->ncp_factors[0] * krpleavingzero.t();
-        Tensor rc(this->m_dimensions, lowranktensor.memptr());
-        return rc;
-    }
+    // Tensor rankk_tensor() {
+    //     UWORD krpsize = arma::prod(this->m_dimensions);
+    //     krpsize /= this->m_dimensions[0];
+    //     MAT krpleavingzero = arma::zeros<MAT>(krpsize, this->m_k);
+    //     krp_leave_out_one(0, &krpleavingzero);
+    //     MAT lowranktensor(this->m_dimensions[0], krpsize);
+    //     lowranktensor = this->ncp_factors[0] * krpleavingzero.t();
+    //     Tensor rc(this->m_dimensions, lowranktensor.memptr());
+    //     return rc;
+    // }
 
-    void rankk_tensor(Tensor *out) {
+    void rankk_tensor(Tensor &out) {
         UWORD krpsize = arma::prod(this->m_dimensions);
         krpsize /= this->m_dimensions[0];
         MAT krpleavingzero = arma::zeros<MAT>(krpsize, this->m_k);
@@ -243,7 +243,7 @@ class NCPFactors {
         MAT lowranktensor(this->m_dimensions[0], krpsize);
         lowranktensor = this->ncp_factors[0] * krpleavingzero.t();
         Tensor rc(this->m_dimensions, lowranktensor.memptr());
-        out = &rc;
+        out = rc;
     }
 
     void printinfo() {

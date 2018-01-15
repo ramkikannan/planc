@@ -43,9 +43,11 @@ class Tensor {
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
         m_data = new double[this->m_numel];
-        freed_on_destruction = false;        
+        freed_on_destruction = false;
         randu();
     }
+    // Need when copying from matrix to Tensor.
+    // otherwise copy constructor will be called.
     Tensor(const UVEC& i_dimensions, double *i_data):
         m_dimensions(i_dimensions),
         m_modes(i_dimensions.n_rows),
@@ -59,28 +61,32 @@ class Tensor {
         if (!freed_on_destruction) {
             delete[] m_data;
             freed_on_destruction = true;
-        }        
+        }
     }
-
     //copy constructor
     Tensor(const Tensor &src) {
-        if (this->m_numel > 0 && this->m_data != NULL) {
-            if (this->m_numel == src.numel()) {
-                memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
-            } else {
-                if (this->m_data != NULL) free(this->m_data);
-                this->m_numel = src.numel();
-                m_data = new double[this->m_numel];
-                memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
+        this->m_numel = src.numel();
+        this->m_modes = src.modes();
+        this->m_dimensions = src.dimensions();
+        this->rand_seed  = 103;
+        m_data = new double[this->m_numel];
+        memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
+    }
+    Tensor& operator=(const Tensor& other) { // copy assignment
+        if (this != &other) { // self-assignment check expected
+            if (other.m_numel != this->m_numel) {         // storage cannot be reused
+                delete[] this->m_data;              // destroy storage in this
+                this->m_numel = 0;
+                this->m_data = NULL;             // preserve invariants in case next line throws
+                this->m_data = new double[other.numel()]; // create storage in this
+                this->m_numel = other.numel();
+                this->m_modes = other.modes();
+                this->m_dimensions = other.dimensions();
+                this->freed_on_destruction = false;
             }
-        } else {
-            this->m_numel = src.numel();
-            this->m_modes = src.modes();
-            this->m_dimensions = src.dimensions();
-            this->rand_seed  = 103;
-            m_data = new double[this->m_numel];
-            memcpy(this->m_data, src.m_data, sizeof(double)*this->m_numel);
+            memcpy(this->m_data, other.m_data, sizeof(double)*this->m_numel);
         }
+        return *this;
     }
 
     int modes() const {return m_modes;}

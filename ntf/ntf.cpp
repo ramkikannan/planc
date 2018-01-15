@@ -21,14 +21,17 @@ int main(int argc, char* argv[]) {
     my_tensor.print();
     // planc::NCPFactors cpfactors(pc.dimensions(), pc.lowrankk(), false);
     // cpfactors.normalize();
-    // cpfactors.print();    
+    // cpfactors.print();
     algotype ntfupdalgo = pc.lucalgo();
     planc::AUNTF auntf(my_tensor, pc.lowrankk(), ntfupdalgo);
     std::cout << "init factors" << std::endl << "--------------" << std::endl;
-    auntf.ncp_factors().print();    
+    auntf.ncp_factors().print();
     // std::cout << "input tensor" << std::endl << "--------------" << std::endl;
     // my_tensor.print();
     auntf.num_it(pc.iterations());
+    if (pc.dim_tree()) {
+        auntf.dim_tree(true);
+    }
     auntf.computeNTF();
     auntf.ncp_factors().print();
     // std::cout << "input factors::" << std::endl;
@@ -39,5 +42,5 @@ int main(int argc, char* argv[]) {
     // for (int i = 0; i < test_modes; i++) {
     //     std::cout << solution.factor(i);
     // }
-    // solution.normalize();    
+    // solution.normalize();
 }

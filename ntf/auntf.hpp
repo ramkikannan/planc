@@ -43,6 +43,7 @@ class AUNTF {
     LUC *m_luc;
     planc::Tensor *lowranktensor;
     KobyDimensionTree *kdt;
+    bool m_enable_dim_tree;
 
   public:
     AUNTF(const planc::Tensor &i_tensor, const int i_k, algotype i_algo) :
@@ -64,8 +65,7 @@ class AUNTF {
         m_num_it = 20;
         INFO << "Init factors for NCP" << std::endl << "======================";
         m_ncp_factors.print();
-        kdt = new KobyDimensionTree(m_input_tensor, m_ncp_factors,
-                                    m_input_tensor.modes() / 2);
+        this->m_enable_dim_tree = false;
     }
     ~AUNTF() {
         for (int i = 0; i < m_input_tensor.modes(); i++) {
@@ -75,10 +75,19 @@ class AUNTF {
         delete[] ncp_krp;
         delete[] ncp_mttkrp_t;
         delete m_luc;
-        delete kdt;
+        if (this->m_enable_dim_tree) {
+            delete kdt;
+        }
         delete lowranktensor;
     }
     NCPFactors& ncp_factors() {return m_ncp_factors;}
+    void dim_tree(bool i_dim_tree) {
+        this->m_enable_dim_tree = i_dim_tree;
+        if (i_dim_tree) {
+            this->kdt = new KobyDimensionTree(m_input_tensor, m_ncp_factors,
+                                              m_input_tensor.modes() / 2);
+        }
+    }
     void num_it(const int i_n) { this->m_num_it = i_n;}
     void computeNTF() {
         for (int i = 0; i < m_num_it; i++) {
@@ -95,8 +104,11 @@ class AUNTF {
                 INFO << "krp_leave_out_" << j << std::endl
                      << ncp_krp[j] << std::endl;
 #endif
-                kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp_t[j].memptr(), false);
-                // m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp_t[j]);
+                if (this->m_enable_dim_tree) {
+                    kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp_t[j].memptr(), false);
+                } else {
+                    m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp_t[j]);
+                }
 #ifdef NTF_VERBOSE
                 INFO << "mttkrp for factor" << j << std::endl
                      << ncp_mttkrp_t[j] << std::endl;
@@ -114,7 +126,9 @@ class AUNTF {
                 }
                 m_ncp_factors.normalize(j);
                 factor = m_ncp_factors.factor(j).t();
-                kdt->set_factor(factor.memptr(), j);
+                if (m_enable_dim_tree) {
+                    kdt->set_factor(factor.memptr(), j);
+                }
             }
 #ifdef NTF_VERBOSE
             INFO << "ncp factors" << std::endl;

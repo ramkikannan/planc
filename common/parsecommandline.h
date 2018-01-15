@@ -21,6 +21,7 @@
 // #define PROCCOLS        2003
 #define NUMKBLOCKS      2004
 #define NORMALIZATION   2005
+#define DIMTREE         2006 
 
 // enum factorizationtype{FT_NMF, FT_DISTNMF, FT_NTF, FT_DISTNTF};
 
@@ -83,6 +84,7 @@ struct option plancopts[] = {
     {"iter",          optional_argument, 0, 't'},
     {"numkblocks",    optional_argument, 0, NUMKBLOCKS},
     {"normalization", optional_argument, 0, NORMALIZATION}, 
+    {"dimtree",       optional_argument, 0, DIMTREE}, 
     {0,             0,                 0,  0 }
 };
 

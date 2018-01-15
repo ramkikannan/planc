@@ -23,6 +23,7 @@ class DistNTF {
     int m_num_k_blocks;
     UVEC m_global_dims;
     UVEC m_local_dims;
+    bool m_enable_dim_tree;
     static const int kprimeoffset = 17;
 
     void printConfig() {
@@ -33,6 +34,7 @@ class DistNTF {
                   << "::error::" << this->m_compute_error
                   << "::regs::" << this->m_regs
                   << "::num_k_blocks::" << m_num_k_blocks
+                  << "::dim_tree::" << m_enable_dim_tree
                   << std::endl;
     }
 
@@ -48,7 +50,8 @@ class DistNTF {
         } else {
             // dio.readInput(m_Afile_name);
         }
-        planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);        
+        // planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);
+        planc::Tensor A = dio.A();        
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             UVEC local_dims = A.dimensions();
             /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
@@ -61,8 +64,8 @@ class DistNTF {
              << A.dimensions()
              << "::global dims::" << this->m_global_dims
              << std::endl;
-#ifdef DISTNTF_VERBOSE             
-             A.print();
+#ifdef DISTNTF_VERBOSE
+        A.print();
 #endif
 #ifdef WRITE_RAND_INPUT
         dio.writeRandInput();
@@ -87,19 +90,20 @@ class DistNTF {
         planc::DistAUNTF ntfsolver(A, this->m_k, this->m_ntfalgo,
                                    this->m_global_dims, A.dimensions(),
                                    mpicomm);
-
-
         memusage(mpicomm.rank(), "after constructor ");
         ntfsolver.num_iterations(this->m_num_it);
         ntfsolver.compute_error(this->m_compute_error);
+        if (this->m_enable_dim_tree) {
+            ntfsolver.dim_tree(this->m_enable_dim_tree);
+        }
         ntfsolver.regularizers(this->m_regs);
         MPI_Barrier(MPI_COMM_WORLD);
         // try {
-            mpitic();
-            ntfsolver.computeNTF();
-            double temp = mpitoc();
+        mpitic();
+        ntfsolver.computeNTF();
+        double temp = mpitoc();
 
-            if (mpicomm.rank() == 0) printf("NMF took %.3lf secs.\n", temp);
+        if (mpicomm.rank() == 0) printf("NMF took %.3lf secs.\n", temp);
         // } catch (std::exception& e) {
         //     printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
         //     MPI_Abort(MPI_COMM_WORLD, 1);
@@ -119,6 +123,7 @@ class DistNTF {
         this->m_regs          = pc.regularizers();
         this->m_global_dims   = pc.dimensions();
         this->m_compute_error = pc.compute_error();
+        this->m_enable_dim_tree = pc.dim_tree();
         printConfig();
         callDistNTF();
     }

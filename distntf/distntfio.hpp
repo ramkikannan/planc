@@ -25,7 +25,7 @@ namespace planc {
 class DistNTFIO {
   private:
     const NTFMPICommunicator& m_mpicomm;
-    Tensor *m_A;
+    Tensor m_A;
     // don't start getting prime number from 2;
     static const int kPrimeOffset = 10;
     // Hope no one hits on this number.
@@ -60,7 +60,7 @@ class DistNTFIO {
     explicit DistNTFIO(const NTFMPICommunicator &mpic): m_mpicomm(mpic) {
     }
     ~DistNTFIO() {
-        delete this->m_A;
+        // delete this->m_A;
     }
     /*
      * We need m,n,pr,pc only for rand matrices. If otherwise we are
@@ -77,7 +77,8 @@ class DistNTFIO {
         std::string rand_prefix("rand_");
         if (!file_name.compare(0, rand_prefix.size(), rand_prefix)) {
             if (!file_name.compare("rand_uniform")) {
-                this->m_A = new Tensor(i_global_dims / i_proc_grids);
+                Tensor temp(i_global_dims / i_proc_grids);
+                this->m_A = temp;
             } else if (!file_name.compare("rand_lowrank")) {
                 randomLowRank(i_global_dims, k);
             }
@@ -94,7 +95,7 @@ class DistNTFIO {
     }
     void writeRandInput() {
     }
-    const Tensor* A() const {return m_A;}
+    const Tensor& A() const {return m_A;}
     const NTFMPICommunicator& mpicomm() const {return m_mpicomm;}
 
 };
