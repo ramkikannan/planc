@@ -16,13 +16,13 @@ typedef enum {RowMajor, ColMajor} Output_Layout;
 	Partial MTTKRP functions
 */
 
-void partial_MTTKRP( Output_Layout OL, int s, direction D, tensor * T, double * A, int r, double * C, int num_threads );
-void partial_MTTKRP_with_KRP( Output_Layout OL, int s, direction D, ktensor * Y, tensor * T, double * C, int num_threads );
-void partial_MTTKRP_with_KRP_output_FM( direction D, ktensor * Y, tensor * T, int num_threads );
-void partial_MTTKRP_with_KRP_output_T( int s, direction D, ktensor * input_ktensor, tensor * input_tensor, tensor * output_tensor, int num_threads );
+void partial_MTTKRP( Output_Layout OL, long int s, direction D, tensor * T, double * A, long int r, double * C, long int num_threads );
+void partial_MTTKRP_with_KRP( Output_Layout OL, long int s, direction D, ktensor * Y, tensor * T, double * C, long int num_threads );
+void partial_MTTKRP_with_KRP_output_FM( direction D, ktensor * Y, tensor * T, long int num_threads );
+void partial_MTTKRP_with_KRP_output_T( long int s, direction D, ktensor * input_ktensor, tensor * input_tensor, tensor * output_tensor, long int num_threads );
 
-void multi_TTV( Output_Layout OL, int s, direction D, tensor * T, double * A, int r, double * C, int num_threads );
-void multi_TTV_with_KRP( Output_Layout OL, int s, direction D, tensor * T, ktensor * Y, double * C, int num_threads );
-void multi_TTV_with_KRP_output_FM( direction D, tensor * input_tensor, ktensor * input_ktensor, int num_threads );
-void multi_TTV_with_KRP_output_T( int s, direction D, tensor * input_tensor, ktensor * input_ktensor, tensor * output_tensor, int num_threads );
+void multi_TTV( Output_Layout OL, long int s, direction D, tensor * T, double * A, long int r, double * C, long int num_threads );
+void multi_TTV_with_KRP( Output_Layout OL, long int s, direction D, tensor * T, ktensor * Y, double * C, long int num_threads );
+void multi_TTV_with_KRP_output_FM( direction D, tensor * input_tensor, ktensor * input_ktensor, long int num_threads );
+void multi_TTV_with_KRP_output_T( long int s, direction D, tensor * input_tensor, ktensor * input_ktensor, tensor * output_tensor, long int num_threads );
 #endif  // DIMTREES_H_

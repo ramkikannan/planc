@@ -25,14 +25,15 @@
 		- C, an output matrix
 */
 
-void partial_MTTKRP( Output_Layout OL, int s, direction D, tensor * T, double * A, int r, double * C, int num_threads ){
+void partial_MTTKRP( Output_Layout OL, long int s, direction D, tensor * T, double * A, long int r, double * C, long int num_threads ){
 
 	// mkl_set_num_threads(num_threads);
+	openblas_set_num_threads(num_threads);
 
 	CBLAS_ORDER 	dgemm_layout;		// layout for dgemm calls
 	CBLAS_TRANSPOSE trans_tensor, trans_A;
 
-	int i, m, k, output_stride, tensor_stride, right_dims_product, left_dims_product;
+	long int i, m, k, output_stride, tensor_stride, right_dims_product, left_dims_product;
 	double alpha, beta;
 
 	alpha 	= 1.0;
@@ -130,9 +131,10 @@ void partial_MTTKRP( Output_Layout OL, int s, direction D, tensor * T, double * 
 	6) C, output matrix
 	7) num_threads
 */
-void partial_MTTKRP_with_KRP( Output_Layout OL, int s, direction D, ktensor * Y, tensor * T, double * C, int num_threads ){
+void partial_MTTKRP_with_KRP( Output_Layout OL, long int s, direction D, ktensor * Y, tensor * T, double * C, long int num_threads ){
 
 	// mkl_set_num_threads(num_threads);
+	openblas_set_num_threads(num_threads);
 
 	if( (s < 0) || (s >= T->nmodes-1) ){	// s cannot be negative or be equal to N-1 or be greater than N-1
 		printf("Invalid value of s in partial_MTTKRP_with_KRP(), s = %d\nExit\n", s); exit(-1);
@@ -144,7 +146,7 @@ void partial_MTTKRP_with_KRP( Output_Layout OL, int s, direction D, ktensor * Y,
 		printf("Y == NULL in partial_MTTKRP_with_KRP()\nExit\n"); exit(-1);
 	}
 
-	int 	i, right_dims_product, left_dims_product, free_KRP;
+	long int 	i, right_dims_product, left_dims_product, free_KRP;
 	double 	* KRP;
 	ktensor tempY;
 
@@ -201,9 +203,9 @@ void partial_MTTKRP_with_KRP( Output_Layout OL, int s, direction D, ktensor * Y,
 	3) ktensor K, the full ktensor
 	4) num_threads
 */
-void partial_MTTKRP_with_KRP_output_FM( direction D, ktensor * Y, tensor * T, int num_threads ){
+void partial_MTTKRP_with_KRP_output_FM( direction D, ktensor * Y, tensor * T, long int num_threads ){
 
-	int s, n;
+	long int s, n;
 
 	if( D == ::direction::left ){
 		s = T->nmodes-2;
@@ -236,10 +238,10 @@ void partial_MTTKRP_with_KRP_output_FM( direction D, ktensor * Y, tensor * T, in
 	5) output_tensor
 	6) num_threads
 */
-void partial_MTTKRP_with_KRP_output_T( int s, direction D, ktensor * input_ktensor, tensor * input_tensor, tensor * output_tensor, int num_threads ){
+void partial_MTTKRP_with_KRP_output_T( long int s, direction D, ktensor * input_ktensor, tensor * input_tensor, tensor * output_tensor, long int num_threads ){
 
 	Output_Layout output_layout = ColMajor;
-	int new_s;	// new_s is the split point for the new tensor
+	long int new_s;	// new_s is the split point for the new tensor
 
 	partial_MTTKRP_with_KRP( output_layout, s, D, input_ktensor, input_tensor, output_tensor->data, num_threads );
 
@@ -273,7 +275,7 @@ void partial_MTTKRP_with_KRP_output_T( int s, direction D, ktensor * input_ktens
 	7) C, output matrix
 	8) num_threads
 */
-void multi_TTV( Output_Layout OL, int s, direction D, tensor * T, double * A, int r, double * C, int num_threads ){
+void multi_TTV( Output_Layout OL, long int s, direction D, tensor * T, double * A, long int r, double * C, long int num_threads ){
 
 	if( s < 0 || s >= T->nmodes-1 ){	// s cannot be negative or be equal to N-1 or be greater than N-1
 		printf("Invalid value of s in multi_TTV(), s = %d\nExit\n", s); exit(-1);
@@ -293,7 +295,7 @@ void multi_TTV( Output_Layout OL, int s, direction D, tensor * T, double * A, in
 
 	CBLAS_ORDER 	dgemv_layout;
 	CBLAS_TRANSPOSE trans_tensor;
-	int right_dims_product, left_dims_product, i, m, n, tensor_stride, output_stride, output_col_stride;
+	long int right_dims_product, left_dims_product, i, m, n, tensor_stride, output_stride, output_col_stride;
 	double alpha, beta;
 
 	alpha = 1.0;
@@ -336,7 +338,8 @@ void multi_TTV( Output_Layout OL, int s, direction D, tensor * T, double * A, in
 			output_col_stride 	= m;
 		}
 	}
-
+	
+	openblas_set_num_threads(num_threads);
 	for( i = 0; i < r; i++ ){
 		/**
 			1) dgemv_layout
@@ -362,11 +365,11 @@ void multi_TTV( Output_Layout OL, int s, direction D, tensor * T, double * A, in
 	KRP wrapper for the general multi_TTV function.
 	Forms a desired KRP and passes it to the multi_TTv function, manages all memory related to the KRP.
 */
-void multi_TTV_with_KRP( Output_Layout OL, int s, direction D, tensor * T, ktensor * Y, double * C, int num_threads ){
+void multi_TTV_with_KRP( Output_Layout OL, long int s, direction D, tensor * T, ktensor * Y, double * C, long int num_threads ){
 
 	ktensor 	tempY;
 	double * 	KRP;
-	int 		free_KRP;
+	long int 	free_KRP;
 
 	// the tensour should have 1 more mode than the ktensor
 	if( T->nmodes != Y->nmodes+1 ){
@@ -409,9 +412,9 @@ void multi_TTV_with_KRP( Output_Layout OL, int s, direction D, tensor * T, ktens
 	3) input_ktensor, factor matrices from which to form the KRP
 	4) num_threads
 */
-void multi_TTV_with_KRP_output_FM( direction D, tensor * input_tensor, ktensor * input_ktensor, int num_threads ){
+void multi_TTV_with_KRP_output_FM( direction D, tensor * input_tensor, ktensor * input_ktensor, long int num_threads ){
 
-	int s, n;
+	long int s, n;
 
 	if( D == ::direction::left ){
 		s = input_ktensor->nmodes-2;
@@ -425,9 +428,9 @@ void multi_TTV_with_KRP_output_FM( direction D, tensor * input_tensor, ktensor *
 	multi_TTV_with_KRP( RowMajor, s, D, input_tensor, input_ktensor, input_ktensor->factors[n], num_threads );
 }
 
-void multi_TTV_with_KRP_output_T( int s, direction D, tensor * input_tensor, ktensor * input_ktensor, tensor * output_tensor, int num_threads ){
+void multi_TTV_with_KRP_output_T( long int s, direction D, tensor * input_tensor, ktensor * input_ktensor, tensor * output_tensor, long int num_threads ){
 
-	int x;
+	long int x;
 	direction op_D;
 
 	multi_TTV_with_KRP( ColMajor, s, D, input_tensor, input_ktensor, output_tensor->data, num_threads );
