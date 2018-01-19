@@ -164,22 +164,26 @@ class DistAUNTF {
     }
 
     void distmttkrp(const int &current_mode) {
-        mpitic();
-        m_gathered_ncp_factors.krp_leave_out_one(current_mode,
-                &ncp_krp[current_mode]);
-        double temp = mpitoc();
-        this->time_stats.compute_duration(temp);
-        this->time_stats.krp_duration(temp);
+        double temp;
+        if (!this->m_enable_dim_tree) {
+            mpitic();
+            m_gathered_ncp_factors.krp_leave_out_one(current_mode,
+                    &ncp_krp[current_mode]);
+            temp = mpitoc();
+            this->time_stats.compute_duration(temp);
+            this->time_stats.krp_duration(temp);
+        }
         mpitic();
         if (this->m_enable_dim_tree) {
-            kdt->in_order_reuse_MTTKRP(current_mode,
-                                       ncp_mttkrp_t[current_mode].memptr(),
-                                       false);
+        kdt->in_order_reuse_MTTKRP(current_mode,
+                                   ncp_mttkrp_t[current_mode].memptr(),
+                                   false);
+        MAT kdt_ncp_mttkrp_t = ncp_mttkrp_t[current_mode];
         } else {
-            m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
-                                  &ncp_mttkrp_t[current_mode]);
+        m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
+                              &ncp_mttkrp_t[current_mode]);
         }
-
+        PRINTROOT(arma::approx_equal(kdt_ncp_mttkrp_t, ncp_mttkrp_t[current_mode], "absdiff", 1e-3));
         temp = mpitoc();  // mttkrp
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
@@ -320,6 +324,12 @@ class DistAUNTF {
     }
     void dim_tree(bool i_dim_tree) {
         this->m_enable_dim_tree = i_dim_tree;
+        if (this->ncp_krp != NULL) {
+            for (int i = 0; i < m_modes; i++) {
+                ncp_krp[i].clear();
+            }
+            delete[] ncp_krp;
+        }
     }
     void computeNTF() {
         // initialize everything.
@@ -384,7 +394,7 @@ class DistAUNTF {
             }
             if (m_compute_error) {
                 double temp_err = computeError(unnorm_factor);
-                PRINTROOT("Iter::" << current_it << "::error::" << temp_err);
+                PRINTROOT("Iter::" << current_it << "::relative_error::" << temp_err);
             }
             PRINTROOT("completed it::" << current_it);
         }
@@ -398,29 +408,29 @@ class DistAUNTF {
         VEC local_lambda = m_local_ncp_factors.lambda();
         PRINTROOT(local_lambda);
         ROWVEC temp_vec = local_lambda.t() * hadamard_all_grams;
-        double norm_gram = arma::dot(temp_vec, local_lambda);
-        // double norm_gram = arma::norm(hadamard_all_grams, "fro");
+        double sq_norm_model = arma::dot(temp_vec, local_lambda);
+        // double sq_norm_model = arma::norm(hadamard_all_grams, "fro");
         // sum of the element-wise dot product between the local mttkrp and
         // the factor matrix
-        double model_error = arma::dot(ncp_local_mttkrp_t[this->m_modes - 1],
-                                       unnorm_factor);
+        double inner_product = arma::dot(ncp_local_mttkrp_t[this->m_modes - 1],
+                                         unnorm_factor);
         double temp = mpitoc();
         this->time_stats.err_compute_duration(temp);
-        double all_model_error;
+        double all_inner_product;
         mpitic();
-        MPI_Allreduce(&model_error, &all_model_error, 1, MPI_DOUBLE, MPI_SUM,
+        MPI_Allreduce(&inner_product, &all_inner_product, 1, MPI_DOUBLE, MPI_SUM,
                       MPI_COMM_WORLD);
         temp = mpitoc();
         this->time_stats.err_communication_duration(temp);
 #ifdef DISTNTF_VERBOSE
-        DISTPRINTINFO ("local_model_error::" << model_error << std::endl);
-        PRINTROOT("norm_A :: " << this->m_global_sqnorm_A
-                  << "::global_gram_norm_sq::" << norm_gram * norm_gram
-                  << "::model_error::" << 2 * all_model_error << std::endl);
+        DISTPRINTINFO ("local_inner_product::" << inner_product << std::endl);
+        PRINTROOT("norm_A_sq :: " << this->m_global_sqnorm_A
+                  << "::model_norm_sq::" << sq_norm_model
+                  << "::global_inner_product::" << all_inner_product << std::endl);
 #endif
-        double relerr = this->m_global_sqnorm_A + norm_gram
-                        - 2 * all_model_error;
-        return relerr;
+        double squared_err = this->m_global_sqnorm_A + sq_norm_model
+                             - 2 * all_inner_product;
+        return std::sqrt(squared_err / this->m_global_sqnorm_A);
     }
 };  // class DistAUNTF
 }  // namespace PLANC
