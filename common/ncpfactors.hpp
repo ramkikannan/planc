@@ -146,7 +146,10 @@ class NCPFactors {
              << "::" << __LINE__
              << "::matorder::" << matorder << std::endl;
 #endif
-        (*o_krp).zeros();
+        DISTPRINTINFO("::ncp_krp::" << o_krp->memptr()
+                      << "::size::" << o_krp->n_rows
+                      << "x" << o_krp->n_cols);
+        o_krp->zeros();
         // N = ncols(1);
         // This is our k. So keep N = k in our case.
         // P = A{matorder(1)};
@@ -184,8 +187,8 @@ class NCPFactors {
 // end
         for (int n = 0; n < this->m_k; n++) {
             MAT ab = ncp_factors[matorder[0]].col(n);
-            for (int i = 1; i < this->m_modes - 1; i++) {                
-                VEC oldabvec = arma::vectorise(ab);                
+            for (int i = 1; i < this->m_modes - 1; i++) {
+                VEC oldabvec = arma::vectorise(ab);
                 VEC currentvec = ncp_factors[matorder[i]].col(n);
                 ab.clear();
                 ab = currentvec * oldabvec.t();

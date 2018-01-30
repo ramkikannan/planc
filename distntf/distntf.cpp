@@ -22,7 +22,7 @@ class DistNTF {
     uint m_compute_error;
     int m_num_k_blocks;
     UVEC m_global_dims;
-    UVEC m_local_dims;
+    UVEC m_factor_local_dims;
     bool m_enable_dim_tree;
     static const int kprimeoffset = 17;
 
@@ -42,6 +42,7 @@ class DistNTF {
         std::string rand_prefix("rand_");
         planc::NTFMPICommunicator mpicomm(this->m_argc, this->m_argv,
                                           this->m_proc_grids);
+        mpicomm.printConfig();
         planc::DistNTFIO dio(mpicomm);
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
             dio.readInput(m_Afile_name, this->m_global_dims, this->m_proc_grids,
@@ -87,8 +88,9 @@ class DistNTF {
         //   const UVEC &i_global_dims,
         //   const UVEC &i_local_dims,
         //   const NTFMPICommunicator &i_mpicomm)
+        this->m_factor_local_dims = this->m_global_dims/mpicomm.size();
         planc::DistAUNTF ntfsolver(A, this->m_k, this->m_ntfalgo,
-                                   this->m_global_dims, A.dimensions(),
+                                   this->m_global_dims, this->m_factor_local_dims,
                                    mpicomm);
         memusage(mpicomm.rank(), "after constructor ");
         ntfsolver.num_iterations(this->m_num_it);

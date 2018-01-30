@@ -49,7 +49,7 @@ class DistNTFIO {
         NCPFactors local_factors(local_dims, i_k, false);
         UWORD start_row, end_row;
         for (int i = 0; i < local_factors.modes(); i++) {
-            start_row = MPI_FIBER_RANK(i) * local_dims(i);
+            start_row = MPI_SLICE_RANK(i) * local_dims(i);
             end_row = start_row + local_dims(i) - 1;
             local_factors.factor(i) = global_factors.factor(i).rows(start_row, end_row);
         }        

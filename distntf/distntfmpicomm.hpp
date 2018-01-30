@@ -22,17 +22,36 @@ class NTFMPICommunicator {
     MPI_Comm* m_slice_comm;
     UVEC m_fiber_ranks;
     UVEC m_slice_ranks;
-
+  public:
     void printConfig() {
         if (rank() == 0) {
             INFO << "successfully setup MPI communicators" << std::endl;
             INFO << "size=" << size() << std::endl;
-
+            INFO << "processor grid size::" << m_proc_grids;
+            int slice_size;
+            MPI_Comm current_slice_comm;
+            for (int i = 0; i < MPI_CART_DIMS; i++) {
+                current_slice_comm = this->m_slice_comm[i];
+                MPI_Comm_size(current_slice_comm, &slice_size);
+                INFO << "Numprocs in slice " << i << "::" << slice_size
+                     << std::endl;
+            }
+            int fiber_size;
+            MPI_Comm current_fiber_comm;
+            for (int i = 0; i < MPI_CART_DIMS; i++) {
+                current_fiber_comm = this->m_fiber_comm[i];
+                MPI_Comm_size(current_fiber_comm, &slice_size);
+                INFO << "Numprocs in fiber " << i << "::" << slice_size
+                     << std::endl;
+            }
         }
+        INFO << "slice ranks of rank::" << m_global_rank << std::endl
+             << m_fiber_ranks;
+        INFO << "fiber ranks of rank::" << m_global_rank << std::endl
+             << m_fiber_ranks;
         MPI_Barrier(MPI_COMM_WORLD);
     }
 
-  public:
     NTFMPICommunicator(int argc, char *argv[],
                        const UVEC &i_dims) :
         m_proc_grids(i_dims) {
@@ -121,6 +140,7 @@ class NTFMPICommunicator {
     int slice_rank(int i)const {return m_slice_ranks[i];}
     UVEC proc_grids() const {return this->m_proc_grids;}
     int rank() const {return m_global_rank;}
+
 };
 
 }  // namespace planc

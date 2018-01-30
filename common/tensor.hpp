@@ -18,8 +18,8 @@ namespace planc {
 
 // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 //extern "C" void dgemm_(const char*, const char*, const int*,
- //                      const int*, const int*, const double*, const double*, const int*,
- //                      const double*, const int*, const double*, double*, const int*);
+//                      const int*, const int*, const double*, const double*, const int*,
+//                      const double*, const int*, const double*, double*, const int*);
 
 class Tensor {
   private:
@@ -167,8 +167,8 @@ class Tensor {
             double beta = 0;
             // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
             //dgemm_(&transa, &transb, &m, &n, &k, &alpha, this->m_data,
-                  // &lda, i_krp.memptr(), &ldb, &beta, o_mttkrp->memptr() , &ldc);
-           // printf("mode=%d,i=%d,m=%d,n=%d,k=%d,alpha=%lf,T_stride=%d,lda=%d,krp_stride=%d,ldb=%d,beat=%lf,mttkrp=!!!,ldc=%d\n",0, 0, m, n, k,alpha,0*k*m,m,0*n*k,i_krp.n_rows,beta,n);
+            // &lda, i_krp.memptr(), &ldb, &beta, o_mttkrp->memptr() , &ldc);
+            // printf("mode=%d,i=%d,m=%d,n=%d,k=%d,alpha=%lf,T_stride=%d,lda=%d,krp_stride=%d,ldb=%d,beat=%lf,mttkrp=!!!,ldc=%d\n",0, 0, m, n, k,alpha,0*k*m,m,0*n*k,i_krp.n_rows,beta,n);
             cblas_dgemm( CblasRowMajor, CblasTrans, CblasTrans, m, n, k, alpha, this->m_data, m, i_krp.memptr(), k, beta, o_mttkrp->memptr(), n );
 
         } else  {
@@ -206,9 +206,9 @@ class Tensor {
                 // for reference from gram while moving input tensor like Y->data()+i*nrows*ncols
                 // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
                 //dgemm_(&transa, &transb, &m, &n, &k, &alpha, A,
-                      //&lda, B , &ldb, &beta, (*o_mttkrp).memptr() , &ldc);
-     //           printf("mode=%d,i=%d,m=%d,n=%d,k=%d,alpha=%lf,T_stride=%d,lda=%d,krp_stride=%d,ldb=%d,beat=%lf,mttkrp=!!!,ldc=%d\n",i_n, i, m, n, k,alpha,i*k*m,k,i*n*k,nmats*ncols,beta,n);
-                cblas_dgemm( CblasRowMajor, CblasNoTrans, CblasTrans, m, n, k, alpha, this->m_data+i*k*m, ncols, i_krp.memptr()+i*k, ncols*nmats, beta, o_mttkrp->memptr(), n );
+                //&lda, B , &ldb, &beta, (*o_mttkrp).memptr() , &ldc);
+                // printf("mode=%d,i=%d,m=%d,n=%d,k=%d,alpha=%lf,T_stride=%d,lda=%d,krp_stride=%d,ldb=%d,beat=%lf,mttkrp=!!!,ldc=%d\n",i_n, i, m, n, k,alpha,i*k*m,k,i*n*k,nmats*ncols,beta,n);
+                cblas_dgemm( CblasRowMajor, CblasNoTrans, CblasTrans, m, n, k, alpha, this->m_data + i * k * m, ncols, i_krp.memptr() + i * k, ncols * nmats, beta, o_mttkrp->memptr(), n );
             }
         }
     }

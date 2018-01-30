@@ -61,7 +61,6 @@ class DistAUNTF {
 
     // communication related variables
     const NTFMPICommunicator &m_mpicomm;
-    std::vector<int> recvmttkrpsize;
     // stats
     DistNTFTime time_stats;
 
@@ -137,6 +136,31 @@ class DistAUNTF {
         int sendcnt = m_local_ncp_factors.factor(current_mode).n_elem;
         int recvcnt = m_local_ncp_factors.factor(current_mode).n_elem;
         m_gathered_ncp_factors_t.factor(current_mode).zeros();
+        // Had this comment for debugging memory corruption in all_gather
+        // DISTPRINTINFO("::ncp_krp::" << ncp_krp[current_mode].memptr()
+        //               << "::size::" << ncp_krp[current_mode].n_rows
+        //               << "x" << ncp_krp[current_mode].n_cols
+        //               << "::m_gathered_ncp_factors_t::"
+        //               << m_gathered_ncp_factors_t.factor(current_mode).memptr()
+        //               << "::diff from recvcnt::"
+        //               << m_gathered_ncp_factors_t.factor(current_mode).memptr() - recvcnt * 8);
+        MPI_Comm current_fiber_comm = this->m_mpicomm.fiber(current_mode);
+#ifdef DISTNTF_VERBOSE
+        int fiber_size;
+        // MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
+        // int slice_size;
+
+        MPI_Comm_size(current_fiber_comm, &fiber_size);
+        //MPI_Comm_size(current_slice_comm, &slice_size);
+        DISTPRINTINFO("::current_mode::" << current_mode
+                      << "::fiber comm size::" << fiber_size
+                      << "::my_global_rank::" << MPI_RANK
+                      << "::my_slice_rank::" << this->m_mpicomm.slice_rank(current_mode)
+                      << "::my_fiber_rank::" << this->m_mpicomm.fiber_rank(current_mode)
+                      << "::sendcnt::" << sendcnt << "::recvcnt::" << recvcnt
+                      << "::gathered factor size::"
+                      << m_gathered_ncp_factors_t.factor(current_mode).n_elem);
+#endif
         mpitic();  // allgather tic
         MPI_Allgather(m_local_ncp_factors_t.factor(current_mode).memptr(),
                       sendcnt, MPI_DOUBLE,
@@ -144,7 +168,8 @@ class DistAUNTF {
                       recvcnt, MPI_DOUBLE,
                       // todo:: check whether it is slice or fiber while running
                       // and debugging the code.
-                      this->m_mpicomm.slice(current_mode));
+                      current_fiber_comm);
+        // current_slice_comm);
         double temp = mpitoc();  // allgather toc
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO("sent local factor::" << std::endl
@@ -175,24 +200,45 @@ class DistAUNTF {
         }
         mpitic();
         if (this->m_enable_dim_tree) {
-        kdt->in_order_reuse_MTTKRP(current_mode,
-                                   ncp_mttkrp_t[current_mode].memptr(),
-                                   false);
-        MAT kdt_ncp_mttkrp_t = ncp_mttkrp_t[current_mode];
+            kdt->in_order_reuse_MTTKRP(current_mode,
+                                       ncp_mttkrp_t[current_mode].memptr(),
+                                       false);
+
         } else {
-        m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
-                              &ncp_mttkrp_t[current_mode]);
+            m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
+                                  &ncp_mttkrp_t[current_mode]);
         }
-        PRINTROOT(arma::approx_equal(kdt_ncp_mttkrp_t, ncp_mttkrp_t[current_mode], "absdiff", 1e-3));
+        // verify if the dimension tree output matches with the classic one
+        // MAT kdt_ncp_mttkrp_t = ncp_mttkrp_t[current_mode];
+        // bool same_mttkrp = arma::approx_equal(kdt_ncp_mttkrp_t, ncp_mttkrp_t[current_mode], "absdiff", 1e-3);
+        // PRINTROOT("kdt vs mttkrp_t::" << same_mttkrp);
+        // MAT ncp_mttkrp = ncp_mttkrp_t[current_mode].t();
+        // same_mttkrp = arma::approx_equal(kdt_ncp_mttkrp_t, ncp_mttkrp, "absdiff", 1e-3);
+        // PRINTROOT("kdt vs mttkrp::" << same_mttkrp);
+        // PRINTROOT("kdt mttkrp::" << kdt_ncp_mttkrp_t);
+        // PRINTROOT("classic mttkrp_t::" << ncp_mttkrp_t[current_mode]);
         temp = mpitoc();  // mttkrp
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
+        MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
+        int slice_size;
+        MPI_Comm_size(current_slice_comm, &slice_size);
+        std::vector<int> recvmttkrpsize(slice_size, ncp_local_mttkrp_t[current_mode].n_cols);
+#ifdef DISTNTF_VERBOSE
+        DISTPRINTINFO("::current_mode::" << current_mode
+                      << "::slice comm size::" << slice_size
+                      << "::my_global_rank::" << MPI_RANK
+                      << "::my_slice_rank::" << this->m_mpicomm.slice_rank(current_mode)
+                      << "::my_fiber_rank::" << this->m_mpicomm.fiber_rank(current_mode)
+                      << "::mttkrp_size::" << ncp_mttkrp_t[current_mode].n_elem
+                      << "::local_mttkrp_size::" << ncp_local_mttkrp_t[current_mode].n_elem);
+#endif
         mpitic();  // reduce_scatter mttkrp
         MPI_Reduce_scatter(ncp_mttkrp_t[current_mode].memptr(),
                            ncp_local_mttkrp_t[current_mode].memptr(),
-                           &this->recvmttkrpsize[current_mode],
+                           &recvmttkrpsize[0],
                            MPI_DOUBLE, MPI_SUM,
-                           this->m_mpicomm.slice(current_mode));
+                           current_slice_comm);
         temp = mpitoc();  // reduce_scatter mttkrp
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO(ncp_mttkrp_t[current_mode]);
@@ -208,21 +254,18 @@ class DistAUNTF {
         ncp_mttkrp_t = new MAT[m_modes];
         ncp_local_mttkrp_t = new MAT[m_modes];
         factor_global_grams = new MAT[m_modes];
-        UVEC temp_recvmttkrpsize = arma::zeros<UVEC>(m_modes);
         factor_local_grams.zeros(this->m_low_rank_k, this->m_low_rank_k);
         global_gram.ones(this->m_low_rank_k, this->m_low_rank_k);
-        UWORD current_size;
+        UWORD current_size = 0;
         for (int i = 0; i < m_modes; i++) {
-            UWORD current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
-            ncp_krp[i].zeros(current_size, this->m_low_rank_k);
-            ncp_mttkrp_t[i].zeros(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
-            ncp_local_mttkrp_t[i].zeros(m_local_ncp_factors.factor(i).n_cols,
-                                        m_local_ncp_factors.factor(i).n_rows);
-            temp_recvmttkrpsize[i] = TENSOR_LOCAL_DIM[i] * this->m_low_rank_k;
-            factor_global_grams[i].zeros(this->m_low_rank_k,
-                                         this->m_low_rank_k);
+            current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
+            ncp_krp[i] = arma::zeros(current_size, this->m_low_rank_k);
+            ncp_mttkrp_t[i] = arma::zeros(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
+            ncp_local_mttkrp_t[i] = arma::zeros(m_local_ncp_factors.factor(i).n_cols,
+                                                m_local_ncp_factors.factor(i).n_rows);
+            factor_global_grams[i] = arma::zeros(this->m_low_rank_k,
+                                                 this->m_low_rank_k);
         }
-        recvmttkrpsize = arma::conv_to<std::vector<int>>::from(temp_recvmttkrpsize);
     }
 
     void freeMatrices() {
@@ -324,11 +367,13 @@ class DistAUNTF {
     }
     void dim_tree(bool i_dim_tree) {
         this->m_enable_dim_tree = i_dim_tree;
-        if (this->ncp_krp != NULL) {
-            for (int i = 0; i < m_modes; i++) {
-                ncp_krp[i].clear();
+        if (this->m_enable_dim_tree) {
+            if (this->ncp_krp != NULL) {
+                for (int i = 0; i < m_modes; i++) {
+                    ncp_krp[i].clear();
+                }
+                delete[] ncp_krp;
             }
-            delete[] ncp_krp;
         }
     }
     void computeNTF() {
