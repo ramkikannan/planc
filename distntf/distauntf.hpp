@@ -250,7 +250,9 @@ class DistAUNTF {
 
     void allocateMatrices() {
         //allocate matrices.
-        ncp_krp = new MAT[m_modes];
+        if (!m_enable_dim_tree){
+            ncp_krp = new MAT[m_modes];
+        }
         ncp_mttkrp_t = new MAT[m_modes];
         ncp_local_mttkrp_t = new MAT[m_modes];
         factor_global_grams = new MAT[m_modes];
@@ -259,7 +261,9 @@ class DistAUNTF {
         UWORD current_size = 0;
         for (int i = 0; i < m_modes; i++) {
             current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
-            ncp_krp[i] = arma::zeros(current_size, this->m_low_rank_k);
+            if (!m_enable_dim_tree){
+                ncp_krp[i] = arma::zeros(current_size, this->m_low_rank_k);
+            }        
             ncp_mttkrp_t[i] = arma::zeros(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
             ncp_local_mttkrp_t[i] = arma::zeros(m_local_ncp_factors.factor(i).n_cols,
                                                 m_local_ncp_factors.factor(i).n_rows);
@@ -270,12 +274,16 @@ class DistAUNTF {
 
     void freeMatrices() {
         for (int i = 0; i < m_modes; i++) {
-            ncp_krp[i].clear();
+            if (!m_enable_dim_tree){
+                ncp_krp[i].clear();
+            }                    
             ncp_mttkrp_t[i].clear();
             ncp_local_mttkrp_t[i].clear();
             factor_global_grams[i].clear();
         }
-        delete[] ncp_krp;
+        if (!m_enable_dim_tree){
+            delete[] ncp_krp;
+        }        
         delete[] ncp_mttkrp_t;
         delete[] ncp_local_mttkrp_t;
         delete[] factor_global_grams;
