@@ -146,9 +146,6 @@ class NCPFactors {
              << "::" << __LINE__
              << "::matorder::" << matorder << std::endl;
 #endif
-        DISTPRINTINFO("::ncp_krp::" << o_krp->memptr()
-                      << "::size::" << o_krp->n_rows
-                      << "x" << o_krp->n_cols);
         o_krp->zeros();
         // N = ncols(1);
         // This is our k. So keep N = k in our case.
