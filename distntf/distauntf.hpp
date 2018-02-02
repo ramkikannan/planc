@@ -223,7 +223,7 @@ class DistAUNTF {
         MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
         int slice_size;
         MPI_Comm_size(current_slice_comm, &slice_size);
-        std::vector<int> recvmttkrpsize(slice_size, ncp_local_mttkrp_t[current_mode].n_cols);
+        std::vector<int> recvmttkrpsize(slice_size, ncp_local_mttkrp_t[current_mode].n_elem);
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO("::current_mode::" << current_mode
                       << "::slice comm size::" << slice_size
