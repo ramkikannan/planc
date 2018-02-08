@@ -21,6 +21,7 @@ class NCPFactors {
     int m_modes;
     int m_k;
     UVEC m_dimensions;
+    // in the distributed mode all the processes has same lambda
     VEC m_lambda;
     //normalize the factors of a matrix
     bool freed_ncp_factors;
@@ -288,7 +289,6 @@ class NCPFactors {
         }
     }
 
-#ifdef MPI_DISTNTF
     // Distribution normalization of factor matrices
     // To be used for MPI code only
     void distributed_normalize() {
@@ -319,7 +319,6 @@ class NCPFactors {
             m_lambda(j) = global_colnorm;
         }
     }
-#endif
 }; // NCPFactors
 }  // planc
 
