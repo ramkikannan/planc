@@ -49,6 +49,7 @@ class NCPFactors {
         m_lambda = arma::ones<VEC>(this->m_k);
         freed_ncp_factors = false;
     }
+
     //copy constructor
     /*NCPFactors(const NCPFactors &src) {
         m_dimensions = src.dimensions();
@@ -317,6 +318,16 @@ class NCPFactors {
             global_colnorm = std::sqrt(global_colnorm);
             this->ncp_factors[mode].col(j) /= global_colnorm;
             m_lambda(j) = global_colnorm;
+        }
+    }
+    /*
+    * this is for reinitializing random numbers across different
+    * processors.
+    */
+    void randu(const int i_seed) {
+        arma::arma_rng::set_seed(i_seed);
+        for (int i = 0; i < this->m_modes; i++) {
+            ncp_factors[i].randu();
         }
     }
 }; // NCPFactors

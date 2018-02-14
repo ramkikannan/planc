@@ -41,18 +41,18 @@ class DistNTFIO {
 
         // start with the same seed_idx with the global dimensions
         // on all the MPI processor.
-        arma::arma_rng::set_seed(kW_seed_idx);
         NCPFactors global_factors(i_global_dims, i_k, false);
+        global_factors.randu(kW_seed_idx); 
         global_factors.normalize();
         int tensor_modes = global_factors.modes();
         UVEC local_dims = i_global_dims / this->m_mpicomm.proc_grids();
         NCPFactors local_factors(local_dims, i_k, false);
         UWORD start_row, end_row;
         for (int i = 0; i < local_factors.modes(); i++) {
-            start_row = MPI_SLICE_RANK(i) * local_dims(i);
+            start_row = MPI_FIBER_RANK(i) * local_dims(i);
             end_row = start_row + local_dims(i) - 1;
             local_factors.factor(i) = global_factors.factor(i).rows(start_row, end_row);
-        }        
+        }
         local_factors.rankk_tensor(m_A);
     }
 
@@ -79,6 +79,9 @@ class DistNTFIO {
             if (!file_name.compare("rand_uniform")) {
                 Tensor temp(i_global_dims / i_proc_grids);
                 this->m_A = temp;
+                // generate again. otherwise all processes will have
+                // same input tensor because of the same seed.
+                this->m_A.randu(449 * MPI_RANK + 677);
             } else if (!file_name.compare("rand_lowrank")) {
                 randomLowRank(i_global_dims, k);
             }

@@ -82,23 +82,24 @@ class NTFMPICommunicator {
 
         // Get the subcommunicators
         std::vector<int> remainDims(MPI_CART_DIMS);
+        for (int i = 0; i < remainDims.size(); i++) remainDims[i] = 1;
         // initialize the fiber ranks
         m_slice_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
         int current_slice_rank;
         for (int i = 0; i < MPI_CART_DIMS; i++) {
-            remainDims[i] = 1;
-            MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_slice_comm[i]));
             remainDims[i] = 0;
+            MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_slice_comm[i]));
+            remainDims[i] = 1;
             MPI_Comm_rank(m_slice_comm[i], &current_slice_rank);
             m_slice_ranks[i] = current_slice_rank;
         }
-        for (int i = 0; i < remainDims.size(); i++) remainDims[i] = 1;
+        for (int i = 0; i < remainDims.size(); i++) remainDims[i] = 0;
         m_fiber_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
         int current_fiber_rank;
         for (int i = 0; i < MPI_CART_DIMS; i++) {
-            remainDims[i] = 0;
-            MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_fiber_comm[i]));
             remainDims[i] = 1;
+            MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_fiber_comm[i]));
+            remainDims[i] = 0;
             MPI_Comm_rank(m_fiber_comm[i], &current_fiber_rank);
             m_fiber_ranks[i] = current_fiber_rank;
         }

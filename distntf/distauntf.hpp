@@ -144,14 +144,15 @@ class DistAUNTF {
         //               << m_gathered_ncp_factors_t.factor(current_mode).memptr()
         //               << "::diff from recvcnt::"
         //               << m_gathered_ncp_factors_t.factor(current_mode).memptr() - recvcnt * 8);
-        MPI_Comm current_fiber_comm = this->m_mpicomm.fiber(current_mode);
+
+        MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
+        int slice_size;
 #ifdef DISTNTF_VERBOSE
+        MPI_Comm current_fiber_comm = this->m_mpicomm.fiber(current_mode);
         int fiber_size;
-        // MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
-        // int slice_size;
 
         MPI_Comm_size(current_fiber_comm, &fiber_size);
-        //MPI_Comm_size(current_slice_comm, &slice_size);
+        MPI_Comm_size(current_slice_comm, &slice_size);
         DISTPRINTINFO("::current_mode::" << current_mode
                       << "::fiber comm size::" << fiber_size
                       << "::my_global_rank::" << MPI_RANK
@@ -168,7 +169,7 @@ class DistAUNTF {
                       recvcnt, MPI_DOUBLE,
                       // todo:: check whether it is slice or fiber while running
                       // and debugging the code.
-                      current_fiber_comm);
+                      current_slice_comm);
         // current_slice_comm);
         double temp = mpitoc();  // allgather toc
 #ifdef DISTNTF_VERBOSE
@@ -221,12 +222,18 @@ class DistAUNTF {
         this->time_stats.compute_duration(temp);
         this->time_stats.mttkrp_duration(temp);
         MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
+
         int slice_size;
+
         MPI_Comm_size(current_slice_comm, &slice_size);
         std::vector<int> recvmttkrpsize(slice_size, ncp_local_mttkrp_t[current_mode].n_elem);
 #ifdef DISTNTF_VERBOSE
+        MPI_Comm current_fiber_comm = this->m_mpicomm.fiber(current_mode);
+        int fiber_size;
+        MPI_Comm_size(current_fiber_comm, &fiber_size);
         DISTPRINTINFO("::current_mode::" << current_mode
                       << "::slice comm size::" << slice_size
+                      << "::fiber comm size::" << fiber_size
                       << "::my_global_rank::" << MPI_RANK
                       << "::my_slice_rank::" << this->m_mpicomm.slice_rank(current_mode)
                       << "::my_fiber_rank::" << this->m_mpicomm.fiber_rank(current_mode)
@@ -250,7 +257,7 @@ class DistAUNTF {
 
     void allocateMatrices() {
         //allocate matrices.
-        if (!m_enable_dim_tree){
+        if (!m_enable_dim_tree) {
             ncp_krp = new MAT[m_modes];
         }
         ncp_mttkrp_t = new MAT[m_modes];
@@ -261,9 +268,9 @@ class DistAUNTF {
         UWORD current_size = 0;
         for (int i = 0; i < m_modes; i++) {
             current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
-            if (!m_enable_dim_tree){
+            if (!m_enable_dim_tree) {
                 ncp_krp[i] = arma::zeros(current_size, this->m_low_rank_k);
-            }        
+            }
             ncp_mttkrp_t[i] = arma::zeros(this->m_low_rank_k, TENSOR_LOCAL_DIM[i]);
             ncp_local_mttkrp_t[i] = arma::zeros(m_local_ncp_factors.factor(i).n_cols,
                                                 m_local_ncp_factors.factor(i).n_rows);
@@ -274,16 +281,16 @@ class DistAUNTF {
 
     void freeMatrices() {
         for (int i = 0; i < m_modes; i++) {
-            if (!m_enable_dim_tree){
+            if (!m_enable_dim_tree) {
                 ncp_krp[i].clear();
-            }                    
+            }
             ncp_mttkrp_t[i].clear();
             ncp_local_mttkrp_t[i].clear();
             factor_global_grams[i].clear();
         }
-        if (!m_enable_dim_tree){
+        if (!m_enable_dim_tree) {
             delete[] ncp_krp;
-        }        
+        }
         delete[] ncp_mttkrp_t;
         delete[] ncp_local_mttkrp_t;
         delete[] factor_global_grams;
@@ -345,8 +352,9 @@ class DistAUNTF {
         this->m_compute_error = false;
         this->m_enable_dim_tree = false;
         this->m_num_it = 30;
-        //local factors.
-        arma::arma_rng::set_seed(i_mpicomm.rank());
+        // randomize again. otherwise all the process and factors
+        // will be same.
+        m_local_ncp_factors.randu(149 * i_mpicomm.rank() + 103);
         m_local_ncp_factors.distributed_normalize();
         for (int i = 0; i < this->m_modes; i++) {
             MAT current_factor = arma::trans(m_local_ncp_factors.factor(i));
@@ -475,15 +483,22 @@ class DistAUNTF {
                       MPI_COMM_WORLD);
         temp = mpitoc();
         this->time_stats.err_communication_duration(temp);
-// #ifdef DISTNTF_VERBOSE
+#ifdef DISTNTF_VERBOSE
         DISTPRINTINFO ("local_inner_product::" << inner_product << std::endl);
         PRINTROOT("norm_A_sq :: " << this->m_global_sqnorm_A
                   << "::model_norm_sq::" << sq_norm_model
                   << "::global_inner_product::" << all_inner_product << std::endl);
-// #endif
+#endif
         double squared_err = this->m_global_sqnorm_A + sq_norm_model
                              - 2 * all_inner_product;
-        return std::sqrt(squared_err / this->m_global_sqnorm_A);
+        if (squared_err < 0) {
+            PRINTROOT("computed error is negative due to round off");
+            PRINTROOT("norm_A_sq :: " << this->m_global_sqnorm_A
+                      << "::model_norm_sq::" << sq_norm_model
+                      << "::global_inner_product::" << all_inner_product
+                      << "::squared_err::" << squared_err << std::endl);
+        }
+        return std::sqrt(std::abs(squared_err) / this->m_global_sqnorm_A);
     }
 };  // class DistAUNTF
 }  // namespace PLANC

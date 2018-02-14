@@ -122,12 +122,19 @@ class Tensor {
         }
     }
 
-    void randu() {
+    void randu(const int i_seed = -1) {
         std::random_device rd;
-        std::mt19937 gen(rand_seed);
         std::uniform_real_distribution<> dis(0, 1);
-        for (int i = 0; i < this->m_numel; i++) {
-            m_data[i] = dis(gen);
+        if (i_seed == -1) {
+            std::mt19937 gen(rand_seed);
+            for (int i = 0; i < this->m_numel; i++) {
+                m_data[i] = dis(gen);
+            }
+        } else {
+            std::mt19937 gen(i_seed);
+            for (int i = 0; i < this->m_numel; i++) {
+                m_data[i] = dis(gen);
+            }
         }
     }
 
