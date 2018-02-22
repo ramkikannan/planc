@@ -87,9 +87,6 @@ class DistAUNTF {
         MPI_Allreduce(factor_local_grams.memptr(),
                       factor_global_grams[current_mode].memptr(),
                       this->m_low_rank_k * this->m_low_rank_k, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#ifdef __WITH__BARRIER__TIMING__
-        MPI_Barrier(MPI_COMM_WORLD);
-#endif
         temp = mpitoc();  // allreduce gram
         applyReg(this->m_regularizers(current_mode * 2),
                  this->m_regularizers(current_mode * 2 + 1),
@@ -119,14 +116,14 @@ class DistAUNTF {
     */
     void gram_hadamard(int current_mode) {
         global_gram.ones();
-        mpitic();
+        mpitic();  // gram hadamard
         for (int i = 0; i < m_modes; i++) {
             if (i != current_mode) {
                 //%= element-wise multiplication
                 global_gram %= factor_global_grams[i];
             }
         }
-        double temp = mpitoc();  // gram
+        double temp = mpitoc();  // gram hadamard
         this->time_stats.compute_duration(temp);
         this->time_stats.gram_duration(temp);
     }
@@ -172,19 +169,19 @@ class DistAUNTF {
                       current_slice_comm);
         // current_slice_comm);
         double temp = mpitoc();  // allgather toc
+        this->time_stats.communication_duration(temp);
+        this->time_stats.allgather_duration(temp);
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO("sent local factor::" << std::endl
                       << m_local_ncp_factors_t.factor(current_mode) << std::endl
                       << " gathered factor::" << std::endl
                       << m_gathered_ncp_factors_t.factor(current_mode));
 #endif
-        this->time_stats.communication_duration(temp);
-        this->time_stats.allgather_duration(temp);
         // keep gather_ncp_factors_t consistent.
         mpitic();  // transpose tic
         m_gathered_ncp_factors.set(current_mode,
                                    m_gathered_ncp_factors_t.factor(current_mode).t());
-        temp = mpitoc();
+        temp = mpitoc();  // transpose toc
         this->time_stats.compute_duration(temp);
         this->time_stats.trans_duration(temp);
     }
@@ -192,14 +189,14 @@ class DistAUNTF {
     void distmttkrp(const int &current_mode) {
         double temp;
         if (!this->m_enable_dim_tree) {
-            mpitic();
+            mpitic();  // krp tic
             m_gathered_ncp_factors.krp_leave_out_one(current_mode,
                     &ncp_krp[current_mode]);
-            temp = mpitoc();
+            temp = mpitoc();  // krp toc
             this->time_stats.compute_duration(temp);
             this->time_stats.krp_duration(temp);
         }
-        mpitic();
+        mpitic();  // mttkrp tic
         if (this->m_enable_dim_tree) {
             kdt->in_order_reuse_MTTKRP(current_mode,
                                        ncp_mttkrp_t[current_mode].memptr(),
@@ -209,6 +206,9 @@ class DistAUNTF {
             m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
                                   &ncp_mttkrp_t[current_mode]);
         }
+        temp = mpitoc();  // mttkrp toc
+        this->time_stats.compute_duration(temp);
+        this->time_stats.mttkrp_duration(temp);
         // verify if the dimension tree output matches with the classic one
         // MAT kdt_ncp_mttkrp_t = ncp_mttkrp_t[current_mode];
         // bool same_mttkrp = arma::approx_equal(kdt_ncp_mttkrp_t, ncp_mttkrp_t[current_mode], "absdiff", 1e-3);
@@ -218,11 +218,8 @@ class DistAUNTF {
         // PRINTROOT("kdt vs mttkrp::" << same_mttkrp);
         // PRINTROOT("kdt mttkrp::" << kdt_ncp_mttkrp_t);
         // PRINTROOT("classic mttkrp_t::" << ncp_mttkrp_t[current_mode]);
-        temp = mpitoc();  // mttkrp
-        this->time_stats.compute_duration(temp);
-        this->time_stats.mttkrp_duration(temp);
-        MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
 
+        MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
         int slice_size;
 
         MPI_Comm_size(current_slice_comm, &slice_size);
@@ -247,12 +244,12 @@ class DistAUNTF {
                            MPI_DOUBLE, MPI_SUM,
                            current_slice_comm);
         temp = mpitoc();  // reduce_scatter mttkrp
+        this->time_stats.communication_duration(temp);
+        this->time_stats.reducescatter_duration(temp);
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO(ncp_mttkrp_t[current_mode]);
         DISTPRINTINFO(ncp_local_mttkrp_t[current_mode]);
 #endif
-        this->time_stats.communication_duration(temp);
-        this->time_stats.reducescatter_duration(temp);
     }
 
     void allocateMatrices() {
@@ -321,7 +318,7 @@ class DistAUNTF {
         this->reportTime(this->time_stats.reducescatter_duration(),
                          "total_reducescatter");
         this->reportTime(this->time_stats.gram_duration(), "total_gram");
-        this->reportTime(this->time_stats.krp_duration(), "total_mttkrp");
+        this->reportTime(this->time_stats.krp_duration(), "total_krp");
         this->reportTime(this->time_stats.mttkrp_duration(), "total_mttkrp");
         this->reportTime(this->time_stats.nnls_duration(), "total_nnls");
         if (this->m_compute_error) {
@@ -419,7 +416,6 @@ class DistAUNTF {
                 // line 11 of the algorithm
                 gram_hadamard(current_mode);
                 // line 12 of the algorithm
-                mpitic();  // nnls_tic
 #ifdef DISTNTF_VERBOSE
                 DISTPRINTINFO("local factor matrix::"
                               << this->m_local_ncp_factors.factor(current_mode));
@@ -429,14 +425,16 @@ class DistAUNTF {
                 DISTPRINTINFO("mttkrp::");
                 this->ncp_local_mttkrp_t[current_mode].print();
 #endif
+                mpitic();  // nnls_tic
                 MAT factor = m_luc_ntf_update->update(m_updalgo, global_gram,
                                                       ncp_local_mttkrp_t[current_mode]);
+                double temp = mpitoc();  // nnls_toc
+                this->time_stats.compute_duration(temp);
+                this->time_stats.nnls_duration(temp);
 #ifdef DISTNTF_VERBOSE
                 DISTPRINTINFO("it::" << current_it << "::mode::" << current_mode
                               << std::endl << factor);
 #endif
-                double temp = mpitoc();  // nnls_toc
-                this->time_stats.nnls_duration(temp);
                 if (m_compute_error && current_mode == this->m_modes - 1) {
                     unnorm_factor = factor;
                 }
@@ -464,7 +462,7 @@ class DistAUNTF {
     double computeError(MAT &unnorm_factor) {
 
         // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram * lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;
-        mpitic();
+        mpitic();  // err compute
         hadamard_all_grams = global_gram % factor_global_grams[this->m_modes - 1];
         VEC local_lambda = m_local_ncp_factors.lambda();
         DISTPRINTINFO("local_lambda::" << local_lambda);
@@ -475,13 +473,15 @@ class DistAUNTF {
         // the factor matrix
         double inner_product = arma::dot(ncp_local_mttkrp_t[this->m_modes - 1],
                                          unnorm_factor);
-        double temp = mpitoc();
+        double temp = mpitoc();  // err compute
+        this->time_stats.compute_duration(temp);
         this->time_stats.err_compute_duration(temp);
         double all_inner_product;
-        mpitic();
+        mpitic();  // err comm
         MPI_Allreduce(&inner_product, &all_inner_product, 1, MPI_DOUBLE, MPI_SUM,
                       MPI_COMM_WORLD);
-        temp = mpitoc();
+        temp = mpitoc();  // err comm
+        this->time_stats.communication_duration(temp);
         this->time_stats.err_communication_duration(temp);
 #ifdef DISTNTF_VERBOSE
         DISTPRINTINFO ("local_inner_product::" << inner_product << std::endl);
