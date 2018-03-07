@@ -1,4 +1,5 @@
-\section{Algorithm} \label{sec:algorithm}
+\section{Algorithm} 
+\label{sec:algorithm}
 
 \subsection{Block Coordinate Descent}
 
@@ -8,8 +9,9 @@
 
 Given a model $\T{M}=\CP$, we compute the relative error $\|\TA - \T{M}\|/\|\TA\|$ efficiently by using the identity $\|\TA-\T{M}\|^2 = \|\TA\|^2 - 2\langle \TA, \T{M} \rangle + \|\T{M}\|^2.$
 The quantity $\|\TA\|$ is fixed, and the other two terms can be computed cheaply given the temporary matrices computed during the course of the BCD algorithm.
-The second term can be computed using the identity $\langle \TA, \T{M} \rangle = \langle \Mn{M}{N}, \Mn{H}{N} \rangle$, where $\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$ is the MTTKRP result in the $N$th mode (the MTTKRP result is computed during the course of the algorithm to update the factor matrix).
-The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\M{S} \Hada $
+The second term can be computed using the identity $\langle \TA, \T{M} \rangle = \langle \Mn{M}{N}, \Mn{H}{N} \rangle$, where $\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$ is the MTTKRP result in the $N$th mode.
+The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\Mn{S}{N} \Hada \MnTra{H}{N} \Mn{H}{N})\V{1}$ where $\Mn{S}{N}=\MnTra{H}{1} \Mn{H}{1} \Hada \cdots \Hada \MnTra{H}{N-1} \Mn{H}{N-1}$.
+Both matrices $\Mn{M}{N}$ and $\Mn{S}{N}$ are computed during the course of the BCD algorithm for updating the factor matrix $\Mn{H}{N}$.
 
 \subsection{Parallel Algorithm}
 
@@ -37,9 +39,9 @@ The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\M{S
 		\label{line:locMTTKRP}
 	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M{V},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
 		\label{line:reduce-scatter}
-	\State $\M{S} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+	\State $\Mn{S}{N} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
 		\label{line:hadamard}
-	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\M{S},\Mn{M}{n}_{\V{p}})$
+	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{N},\Mn{M}{n}_{\V{p}})$
 		\label{line:locNLS}
 	\State \Comment{Normalize columns}
 	\State $\V{c} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
@@ -56,7 +58,7 @@ The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\M{S
 	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
 	\State $b = \text{Inner-Product}(\Mn{M}{N}_{\V{p}},\Mn[\hat]{H}{N}_{\V{p}})$
 	\State $\beta = \text{All-Reduce}(b,\textsc{All-Procs})$
-	\State $\gamma = \V{\lambda}^\Tra (\M{S} \Hada \Mn{G}{N}) \V{\lambda}$
+	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
 	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
 \EndWhile
 \Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
