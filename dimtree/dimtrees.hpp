@@ -28,7 +28,7 @@
 void partial_MTTKRP( Output_Layout OL, long int s, direction D, tensor * T, double * A, long int r, double * C, long int num_threads ){
 
 	// mkl_set_num_threads(num_threads);
-	openblas_set_num_threads(num_threads);
+	// openblas_set_num_threads(num_threads);
 
 	CBLAS_ORDER 	dgemm_layout;		// layout for dgemm calls
 	CBLAS_TRANSPOSE trans_tensor, trans_A;
@@ -134,7 +134,7 @@ void partial_MTTKRP( Output_Layout OL, long int s, direction D, tensor * T, doub
 void partial_MTTKRP_with_KRP( Output_Layout OL, long int s, direction D, ktensor * Y, tensor * T, double * C, long int num_threads ){
 
 	// mkl_set_num_threads(num_threads);
-	openblas_set_num_threads(num_threads);
+	// openblas_set_num_threads(num_threads);
 
 	if( (s < 0) || (s >= T->nmodes-1) ){	// s cannot be negative or be equal to N-1 or be greater than N-1
 		printf("Invalid value of s in partial_MTTKRP_with_KRP(), s = %d\nExit\n", s); exit(-1);
@@ -339,7 +339,7 @@ void multi_TTV( Output_Layout OL, long int s, direction D, tensor * T, double * 
 		}
 	}
 	
-	openblas_set_num_threads(num_threads);
+	// openblas_set_num_threads(num_threads);
 	for( i = 0; i < r; i++ ){
 		/**
 			1) dgemv_layout

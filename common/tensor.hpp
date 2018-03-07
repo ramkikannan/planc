@@ -6,6 +6,8 @@
 #include <armadillo>
 #include <random>
 #include <type_traits>
+#include <ios>
+#include <fstream>
 
 namespace planc {
 /*
@@ -230,6 +232,7 @@ class Tensor {
         for (int i = 0; i < this->m_numel; i++) {
             norm_fro += (this->m_data[i] * this->m_data[i]);
         }
+        return norm_fro;
     }
     double err(const Tensor &b) const {
         double norm_fro = 0;
@@ -273,6 +276,49 @@ class Tensor {
             if (this->m_data[i] < min) this->m_data[i] = min;
         }
     }
+
+    void save(const char* filename, std::ios_base::openmode mode = std::ios_base::out) {
+        std::ofstream ofs;
+        ofs.open(filename, mode);
+        // write modes
+        ofs << this->m_modes << std::endl;
+        // dimension of modes
+        for (int i = 0; i < this->m_modes; i++) {
+            ofs << this->m_dimensions[i] << " ";
+        }
+        ofs << std::endl;
+        // write elements
+        for (size_t i = 0; i < this->m_numel; i++) {
+            ofs << this->m_data[i] << std::endl;
+        }
+        // Close the file
+        ofs.close();
+    }
+    void read(const char* filename, std::ios_base::openmode mode = std::ios_base::in) {
+        // clear existing tensor
+        if (this->m_numel > 0) {
+            delete[] this->m_data;  // destroy storage in this
+            this->m_numel = 0;
+            this->m_data = NULL;  // preserve invariants in case next line throws
+        }
+        std::ifstream ifs;
+        ifs.open(filename, mode);
+        // write modes        
+        ifs >> this->m_modes;
+        // dimension of modes
+        this->m_dimensions = arma::zeros<UVEC>(this->m_modes);
+        for (int i = 0; i < this->m_modes; i++) {
+            ifs >> this->m_dimensions[i];
+        }
+        this->m_numel = arma::prod(this->m_dimensions);
+        this->m_data = new double[this->m_numel];
+        for (int i=0; i < this->m_numel; i++){
+            ifs >> this->m_data[i];
+        }
+        // Close the file
+        ifs.close();
+    }
+
 };  // class Tensor
 }  // namespace planc
 
