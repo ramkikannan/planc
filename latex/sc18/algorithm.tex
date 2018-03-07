@@ -1,0 +1,59 @@
+\section{Algorithm} \label{sec:algorithm}
+
+\subsection{Block Coordinate Descent}
+
+\subsection{Dimension Trees}
+
+\subsection{Parallel Algorithm}
+
+\begin{algorithm}
+\caption{$\lt[\Mn{H}{1},\dots,\Mn{H}{N}\rt] = \text{Par-NNCP-ALS}(\TA,k)$}
+\label{alg:2D}
+\begin{algorithmic}[1]
+\Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $k$ is rank of approximation
+%\Require Local memory: space for $\Mn{H}{i}_{p_i}$ of size $(M_i/P_i) \times k$, for $1\leq i\leq N$
+\State \Comment{Initialize data}
+\State $a = \text{Norm-Squared}(\TA_{\V{p}})$
+\State $\alpha = \text{All-Reduce}(a,\textsc{All-Procs})$
+\For{$n=2$ to $N$}
+	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times k$ 
+	\State $\M{U} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+	\State $\Mn{G}{n} = \text{All-Reduce}(\M{U},\textsc{All-Procs})$
+	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
+\EndFor
+\State \Comment{Compute NNCP approximation}
+\While{not converged}
+	\State \Comment{Perform outer iteration of NNCP-ALS}
+	\For{$n=1$ to $N$}
+	\State \Comment{Compute new factor matrix in $n$th mode}
+	\State $\M{V} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
+		\label{line:locMTTKRP}
+	\State $\M{W} = \text{Reduce-Scatter}(\M{V},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
+		\label{line:reduce-scatter}
+	\State $\M{S} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+		\label{line:hadamard}
+	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\M{S},\M{W})$
+		\label{line:locNLS}
+	\State \Comment{Normalize columns}
+	\State $\V{c} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
+	\State $\V{\lambda} = \text{All-Reduce}(\V{c},\textsc{All-Procs})$
+	\State $\Mn{H}{n}_{\V{p}} = \text{Local-Col-Scale}(\Mn[\hat]{H}{n}_{\V{p}},\V{\lambda})$
+	\State \Comment{Organize data for later modes}
+	\State $\M{U} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+		\label{line:locSYRK}
+	\State $\Mn{G}{n} = \text{All-Reduce}(\M{U},\textsc{All-Procs})$
+		\label{line:all-reduce}
+	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
+		\label{line:all-gather}
+	\EndFor
+	\State \Comment{Compute error}
+	\State $b = \text{Inner-Product}(\M{W},\Mn[\hat]{H}{N}_{\V{p}})$
+	\State $\beta = \text{All-Reduce}(b,\textsc{All-Procs})$
+	\State $\gamma = \V{\lambda}^\Tra (\M{S} \Hada \Mn{G}{N}) \V{\lambda}$
+	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
+\EndWhile
+\Ensure $\lt\|\TA - \Dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\rt\| /\|\TA\| = \epsilon$
+\Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times k$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
+\end{algorithmic}
+\end{algorithm}
+

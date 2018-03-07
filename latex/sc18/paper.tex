@@ -344,10 +344,7 @@ Email: kannanr@ornl.gov}}
 
 % As a general rule, do not put math, special symbols or citations
 % in the abstract
-\begin{abstract}
-The abstract goes here.
-\end{abstract}
-
+\input{abstract}
 % no keywords
 
 
@@ -364,188 +361,19 @@ The abstract goes here.
 \IEEEpeerreviewmaketitle
 
 
+\input{introduction}
 
-\section{Introduction}
+\input{prelims}
 
-\grey{Contributions:
-\begin{itemize}
-	\item fastest scalable NNCP (and unsonstrained CP) software for dense tensors
-	\item computation efficient using dimension trees, communication efficient using optimal parallel algorithm
-	\item available open-source software, with flexibility to incorporate multiple NLS algorithms
-\end{itemize}
-}
+\input{survey}
 
-\section{Preliminaries}
+\input{algorithm}
 
-\section{Related Work}
+\input{experiments}
 
-\section{Algorithm}
-
-\subsection{Block Coordinate Descent}
-
-\subsection{Dimension Trees}
-
-\subsection{Parallel Algorithm}
-
-\begin{algorithm}
-\caption{$\lt[\Mn{H}{1},\dots,\Mn{H}{N}\rt] = \text{Par-NNCP-ALS}(\TA,k)$}
-\label{alg:2D}
-\begin{algorithmic}[1]
-\Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $k$ is rank of approximation
-%\Require Local memory: space for $\Mn{H}{i}_{p_i}$ of size $(M_i/P_i) \times k$, for $1\leq i\leq N$
-\State \Comment{Initialize data}
-\State $a = \text{Norm-Squared}(\TA_{\V{p}})$
-\State $\alpha = \text{All-Reduce}(a,\textsc{All-Procs})$
-\For{$n=2$ to $N$}
-	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times k$ 
-	\State $\M{U} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
-	\State $\Mn{G}{n} = \text{All-Reduce}(\M{U},\textsc{All-Procs})$
-	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
-\EndFor
-\State \Comment{Compute NNCP approximation}
-\While{not converged}
-	\State \Comment{Perform outer iteration of NNCP-ALS}
-	\For{$n=1$ to $N$}
-	\State \Comment{Compute new factor matrix in $n$th mode}
-	\State $\M{V} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
-		\label{line:locMTTKRP}
-	\State $\M{W} = \text{Reduce-Scatter}(\M{V},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
-		\label{line:reduce-scatter}
-	\State $\M{S} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
-		\label{line:hadamard}
-	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\M{S},\M{W})$
-		\label{line:locNLS}
-	\State \Comment{Normalize columns}
-	\State $\V{c} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
-	\State $\V{\lambda} = \text{All-Reduce}(\V{c},\textsc{All-Procs})$
-	\State $\Mn{H}{n}_{\V{p}} = \text{Local-Col-Scale}(\Mn[\hat]{H}{n}_{\V{p}},\V{\lambda})$
-	\State \Comment{Organize data for later modes}
-	\State $\M{U} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
-		\label{line:locSYRK}
-	\State $\Mn{G}{n} = \text{All-Reduce}(\M{U},\textsc{All-Procs})$
-		\label{line:all-reduce}
-	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
-		\label{line:all-gather}
-	\EndFor
-	\State \Comment{Compute error}
-	\State $b = \text{Inner-Product}(\M{W},\Mn[\hat]{H}{N}_{\V{p}})$
-	\State $\beta = \text{All-Reduce}(b,\textsc{All-Procs})$
-	\State $\gamma = \V{\lambda}^\Tra (\M{S} \Hada \Mn{G}{N}) \V{\lambda}$
-	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
-\EndWhile
-\Ensure $\lt\|\TA - \Dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\rt\| /\|\TA\| = \epsilon$
-\Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times k$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
-\end{algorithmic}
-\end{algorithm}
-
-\section{Performance Results}
-
-% An example of a floating figure using the graphicx package.
-% Note that \label must occur AFTER (or within) \caption.
-% For figures, \caption should occur after the \includegraphics.
-% Note that IEEEtran v1.7 and later has special internal code that
-% is designed to preserve the operation of \label within \caption
-% even when the captionsoff option is in effect. However, because
-% of issues like this, it may be the safest practice to put all your
-% \label just after \caption rather than within \caption{}.
-%
-% Reminder: the "draftcls" or "draftclsnofoot", not "draft", class
-% option should be used if it is desired that the figures are to be
-% displayed while in draft mode.
-%
-%\begin{figure}[!t]
-%\centering
-%\includegraphics[width=2.5in]{myfigure}
-% where an .eps filename suffix will be assumed under latex, 
-% and a .pdf suffix will be assumed for pdflatex; or what has been declared
-% via \DeclareGraphicsExtensions.
-%\caption{Simulation results for the network.}
-%\label{fig_sim}
-%\end{figure}
-
-% Note that the IEEE typically puts floats only at the top, even when this
-% results in a large percentage of a column being occupied by floats.
-
-
-% An example of a double column floating figure using two subfigures.
-% (The subfig.sty package must be loaded for this to work.)
-% The subfigure \label commands are set within each subfloat command,
-% and the \label for the overall figure must come after \caption.
-% \hfil is used as a separator to get equal spacing.
-% Watch out that the combined width of all the subfigures on a 
-% line do not exceed the text width or a line break will occur.
-%
-%\begin{figure*}[!t]
-%\centering
-%\subfloat[Case I]{\includegraphics[width=2.5in]{box}%
-%\label{fig_first_case}}
-%\hfil
-%\subfloat[Case II]{\includegraphics[width=2.5in]{box}%
-%\label{fig_second_case}}
-%\caption{Simulation results for the network.}
-%\label{fig_sim}
-%\end{figure*}
-%
-% Note that often IEEE papers with subfigures do not employ subfigure
-% captions (using the optional argument to \subfloat[]), but instead will
-% reference/describe all of them (a), (b), etc., within the main caption.
-% Be aware that for subfig.sty to generate the (a), (b), etc., subfigure
-% labels, the optional argument to \subfloat must be present. If a
-% subcaption is not desired, just leave its contents blank,
-% e.g., \subfloat[].
-
-
-% An example of a floating table. Note that, for IEEE style tables, the
-% \caption command should come BEFORE the table and, given that table
-% captions serve much like titles, are usually capitalized except for words
-% such as a, an, and, as, at, but, by, for, in, nor, of, on, or, the, to
-% and up, which are usually not capitalized unless they are the first or
-% last word of the caption. Table text will default to \footnotesize as
-% the IEEE normally uses this smaller font for tables.
-% The \label must come after \caption as always.
-%
-%\begin{table}[!t]
-%% increase table row spacing, adjust to taste
-%\renewcommand{\arraystretch}{1.3}
-% if using array.sty, it might be a good idea to tweak the value of
-% \extrarowheight as needed to properly center the text within the cells
-%\caption{An Example of a Table}
-%\label{table_example}
-%\centering
-%% Some packages, such as MDW tools, offer better commands for making tables
-%% than the plain LaTeX2e tabular which is used here.
-%\begin{tabular}{|c||c|}
-%\hline
-%One & Two\\
-%\hline
-%Three & Four\\
-%\hline
-%\end{tabular}
-%\end{table}
-
-
-% Note that the IEEE does not put floats in the very first column
-% - or typically anywhere on the first page for that matter. Also,
-% in-text middle ("here") positioning is typically not used, but it
-% is allowed and encouraged for Computer Society conferences (but
-% not Computer Society journals). Most IEEE journals/conferences use
-% top floats exclusively. 
-% Note that, LaTeX2e, unlike IEEE journals/conferences, places
-% footnotes above bottom floats. This can be corrected via the
-% \fnbelowfloat command of the stfloats package.
-
-
-
-
-\section{Conclusion}
-The conclusion goes here.
-
-
-
+\input{conclusion}
 
 % conference papers do not normally have an appendix
-
-
 
 % use section* for acknowledgment
 \ifCLASSOPTIONcompsoc
