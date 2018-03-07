@@ -385,10 +385,17 @@ The abstract goes here.
 
 \subsection{Dimension Trees}
 
+\subsection{Relative Error Computation}
+
+Given a model $\T{M}=\CP$, we compute the relative error $\|\TA - \T{M}\|/\|\TA\|$ efficiently by using the identity $\|\TA-\T{M}\|^2 = \|\TA\|^2 - 2\langle \TA, \T{M} \rangle + \|\T{M}\|^2.$
+The quantity $\|\TA\|$ is fixed, and the other two terms can be computed cheaply given the temporary matrices computed during the course of the BCD algorithm.
+The second term can be computed using the identity $\langle \TA, \T{M} \rangle = \langle \Mn{M}{N}, \Mn{H}{N} \rangle$, where $\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$ is the MTTKRP result in the $N$th mode (the MTTKRP result is computed during the course of the algorithm to update the factor matrix).
+The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\M{S} \Hada $
+
 \subsection{Parallel Algorithm}
 
 \begin{algorithm}
-\caption{$\lt[\Mn{H}{1},\dots,\Mn{H}{N}\rt] = \text{Par-NNCP-ALS}(\TA,k)$}
+\caption{$(\CPl,\epsilon) = \text{Par-NNCP}(\TA,k)$}
 \label{alg:2D}
 \begin{algorithmic}[1]
 \Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $k$ is rank of approximation
@@ -404,16 +411,16 @@ The abstract goes here.
 \EndFor
 \State \Comment{Compute NNCP approximation}
 \While{not converged}
-	\State \Comment{Perform outer iteration of NNCP-ALS}
+	\State \Comment{Perform outer iteration of BCD}
 	\For{$n=1$ to $N$}
 	\State \Comment{Compute new factor matrix in $n$th mode}
 	\State $\M{V} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
 		\label{line:locMTTKRP}
-	\State $\M{W} = \text{Reduce-Scatter}(\M{V},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
+	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M{V},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
 		\label{line:reduce-scatter}
 	\State $\M{S} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
 		\label{line:hadamard}
-	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\M{S},\M{W})$
+	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\M{S},\Mn{M}{n}_{\V{p}})$
 		\label{line:locNLS}
 	\State \Comment{Normalize columns}
 	\State $\V{c} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
@@ -427,13 +434,13 @@ The abstract goes here.
 	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
 		\label{line:all-gather}
 	\EndFor
-	\State \Comment{Compute error}
-	\State $b = \text{Inner-Product}(\M{W},\Mn[\hat]{H}{N}_{\V{p}})$
+	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
+	\State $b = \text{Inner-Product}(\Mn{M}{N}_{\V{p}},\Mn[\hat]{H}{N}_{\V{p}})$
 	\State $\beta = \text{All-Reduce}(b,\textsc{All-Procs})$
 	\State $\gamma = \V{\lambda}^\Tra (\M{S} \Hada \Mn{G}{N}) \V{\lambda}$
 	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
 \EndWhile
-\Ensure $\lt\|\TA - \Dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\rt\| /\|\TA\| = \epsilon$
+\Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
 \Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times k$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
 \end{algorithmic}
 \end{algorithm}
