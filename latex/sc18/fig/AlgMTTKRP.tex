@@ -1,0 +1,28 @@
+% !TEX root = Alg_header.tex
+
+\begin{tikzpicture}[x={(-0.5cm,-0.4cm)}, y={(1cm,0cm)}, z={(0cm,1cm)},every node/.append style={transform shape},scale=\parscale]
+
+% highlight all-gather/reduce-scatter patterns
+
+% local computation
+% front face
+\begin{scope}[canvas is yz plane at x=.5]
+	% highlight block of 1st factor matrix now owned by processor
+	\draw[fill=\highlight,shift={(-1,.5)},xscale=.5] (0,0) rectangle (-1,-1);
+\end{scope}
+% right face
+\begin{scope}[canvas is zx plane at y=(\procdim-.5),rotate=-90]
+	% highlight block of 3rd factor matrix now owned by processor
+	\draw[fill=\highlight,yscale=.5,shift={(-.5,-6)}] (0,0) rectangle (1,-1);
+\end{scope}
+
+% front face
+\begin{scope}[canvas is yz plane at x=.5]
+	% highlight block of 2nd factor matrix contribution computed by processor
+	\draw[fill=\highlight,shift={(1.5,-3)},yscale=.5] (0,0) rectangle (1,-1);
+\end{scope}
+
+\parbasepic
+
+\end{tikzpicture}
+

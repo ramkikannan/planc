@@ -1,3 +1,5 @@
+% !TEX root = paper.tex
+
 \section{Preliminaries} 
 \label{sec:prelims}
 
@@ -10,3 +12,40 @@
 	\end{itemize}
 	\item MPI collectives
 \end{itemize}
+
+\begin{algorithm}
+%\caption{$(\CPl,\epsilon) = \text{NNCP}(\TA,k)$}
+\caption{$\CP = \text{NNCP}(\TA,k)$}
+\label{alg:nncp}
+\begin{algorithmic}[1]
+\Require $\TA$ is $I_1\times \cdots \times I_N$ tensor, $k$ is approximation rank
+\State \Comment{Initialize data}
+%\State $\alpha = \|\TA\|^2$
+\For{$n=2$ to $N$}
+	\State Initialize $\Mn{H}{n}$ 
+	\State $\Mn{G}{n} = \MnTra{H}{n}\Mn{H}{n}$
+\EndFor
+\State \Comment{Compute NNCP approximation}
+\While{not converged}
+	\State \Comment{Perform outer iteration of BCD}
+	\For{$n=1$ to $N$}
+	\State \Comment{Compute new factor matrix in $n$th mode}
+	\State $\Mn{M}{n} = \text{MTTKRP}(\TA,\{\Mn{H}{i}\},n)$
+	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+	\State $\Mn{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$
+%	\State $\Mn[\hat]{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$
+%	\State \Comment{Normalize columns}
+%	\State $\V{\lambda} = \text{Col-Norms}(\Mn[\hat]{H}{n})$
+%	\State $\Mn{H}{n} = \text{Col-Scale}(\Mn[\hat]{H}{n},\V{\lambda})$
+%	\State \Comment{Organize data for later modes}
+	\State $\Mn{G}{n} = \MnTra{H}{n}\Mn{H}{n}$
+	\EndFor
+%	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
+%	\State $\beta = \langle \Mn{M}{N},\Mn[\hat]{H}{N} \rangle$
+%	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
+%	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
+\EndWhile
+%\Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
+\Ensure $\TA \approx \CP$
+\end{algorithmic}
+\end{algorithm}

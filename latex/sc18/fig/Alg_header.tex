@@ -1,0 +1,64 @@
+% !TEX root = ../paper.tex
+
+\newcommand{\procdim}{3}
+\newcommand{\proc}{\draw[black,shift={(-.5,-.5)}] (0,0) grid (\procdim,\procdim);}
+\newcommand{\highlight}{gray!75}
+\newcommand{\commhighlight}{gray!25}
+\newcommand{\parscale}{.46}
+\newcommand{\secfaclabel}{$\Mn{M}{2}$}
+
+\newcommand{\parbasepic}{
+% highlight one processor's data
+% front face
+\begin{scope}[canvas is yz plane at x=.5,shift={(1.5,-1.5)}]
+	% highlight front face of tensor block
+	\draw[fill=\highlight,shift={(0,1)}] (0,0) rectangle (1,1);
+	% highlight block of 1st factor matrix
+	\draw[fill=\highlight,shift={(-2.5,2-1/3)},xscale=.5] (0,0) rectangle (-1,-1/9);
+	% highlight block of 2nd factor matrix
+	\draw[shift={(0,-1.5)},yscale=.5] (0,0) rectangle (1/9,-1);
+\end{scope}
+% right face
+\begin{scope}[canvas is zx plane at y=(\procdim-.5),rotate=-90,shift={(-.5,-3)}]
+	% highlight front face of tensor block
+	\draw[fill=\highlight,shift={(0,2.5)}] (0,0) rectangle (1,1);
+	% highlight block of 3rd factor matrix
+	\draw[fill=\highlight,yscale=.5] (0,0) rectangle (1/9,-1);
+\end{scope}
+% top face
+\begin{scope}[canvas is yx plane at z=.5,yscale=-1,rotate=0]
+	% highlight front face of tensor block
+	\draw[fill=\highlight,shift={(1.5,-.5)}] (0,0) rectangle (1,1);
+\end{scope}
+
+% draw tensor
+% front face
+\begin{scope}[canvas is yz plane at x=.5,rotate=-90]
+	\proc
+\end{scope}
+% top face
+\begin{scope}[canvas is yx plane at z=.5,yscale=-1,rotate=0]
+	\proc
+\end{scope}
+% right face
+\begin{scope}[canvas is zx plane at y=(\procdim-.5),rotate=180]
+	\proc
+\end{scope}
+
+% draw factor matrices
+% front face
+\begin{scope}[canvas is yz plane at x=.5,shift={(1.5,-.5)}]
+	% draw 1st factor matrix
+	\draw[shift={(-2.5,0)},xscale=.5] (0,-2) grid (-1,1);
+	\node[draw=none] at (-3.6,-.5) {\Large $\Mn{H}{1}$};
+	% draw 2nd factor matrix
+	\draw[shift={(0,-2.5)},yscale=.5] (-2,0) grid (1,-1);
+	\node[draw=none] at (-.5,-3.5) {\Large \secfaclabel};
+\end{scope}
+% right face
+\begin{scope}[canvas is zx plane at y=(\procdim-.5),rotate=-90,shift={(1.5,-.5)}]
+	% draw 2nd factor matrix
+	\draw[shift={(0,-2.5)},yscale=.5] (-2,0) grid (1,-1);
+	\node[draw=none] at (-.5,-3.5) {\Large $\Mn{H}{3}$};
+\end{scope}
+}

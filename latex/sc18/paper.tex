@@ -117,45 +117,6 @@
 
 
 
-
-% *** MATH PACKAGES ***
-%
-%\usepackage{amsmath}
-% A popular package from the American Mathematical Society that provides
-% many useful and powerful commands for dealing with mathematics.
-%
-% Note that the amsmath package sets \interdisplaylinepenalty to 10000
-% thus preventing page breaks from occurring within multiline equations. Use:
-%\interdisplaylinepenalty=2500
-% after loading amsmath to restore such page breaks as IEEEtran.cls normally
-% does. amsmath.sty is already installed on most LaTeX systems. The latest
-% version and documentation can be obtained at:
-% http://www.ctan.org/pkg/amsmath
-
-
-
-
-
-% *** SPECIALIZED LIST PACKAGES ***
-%
-%\usepackage{algorithmic}
-% algorithmic.sty was written by Peter Williams and Rogerio Brito.
-% This package provides an algorithmic environment fo describing algorithms.
-% You can use the algorithmic environment in-text or within a figure
-% environment to provide for a floating algorithm. Do NOT use the algorithm
-% floating environment provided by algorithm.sty (by the same authors) or
-% algorithm2e.sty (by Christophe Fiorio) as the IEEE does not use dedicated
-% algorithm float types and packages that provide these will not provide
-% correct IEEE style captions. The latest version and documentation of
-% algorithmic.sty can be obtained at:
-% http://www.ctan.org/pkg/algorithms
-% Also of interest may be the (relatively newer and more customizable)
-% algorithmicx.sty package by Szasz Janos:
-% http://www.ctan.org/pkg/algorithmicx
-
-
-
-
 % *** ALIGNMENT PACKAGES ***
 %
 %\usepackage{array}
@@ -178,11 +139,11 @@
 
 
 % *** SUBFIGURE PACKAGES ***
-%\ifCLASSOPTIONcompsoc
-%  \usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
-%\else
-%  \usepackage[caption=false,font=footnotesize]{subfig}
-%\fi
+\ifCLASSOPTIONcompsoc
+  \usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
+\else
+  \usepackage[caption=false,font=footnotesize]{subfig}
+\fi
 % subfig.sty, written by Steven Douglas Cochran, is the modern replacement
 % for subfigure.sty, the latter of which is no longer maintained and is
 % incompatible with some LaTeX packages including fixltx2e. However,
@@ -252,7 +213,7 @@
 
 % *** PDF, URL AND HYPERLINK PACKAGES ***
 %
-%\usepackage{url}
+\usepackage{url}
 % url.sty was written by Donald Arseneau. It provides better support for
 % handling and breaking URLs. url.sty is already installed on most LaTeX
 % systems. The latest version and documentation can be obtained at:
@@ -275,6 +236,9 @@
 \usepackage{amsfonts,amsmath,latexsym,amssymb}
 \usepackage{algorithm,algpseudocode}
 \usepackage{graphicx,xcolor}
+\usepackage{hyperref,cleveref}
+\usepackage{tikz}
+\usetikzlibrary{3d}
 % to include our macros
 \usepackage{ourmacros}
 

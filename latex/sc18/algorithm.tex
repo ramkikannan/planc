@@ -1,3 +1,5 @@
+% !TEX root = paper.tex
+
 \section{Algorithm} 
 \label{sec:algorithm}
 
@@ -15,12 +17,23 @@ These identities have been used in previous work \cite{KB09,TensorBox,SK16}.
 
 \subsection{Parallel Algorithm}
 
+\input{fig/Alg_header.tex}
+\begin{figure*}[t]
+\centering
+  \subfloat[Start $n$th iteration with redundant subset of rows of each input matrix.]{\input{fig/AlgStart.tex}} \quad
+  \subfloat[Compute local MTTKRP for contribution to output matrix $\Mn{M}{2}$.]{\input{fig/AlgMTTKRP.tex}} \quad
+  \subfloat[Reduce-Scatter to compute and distribute rows of $\Mn{M}{2}$.]{\input{fig/AlgRS.tex}} \quad
+  \subfloat[Compute local NLS update to obtain $\Mn{H}{2}_{\V{p}}$ from $\Mn{M}{2}_{\V{p}}$ (and $\Mn{S}{2}$).]{\input{fig/AlgNLS.tex}} \quad
+  \subfloat[All-Gather to collect rows of $\Mn{H}{2}$ needed for later inner iterations.]{\input{fig/AlgAG.tex}}
+  \caption{Illustration of 2nd inner iteration of Par-NNCP algorithm for 3-way tensor on a $3\times3\times3$ processor grid, showing data distribution, communication, and computation across steps.  Highlighted areas correspond to processor $(1,3,1)$ and its processor slice with which it communicates.  The column normalization and computation of $\Mn{G}{2}$, which involve communication across all processors, is not shown here.}
+  \label{fig:par_staten} 
+\end{figure*}
+
 \begin{algorithm}
 \caption{$(\CPl,\epsilon) = \text{Par-NNCP}(\TA,k)$}
 \label{alg:2D}
 \begin{algorithmic}[1]
 \Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $k$ is rank of approximation
-%\Require Local memory: space for $\Mn{H}{i}_{p_i}$ of size $(M_i/P_i) \times k$, for $1\leq i\leq N$
 \State \Comment{Initialize data}
 \State $a = \text{Norm-Squared}(\TA_{\V{p}})$
 \State $\alpha = \text{All-Reduce}(a,\textsc{All-Procs})$
@@ -39,9 +52,9 @@ These identities have been used in previous work \cite{KB09,TensorBox,SK16}.
 		\label{line:locMTTKRP}
 	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M[\overline]{M},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
 		\label{line:reduce-scatter}
-	\State $\Mn{S}{N} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
 		\label{line:hadamard}
-	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{N},\Mn{M}{n}_{\V{p}})$
+	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{n},\Mn{M}{n}_{\V{p}})$
 		\label{line:locNLS}
 	\State \Comment{Normalize columns}
 	\State $\V[\overline]{\lambda} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
