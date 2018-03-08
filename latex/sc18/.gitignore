@@ -1,7 +1,7 @@
 paper.pdf
-<<<<<<< HEAD
 *.aux
 *.log
 *.gz
-=======
->>>>>>> 675c15625ad921da197fe199e571ccad38175487
+*.bbl
+*.blg
+*.out

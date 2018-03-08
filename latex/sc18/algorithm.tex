@@ -10,6 +10,8 @@ The quantity $\|\TA\|$ is fixed, and the other two terms can be computed cheaply
 The second term can be computed using the identity $\langle \TA, \T{M} \rangle = \langle \Mn{M}{N}, \Mn{H}{N} \rangle$, where $\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$ is the MTTKRP result in the $N$th mode.
 The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\Mn{S}{N} \Hada \MnTra{H}{N} \Mn{H}{N})\V{1}$ where $\Mn{S}{N}=\MnTra{H}{1} \Mn{H}{1} \Hada \cdots \Hada \MnTra{H}{N-1} \Mn{H}{N-1}$.
 Both matrices $\Mn{M}{N}$ and $\Mn{S}{N}$ are computed during the course of the BCD algorithm for updating the factor matrix $\Mn{H}{N}$.
+The extra computation involved in computing the relative error is negligible.
+These identities have been used in previous work \cite{KB09,TensorBox,SK16}.
 
 \subsection{Parallel Algorithm}
 
@@ -24,8 +26,8 @@ Both matrices $\Mn{M}{N}$ and $\Mn{S}{N}$ are computed during the course of the 
 \State $\alpha = \text{All-Reduce}(a,\textsc{All-Procs})$
 \For{$n=2$ to $N$}
 	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times k$ 
-	\State $\M{U} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
-	\State $\Mn{G}{n} = \text{All-Reduce}(\M{U},\textsc{All-Procs})$
+	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
 	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
 \EndFor
 \State \Comment{Compute NNCP approximation}
@@ -33,29 +35,29 @@ Both matrices $\Mn{M}{N}$ and $\Mn{S}{N}$ are computed during the course of the 
 	\State \Comment{Perform outer iteration of BCD}
 	\For{$n=1$ to $N$}
 	\State \Comment{Compute new factor matrix in $n$th mode}
-	\State $\M{V} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
+	\State $\M[\overline]{M} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
 		\label{line:locMTTKRP}
-	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M{V},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
+	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M[\overline]{M},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
 		\label{line:reduce-scatter}
 	\State $\Mn{S}{N} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
 		\label{line:hadamard}
 	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{N},\Mn{M}{n}_{\V{p}})$
 		\label{line:locNLS}
 	\State \Comment{Normalize columns}
-	\State $\V{c} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
-	\State $\V{\lambda} = \text{All-Reduce}(\V{c},\textsc{All-Procs})$
+	\State $\V[\overline]{\lambda} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
+	\State $\V{\lambda} = \text{All-Reduce}(\V[\overline]{\lambda},\textsc{All-Procs})$
 	\State $\Mn{H}{n}_{\V{p}} = \text{Local-Col-Scale}(\Mn[\hat]{H}{n}_{\V{p}},\V{\lambda})$
 	\State \Comment{Organize data for later modes}
-	\State $\M{U} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
 		\label{line:locSYRK}
-	\State $\Mn{G}{n} = \text{All-Reduce}(\M{U},\textsc{All-Procs})$
+	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
 		\label{line:all-reduce}
 	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
 		\label{line:all-gather}
 	\EndFor
 	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
-	\State $b = \text{Inner-Product}(\Mn{M}{N}_{\V{p}},\Mn[\hat]{H}{N}_{\V{p}})$
-	\State $\beta = \text{All-Reduce}(b,\textsc{All-Procs})$
+	\State $\overline{\beta} = \text{Inner-Product}(\Mn{M}{N}_{\V{p}},\Mn[\hat]{H}{N}_{\V{p}})$
+	\State $\beta = \text{All-Reduce}(\overline{\beta},\textsc{All-Procs})$
 	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
 	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
 \EndWhile
