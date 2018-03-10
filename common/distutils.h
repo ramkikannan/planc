@@ -23,6 +23,9 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 
 #define MPITIC mpitic()
 #define MPITOC mpitoc()
+// #define MPITIC mpitic(MPI_RANK)
+// #define MPITOC mpitoc(MPI_RANK)
+
 
 // #define PRINTROOT(MSG) 
 #define PRINTROOT(MSG) if (ISROOT) INFO << "::" << __PRETTY_FUNCTION__ \
