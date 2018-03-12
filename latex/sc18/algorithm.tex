@@ -5,6 +5,31 @@
 
 \subsection{Dimension Trees}
 
+An important optimization of the CP-ALS algorithm is to re-use temporary values across inner iterations \cite{PTC13a,KU16-TR,LCPSV17,Kaya17}.
+To illustrate the idea, consider a 3-way tensor $\T{X}$ approximated by $\dsquare{\M{U},\M{V},\M{W}}$ and the two MTTKRP computations $\underline{\Mz{X}{1}(\M{W}}\Khat\M{V})$ and $\underline{\Mz{X}{2}(\M{W}}\Khat\M{U})$ used to update factor matrices $\M{U}$ and $\M{V}$, respectively.
+The underlined parts of the expressions correspond to the shared dependence of the outputs on the tensor $\T{X}$ and the third factor matrix $\M{W}$.
+Indeed, a temporary quantity, which we refer to as a \emph{partial MTTKRP}, can be computed and re-used across the two MTTKRP expressions.
+We refer to the computation that combines the temporary quantity with the other factor matrix to complete the MTTKRP computation as a multi-tensor-times-vector or \emph{multi-TTV}, as it consists of multiple operations that multiply a tensor times a set of vectors, each corresponding to a different mode.
+This terminology was used in \cite{HBJT17-TR}.
+
+For a larger number of modes, a more general approach can organize the temporary quantities to be used over a maximal number of MTTKRPs.
+The general approach can yield significant benefit, decreasing the computation by a factor of approximately $N/2$ for dense $N$-way tensors.
+The idea is introduced in \cite{PTC13a}, but we adopt the terminology and notation of \emph{dimension trees} used in \cite{KU16-TR,Kaya17}.
+In this notation, the root node is labeled $\{1,\dots,N\}$ and corresponds to the original tensor, a leaf is labeled $\{n\}$ and corresponds to the $n$th MTTKRP result, and an internal node is labeled by a set of modes $\{i,\dots,j\}$ and corresponds to a temporary tensor whose values contribute to the MTTKRP results of modes $i,\dots,j$.
+
+\Cref{fig:DT} illustrates a dimension tree for the case $N=5$.
+Various shapes of binary trees are possible \cite{PTC13a,Kaya17}.
+For dense tensors, the computational cost is dominated by the root's branches, which correspond to partial MTTKRP computations.
+All other edges in a tree correspond to multi-TTVs and are typically much cheaper.
+
+\begin{figure}
+\input{fig/dim_tree.tex}
+\caption{Dimension tree example for $N=5$. 
+The data associated with the root node is the original tensor, the data associated with the leaf nodes are MTTKRP results, and the data associated with internal nodes are temporary tensors.  
+Edges labeled with PM correspond to partial MTTKRP computations, and edges labeled with mTTV correspond to multi-TTV computations.}
+\label{fig:DT}
+\end{figure}
+
 \subsection{Relative Error Computation}
 
 Given a model $\T{M}=\CP$, we compute the relative error $\|\TA - \T{M}\|/\|\TA\|$ efficiently by using the identity $\|\TA-\T{M}\|^2 = \|\TA\|^2 - 2\langle \TA, \T{M} \rangle + \|\T{M}\|^2.$
