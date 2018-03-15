@@ -49,10 +49,11 @@ class DistNTF {
                           this->m_k,
                           this->m_sparsity);
         } else {
-            // dio.readInput(m_Afile_name);
+            dio.readInput(m_Afile_name);
         }
         // planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);
-        planc::Tensor A = dio.A();        
+        planc::Tensor A;
+        A = dio.A();        
         if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
             UVEC local_dims = A.dimensions();
             /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,

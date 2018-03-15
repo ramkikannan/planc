@@ -45,11 +45,16 @@ class NTFMPICommunicator {
                      << std::endl;
             }
         }
-        INFO << "slice ranks of rank::" << m_global_rank << std::endl
-             << m_fiber_ranks;
-        INFO << "fiber ranks of rank::" << m_global_rank << std::endl
-             << m_fiber_ranks;
         MPI_Barrier(MPI_COMM_WORLD);
+        for (int i = 0; i < size(); i++) {
+            if (i == rank()) {
+                INFO << "slice ranks of rank::" << m_global_rank
+                     << "::" << m_slice_ranks << std::endl;
+                INFO << "fiber ranks of rank::" << m_global_rank
+                     << "::" << m_fiber_ranks << std::endl;
+            }
+            MPI_Barrier(MPI_COMM_WORLD);
+        }        
     }
 
     NTFMPICommunicator(int argc, char *argv[],

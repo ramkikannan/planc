@@ -34,7 +34,6 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 #define DISTPRINTINFO(MSG) INFO << MPI_RANK << "::" << __PRETTY_FUNCTION__ \
                                 << "::" << __LINE__ \
                                 << "::" << std::endl << MSG << std::endl;
-
 #define PRINTTICTOCTOP if (ISROOT) INFO << "tictoc::" << tictoc_stack.top() \
                                          << std::endl;
 

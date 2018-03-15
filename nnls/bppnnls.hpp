@@ -419,7 +419,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
             } else {
                 // we have to group passive set columns that are same.
                 // find the correlation matrix of passive set matrix.
-                vector<UWORD> sortedIdx, beginIdx;
+                std::vector<UWORD> sortedIdx, beginIdx;
                 computeCorrelationScore(PassSet, sortedIdx, beginIdx);
                 // UVEC solved(k1);
                 // solved.zeros();
@@ -431,7 +431,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                     // UVEC samePassiveSetCols=find(corrPassMat.col(i)==1);
                     UWORD sortedBeginIdx = beginIdx[i - 1];
                     UWORD sortedEndIdx = beginIdx[i];
-                    UVEC samePassiveSetCols(vector<UWORD>
+                    UVEC samePassiveSetCols(std::vector<UWORD>
                                             (sortedIdx.begin() + sortedBeginIdx,
                                              sortedIdx.begin() + sortedEndIdx));
                     // solved(samePassiveSetCols).ones();
@@ -533,8 +533,8 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
     * one datapoint. The objective is to returns a low triangular
     * correlation matrix with 1 if the strings are equal. Zero otherwise
     */
-    void computeCorrelationScore(arma::umat &PassSet, vector<UWORD> &sortedIdx,
-                                 vector<UWORD> &beginIndex) {
+    void computeCorrelationScore(arma::umat &PassSet, std::vector<UWORD> &sortedIdx,
+                                 std::vector<UWORD> &beginIndex) {
         SortBooleanMatrix<arma::umat> sbm(PassSet);
         sortedIdx = sbm.sortIndex();
         BooleanArrayComparator<arma::umat> bac(PassSet);
