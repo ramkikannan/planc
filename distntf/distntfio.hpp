@@ -74,20 +74,21 @@ class DistNTFIO {
         UVEC global_dims = m_A.dimensions();
         UVEC local_dims =  global_dims / this->m_mpicomm.proc_grids();
         size_t num_modes = m_A.modes();
-        std::vector<std::vector<size_t>> idxs_for_mode(num_modes);
+        std::vector<std::vector<size_t>> idxs_for_mode;
         size_t current_start_idx, current_end_idx, num_idxs_for_mode;
         // For i over modes
         for (size_t i = 0; i < num_modes; i++) {
             // Start_idx(i) = MPI_FIBER_RANK(i) * global_dims(i)
             current_start_idx = MPI_FIBER_RANK(i) * local_dims(i);
-            current_end_idx = current_start_idx + local_dims(i);
-            num_idxs_for_mode = current_end_idx -  current_start_idx;
-            UVEC idxs_current_mode = arma::linspace<UVEC>(current_start_idx,
-                                     current_end_idx - 1,
-                                     num_idxs_for_mode);
-            std::vector<size_t> idxs_current_mode_stdvec =
-                arma::conv_to<std::vector<size_t>>::from(idxs_current_mode);
-            idxs_for_mode.push_back(idxs_current_mode_stdvec);
+            // current_end_idx = current_start_idx + local_dims(i);
+            // num_idxs_for_mode = current_end_idx -  current_start_idx;
+            // UVEC idxs_current_mode = arma::linspace<UVEC>(current_start_idx,
+            //                          current_end_idx - 1,
+            //                          num_idxs_for_mode);
+            std::vector<size_t> idxs_current_mode(local_dims(i));
+            std::iota (std::begin(idxs_current_mode), std::end(idxs_current_mode), current_start_idx);
+            // arma::conv_to<std::vector<size_t>>::from(idxs_current_mode);
+            idxs_for_mode.push_back(idxs_current_mode);
         }
         // we have to now determing the cartesian product of this set.
         std::vector<std::vector<size_t>> global_idxs = cartesian_product(idxs_for_mode);
@@ -129,8 +130,9 @@ class DistNTFIO {
         } else if (extension == "npy") {
             NumPyArray npyreader;
             npyreader.load(file_name);
-            DISTPRINTINFO("numpy info::");
-            npyreader.printInfo();
+            if (MPI_RANK == 0) {
+                npyreader.printInfo();
+            }
             this->m_A = *(npyreader.m_input_tensor);
             if (MPI_SIZE > 1) {
                 build_local_tensor();

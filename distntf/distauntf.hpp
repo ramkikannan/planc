@@ -464,8 +464,7 @@ class DistAUNTF {
         // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram * lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;
         MPITIC;  // err compute
         hadamard_all_grams = global_gram % factor_global_grams[this->m_modes - 1];
-        VEC local_lambda = m_local_ncp_factors.lambda();
-        DISTPRINTINFO("local_lambda::" << local_lambda);
+        VEC local_lambda = m_local_ncp_factors.lambda();        
         ROWVEC temp_vec = local_lambda.t() * hadamard_all_grams;
         double sq_norm_model = arma::dot(temp_vec, local_lambda);
         // double sq_norm_model = arma::norm(hadamard_all_grams, "fro");
@@ -484,6 +483,7 @@ class DistAUNTF {
         this->time_stats.communication_duration(temp);
         this->time_stats.err_communication_duration(temp);
 #ifdef DISTNTF_VERBOSE
+        DISTPRINTINFO("local_lambda::" << local_lambda);
         DISTPRINTINFO ("local_inner_product::" << inner_product << std::endl);
         PRINTROOT("norm_A_sq :: " << this->m_global_sqnorm_A
                   << "::model_norm_sq::" << sq_norm_model
