@@ -67,6 +67,7 @@ class Tensor {
     }
     //copy constructor
     Tensor(const Tensor &src) {
+        clear();
         this->m_numel = src.numel();
         this->m_modes = src.modes();
         this->m_dimensions = src.dimensions();
@@ -76,19 +77,24 @@ class Tensor {
     }
     Tensor& operator=(const Tensor& other) { // copy assignment
         if (this != &other) { // self-assignment check expected
-            if (other.m_numel != this->m_numel) {         // storage cannot be reused
-                delete[] this->m_data;              // destroy storage in this
-                this->m_numel = 0;
-                this->m_data = NULL;             // preserve invariants in case next line throws
-                this->m_data = new double[other.numel()]; // create storage in this
-                this->m_numel = other.numel();
-                this->m_modes = other.modes();
-                this->m_dimensions = other.dimensions();
-                this->freed_on_destruction = false;
-            }
+            clear();
+            this->m_data = new double[other.numel()]; // create storage in this
+            this->m_numel = other.numel();
+            this->m_modes = other.modes();
+            this->m_dimensions = other.dimensions();
+            this->freed_on_destruction = false;
             memcpy(this->m_data, other.m_data, sizeof(double)*this->m_numel);
         }
         return *this;
+    }
+
+    void clear() {
+        if (this->m_numel > 0 && this->m_data != NULL) {
+            delete[] this->m_data;  // destroy storage in this
+            this->m_numel = 0;
+            this->m_data = NULL;
+            freed_on_destruction = false;
+        }
     }
 
     int modes() const {return m_modes;}
@@ -277,9 +283,13 @@ class Tensor {
         }
     }
 
-    void save(const char* filename, std::ios_base::openmode mode = std::ios_base::out) {
+    void save(std::string filename, std::ios_base::openmode mode = std::ios_base::out) {
+        std::string filename_no_extension = filename.substr(0,
+                                            filename.find_last_of("."));
+        // info file always in text mode
+        filename_no_extension.append(".info");
         std::ofstream ofs;
-        ofs.open(filename, mode);
+        ofs.open(filename_no_extension, std::ios_base::out);
         // write modes
         ofs << this->m_modes << std::endl;
         // dimension of modes
@@ -287,6 +297,8 @@ class Tensor {
             ofs << this->m_dimensions[i] << " ";
         }
         ofs << std::endl;
+        ofs.close();
+        ofs.open(filename, mode);
         // write elements
         for (size_t i = 0; i < this->m_numel; i++) {
             ofs << this->m_data[i] << std::endl;
@@ -294,29 +306,48 @@ class Tensor {
         // Close the file
         ofs.close();
     }
-    void read(const char* filename, std::ios_base::openmode mode = std::ios_base::in) {
+    void read(std::string filename, std::ios_base::openmode mode = std::ios_base::in) {
         // clear existing tensor
         if (this->m_numel > 0) {
             delete[] this->m_data;  // destroy storage in this
             this->m_numel = 0;
             this->m_data = NULL;  // preserve invariants in case next line throws
         }
+        std::string filename_no_extension = filename.substr(0,
+                                            filename.find_last_of("."));
+        filename_no_extension.append(".info");
+
         std::ifstream ifs;
-        ifs.open(filename, mode);
-        // write modes        
+        // info file always in text mode
+        ifs.open(filename_no_extension, std::ios_base::in);
+        // write modes
         ifs >> this->m_modes;
         // dimension of modes
         this->m_dimensions = arma::zeros<UVEC>(this->m_modes);
         for (int i = 0; i < this->m_modes; i++) {
             ifs >> this->m_dimensions[i];
         }
+        ifs.close();
+        ifs.open(filename, mode);
         this->m_numel = arma::prod(this->m_dimensions);
         this->m_data = new double[this->m_numel];
-        for (int i=0; i < this->m_numel; i++){
+        for (int i = 0; i < this->m_numel; i++) {
             ifs >> this->m_data[i];
         }
         // Close the file
         ifs.close();
+    }
+
+    size_t sub2ind(UVEC sub) {
+        assert(sub.n_cols == this->m_dimensions.n_cols);
+        UVEC cumprod_dims = arma::cumprod(this->m_dimensions);
+        UVEC cumprod_dims_shifted = arma::shift(cumprod_dims, 1);
+        cumprod_dims_shifted(0) = 1;
+        size_t idx =  arma::dot(cumprod_dims_shifted, sub);
+        return idx;
+    }
+    double at(UVEC sub) {
+        return m_data[sub2ind(sub)];
     }
 
 };  // class Tensor
