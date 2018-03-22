@@ -1,3 +1,5 @@
+% !TEX root = experiments.tex
+
 % macros for plotting
 \newcommand{\datafile}{}
 \newcommand{\alg}{}
@@ -111,16 +113,10 @@
 
 % set options for strongscaling plot
 \newcommand{\strongscalingplotoptions}{
-	xlabel=Time (s),
-	\ifylabel
-		ylabel=Relative Error,
-		ylabel style={yshift=-.3cm},
-	\fi
-	\ifwider
-		width=1.8in, height=2in,
-	\else
-		width=1.35in, height=2in,
-	\fi
+	log basis y={2},
+	log basis x={2},
+	xlabel=Nodes,
+	ylabel=Time (s),
 	y tick label style={
         /pgf/number format/.cd,
             precision=4,
@@ -130,13 +126,11 @@
 
 % plot time over p, filtering rows out appropriately
 \newcommand{\strongscalingplot}{
-\begin{axis}[\strongscalingplotoptions]
+\begin{loglogaxis}[\strongscalingplotoptions]
 	%\addplot+ [discard if not={algo}{liavas},thick,mark options={solid}] table [x={nodes}, y={totaltime}] {\datafile};
 	%\addplot+ [discard if not={algo}{nodimtree},thick,mark options={solid},mark=square*] table [x={nodes}, y={totaltime}] {\datafile};
 	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=triangle*] table [x={p}, y={total_d}] {\datafile};
-	\iflegend
-		\legend{Liavas, Classic, DimTree}
-	\fi
-\end{axis}
+	\legend{DimTree}
+\end{loglogaxis}
 }
 
