@@ -198,9 +198,15 @@ class DistAUNTF {
         }
         MPITIC;  // mttkrp tic
         if (this->m_enable_dim_tree) {
+            double multittv_time = 0;
+            double mttkrp_time = 0;
             kdt->in_order_reuse_MTTKRP(current_mode,
                                        ncp_mttkrp_t[current_mode].memptr(),
-                                       false);
+                                       false, multittv_time, mttkrp_time);
+            this->time_stats.compute_duration(multittv_time);
+            this->time_stats.compute_duration(mttkrp_time);
+            this->time_stats.multittv_duration(multittv_time);
+            this->time_stats.mttkrp_duration(mttkrp_time);
 
         } else {
             m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
@@ -320,6 +326,7 @@ class DistAUNTF {
         this->reportTime(this->time_stats.gram_duration(), "total_gram");
         this->reportTime(this->time_stats.krp_duration(), "total_krp");
         this->reportTime(this->time_stats.mttkrp_duration(), "total_mttkrp");
+        this->reportTime(this->time_stats.multittv_duration(), "total_multittv");
         this->reportTime(this->time_stats.nnls_duration(), "total_nnls");
         if (this->m_compute_error) {
             this->reportTime(this->time_stats.err_compute_duration(),
@@ -345,7 +352,7 @@ class DistAUNTF {
         m_local_ncp_factors_t(i_local_dims, i_k, true),
         m_gathered_ncp_factors(i_tensor.dimensions(), i_k, false),
         m_gathered_ncp_factors_t(i_tensor.dimensions(), i_k, true),
-        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
+        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
         this->m_compute_error = false;
         this->m_enable_dim_tree = false;
         this->m_num_it = 30;
@@ -464,7 +471,7 @@ class DistAUNTF {
         // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram * lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;
         MPITIC;  // err compute
         hadamard_all_grams = global_gram % factor_global_grams[this->m_modes - 1];
-        VEC local_lambda = m_local_ncp_factors.lambda();        
+        VEC local_lambda = m_local_ncp_factors.lambda();
         ROWVEC temp_vec = local_lambda.t() * hadamard_all_grams;
         double sq_norm_model = arma::dot(temp_vec, local_lambda);
         // double sq_norm_model = arma::norm(hadamard_all_grams, "fro");

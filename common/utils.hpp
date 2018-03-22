@@ -23,6 +23,7 @@ static ULONG powersof10[16] = {
 };
 
 static std::stack<clock_t> tictoc_stack;
+static std::stack<double> tictoc_stack_omp_clock;
 
 inline void tic() {
     tictoc_stack.push(clock());

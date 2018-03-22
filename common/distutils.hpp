@@ -9,13 +9,16 @@
 #include "utils.hpp"
 
 inline void mpitic() {
-    tictoc_stack.push(clock());
+    // tictoc_stack.push(clock());
+    tictoc_stack_omp_clock.push(omp_get_wtime());
 }
 
 inline void mpitic(int rank) {
-    double temp = clock();    
+    // double temp = clock();
+    double temp = omp_get_wtime();
     std::cout << "tic::" << rank << "::" << temp << std::endl;
-    tictoc_stack.push(temp);
+    // tictoc_stack.push(temp);
+    tictoc_stack_omp_clock.push(omp_get_wtime());
 }
 
 inline double mpitoc(int rank) {
@@ -23,10 +26,12 @@ inline double mpitoc(int rank) {
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     std::cout << "toc::" << rank << "::"
-         << tictoc_stack.top() << std::endl;
-    double rc = (static_cast<double>
-                 (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
-    tictoc_stack.pop();
+              << tictoc_stack_omp_clock.top() << std::endl;
+    // double rc = (static_cast<double>
+    //              (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
+    //tictoc_stack.pop();
+    double rc = omp_get_wtime() - tictoc_stack_omp_clock.top();
+    tictoc_stack_omp_clock.pop();
     return rc;
 }
 
@@ -34,9 +39,11 @@ inline double mpitoc() {
 #ifdef __WITH__BARRIER__TIMING__
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    double rc = (static_cast<double>
-                 (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
-    tictoc_stack.pop();
+    // double rc = (static_cast<double>
+    //              (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
+    // tictoc_stack.pop();
+    double rc = omp_get_wtime() - tictoc_stack_omp_clock.top();
+    tictoc_stack_omp_clock.pop();
     return rc;
 }
 
