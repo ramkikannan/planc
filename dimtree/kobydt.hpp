@@ -117,9 +117,12 @@ class KobyDimensionTree {
     * Return the col major ordered mttkrp
     */
 
-    void in_order_reuse_MTTKRP(long int n, double *out, bool colmajor) {
+    void in_order_reuse_MTTKRP(long int n, double *out, bool colmajor,
+                               double &multittv_time, double &mttkrp_time) {
         // ktensor *Y = m_local_Y;
         direction D;
+        multittv_time = 0;
+        mttkrp_time = 0;
 
         if (n == 0) {
             /**
@@ -136,7 +139,11 @@ class KobyDimensionTree {
                     T) the original data tensor
                     num_threads)
                 */
+                MPITIC;
                 partial_MTTKRP_with_KRP_output_FM(D, m_local_Y, m_local_T, num_threads);
+                mttkrp_time += MPITOC;
+
+
             } else {                    // tensor output PM
                 /**
                     PM outputs an intermediate tensor
@@ -147,8 +154,12 @@ class KobyDimensionTree {
                     projection_Tensor)
                     num_threads)
                 */
+                MPITIC;
                 partial_MTTKRP_with_KRP_output_T(s, D, m_local_Y, m_local_T, projection_Tensor, num_threads);
+                mttkrp_time += MPITOC;
+                MPITIC;
                 multi_TTV_with_KRP_output_FM(D, projection_Tensor, projection_Ktensor, num_threads);
+                multittv_time += MPITOC;
             }
         } else if (n == s + 1) {
             /**
@@ -157,30 +168,42 @@ class KobyDimensionTree {
             D = ::direction::left; //    Contracting over the left modes
             LR_Ktensor_Reordering_existingY(m_local_Y, projection_Ktensor, s, opposite_direction(D)); // s because s is not included on the right
             if (projection_Ktensor->nmodes == 1) {    // factor matrix output PM
+                MPITIC;
                 partial_MTTKRP_with_KRP_output_FM(D, m_local_Y, m_local_T, num_threads);
+                mttkrp_time += MPITOC;
             } else {
+                MPITIC;
                 partial_MTTKRP_with_KRP_output_T(s, D, m_local_Y, m_local_T, projection_Tensor, num_threads);
+                mttkrp_time += MPITOC;
 
                 // op(D) because multi ttvs in this tree structure are always right
+                MPITIC;
                 multi_TTV_with_KRP_output_FM(opposite_direction(D), projection_Tensor, projection_Ktensor, num_threads);
+                multittv_time += MPITOC;
             }
         } else {
             D = ::direction::left;
             if (projection_Ktensor->nmodes == 2) {
                 // A single left contraction to output a factor martix
+                MPITIC;
                 multi_TTV_with_KRP_output_FM(D, projection_Tensor, projection_Ktensor, num_threads);
+                multittv_time += MPITOC;
             } else {
                 /**
                     1) A single left contraction to updage the projection_tensor
                     2) A right contraction to get the desired MTTKRP
                 */
+                MPITIC;
                 multi_TTV_with_KRP_output_T(0, D, projection_Tensor, projection_Ktensor, buffer_Tensor, num_threads);
+                multittv_time += MPITOC;
 
                 LR_tensor_Reduction(buffer_Tensor, projection_Tensor, buffer_Tensor->nmodes, D);
                 tensor_data_swap(projection_Tensor, buffer_Tensor);
 
                 remove_mode_Ktensor(projection_Ktensor, 0);// remove the 0th factor matrix and mode from the projection_Ktensor
+                MPITIC;
                 multi_TTV_with_KRP_output_FM(::direction::right, projection_Tensor, projection_Ktensor, num_threads);
+                multittv_time += MPITOC;
             }
         }
         if (colmajor) {
