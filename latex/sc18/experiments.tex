@@ -2,18 +2,46 @@
 
 \section{Performance Results} \label{sec:experiments}
 
+\input{plots}
+
 \subsection{Datasets}
 
 \subsubsection{Real World}
 \subsubsection{Synthetic}
 
-\subsection{Machine Detatils}
+\subsection{Machine Details}
 
 \subsection{Strong Scaling}
 
-\subsection{Weak Scaling}
+\begin{itemize}
+	\item 3D HSI (3 algs)
+	\item 3D synthetic (3 algs)
+	\item 5D synthetic (2 algs)
+\end{itemize}
 
 \begin{figure}
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/str_5D_syn.dat}
+\strongscalingplot
+\end{tikzpicture}
+\caption{Strong scaling of 5D synthetic tensor}
+\end{figure}
+
+\subsection{Weak Scaling}
+
+\begin{itemize}
+	\item 4D synthetic (2 algs)
+	\item 3D neuroscience, increasing one mode? (2 algs)
+\end{itemize}
+
+\subsection{Varying Approximation Rank}
+
+\begin{itemize}
+	\item 4D HSI (2 algs)
+	\item 3D neuroscience (2 algs)
+\end{itemize}
+
+%\begin{figure}
 
 % set which run to plot
 %\renewcommand{\run}{3}

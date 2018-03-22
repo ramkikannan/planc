@@ -1,8 +1,8 @@
 % macros for plotting
 \newcommand{\datafile}{}
-\newcommand{\run}{}
-\newcommand{\numiterations}{30}
-\newcommand{\minvalue}{1}
+\newcommand{\alg}{}
+%\newcommand{\numiterations}{30}
+%\newcommand{\minvalue}{1}
 
 % toggles whether or not to plot naive results (if not, the rows of the data file also need to be commented out)
 \newif\ifnaive
@@ -109,8 +109,8 @@
     }
 }
 
-% set options for relative error over time plot
-\newcommand{\relerrplotoptions}{
+% set options for strongscaling plot
+\newcommand{\strongscalingplotoptions}{
 	xlabel=Time (s),
 	\ifylabel
 		ylabel=Relative Error,
@@ -128,23 +128,12 @@
 	legend style={draw=none, cells={align=left}, nodes={scale=0.7}}
 }
 
-% plot relative error over time, filtering rows out appropriately
-\newcommand{\relerrplot}{
-\begin{axis}[\relerrplotoptions]
-	\addplot+ [discard if not={algo}{liavas},discard if not={runs}{\run},green,thick,mark options={solid}] table [x={totaltime}, y={relerr}] {\datafile};
-	\addplot+ [discard if not={algo}{nodimtree},discard if not={runs}{\run},red,thick,mark options={solid},mark=square*] table [x={totaltime}, y={relerr}] {\datafile};
-	\addplot+ [discard if not={algo}{dimtree},discard if not={runs}{\run},blue,thick,mark options={solid},mark=triangle*] table [x={totaltime}, y={relerr}] {\datafile};
-	\iflegend
-		\legend{Liavas, Classic, DimTree}
-	\fi
-\end{axis}
-}
-
+% plot time over p, filtering rows out appropriately
 \newcommand{\strongscalingplot}{
-\begin{axis}[\relerrplotoptions]
-	\addplot+ [discard if not={algo}{liavas},discard if not={runs}{\run},green,thick,mark options={solid}] table [x={nodes}, y={totaltime}] {\datafile};
-	\addplot+ [discard if not={algo}{nodimtree},discard if not={runs}{\run},red,thick,mark options={solid},mark=square*] table [x={nodes}, y={totaltime}] {\datafile};
-	\addplot+ [discard if not={algo}{dimtree},discard if not={runs}{\run},blue,thick,mark options={solid},mark=triangle*] table [x={nodes}, y={totaltime}] {\datafile};
+\begin{axis}[\strongscalingplotoptions]
+	%\addplot+ [discard if not={algo}{liavas},thick,mark options={solid}] table [x={nodes}, y={totaltime}] {\datafile};
+	%\addplot+ [discard if not={algo}{nodimtree},thick,mark options={solid},mark=square*] table [x={nodes}, y={totaltime}] {\datafile};
+	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=triangle*] table [x={p}, y={total_d}] {\datafile};
 	\iflegend
 		\legend{Liavas, Classic, DimTree}
 	\fi
