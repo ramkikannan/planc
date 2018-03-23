@@ -45,7 +45,7 @@ class KobyDimensionTree {
             m_local_Y->dims[i] = i_input_tensor.dimensions()[i];
             m_local_Y->factors[i] = (double*)malloc(sizeof(double) * i_ncp_factors.rank() * m_local_T->dims[i]);
         }
-        num_threads = 1;
+        num_threads = 16;
         s = split_mode;
         // Allocate memory for the larger of two partial MTTKRP
         set_left_right_product(s);
