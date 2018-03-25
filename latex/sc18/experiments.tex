@@ -22,19 +22,21 @@
 \begin{figure}
 \begin{tikzpicture}
 \renewcommand{\datafile}{data/str_3D_syn.dat}
+\renewcommand{\numiterations}{42}
 \liavastrue
 \strongscalingplot
 \end{tikzpicture}
-\caption{Strong scaling of 3D synthetic tensor. \grey{Need to set numiterations correctly.}}
+\caption{Strong scaling of 3D synthetic tensor with dimension $1024\times 1024\times 1024$ on processor grids $2^k\times 2^k\times 2^k$ for $k\in\{0,1,2,3\}$.  The rank is fixed at 32.}
 \end{figure}
 
 \begin{figure}
 \begin{tikzpicture}
 \renewcommand{\datafile}{data/str_5D_syn.dat}
+\renewcommand{\numiterations}{10}
 \liavasfalse
 \strongscalingplot
 \end{tikzpicture}
-\caption{Strong scaling of 5D synthetic tensor. \grey{Need to set numiterations correctly.}}
+\caption{Strong scaling of 5D synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$.  The rank is fixed at 32.}
 \end{figure}
 
 \subsection{Weak Scaling}
@@ -47,9 +49,11 @@
 \begin{figure}
 \begin{tikzpicture}
 \renewcommand{\datafile}{data/wk_4D_syn.dat}
+\renewcommand{\numiterations}{10}
 \breakdownplot
+%\labels
 \end{tikzpicture}
-\caption{Weak scaling of 4D synthetic tensor. \grey{Need to set numiterations correctly.}}
+\caption{Weak scaling of 4D synthetic tensors with (D) and without (N) the use of dimension trees.  The tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$, and the rank is fixed at 32.  The reported times are per iteration.}
 \end{figure}
 
 \subsection{Varying Approximation Rank}
