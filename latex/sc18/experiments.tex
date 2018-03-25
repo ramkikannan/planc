@@ -21,7 +21,17 @@
 
 \begin{figure}
 \begin{tikzpicture}
+\renewcommand{\datafile}{data/str_3D_syn.dat}
+\liavastrue
+\strongscalingplot
+\end{tikzpicture}
+\caption{Strong scaling of 3D synthetic tensor. \grey{Need to set numiterations correctly.}}
+\end{figure}
+
+\begin{figure}
+\begin{tikzpicture}
 \renewcommand{\datafile}{data/str_5D_syn.dat}
+\liavasfalse
 \strongscalingplot
 \end{tikzpicture}
 \caption{Strong scaling of 5D synthetic tensor. \grey{Need to set numiterations correctly.}}

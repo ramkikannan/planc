@@ -16,6 +16,8 @@
 \newif\ifylabel
 % toggles wider plot area
 \newif\ifwider
+% toggles including liavas results
+\newif\ifliavas
 
 
 \newcommand{\setcolors}{
@@ -35,24 +37,22 @@
 	reverse legend,
 	bar width=6pt,
 	width=9cm, height=3.85cm,
-	ylabel={Time (seconds)}, 
-	y label style={yshift=-.5cm},
+	ylabel={Time (s)}, 
+	%y label style={yshift=-.5cm},
 	ymin=0,
 	symbolic x coords={1,16,81,256},
 	xtick=data,
-	legend={DimTree}
 }
 
 % stacked bar plot command
 \newcommand{\breakdownplot}{
 \begin{axis}[\breakdownplotoptions]
 	\setcolors
-	\addplot table[x=p, y expr=(\thisrow{mttkrp}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=p, y expr=(\thisrow{nnls}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=p, y expr=(\thisrow{gram}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=p, y expr=(\thisrow{allgather}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=p, y expr=(\thisrow{reducescatter}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=p, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=p, y expr=((\thisrow{mttkrp}+\thisrow{krp})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=p, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=p, y expr=((\thisrow{nnls}+\thisrow{gram}+\thisrow{allreduce})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=p, y expr=((\thisrow{err_compute}+\thisrow{err_communication})/(\minvalue*\numiterations))] {\datafile};
+	\legend{MTTRKP,Factor Comm,NLS,Error};
 \end{axis}
 }
 
@@ -100,10 +100,12 @@
 % plot time over p, filtering rows out appropriately
 \newcommand{\strongscalingplot}{
 \begin{loglogaxis}[\strongscalingplotoptions]
-	%\addplot+ [discard if not={algo}{liavas},thick,mark options={solid}] table [x={nodes}, y={totaltime}] {\datafile};
-	%\addplot+ [discard if not={algo}{nodimtree},thick,mark options={solid},mark=square*] table [x={nodes}, y={totaltime}] {\datafile};
+	%\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={p}, y={totaltime}] {\datafile};
 	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=triangle*] table [x={p}, y={total}] {\datafile};
-	\legend{DimTree}
+	\ifliavas
+		\addplot+ [discard if not={alg}{L},thick,mark options={solid}] table [x={p}, y={total}] {\datafile};
+	\fi
+	\legend{DimTree,Liavas};
 \end{loglogaxis}
 }
 
