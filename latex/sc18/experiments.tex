@@ -74,6 +74,7 @@
 	height =.75\columnwidth,
 	%width=9cm, height=3.85cm,
 	ylabel={Time (s)}, 
+	xlabel={Rank $k$},
 	y label style={yshift=-.5cm},
 	ymin=0,
 	%symbolic x coords={D10,N10,,D20,N20,,D30,N30,,D40,N40,,D50,N50},
@@ -93,7 +94,7 @@
 \end{axis}
 %\labels
 \end{tikzpicture}
-\caption{Ksweep for HSI: $1344\times 1024\times 33 \times 9$, $8\times8\times1\times1$ processor grid}
+\caption{Per-iteration time breakdown of our implementation (using dimension trees) over various ranks for a time-lapse HSI dataset with dimensions $1344\times 1024\times 33 \times 9$ on 64 processors arranged in a $8\times8\times1\times1$ grid.}
 \end{figure}
 
 %\begin{figure}
