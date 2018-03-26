@@ -1,0 +1,130 @@
+\documentclass[xcolor=dvipsnames]{beamer}
+
+\usepackage{setspace}
+\usepackage{beamerthemesplit}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{color}
+\usepackage{colortbl}
+%\usepackage{algorithm,algorithmic}
+\usepackage{multimedia,xmpmulti}
+\usepackage{multirow,multicol}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{multimedia,xmpmulti}
+\usepackage{tabularx}
+\usepackage{algorithm,algpseudocode}
+
+\usepackage{ourmacros}
+
+%% Tikz - For making pretty pictures
+\usepackage{tikz}
+\usetikzlibrary{3d}
+\usetikzlibrary{patterns}
+\usetikzlibrary{calc}
+\usetikzlibrary{arrows}
+
+
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+\newcommand{\multiplycolor}{blue}
+\newcommand{\zero}{}
+
+
+\graphicspath{{fig/}}
+
+\mode<presentation>
+
+\definecolor{wfugold}{rgb}{0.6196078,0.494117647,0.21960784}
+\usetheme{Warsaw}
+\usecolortheme[named=wfugold]{structure}
+%Madrid
+%\usecolortheme{dolphin}
+%\useinnertheme{rounded}
+%\usefonttheme{serif}
+\setbeamertemplate{navigation symbols}{} % gets rid of navigation bars
+\setbeamertemplate{footline}
+{
+  \hbox{
+  \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.25ex,dp=1ex,left]{author in head/foot}%
+    \usebeamerfont{author in head/foot}
+    Ballard
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}
+    
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}
+    \insertframenumber{} \hspace*{2ex} 
+  \end{beamercolorbox}}%
+}
+
+\title{Parallel Nonnegative CP Decomposition \\ of Dense Tensors}
+\author[]{Grey Ballard, Koby Hayashi, Ramakrishnan Kannan}
+\institute{}
+\date{March 26, 2018}
+%\titlegraphic{\includegraphics[scale=.15]{wfulogo}}
+
+\begin{document}
+
+\begin{frame}[plain]
+\maketitle
+\end{frame}
+\addtocounter{framenumber}{-1}
+
+\begin{frame}
+\frametitle{Nonnegative CP via Block Coordinate Descent (ALS)}
+
+\footnotesize
+\begin{itemize}
+	\item Basic algorithm is block coordinate descent, each block is factor matrix
+	\item For each block, solve nonnegative linear least squares problem
+\end{itemize}
+\normalsize
+
+\vfill
+
+%\begin{algorithm}
+%\caption{$(\CPl,\epsilon) = \text{NNCP}(\TA,k)$}
+%\caption{$\CP = \text{NNCP}(\TA,k)$}
+%\label{alg:nncp}
+\begin{algorithmic}[1]
+\Require $\TA$ is $I_1\times \cdots \times I_N$ tensor, $k$ is approximation rank
+%\State \Comment{Compute NNCP approximation}
+\While{not converged}
+	\State \Comment{Perform outer iteration of BCD}
+	\For{$n=1$ to $N$}
+	\State \Comment{Compute new factor matrix in $n$th mode}
+	\State \red{$\Mn{M}{n} = \text{MTTKRP}(\TA,\{\Mn{H}{i}\},n)$}
+	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+	\State \blue{$\Mn{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$}
+%	\State $\Mn[\hat]{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$
+%	\State \Comment{Normalize columns}
+%	\State $\V{\lambda} = \text{Col-Norms}(\Mn[\hat]{H}{n})$
+%	\State $\Mn{H}{n} = \text{Col-Scale}(\Mn[\hat]{H}{n},\V{\lambda})$
+%	\State \Comment{Organize data for later modes}
+	\State $\Mn{G}{n} = \MnTra{H}{n}\Mn{H}{n}$
+	\EndFor
+%	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
+%	\State $\beta = \langle \Mn{M}{N},\Mn[\hat]{H}{N} \rangle$
+%	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
+%	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
+\EndWhile
+%\Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
+\Ensure $\TA \approx \CP$
+\end{algorithmic}
+%\end{algorithm}
+
+\end{frame}
+
+\begin{frame}
+
+\end{frame}
+
+\end{document}
+
