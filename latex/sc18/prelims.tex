@@ -119,7 +119,7 @@ $\mathcal{X}$, whose Cartesian product constitutes $\mathcal{X}$.
 computed simultaneously  (c) when updating a block, ensure we are 
 using the most recent other blocks and (d) importantly, every block
 must be solved optimally. Every NTF variant will have different the partition
-scheme for blocks with natural partition such as scalar, vector \cite{CP2009} and matrix \cite{KP2011}. 
+scheme for blocks with natural partition such as scalar \cite{SL2001}, vector \cite{CP2009} and matrix \cite{KP2011}. 
 Also, the update equation for determining the optimal block given
 other blocks such as projected gradient, block principal pivoting \cite{KP2011}  etc. 
 A detailed discussion of equivalences and comparison of different NMF and NTF algorithm
@@ -156,5 +156,5 @@ using normal equations with $\CC^T\CC$ and $\CC^T\BB$ for determining the non-ne
 In our case, $\CC^T\CC$ is $\Mn{S}{n}$ and $\CC^T\BB$ is $\Mn{M}{n}_{\V{p}}$. We use the same implementation
 of BPP from $MPIFAUN$.
 
-Our paper can be extended to other NTF algorithms such as AO-ADMM \cite{HSL2015} and Nestrov based updates
+Our paper can be extended to other NTF algorithms such as Alternating Optimization and Alternating Direction Method of Multipliers (AO-ADMM) \cite{HSL2015, SBK2017} and Nestrov based updates
 \cite{LKLHS2017} by changing the $Local-NLS-Update$ function of the proposed Algorithm \ref{alg:2D}. 
