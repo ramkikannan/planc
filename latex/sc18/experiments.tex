@@ -63,6 +63,39 @@
 	\item 3D neuroscience (2 algs)
 \end{itemize}
 
+\begin{figure}
+\renewcommand{\datafile}{data/ksw_4D_HSI.dat}
+\renewcommand{\numiterations}{10}
+\begin{tikzpicture}
+\begin{axis}[	
+	ybar stacked,
+	bar width=8pt,
+	width=\columnwidth,
+	height =.75\columnwidth,
+	%width=9cm, height=3.85cm,
+	ylabel={Time (s)}, 
+	y label style={yshift=-.5cm},
+	ymin=0,
+	%symbolic x coords={D10,N10,,D20,N20,,D30,N30,,D40,N40,,D50,N50},
+	symbolic x coords={D10,D20,D30,D40,D50},
+	%xtick=data,
+	xticklabels={,10,20,30,40,50},
+	legend style={at={(0.5,1.3)},anchor=north},
+	legend columns=-1,
+]
+	\setcolors
+	\addplot table[x=alg-K, y expr=(\thisrow{mttkrp}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=(\thisrow{mttv}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=((\thisrow{nnls}+\thisrow{gram})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
+	\legend{PM,mTTV,NLS,Factor Comm,Gram Comm};
+\end{axis}
+%\labels
+\end{tikzpicture}
+\caption{Ksweep for HSI: $1344\times 1024\times 33 \times 9$, $8\times8\times1\times1$ processor grid}
+\end{figure}
+
 %\begin{figure}
 
 % set which run to plot
