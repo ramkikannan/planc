@@ -56,7 +56,7 @@
 	\addplot table[x=alg-p, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
 	\addplot table[x=alg-p, y expr=((\thisrow{nnls}+\thisrow{gram}+\thisrow{allreduce})/(\minvalue*\numiterations))] {\datafile};
 	\addplot table[x=alg-p, y expr=((\thisrow{err_compute}+\thisrow{err_communication})/(\minvalue*\numiterations))] {\datafile};
-	\legend{MTTRKP,KRP,Factor Comm,NLS,Error};
+	\legend{MTTKRP,KRP,Factor Comm,NLS,Error};
 \end{axis}
 }
 
