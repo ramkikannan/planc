@@ -38,15 +38,51 @@ The second term can be computed using the identity $\langle \TA, \T{M} \rangle =
 The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\Mn{S}{N} \Hada \MnTra{H}{N} \Mn{H}{N})\V{1}$ where $\Mn{S}{N}=\MnTra{H}{1} \Mn{H}{1} \Hada \cdots \Hada \MnTra{H}{N-1} \Mn{H}{N-1}$.
 Both matrices $\Mn{M}{N}$ and $\Mn{S}{N}$ are computed during the course of the BCD algorithm for updating the factor matrix $\Mn{H}{N}$.
 The extra computation involved in computing the relative error is negligible.
-These identities have been used in previous work \cite{KB09,TensorBox,SK16}.
+These identities have been used in previous work \cite{KB09,TensorBox,SK16,LKLHS2017}.
 
 \subsection{Parallel Algorithm}
 
 \subsubsection{Algorithm Overview}
 
+The basic sequential algorithm is given in \Cref{alg:nncp}, and the parallel version is given in \Cref{alg:Par-NNCP-short}.
+We will refer to both the inner iteration, in which one factor matrix is updated (\cref{line:for} to \cref{line:endfor}), and the outer iteration, in which all factor matrices are updated (\cref{line:while} to \cref{line:endwhile}).
+In the parallel algorithm, the processors are organized into a logical multidimensional grid (tensor) with as many modes as the data tensor.
+The communication patterns used in the algorithm are all MPI collectives, including All-Reduce, Reduce-Scatter, and All-Gather.
+The processor communicators (across which the collectives are performed) include the set of all processors and the sets of processors within the same processor slice.
+Processors within a mode-$n$ slice all have the same $n$th coordinate.
+
+The method of enforcing the nonnegativity constraints of the linear least squares solve (or update) generally affects only local computation because each row of a factor matrix can be updated independently.
+In our algorithm, each processor solves the linear problem or computes the update for its subset of rows (see \cref{line:locNLS}). 
+The most expensive (and most complicated) part of the parallel algorithm is the computation of the MTTKRP, which corresponds to \cref{line:locMTTKRP,line:reduce-scatter,line:all-gather}.
+
+The details that are omitted from this presentation of the algorithm include the normalization of each factor matrix after it is computed and the computation of the residual error at the end of an outer iteration.
+The computations do involve both local computation and communication, but their costs are negligible.
+A more detailed pseudocode is given in \Cref{alg:Par-NNCP-long}.
+
 \subsubsection{Data Distribution}
 
+Given a logical processor grid of processors $P_1\times \cdots \times P_N$, we distribute the tensor $\TA$ in a block or Cartesian partition.
+Each processor owns a local tensor of dimensions $(I_1/P_1)\times \cdots \times (I_N/P_N)$, and only one copy of the tensor is stored.
+Locally, the tensor is stored linearly, with entries ordered in a natural mode-descending way that generalizes column-major layout of matrices.
+Given a processor $\V{p}=(\VE{p}{1},\dots,\VE{p}{N})$, we denote its local tensor by $\TA_{\V{p}}$.
+
+Each factor matrix is distributed across processors in a block row partition, so that each processor owns a subset of the rows.
+We use the notation $\Mn{H}{n}_{\V{p}}$, which has dimensions $I_n/P\times R$ to denote the local part of the $n$th factor matrix stored on processor $\V{p}$.
+However, we also make use a redundant distribution of the factor matrices across processors, because all processors in a mode-$n$ processor slice need access to the same entries of $\Mn{H}{n}$ to perform their computations.
+The notation $\Mn{H}{n}_{\VE{p}{n}}$ denotes the $I_n/P_n\times R$ submatrix of $\Mn{H}{n}$ that is redundantly stored on all processors whose $n$th coordinate is $\VE{p}{n}$ (there are $P/P_n$ such processors).
+
+Other matrices involved in the algorithm include $\Mn{M}{n}_{\V{p}}$, which is the result of the MTTKRP computation and has the same distribution scheme as $\Mn{H}{n}_{\V{p}}$, and $\Mn{G}{n}$, which is the $R\times R$ Gram matrix of the factor matrix $\Mn{H}{n}$ and is stored redundantly on all processors.
+
 \subsubsection{Inner Iteration}
+
+The inner iteration is displayed graphically in \Cref{fig:inner} for a 3-way example and an update of the $2$nd factor matrix.
+The main idea is that at the start of the $n$th inner iteration (\cref{fig:inner_a}), all of the data is in place for each processor to perform a local MTTKRP computation.
+This means that all processors in a slice redundantly own the same rows of the corresponding factor matrix (for all modes except $n$).
+After the local MTTKRP is computed (\cref{fig:inner_b}), each processor has computed a contribution to a subset of the rows of the global MTTKRP $\Mn{M}{n}$, but its contribution must be summed up with the contributions of all other processors in its mode-$n$ slice.
+This summation is performed with a Reduce-Scatter collective across the mode-$n$ processor slice that achieves a row-wise partition of the result (in \cref{fig:inner_c}, the light gray shading corresponds to the rows of $\Mn{M}{2}$ to which processor $(1,3,1)$ contributes and the dark gray shading corresponds to the rows it receives as output).
+The output distribution of the Reduce-Scatter is designed so that afterwards, the update of the factor matrix in that mode can be performed row-wise in parallel.
+Along with $\Mn{S}{n}$, which can be computed locally, each processor updates its own rows of the factor matrix given its rows of the MTTKRP result (\cref{fig:inner_d}).
+The remainder of the inner iteration is preparing and distributing the new factor matrix data for future inner iterations, which includes an All-Gather of the newly computed factor matrix $\Mn{H}{n}$ across mode-$n$ processor slices (\cref{fig:inner_e}) and recomputing $\Mn{G}{n}={\Mn{H}{n}}^\Tra\Mn{H}{n}$.
 
 \subsubsection{Analysis}
 
@@ -59,13 +95,13 @@ These identities have been used in previous work \cite{KB09,TensorBox,SK16}.
 \input{fig/Alg_header.tex}
 \begin{figure*}[t]
 \centering
-  \subfloat[Start $n$th iteration with redundant subset of rows of each input matrix.]{\input{fig/AlgStart.tex}} \quad
-  \subfloat[Compute local MTTKRP for contribution to output matrix $\Mn{M}{2}$.]{\input{fig/AlgMTTKRP.tex}} \quad
-  \subfloat[Reduce-Scatter to compute and distribute rows of $\Mn{M}{2}$.]{\input{fig/AlgRS.tex}} \quad
-  \subfloat[Compute local NLS update to obtain $\Mn{H}{2}_{\V{p}}$ from $\Mn{M}{2}_{\V{p}}$ (and $\Mn{S}{2}$).]{\input{fig/AlgNLS.tex}} \quad
-  \subfloat[All-Gather to collect rows of $\Mn{H}{2}$ needed for later inner iterations.]{\input{fig/AlgAG.tex}}
+  \subfloat[Start $n$th iteration with redundant subset of rows of each input matrix. \label{fig:inner_a}]{\input{fig/AlgStart.tex}}  \quad
+  \subfloat[Compute local MTTKRP for contribution to output matrix $\Mn{M}{2}$. \label{fig:inner_b}]{\input{fig/AlgMTTKRP.tex}}  \quad
+  \subfloat[Reduce-Scatter to compute and distribute rows of $\Mn{M}{2}$. \label{fig:inner_c}]{\input{fig/AlgRS.tex}} \quad
+  \subfloat[Compute local NLS update to obtain $\Mn{H}{2}_{\V{p}}$ from $\Mn{M}{2}_{\V{p}}$ (and $\Mn{S}{2}$). \label{fig:inner_d}]{\input{fig/AlgNLS.tex}} \quad
+  \subfloat[All-Gather to collect rows of $\Mn{H}{2}$ needed for later inner iterations. \label{fig:inner_e}]{\input{fig/AlgAG.tex}}
   \caption{Illustration of 2nd inner iteration of Par-NNCP algorithm for 3-way tensor on a $3\times3\times3$ processor grid, showing data distribution, communication, and computation across steps.  Highlighted areas correspond to processor $(1,3,1)$ and its processor slice with which it communicates.  The column normalization and computation of $\Mn{G}{2}$, which involve communication across all processors, is not shown here.}
-  \label{fig:par_staten} 
+  \label{fig:inner} 
 \end{figure*}
 
 \begin{algorithm}
@@ -81,78 +117,32 @@ These identities have been used in previous work \cite{KB09,TensorBox,SK16}.
 \EndFor
 \State \Comment{Compute NNCP approximation}
 \While{not converged}
+	\label{line:while}
 	\State \Comment{Perform outer iteration of BCD}
 	\For{$n=1$ to $N$}
-	\State \Comment{Compute new factor matrix in $n$th mode}
-	\State $\M[\overline]{M} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
-		\label{line:locMTTKRP}
-	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M[\overline]{M},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
-		\label{line:reduce-scatter}
-	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
-		\label{line:hadamard}
-	\State $\Mn{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{n},\Mn{M}{n}_{\V{p}})$
-		\label{line:locNLS}
-	\State \Comment{Organize data for later modes}
-	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
-		\label{line:locSYRK}
-	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
-		\label{line:all-reduce}
-	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
-		\label{line:all-gather}
+		\label{line:for}
+		\State \Comment{Compute new factor matrix in $n$th mode}
+		\State $\M[\overline]{M} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
+			\label{line:locMTTKRP}
+		\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M[\overline]{M},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
+			\label{line:reduce-scatter}
+		\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+			\label{line:hadamard}
+		\State $\Mn{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{n},\Mn{M}{n}_{\V{p}})$
+			\label{line:locNLS}
+		\State \Comment{Organize data for later modes}
+		\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+			\label{line:locSYRK}
+		\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
+			\label{line:all-reduce}
+		\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
+			\label{line:all-gather}
 	\EndFor 
+		\label{line:endfor}
 \EndWhile
+	\label{line:endwhile}
 \Ensure $\TA \approx \CP$
 \Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times k$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}
-\caption{$(\CPl,\epsilon) = \text{Par-NNCP}(\TA,k)$}
-\label{alg:Par-NNCP}
-\begin{algorithmic}[1]
-\Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $k$ is rank of approximation
-\State \Comment{Initialize data}
-\State $a = \text{Norm-Squared}(\TA_{\V{p}})$
-\State $\alpha = \text{All-Reduce}(a,\textsc{All-Procs})$
-\State $\epsilon = $ \texttt{Inf}
-\For{$n=2$ to $N$}
-	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times k$ 
-	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
-	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
-	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
-\EndFor
-\State \Comment{Compute NNCP approximation}
-\While{$\epsilon > $ \texttt{tol}}
-	\State \Comment{Perform outer iteration of BCD}
-	\For{$n=1$ to $N$}
-	\State \Comment{Compute new factor matrix in $n$th mode}
-	\State $\M[\overline]{M} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
-		\label{line:locMTTKRP}
-	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M[\overline]{M},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
-		\label{line:reduce-scatter}
-	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
-		\label{line:hadamard}
-	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{n},\Mn{M}{n}_{\V{p}})$
-		\label{line:locNLS}
-	\State \Comment{Normalize columns}
-	\State $\V[\overline]{\lambda} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
-	\State $\V{\lambda} = \text{All-Reduce}(\V[\overline]{\lambda},\textsc{All-Procs})$
-	\State $\Mn{H}{n}_{\V{p}} = \text{Local-Col-Scale}(\Mn[\hat]{H}{n}_{\V{p}},\V{\lambda})$
-	\State \Comment{Organize data for later modes}
-	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
-		\label{line:locSYRK}
-	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
-		\label{line:all-reduce}
-	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
-		\label{line:all-gather}
-	\EndFor
-	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
-	\State $\overline{\beta} = \text{Inner-Product}(\Mn{M}{N}_{\V{p}},\Mn[\hat]{H}{N}_{\V{p}})$
-	\State $\beta = \text{All-Reduce}(\overline{\beta},\textsc{All-Procs})$
-	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
-	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
-\EndWhile
-\Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
-\Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times k$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
-\end{algorithmic}
-\end{algorithm}
