@@ -257,6 +257,29 @@ $$\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$$
 
 \end{frame}
 
+\begin{frame}
+\frametitle{Comparison against existing code}
+
+From paper: \\
+\footnotesize
+A. P. Liavas, G. Kostoulas, G. Lourakis, K. Huang, and N. D. Sidiropoulos, "Nesterov-based Alternating Optimization for Nonnegative Tensor Factorization: Algorithm and Parallel Implementations", \emph{IEEE Transactions on Signal Processing}, vol. 66, no. 4, Feb. 2018.
+
+\vfill
+
+Code available: \url{http://www.telecom.tuc.gr/Greek/Liavas/publications/MPI_EIGEN_Nesterov_NTF.zip}
+
+\vfill
+
+Not a whole lot of detail in paper about implementation, but data distribution and communication pattern the same as ours
+\begin{itemize}
+	\item limited to 3D tensors
+	\item uses Eigen for local dense linear algebra
+	\item no use of dimension trees
+	\item inefficient error computation
+\end{itemize}
+
+\end{frame}
+
 \input{../sc18/plots}
 
 \begin{frame}
@@ -351,7 +374,7 @@ $$\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$$
 	\item Hard not to be compute bound in dense case
 	\begin{itemize}
 	\scriptsize
-		\item computation is dominated by $O(R (\prod I_k) / P)$
+		\item computation is dominated by $O(R \prod I_k / P_k)$
 		\item communication is dominated by $O(R \sum I_k / P_k)$
 		\item computation scales with $P$, communication scales with $P^{1/N}$, but it doesn't matter until $P$ is huge
 	\end{itemize}
@@ -368,7 +391,7 @@ $$\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$$
 	\begin{itemize}
 	\scriptsize
 		\item limited to 3D tensors
-		\item permutes the tensor entries for each matricization 
+		\item stores each matricization separately (each in col-major)
 		\item does not use dimension trees or efficient error computation
 		\item this doesn't explain everything, but we don't have a time breakdown for further detail
 	\end{itemize}
