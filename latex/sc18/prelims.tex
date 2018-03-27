@@ -3,9 +3,18 @@
 \section{Preliminaries} 
 \label{sec:prelims}
 
-	Tensors will be denoted using Euler script (e.g., $\T{T}$), matrices will be denoted (e.g., $\M{M}$), vectors will be denoted as lower case bold face type (e.g., $\V{v}$), and scalars will not be bolded (e.g., $s$). Matlab style notation will be sued to index into tensors, matrices, and vectors. For example, $\M{M}(:,c)$ gives the cth column of the matrix M.
-	The Hadamard product is the element wise matrix product and will be denoted using $*$. 
-	The Khatri-Rao product, abbreviated KRP, will be denoted with $\Khat$. Given matrices $\M{A}$ and $\M{B}$ that are $I_{A} \times R$ and $I_{B} \times R$, the KRP $\M{K} = \M{A} \Khat \M{B}$ is $I_{A}I_{B} \times R$. It can be thought of as a series row-wise Hadamard products s.t. \\$\M{K}(0:) = \M{A}(0,:) * \M{B}(0,:)\\ \M{K}(1:) = \M{A}(0,:) * \M{B}(1,:)  \\.\\.\\. \\ \M{K}(I_{A}I_{B} - 1,:) = \M{A}(I_{A}-1,:) * \M{B}(I_{B}-1,:)$ 
+Tensors will be denoted using Euler script (e.g., $\T{T}$), 
+matrices will be denoted (e.g., $\M{M}$), vectors will be denoted as lower case bold face type 
+(e.g., $\V{v}$), and scalars will not be bolded (e.g., $s$). 
+Matlab style notation will be sued to index into tensors, matrices, and vectors. 
+For example, $\M{M}(:,c)$ gives the cth column of the matrix M.
+The Hadamard product is the element wise matrix product and will be denoted using $*$. 
+The Khatri-Rao product, abbreviated KRP, will be denoted with $\Khat$. 
+Given matrices $\M{A}$ and $\M{B}$ that are $I_{A} \times R$ and $I_{B} \times R$, the KRP $\M{K} = \M{A} \Khat \M{B}$ is $I_{A}I_{B} \times R$. 
+It can be thought of as a series row-wise Hadamard products s.t.
+ \\$\M{K}(0:) = \M{A}(0,:) * \M{B}(0,:)\\ \M{K}(1:) = \M{A}(0,:) * \M{B}(1,:)  \\.\\.\\. \\ \M{K}(I_{A}I_{B} - 1,:) = \M{A}(I_{A}-1,:) * \M{B}(I_{B}-1,:)$ \\
+ The Matricized Tensor Times Khatri Rao Product or MTTKRP will be central to this work and takes the form $\M{M} = \M{X}_{(n)}( \Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{n-1} \Khat \Mn{H}{n+1} \Khat  \cdots \Khat \Mn{H}{0})$. $\M{X}_{(n)}$ is a matrix formed by taking the nth mode fibers of a tensor $\T{X}$ with dimensions $I_{0} \times I_{1} \times ... \times I_{N-1}$ and making them the columns of a matrix. 
+	
 
 \begin{itemize}
 	%\item tensor notation, Hadamard, Khatri-Rao, 
