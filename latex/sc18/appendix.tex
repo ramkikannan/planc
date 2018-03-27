@@ -32,7 +32,7 @@
 	\State $\V{\lambda} = \text{All-Reduce}(\V[\overline]{\lambda},\textsc{All-Procs})$
 	\State $\Mn{H}{n}_{\V{p}} = \text{Local-Col-Scale}(\Mn[\hat]{H}{n}_{\V{p}},\V{\lambda})$
 	\State \Comment{Organize data for later modes}
-	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+	\State $\M[\overline]{G} = {\Mn{H}{n}_{\V{p}}}^\Tra\Mn{H}{n}_{\V{p}}$
 	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
 	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
 	\EndFor
