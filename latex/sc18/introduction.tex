@@ -1,10 +1,25 @@
+% !TEX root = paper.tex
+
 \section{Introduction}
 
-\grey{Contributions:
 \begin{itemize}
-	\item fastest scalable NNCP (and unsonstrained CP) software for dense tensors
-	\item computation efficient using dimension trees, communication efficient using optimal parallel algorithm
-	\item available open-source software, with flexibility to incorporate multiple NLS algorithms
+	\item CP and its applications
+	\item NNCP and its specific applications (2D R...g raph \cite{JC+16}, MD protein folding simultation analysis, phenotypes of patients Ghosh/Sun
+	\item importance of preserving multidimensional relationships
+	\item parallelization strategy, bottlenecked by MTTKRP but independence in solve
+	\item challenge is to perform matrix operations with different views of tensor
+	\item summarize our approach, highlight comptuational avoidance, communication avoidance
+	\item state bulleted list of contributions
+	\begin{itemize}
+		\item algorithm and analysis
+		\item implementation and benchmrking, showing near-lienar scaling and improvement over existed code
+		\item generalization to higher modes
+		\item scaled up to 512 GB synthetic data
+	\end{itemize}
 \end{itemize}
-}
 
+The CP decomposition is a low-rank approximation of a multi-dimensional array, or tensor, which generalizes matrix approximations like the truncated singular value decomposition.
+CP is often used for finding hidden patterns, or latent factors, within tensor data, particularly when the goal is to interpret the factors, and it is popular within the signal processing, machine learning, and scientific computing communities.
+To aid in interpretability, domain-specific constraints are often imposed on the computed factors.
+We focus in this paper on constraining solutions to have nonnegative entries, which is useful when the tensor data itself is nonnegative.
+For example, when tensor entries

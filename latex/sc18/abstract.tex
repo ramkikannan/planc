@@ -2,7 +2,7 @@
 
 \begin{abstract}
 
-The CP tensor decomposition is a low-rank approximation of multidimensional (or tensor) data. 
+The CP tensor decomposition is a low-rank approximation of a tensor. 
 We present a distributed-memory parallel algorithm and implementation of an alternating optimization method for computing a CP decomposition of dense tensor data that can enforce nonnegativity of the computed low-rank factors.
 The principal task is to parallelize the matricized-tensor times Khatri-Rao product (MTTKRP) bottleneck subcomputation.
 The algorithm is computation efficient, using dimension trees to avoid redundant computation across MTTKRPs within the alternating method.

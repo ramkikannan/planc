@@ -9,7 +9,7 @@ The tensor operations discussed and the notation used in this paper follow Kolda
 
 Recently, there has been growing interest in scaling tensor operations to bigger data and more processors in both the data mining/machine learning and the high performance computing communities. 
 For sparse tensors, there have been parallelization efforts to compute CP decompositions both on shared-memory platforms \cite{SRSK2015,LCPSV17} as well as distributed-memory platforms \cite{KU16,SK16,KU18}, and these approaches can be generalized to constrained problems \cite{SBK2017}.
-The focus of this work is on dense tensors, but many of the ideas for sparse tensors are applicable to the dense case, including parallel data distributions and techniques to avoid recomputation across modes.
+The focus of this work is on dense tensors, but many of the ideas for sparse tensors are applicable to the dense case, including parallel data distributions, communication pattern, and techniques to avoid recomputation across modes.
 
 In particular, Liavas et al. \cite{LK+17b} extend a parallel algorithm designed for sparse tensors \cite{SK16} to the 3D dense case.
 They use the ``medium-grained'' dense tensor distribution and row-wise factor matrix distribution, which is exactly the same as our distribution strategy (see \cref{sec:datadist}), and they use a Nesterov-based algorithm to enforce the nonnegativity constraints.

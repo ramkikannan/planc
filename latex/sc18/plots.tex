@@ -104,13 +104,15 @@
 \newcommand{\strongscalingplot}{
 \begin{loglogaxis}[\strongscalingplotoptions]
 	%\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={p}, y={totaltime}] {\datafile};
-	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=triangle*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
-	\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+	%\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=triangle*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+	%\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+	\addplot+ [discard if not={alg}{DF},thick,mark options={solid},mark=square*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+	\addplot+ [discard if not={alg}{NF},thick,mark options={solid},mark=square*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
 	\ifliavas
 		\addplot+ [discard if not={alg}{L},thick,mark options={solid}] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
 		\legend{DimTree,NoDimTree,Liavas}
 	\else
-		\legend{DimTree,NoDimTree};
+		\legend{DimTree,NoDimTree,FlatDimTree,FlatNoDimTree};
 	\fi
 \end{loglogaxis}
 }
