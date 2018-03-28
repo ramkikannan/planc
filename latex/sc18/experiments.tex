@@ -37,12 +37,13 @@ The strong scaling on 3D synthetic tensor with baseline is shown in Figure \ref{
 We can observe from the figure that all the three algorithms scales linearly as the problem is more
 compute bound in the case of dense tensors. The computation is dominated by $O(R \prod I_k / P_k)$
 and the communication scales as $P^{1/N}$. As evident from the figure, this communication cost doesn't 
-show up even for $P$ in the order of few hundreds. We are \koby{xx} faster than the baseline 
+show up even for $P$ in the order of few hundreds. Our proposed algorithm with dimension trees is 1.5x faster than the baseline 
 {\em Liavas}\cite{LK+17b}. The advantages of the dimension tree more pronounced only in the higher
 modes because of avoiding unnecessary KRP computation that is more memory bound. Even though, in
 the Figure \ref{fig:strongsynthetic3D} the dimension trees is only as good as the classical MTTKRP, we are witnessing
-2.5x speed up with dimension trees in Figure \ref{fig:strongsynthetic5D}. Also, for tensors with equal dimensions over
-modes, dimension trees has some advantage with favorable shapes for matrix multiplication DGEMM. 
+2.5x speed up with dimension trees over higher modes as in Figure \ref{fig:strongsynthetic5D}. 
+Also, for tensors with equal dimensions over all the
+modes, dimension trees has some advantage with favorable shapes for matrix multiplication with BLAS DGEMM.
 
 \begin{figure}
 \begin{tikzpicture}
@@ -125,7 +126,19 @@ In the case of weakscaling, we wanted to understand the time it takes to solve b
 %\labels
 \end{tikzpicture}
 \caption{Per-iteration time breakdown of our implementation (using dimension trees) over various ranks for a time-lapse HSI dataset with dimensions $1344\times 1024\times 33 \times 9$ on 64 processors arranged in a $8\times8\times1\times1$ grid.}
+\label{fig:ksweep4DHSI}
 \end{figure}
+
+According to Kim, He and Park \cite{KHP2014}, in the case of dense tensors, as the low rank $k$ increases, the approximation 
+error  $\|\TA - \T{M}\|$ decreases because it is obtaining bigger low rank factors. However, there is a law of diminishing advantages, 
+that an increase in $k$ in lower values, say from 5 to 10, will have significant improvement in relative error over increase in higher 
+values, like 100 to 105. Hence, it is common practice in the community to sweep $k$, to obtain better approximation error within the 
+manageable computation. Towards this end, we wanted to understand the increase in running time over increasing the low rank $k
+$. The results of the experiments on real world four mode HSI tensor is presented in Figure \ref{fig:ksweep4DHSI}. We can observe 
+that, the multi-TTV({\em mTTV}) scales linearly with the increasing $k$,  where as the partial MTTKRP ({\em PM}) is scaling super 
+linearly. This is because, with higher $k$, the BLAS $DGEMM$ gets a bigger chunk of work that it can optimize better.  The local 
+compute $NLS$ is increasing as expected nearly $O(k^3)$ and the $ALL-GATHER$ required for the gram matrices over $k^2$ 
+elements, becomes significant on higher $k$'s. 
 
 %\begin{figure}
 
