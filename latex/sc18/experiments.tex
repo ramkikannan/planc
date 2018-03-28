@@ -7,6 +7,7 @@
 \subsection{Datasets}
 
 \subsubsection{Real World}
+{\em Hyperspectral Images(HSI):} For real world datasets and comparison with the baseline Liavas \cite{LKLHS18}, we considered the same hyperspectral imaging datasets from \cite{FAN16}. Each hyperspectral image has dimensions 1024 x 1344 x 33 and represents a set of 33 greyscale images of size 1344 (H) x 1024 (V) pixels sampled at wavelengths 400, 410, ..., 720 nm, with each pixel value representing spectral radiance in $W m^{-2} sr^{-1} nm^{-1}$. In each scene, hyperspectral images were acquired at about 1-hour intervals. Since, the baseline can work only for three mode real world data, we considered one image and to demonstrate the proposed algorithm's capability we considered the entire set of 9 images collected over 9 time step as  1024 x 1344 x 33 x 9. 
 
 \subsubsection{Synthetic}
 For the synthetic datasets, our open source code supports (a) low-rank tensor (b) uniform random and (c) positive shifted normal distribution of $\mathfrak{N}(3,1)$ -- that is change the mean such that all the random numbers are positive. We considered three different synthetic matrices for different cases. For baseline comparison with Liavas \cite{LKLHS18}, we considered a three mode 
@@ -32,6 +33,17 @@ Eos is a 736-node Cray® XC30? cluster with a total of 47.104TB of memory. Its pr
 	\item 5D synthetic (2 algs)
 \end{itemize}
 
+The strong scaling on 3D synthetic tensor with baseline is shown in Figure \ref{fig:strongsynthetic3D}. 
+We can observe from the figure that all the three algorithms scales linearly as the problem is more
+compute bound in the case of dense tensors. The computation is dominated by $O(R \prod I_k / P_k)$
+and the communication scales as $P^{1/N}$. As evident from the figure, this communication cost doesn't 
+show up even for $P$ in the order of few hundreds. We are \koby{xx} faster than the baseline 
+{\em Liavas}\cite{LKLHS18}. The advantages of the dimension tree more pronounced only in the higher
+modes because of avoiding unnecessary KRP computation that is more memory bound. Even though, in
+the Figure \ref{fig:strongsynthetic3D} the dimension trees is only as good as the classical MTTKRP, we are witnessing
+2.5x speed up with dimension trees in Figure \ref{fig:strongsynthetic5D}. Also, for tensors with equal dimensions over
+modes, dimension trees has some advantage with favorable shapes for matrix multiplication DGEMM. 
+
 \begin{figure}
 \begin{tikzpicture}
 \renewcommand{\datafile}{data/str_3D_syn.dat}
@@ -40,6 +52,7 @@ Eos is a 736-node Cray® XC30? cluster with a total of 47.104TB of memory. Its pr
 \strongscalingplot
 \end{tikzpicture}
 \caption{Strong scaling of 3D synthetic tensor with dimension $1024\times 1024\times 1024$ on processor grids $2^k\times 2^k\times 2^k$ for $k\in\{0,1,2,3\}$.  The rank is fixed at 32.}
+\label{fig:strongsynthetic3D}
 \end{figure}
 
 \begin{figure}
@@ -50,6 +63,7 @@ Eos is a 736-node Cray® XC30? cluster with a total of 47.104TB of memory. Its pr
 \strongscalingplot
 \end{tikzpicture}
 \caption{Strong scaling of 5D synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$.  The rank is fixed at 32.}
+\label{fig:strongsynthetic5D}
 \end{figure}
 
 \subsection{Weak Scaling}
@@ -59,6 +73,8 @@ Eos is a 736-node Cray® XC30? cluster with a total of 47.104TB of memory. Its pr
 	\item 3D neuroscience, increasing one mode? (2 algs)
 \end{itemize}
 
+In the case of weakscaling, we wanted to understand the time it takes to solve bigger problems by increasing the number of nodes with the increase in data size by keeping the problem size (workload) assigned to each processing element constant. We conducted this experiment by using synthetic tensor and processor grid of dimensions $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$, and the rank is fixed at 32. For eg., in the case of 3 x 3 x 3 x 3 processor grid with 81 nodes, we ran the proposed algorithm with and without dimension trees on a four mode tensor of size 384 x 384 x 384 x 384. The results of the breakdown plot is shown in Figure \ref{fig:weaksynthetic4D}. Since, the NTF on dense tensors is compute intensive, the total time of the weak scaling is staying fixed for both the case of with and without dimension trees. The entire running is completely dominated by the MTTKRP computation.  As mentioned above, from the Figure   \ref{fig:weaksynthetic4D}, we can observe that the KRP cost of dimension trees is insignificant and it offers 2.5x speed up over classical MTTKRP. 
+
 \begin{figure}
 \begin{tikzpicture}
 \renewcommand{\datafile}{data/wk_4D_syn.dat}
@@ -67,6 +83,7 @@ Eos is a 736-node Cray® XC30? cluster with a total of 47.104TB of memory. Its pr
 %\labels
 \end{tikzpicture}
 \caption{Weak scaling of 4D synthetic tensors with (D) and without (N) the use of dimension trees.  The tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$, and the rank is fixed at 32.  The reported times are per iteration.}
+\label{fig:weaksynthetic4D}
 \end{figure}
 
 \subsection{Varying Approximation Rank}
