@@ -7,10 +7,10 @@
 \subsection{Datasets}
 
 \subsubsection{Real World}
-{\em Hyperspectral Images(HSI):} For real world datasets and comparison with the baseline Liavas \cite{LKLHS18}, we considered the same hyperspectral imaging datasets from \cite{FAN16}. Each hyperspectral image has dimensions 1024 x 1344 x 33 and represents a set of 33 greyscale images of size 1344 (H) x 1024 (V) pixels sampled at wavelengths 400, 410, ..., 720 nm, with each pixel value representing spectral radiance in $W m^{-2} sr^{-1} nm^{-1}$. In each scene, hyperspectral images were acquired at about 1-hour intervals. Since, the baseline can work only for three mode real world data, we considered one image and to demonstrate the proposed algorithm's capability we considered the entire set of 9 images collected over 9 time step as  1024 x 1344 x 33 x 9. 
+{\em Hyperspectral Images(HSI):} For real world datasets and comparison with the baseline Liavas \cite{LK+17b}, we considered the same hyperspectral imaging datasets from \cite{FAN16}. Each hyperspectral image has dimensions 1024 x 1344 x 33 and represents a set of 33 greyscale images of size 1344 (H) x 1024 (V) pixels sampled at wavelengths 400, 410, ..., 720 nm, with each pixel value representing spectral radiance in $W m^{-2} sr^{-1} nm^{-1}$. In each scene, hyperspectral images were acquired at about 1-hour intervals. Since, the baseline can work only for three mode real world data, we considered one image and to demonstrate the proposed algorithm's capability we considered the entire set of 9 images collected over 9 time step as  1024 x 1344 x 33 x 9. 
 
 \subsubsection{Synthetic}
-For the synthetic datasets, our open source code supports (a) low-rank tensor (b) uniform random and (c) positive shifted normal distribution of $\mathfrak{N}(3,1)$ -- that is change the mean such that all the random numbers are positive. We considered three different synthetic matrices for different cases. For baseline comparison with Liavas \cite{LKLHS18}, we considered a three mode 
+For the synthetic datasets, our open source code supports (a) low-rank tensor (b) uniform random and (c) positive shifted normal distribution of $\mathfrak{N}(3,1)$ -- that is change the mean such that all the random numbers are positive. We considered three different synthetic matrices for different cases. For baseline comparison with Liavas \cite{LK+17b}, we considered a three mode 
 uniform of size 1024x1024x1024 on processor grids $2^k \times 2^k \times 2^k$ for $k \in {0,1,2,3}$. We used the uniform five 
 mode synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids 
 $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$ for strong scaling 
@@ -38,7 +38,7 @@ We can observe from the figure that all the three algorithms scales linearly as 
 compute bound in the case of dense tensors. The computation is dominated by $O(R \prod I_k / P_k)$
 and the communication scales as $P^{1/N}$. As evident from the figure, this communication cost doesn't 
 show up even for $P$ in the order of few hundreds. We are \koby{xx} faster than the baseline 
-{\em Liavas}\cite{LKLHS18}. The advantages of the dimension tree more pronounced only in the higher
+{\em Liavas}\cite{LK+17b}. The advantages of the dimension tree more pronounced only in the higher
 modes because of avoiding unnecessary KRP computation that is more memory bound. Even though, in
 the Figure \ref{fig:strongsynthetic3D} the dimension trees is only as good as the classical MTTKRP, we are witnessing
 2.5x speed up with dimension trees in Figure \ref{fig:strongsynthetic5D}. Also, for tensors with equal dimensions over
