@@ -4,6 +4,7 @@
 \label{sec:algorithm}
 
 \subsection{Dimension Trees}
+\label{sec:dimtrees}
 
 An important optimization of the CP-ALS algorithm is to re-use temporary values across inner iterations \cite{PTC13a,KU16-TR,LCPSV17,Kaya17}.
 To illustrate the idea, consider a 3-way tensor $\T{X}$ approximated by $\dsquare{\M{U},\M{V},\M{W}}$ and the two MTTKRP computations $\underline{\Mz{X}{1}(\M{W}}\Khat\M{V})$ and $\underline{\Mz{X}{2}(\M{W}}\Khat\M{U})$ used to update factor matrices $\M{U}$ and $\M{V}$, respectively.
@@ -60,6 +61,7 @@ The computations do involve both local computation and communication, but their 
 A more detailed pseudocode is given in \Cref{alg:Par-NNCP-long}.
 
 \subsubsection{Data Distribution}
+\label{sec:datadist}
 
 Given a logical processor grid of processors $P_1\times \cdots \times P_N$, we distribute the tensor $\TA$ in a block or Cartesian partition.
 Each processor owns a local tensor of dimensions $(I_1/P_1)\times \cdots \times (I_N/P_N)$, and only one copy of the tensor is stored.

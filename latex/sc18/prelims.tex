@@ -44,7 +44,7 @@ In this case, every subproblem is a linear nonnegative least squares problem.
 The NLS-Update in \cref{line:NLS} can be implemented in different ways.
 In a faithful BCD algorithm, the subproblems are solved exactly; in this case, the subproblem is a nonnegative linear least squares problem, which is convex.
 We use the Block Principal Pivoting (BPP) method \cite{KP2011,KHP2014}, which is an active-set-like method, to solve the subproblem exactly.
-BPP is an active-set-like method for solving the NLS subproblems in Eq. \eqref{eqn:single NLS}.
+%BPP is an active-set-like method for solving the NLS subproblems in Eq. \eqref{eqn:single NLS}.
 
 However, as discussed in \cite{KBP2018} for the matrix case, there are other reasonable alternatives to updating the factor matrix without solving the subproblem exactly.
 For example, we can more efficiently update individual columns of the factor matrix as is done in the Hierarchical Alternating Least Squares (HALS) method \cite{CP2009}.

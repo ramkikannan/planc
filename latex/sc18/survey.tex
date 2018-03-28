@@ -3,46 +3,28 @@
 \section{Related Work} 
 \label{sec:survey}
 
-\grey{I haven't organized these very well...}
-\begin{itemize}
-	\item NLS algorithms
-	\begin{itemize}
-		\item MU, HALS, BPP, etc.
-	\end{itemize}
-	\item parallel sparse CP
-	\begin{itemize}
-		\item Karypis/Smith
-		\item Kaya/Ucar
-		\item Vagelis/Faloutsos?
-		\item Li/Vuduc?
-	\end{itemize}
-	\item dense tensor computations
-	\begin{itemize}
-		\item Phan/Cichocki
-		\item Austin/Ballard/Kolda IPDPS16
-		\item Ballard/Knight/Rouse IPDPS18
-	\end{itemize}
-	\item parallel dense CP
-	\begin{itemize}
-		\item Liavs et al.
-		\item Cichocki?
-		\item distributed incremental descent?
-	\end{itemize} 
-\end{itemize}
+The formulation of NNCP with least squares error and algorithms for computing it go back to \cite{Paatero97,WW01}, developed in part as a generalization of nonnegative matrix factorization algorithms \cite{LS99} to tensors.
+Sidiropoulos et al. \cite{SLFHPF2017} provide a more detailed and complete survey that includes basic tensor factorization models with and without constraints, broad coverage of algorithms, and recent driving applications.
+The tensor operations discussed and the notation used in this paper follow Kolda and Bader's survey \cite{KB2009}. 
 
-In recent time scaling tensor operations have been of interest to the data mining/machine learning (DM/ML) and the high performance computing (HPC) community. A detailed survey of  from Sidiropoulos et.al., \cite{SLFHPF2017} that includes basic tensor factorization models and their relationships and properties, broad coverage of algorithms ranging from alternating optimization to stochastic gradient and different applications ranging is a good starting point for Non-negative Tensor Factorization. Similarly, the tensor operations used in this paper is motivated out of Bader and Kolda \cite{KB2009, BK2012}. 
+Recently, there has been growing interest in scaling tensor operations to bigger data and more processors in both the data mining/machine learning and the high performance computing communities. 
+For sparse tensors, there have been parallelization efforts to compute CP decompositions both on shared-memory platforms \cite{SRSK2015,LCPSV17} as well as distributed-memory platforms \cite{KU16,SK16,KU18}, and these approaches can be generalized to constrained problems \cite{SBK2017}.
+The focus of this work is on dense tensors, but many of the ideas for sparse tensors are applicable to the dense case, including parallel data distributions and techniques to avoid recomputation across modes.
 
-Most of the work is for sparse tensors because of the general availability of the 
-internet data. A collection of sparse tensor datasets can be found at FROSTT repository \cite{forsttdataset}. We  
-briefly capture some of the key results on sparse tensors towards tensor factorization.
+In particular, Liavas et al. \cite{LK+17b} extend a parallel algorithm designed for sparse tensors \cite{SK16} to the 3D dense case.
+They use the ``medium-grained'' dense tensor distribution and row-wise factor matrix distribution, which is exactly the same as our distribution strategy (see \cref{sec:datadist}), and they use a Nesterov-based algorithm to enforce the nonnegativity constraints.
+Their code is publicly available, and we compare our performance with theirs in \cref{sec:experiments}.
+A similar data distribution and parallel algorithm for computing a single dense MTTKRP computation is proposed by Ballard, Knight, and Rouse \cite{BKR17-TR}. 
+They prove that the algorithm is communication optimal, but they do not provide an implementation.
+Another approach to parallelizing NNCP decomposition of dense tensors is presented by Phan and Cichocki \cite{PC11}, but they use a dynamic tensor factorization, which performs different, more independent computations across processors.
 
-\subsection{Sparse NTF:}
-Smith and Karypis \cite{SBK2017} has recently presented parallelization strategies and two approaches for accelerating AO-ADMM. They also developed a method of exploiting dynamic sparsity in the factors to speed up tensor-matrix kernels and efficient use of cache resources that offered 8x speed up over the state of the art sparse tensor methods. Their entire software is available at \cite{splattsoftware}.  Kaya and Ucar have contributed significantly in the area of sparse tensor decomposition. A comprehensive coverage of their entire work is detailed at \cite{Kaya2017}. They have investigated hyper-graph based tensor decomposition on distributed memory \cite{KU15},  effective shared memory parallelizations of these algorithms \cite{KU16} and CP decomposition for sparse tensor \cite{KU18}. Li et.al., \cite{LCPSV17}  have optimized MTTKRP for sparse tensors on shared memory systems using an adaptive tensor memoization algorithm that achieve 8× faster over SPLATT \cite{SRSK2015}. The optimization of the kernel Sparse Tensor-Times-dense matrix Multiply (SpTTM) on shared memory CPU and GPU by parallelizing, avoiding locks, and exploiting data locality have been proposed Li, Ma, Yan and Vuduc \cite{LMYV16}.
+The idea of using dimension trees (discussed in \cref{sec:dimtrees}) to avoid recomputation within MTTKRPs across modes is introduced in \cite{PTC13a} for computing the CP decomposition of dense tensors.
+It has also been used for sparse CP \cite{LCPSV17,KU18} and other tensor computations \cite{KU16}.
 
-Given these recent work on the sparse tensors, we survey the literature around dense tensor -- the interest of this paper. Unlike sparse tensor, there are very few activities around dense tensors that are important for analyzing tensors from images and scientific world such as 2D Ronchigram from pytography data. With the advent of the deep learning and the interest of the community in processing higher order tensors from hyper spectral image and medical imaging, we have used these real world in conducting experiments of this paper. 
+%Given these recent work on the sparse tensors, we survey the literature around dense tensor -- the interest of this paper. Unlike sparse tensor, there are very few activities around dense tensors that are important for analyzing tensors from images and scientific world such as 2D Ronchigram from pytography data. With the advent of the deep learning and the interest of the community in processing higher order tensors from hyper spectral image and medical imaging, we have used these real world in conducting experiments of this paper. 
+%
+%Austin, Ballard, and Kolda \cite{ABK16} distributed-memory parallel implementation for the Tucker decomposition to compress 8TB of scientific data. Tucker decomposition is unconstrained and a completely different decomposition over constrained Non-negative Tensor Factorization explained in this paper.  Recently,  Ballard, Knight, Rouse \cite{BKR17-TR} have proposed Communication Lower Bounds for Matricized Tensor Times Khatri-Rao Product under particular distribution of dense tensors. The proposed algorithm \ref{alg:2D} is motivated out of this work. 
+%
+%With this detailed survey, we would like to highlight the contribution of this paper.
 
-Austin, Ballard, and Kolda \cite{ABK16} distributed-memory parallel implementation for the Tucker decomposition to compress 8TB of scientific data. Tucker decomposition is unconstrained and a completely different decomposition over constrained Non-negative Tensor Factorization explained in this paper.  Recently,  Ballard, Knight, Rouse \cite{BKR2018} have proposed Communication Lower Bounds for Matricized Tensor Times Khatri-Rao Product under particular distribution of dense tensors. The proposed algorithm \ref{alg:2D} is motivated out of this work. 
-
-With this detailed survey, we would like to highlight the contribution of this paper.
-
-\subsection{Contributions:}
+%\subsection{Contributions:}
