@@ -7,9 +7,22 @@
 \subsection{Datasets}
 
 \subsubsection{Real World}
+
 \subsubsection{Synthetic}
+For the synthetic datasets, our open source code supports (a) low-rank tensor (b) uniform random and (c) positive shifted normal distribution of $\mathfrak{N}(3,1)$ -- that is change the mean such that all the random numbers are positive. We considered three different synthetic matrices for different cases. For baseline comparison with Liavas \cite{LKLHS18}, we considered a three mode 
+uniform of size 1024x1024x1024 on processor grids $2^k \times 2^k \times 2^k$ for $k \in {0,1,2,3}$. We used the uniform five 
+mode synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids 
+$1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$ for strong scaling 
+experiments.  In the case of weak scaling of four mode synthetic tensors with (D) and without (N) the use of dimension trees.  The 
+tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$. In all the cases the dimensions were considered such that synthetic tensors can be accomodated even on single node with 64GB for scale up plots. 
 
 \subsection{Machine Details}
+The entire experimentation was performed on Eos -- a super computer in Oak Ridge Leadership Computing Facility (OLCF). 
+Eos is a 736-node Cray® XC30? cluster with a total of 47.104TB of memory. Its processor is the Intel® Xeon® E5-2670. It features 
+16 I/O service nodes and 2 external login nodes. Its compute nodes are organized in blades. Each blade contains 4 nodes and every node has 2 sockets with 8 physical cores and 64GB memory. Even though the machine support Intel's hyper-threading (HT), we restricted the total number of OpenMP threads to match the number of physical cores as HT offers minimal improvement for
+ BLAS and LAPACK operations. In total, the Eos compute partition contains 11,776 traditional processor cores (23,552 logical cores 
+ with HT Technology enabled) and some of the experiments peaked to 8,192 out of 11,776 physical cores that is approximately 
+ 70\% of the peak capacity.
 
 \subsection{Strong Scaling}
 
