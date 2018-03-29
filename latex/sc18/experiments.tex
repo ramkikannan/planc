@@ -42,7 +42,8 @@ In total, the Eos compute partition contains 11,776 traditional processor cores 
 
 Our objective of the implementation is using open source software as much as possible 
 to promote reproducibility and reuse of our code.
-Unlike Liavas \cite{LK+17b} that uses Eigen matrix library, we use Armadillo \cite{sanderson2010} for matrix representation
+%Unlike Liavas \cite{LK+17b} that uses Eigen matrix library \cite{eigenweb}, 
+We use Armadillo \cite{sanderson2010} for matrix representation
 and operations.  
 In Armadillo, the elements of the dense matrix are stored in column major order.
 For dense BLAS and LAPACK operations, we linked Armadillo with the default LAPACK/BLAS wrappers from Cray. 
@@ -54,8 +55,8 @@ The implementation proposed by Liavas et al. \cite{LK+17b} is the only publicly 
 We use the acronym NbAO-NTF for Nesterov-based Alternating Optimization Nonnegative Tensor Factorization to refer to their code.
 
 It is based on the same parallel algorithm as our implementation, though it is limited to 3D tensors.
-The code uses MPI collectives for communication and Eigen as an interface to BLAS and LAPACK.
-We compiled the code linked to OpenBLAS (the same BLAS implementation used by our code) but we were unable to run multithreaded BLAS with their code.
+The code uses MPI collectives for communication and Eigen \cite{eigenweb} as an interface to BLAS and LAPACK.
+We compiled the code linked to BLAS/LAPACK wrappers from Cray  (the same BLAS implementation used by our code) but we were unable to run multithreaded BLAS with their code.
 For fair comparison, we use a flat MPI configuration (one MPI process per core) on all comparisons between the two implementations.
 
 We also point out a difference between the Nesterov-based algorithm and the BPP algorithm for solving the NLS subproblems.
@@ -114,9 +115,9 @@ In \cref{fig:strongsynthetic5D}, we benchmark performance for a 5D cubical tenso
 Because the tensor is 5D, we can no longer compare against NbAO-NTF.
 We see a $13-16\times$ speed up using a dimension tree over not using one for this problem.
 As predicted, the dimension tree optimization saves relatively more arithmetic for higher-order tensors.
-However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from avoiding  unnecessary KRP computation that is memory bound.  
+However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from more efficient DGEMM performance and avoiding memory-bound KRP computation.  
 That is, although the flop count of KRP computation is lower order, it still contributes to the run time because it is inefficient.
-Also, for tensors with balanced dimensions, the dimension tree approach has some advantage with favorable shapes for BLAS's DGEMM.
+Also, for tensors with balanced dimensions, the dimension tree approach yields more favorable shapes for DGEMM.
 
 
 \begin{figure}
