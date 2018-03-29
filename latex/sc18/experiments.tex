@@ -34,12 +34,12 @@ Eos is a 736-node Cray® XC30? cluster with a total of 47.104TB of memory. Its pr
 \end{itemize}
 
 The strong scaling on 3D synthetic tensor with baseline is shown in Figure \ref{fig:strongsynthetic3D}. 
-We can observe from the figure that all the three algorithms scales linearly as the problem is more
+We can observe from the figure that all the three algorithms scale linearly as the problem is more
 compute bound in the case of dense tensors. The computation is dominated by $O(R \prod I_k / P_k)$
 and the communication scales as $P^{1/N}$. As evident from the figure, this communication cost doesn't 
 show up even for $P$ in the order of few hundreds. Our proposed algorithm with dimension trees is 1.5x faster than the baseline 
-{\em Liavas}\cite{LK+17b}. The advantages of the dimension tree more pronounced only in the higher
-modes because of avoiding unnecessary KRP computation that is more memory bound. Even though, in
+{\em Liavas}\cite{LK+17b}. The advantages of the dimension tree are more pronounced in higher
+mode tensors because of more reuse over partial MTTKRPs and avoiding unnecessary KRP computation that is more memory bound. Even though, in
 the Figure \ref{fig:strongsynthetic3D} the dimension trees is only as good as the classical MTTKRP, we are witnessing
 2.5x speed up with dimension trees over higher modes as in Figure \ref{fig:strongsynthetic5D}. 
 Also, for tensors with equal dimensions over all the
