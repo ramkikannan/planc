@@ -154,10 +154,22 @@ Without using a dimension tree, we observe that the KRP is expensive and yields 
 
 \subsection{Varying Approximation Rank}
 
-\begin{itemize}
-	\item 4D HSI (2 algs)
-	\item 3D neuroscience (2 algs)
-\end{itemize}
+One of the challenges of the CP (and NNCP) decomposition in practice is the choice of decomposition rank.
+The most common technique is to compute multiple CP decompositions for various ranks.
+As the rank $k$ increases, the approximation error  $\|\TA - \T{M}\|$ decreases with the better approximation power of more parameters. 
+However, the benefit of increasing $k$ eventually diminishes if the data can be well approximated with a CP model.
+%that an increase in $k$ in lower values, say from 5 to 10, will have significant improvement in relative error over increase in higher 
+%values, like 100 to 105. 
+%Hence, it is common practice in the community to sweep $k$, to obtain better approximation error within the 
+%manageable computation. 
+Towards this end, we experiment with various values of $k$ to observe the relative increase in running time for two real-world data sets. 
+The results of the experiments on real world four mode HSI tensor is presented in Figure \ref{fig:ksweep4DHSI}. We can observe 
+that, the multi-TTV({\em mTTV}) scales linearly with the increasing $k$,  where as the partial MTTKRP ({\em PM}) is scaling super 
+linearly. This is because, with higher $k$, the BLAS $DGEMM$ gets a bigger chunk of work that it can optimize better.  The local 
+compute $NLS$ is increasing as expected nearly $O(k^3)$ and the $ALL-GATHER$ required for the gram matrices over $k^2$ 
+elements, becomes significant on higher $k$'s. 
+
+In Figure \ref{fig:ksweepneuro} we compare k-sweeps for $R = 10,20,...,50$ for all 3 algorithms. Starting at $R=10$ we see the largest speed up of $2\times$ for dimension trees over Liavas. This is due to a combination of the dimension tree performing less flops in the MTTKRPs and KRPs. However, as the rank increases this speed up diminishes to $1.6\times$. The loss of speed up is a result of the fact that, as we observed in Figure \ref{fig:ksweep4DHSI}, the multi-TTV operations do not scale as well as the partial-MTTKRPs for increasing $R$. 
 
 \begin{figure}
 \renewcommand{\datafile}{data/ksw_4D_HSI.dat}
@@ -206,19 +218,6 @@ Without using a dimension tree, we observe that the KRP is expensive and yields 
 \caption{$k$ sweep plot for Neuroscience dataset}
 \label{fig:ksweepneuro}
 \end{figure}
-
-According to Kim, He and Park \cite{KHP2014}, in the case of dense tensors, as the low rank $k$ increases, the approximation 
-error  $\|\TA - \T{M}\|$ decreases because it is obtaining bigger low rank factors. However, there is a law of diminishing advantages, 
-that an increase in $k$ in lower values, say from 5 to 10, will have significant improvement in relative error over increase in higher 
-values, like 100 to 105. Hence, it is common practice in the community to sweep $k$, to obtain better approximation error within the 
-manageable computation. Towards this end, we wanted to understand the increase in running time over increasing the low rank $k
-$. The results of the experiments on real world four mode HSI tensor is presented in Figure \ref{fig:ksweep4DHSI}. We can observe 
-that, the multi-TTV({\em mTTV}) scales linearly with the increasing $k$,  where as the partial MTTKRP ({\em PM}) is scaling super 
-linearly. This is because, with higher $k$, the BLAS $DGEMM$ gets a bigger chunk of work that it can optimize better.  The local 
-compute $NLS$ is increasing as expected nearly $O(k^3)$ and the $ALL-GATHER$ required for the gram matrices over $k^2$ 
-elements, becomes significant on higher $k$'s. 
-
-In Figure \ref{fig:ksweepneuro} we compare k-sweeps for $R = 10,20,...,50$ for all 3 algorithms. Starting at $R=10$ we see the largest speed up of $2\times$ for dimension trees over Liavas. This is due to a combination of the dimension tree performing less flops in the MTTKRPs and KRPs. However, as the rank increases this speed up diminishes to $1.6\times$. The loss of speed up is a result of the fact that, as we observed in Figure \ref{fig:ksweep4DHSI}, the multi-TTV operations do not scale as well as the partial-MTTKRPs for increasing $R$. 
 
 %\begin{figure}
 
