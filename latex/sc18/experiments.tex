@@ -57,7 +57,10 @@ modes, dimension trees has some advantage with favorable shapes for matrix multi
 
 The Figure \ref{fig:stronghsi3D} shows the strong scaling on the three modes HSI real world data. We can observe
 that our proposed algorithm with dimension trees is almost 2x faster than baseline Liavas. The proposed algorithm
-with classical MTTKRP was performing better on higher number of processors over the baseline. 
+with classical MTTKRP was performing better on higher number of processors over the baseline. This is because at
+1024 processes on 64 nodes, MTTKRP is no more the dominating cost and hence there is no advantages due to
+dimension trees. Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the 
+cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
 
 \begin{figure}
 \begin{tikzpicture}

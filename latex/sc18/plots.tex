@@ -91,7 +91,11 @@
 \newcommand{\strongscalingplotoptions}{
 		log basis y={2},
 		log basis x={2},
-		xlabel=Nodes,
+		\ifliavas
+			xlabel=Num. Procs,
+		\else
+			xlabel=Nodes,
+		\fi
 		ylabel=Time (s),
 		y tick label style={
 	        /pgf/number format/.cd,
