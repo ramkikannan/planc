@@ -114,9 +114,9 @@ In \cref{fig:strongsynthetic5D}, we benchmark performance for a 5D cubical tenso
 Because the tensor is 5D, we can no longer compare against NbAO-NTF.
 We see a $13-16\times$ speed up using a dimension tree over not using one for this problem.
 As predicted, the dimension tree optimization saves relatively more arithmetic for higher-order tensors.
-However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from avoiding  unnecessary KRP computation that is memory bound.  
+However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from more efficient DGEMM performance and avoiding memory-bound KRP computation.  
 That is, although the flop count of KRP computation is lower order, it still contributes to the run time because it is inefficient.
-Also, for tensors with balanced dimensions, the dimension tree approach has some advantage with favorable shapes for BLAS's DGEMM.
+Also, for tensors with balanced dimensions, the dimension tree approach yields more favorable shapes for DGEMM.
 
 
 \begin{figure}
