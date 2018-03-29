@@ -17,8 +17,8 @@ To aid in interpretability, domain-specific constraints are often imposed on the
 We focus in this paper on dense tensors (when nearly all of the tensor entries are nonzero) and on constraining solutions to have nonnegative entries, which is useful when the tensor data itself is nonnegative. Formally, NNCP can be defined as
 \SplitN{\label{eqn:nncp}}{
  \min_{\HH^{(i)} \geq 0} & \| \TA - \sum_{r=1}^R \Mn{H}{1}(:,r) \circ \cdots \circ \Mn{H}{N}(:,r) \|^2
-}, 
-where $\Mn{H}{1}(:,i) \circ \cdots \circ \Mn{H}{N}(:,i)$ is the outer product of the $i$^{th} vectors from all the $N$ factors. 
+}
+where $\Mn{H}{1}(:,i) \circ \cdots \circ \Mn{H}{N}(:,i)$ is the outer product of the $i^{th}$ vector from all the $N$ factors that yields a rank one tensor $\T{M}$ and $\sum_{r=1}^R \Mn{H}{1}(:,r) \circ \cdots \circ \Mn{H}{N}(:,r)$ results in a sum of $R$ rank one tensors that will be of the same dimension as the input tensor $\TA$. 
 For example, in imaging and microscopy applications, tensor values often correspond to intensities, and NNCP can be used to cluster and analyze the data in a lower-dimensional space \cite{JC+16}.
 In this work, we consider two such applications: a series of time-lapse hyperspectral images \cite{FAN16} and a dynamic functional correlation data set generated from functional magnetic resonance images of human brains \cite{VEU+12}.
 
