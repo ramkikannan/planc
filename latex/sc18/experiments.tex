@@ -38,11 +38,11 @@ We can observe from the figure that all the three algorithms scale linearly as t
 compute bound in the case of dense tensors. The computation is dominated by $O(R \prod I_k / P_k)$
 and the communication scales as $P^{1/N}$. As evident from the figure, this communication cost doesn't 
 show up even for $P$ in the order of few hundreds. Our proposed algorithm with dimension trees is 1.5x faster than the baseline 
-{\em Liavas}\cite{LK+17b}. The advantages of the dimension tree are more pronounced in higher
-mode tensors because of more reuse over partial MTTKRPs and avoiding unnecessary KRP computation that is more memory bound. Even though, in
-the Figure \ref{fig:strongsynthetic3D} the dimension trees is only as good as the classical MTTKRP, we are witnessing
+{\em Liavas}\cite{LK+17b}. 
+The dimension trees are faster over classical MTTKRP, in both the three and five mode synthetic tensors. We are witnessing
 2.5x speed up with dimension trees over higher modes as in Figure \ref{fig:strongsynthetic5D}. 
-Also, for tensors with equal dimensions over all the
+The advantages of the dimension tree are more pronounced in higher
+mode tensors because of more reuse over partial MTTKRPs and avoiding unnecessary KRP computation that is more memory bound.  Also, for tensors with equal dimensions over all the
 modes, dimension trees has some advantage with favorable shapes for matrix multiplication with BLAS DGEMM.
 
 \begin{figure}
