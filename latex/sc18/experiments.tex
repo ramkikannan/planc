@@ -38,7 +38,17 @@ The entire experimentation was performed on Eos, a supercomputer at the Oak Ridg
 Eos is a 736-node Cray XC30 cluster of Intel Xeon E5-2670 processors with a total of 47.104TB of memory. 
 Its compute nodes are organized in blades where each blade contains 4 nodes, and every node has 2 sockets with 8 physical cores and 64GB memory. 
 The machine support Intel's hyper-threading (HT), but we restricted it because HT offers minimal improvement for BLAS and LAPACK operations. 
-In total, the Eos compute partition contains 11,776 traditional processor cores and our experiments used up to 4,096 cores (35\% of the machine).
+In total, the Eos compute partition contains 11,776 traditional processor cores and our experiments used up to 4,096 cores (35\% of the machine). 
+
+Our objective of the implementation is using open source software as much as possible 
+to promote reproducibility and reuse of our code.
+Unlike Liavas \cite{LK+17b} that uses Eigen matrix library, we use Armadillo \cite{sanderson2010} for matrix representation
+and operations.  
+In Armadillo, the elements of the dense matrix are stored in column major order.
+For dense BLAS and LAPACK operations, we linked Armadillo with the default LAPACK/BLAS wrappers from Cray. 
+For compiler, we use GNU C++ Compiler (g++ (GCC) 6.3.0) and MPI library is from Cray.  We could also 
+compile and run the code in RHEA the commodity cluster from OLCF with entire open source libraries such as OpenBLAS and OpenMPI. 
+
 \grey{add compiler and blas details}
 
 \subsection{Comparison Implementations}
