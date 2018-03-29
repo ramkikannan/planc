@@ -33,10 +33,17 @@ The Matricized-Tensor Times Khatri-Rao Product or MTTKRP will be central to this
 \subsection {Block Coordinate Descent for NNCP}
 
 While there are multiple optimization methods to compute NNCP, we will focus on a class of methods that use Block Coordinate Descent (BCD), which is also known as the nonlinear Gauss-Seidel method \cite{Bertsekas1999}.
-In BCD, the variables are partitioned into blocks, and each variable block is cyclically updated with all other blocks fixed.
+In BCD, the variables are partitioned into blocks, and each variable block is cyclically updated to optimality with all other blocks fixed.
 For details on the convergence properties and comparisons of BCD methods for nonnegative matrix and tensor decomposition problems, see \cite{KHP2014}.
-We consider BCD methods for NNCP that choose the factor matrices as the blocks, which is also often referred to as Alternating Least Squares.
-In this case, every subproblem is a linear nonnegative least squares problem.
+We consider BCD methods for NNCP that choose the entire factor matrices as the blocks, which is also often referred to as Alternating Least Squares.
+In this case, every subproblem is a linear nonnegative least squares problem. Formally, the following problem 
+is solved iteratively for $n = 1 \cdots N$.
+
+\SplitN{\label{eqn:bcdnncp}}{
+\HH^{(n)} \leftarrow \argmin_{\HH \geq 0} & \| \Mn{S}{n} \HH^T - \Mn{M}{n}^T \|_F^2
+}
+
+where, $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$. 
 
 \Cref{alg:nncp} shows the pseudocode for BCD applied to NNCP.
 \Cref{line:MTTKRP,line:GH,line:Gn} compute matrices involved in the gradients of the subproblem objective functions, and \cref{line:NLS} uses those matrices to update the current factor matrix.
