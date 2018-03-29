@@ -6,8 +6,16 @@
 
 \subsection{Datasets}
 
-\subsubsection{Real World}
-{\em Hyperspectral Images(HSI):} For real world datasets and comparison with the baseline Liavas \cite{LK+17b}, we considered the same hyperspectral imaging datasets from \cite{FAN16}. Each hyperspectral image has dimensions 1024 x 1344 x 33 and represents a set of 33 greyscale images of size 1344 (H) x 1024 (V) pixels sampled at wavelengths 400, 410, ..., 720 nm, with each pixel value representing spectral radiance in $W m^{-2} sr^{-1} nm^{-1}$. In each scene, hyperspectral images were acquired at about 1-hour intervals. Since, the baseline can work only for three mode real world data, we considered one image and to demonstrate the proposed algorithm's capability we considered the entire set of 9 images collected over 9 time step as  1024 x 1344 x 33 x 9. 
+\subsubsection{Hyperspectral Images (HSI)}
+For comparison with previous work \cite{LK+17b}, we consider the same 3D hyperspectral imaging dataset called ``Souto\_wood\_pile'' \cite{FAN16}. 
+The hyperspectral datacube has dimensions $1024 \times 1344 \times 33$ and represents a set of 33 grayscale images of size 1344 $\times$ 1024 pixels sampled at wavelengths 400, 410, $\dots$, 720 nm, with each pixel value representing spectral radiance in $W m^{-2} sr^{-1} nm^{-1}$. 
+We also consider the Nogueir\'{o} scene dataset, which is a sequence of 9 time-lapse HSI images of the same scene acquired at about 1-hour intervals.
+In each scene, hyperspectral images were acquired at about 1-hour intervals. 
+Each Nogueir\'{o} scene HSI image has the same properties as the Souto\_wood\_pile data set, so the corresponding tensor has dimensions $1024 \times 1344 \times 33 \times 9$. 
+
+\subsubsection{Dynamic Functional Connectivity (dFC)}
+
+
 
 \subsubsection{Synthetic}
 For the synthetic datasets, our open source code supports (a) low-rank tensor (b) uniform random and (c) positive shifted normal distribution of $\mathfrak{N}(3,1)$ -- that is change the mean such that all the random numbers are positive. We considered three different synthetic matrices for different cases. For baseline comparison with Liavas \cite{LK+17b}, we considered a three mode 
@@ -15,7 +23,7 @@ uniform of size 1024x1024x1024 on processor grids $2^k \times 2^k \times 2^k$ fo
 mode synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids 
 $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$ for strong scaling 
 experiments.  In the case of weak scaling of four mode synthetic tensors with (D) and without (N) the use of dimension trees.  The 
-tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$. In all the cases the dimensions were considered such that synthetic tensors can be accomodated even on single node with 64GB for scale up plots. 
+tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$. In all the cases the dimensions were considered such that synthetic tensors can be accommodated even on single node with 64GB for scale up plots. 
 
 \subsection{Machine Details}
 The entire experimentation was performed on Eos -- a super computer in Oak Ridge Leadership Computing Facility (OLCF). 
