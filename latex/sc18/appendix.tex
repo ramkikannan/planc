@@ -4,16 +4,16 @@
 \label{sec:appendix}
 
 \begin{algorithm}
-\caption{$(\CPl,\epsilon) = \text{Par-NNCP}(\TA,k)$}
+\caption{$(\CPl,\epsilon) = \text{Par-NNCP}(\TA,R)$}
 \label{alg:Par-NNCP-long}
 \begin{algorithmic}[1]
-\Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $k$ is rank of approximation
+\Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $R$ is rank of approximation
 \State \Comment{Initialize data}
 \State $a = \text{Norm-Squared}(\TA_{\V{p}})$
 \State $\alpha = \text{All-Reduce}(a,\textsc{All-Procs})$
 \State $\epsilon = $ \texttt{Inf}
 \For{$n=2$ to $N$}
-	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times k$ 
+	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times R$ 
 	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
 	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
 	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
@@ -43,6 +43,6 @@
 	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
 \EndWhile
 \Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
-\Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times k$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
+\Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times R$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
 \end{algorithmic}
 \end{algorithm}
