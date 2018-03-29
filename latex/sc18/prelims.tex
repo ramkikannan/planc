@@ -39,9 +39,9 @@ We consider BCD methods for NNCP that choose the entire factor matrices as the b
 In this case, every subproblem is a linear nonnegative least squares problem. Formally, the following problem 
 is solved iteratively for $n = 1 \cdots N$.
 
-\SplitN{\label{eqn:bcdnncp}}{
-\HH^{(n)} \leftarrow \argmin_{\HH \geq 0} & \| \Mn{S}{n} \HH^T - {\Mn{M}{n}}^T \|_F^2
-}
+%\SplitN{\label{eqn:bcdnncp}}{
+$$\HH^{(n)} \leftarrow \argmin_{\HH \geq 0}  \| \Mn{S}{n} \HH^T - {\Mn{M}{n}}^T \|_F^2$$
+%}
 
 %where, $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$. 
 

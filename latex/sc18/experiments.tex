@@ -47,7 +47,7 @@ and operations.
 In Armadillo, the elements of the dense matrix are stored in column major order.
 For dense BLAS and LAPACK operations, we linked Armadillo with the default LAPACK/BLAS wrappers from Cray. 
 For compiler, we use GNU C++ Compiler (g++ (GCC) 6.3.0) and MPI library is from Cray.  We could also 
-compile and run the code in RHEA the commodity cluster from OLCF with entire open source libraries such as OpenBLAS and OpenMPI. 
+compile and run the code in Rhea the commodity cluster from OLCF with entire open source libraries such as OpenBLAS and OpenMPI. 
 
 \subsection{Comparison Implementations}
 The implementation proposed by Liavas et al. \cite{LK+17b} is the only publicly available distributed-memory software (of which we are aware) for computing the CP decomposition of dense tensors, with or without constraints.
@@ -162,13 +162,20 @@ However, the benefit of increasing $k$ eventually diminishes if the data can be 
 %Hence, it is common practice in the community to sweep $k$, to obtain better approximation error within the 
 %manageable computation. 
 Towards this end, we experiment with various values of $k$ to observe the relative increase in running time for two real-world data sets. 
-The results of the experiments on real world four mode HSI tensor is presented in Figure \ref{fig:ksweep4DHSI}. We can observe 
-that, the multi-TTV({\em mTTV}) scales linearly with the increasing $k$,  where as the partial MTTKRP ({\em PM}) is scaling super 
-linearly. This is because, with higher $k$, the BLAS $DGEMM$ gets a bigger chunk of work that it can optimize better.  The local 
-compute $NLS$ is increasing as expected nearly $O(k^3)$ and the $ALL-GATHER$ required for the gram matrices over $k^2$ 
-elements, becomes significant on higher $k$'s. 
 
-In Figure \ref{fig:ksweepneuro} we compare k-sweeps for $R = 10,20,...,50$ for all 3 algorithms. Starting at $R=10$ we see the largest speed up of $2\times$ for dimension trees over Liavas. This is due to a combination of the dimension tree performing less flops in the MTTKRPs and KRPs. However, as the rank increases this speed up diminishes to $1.6\times$. The loss of speed up is a result of the fact that, as we observed in Figure \ref{fig:ksweep4DHSI}, the multi-TTV operations do not scale as well as the partial-MTTKRPs for increasing $R$. 
+\Cref{fig:ksweep4DHSI} shows the time breakdown of our implementation using a dimension tree on the 4D HSI dataset for $R=\{10,\dots,50\}$. 
+We observe an overall time increase with increased $k$, but each part of the computation scales slightly differently.
+The multi-TTV computation ({\em mTTV}) scales linearly with the increasing $k$,  whereas the partial MTTKRP ({\em PM}) is scaling super-linearly. 
+This is because mTTV is cast as matrix-vector products (DGEMV) and PM is cast as matrix-matrix products (DGEMM).
+As $k$ increases from 10 to 50, DGEMM performance improves but DGEMV performance is constant.  
+The local NLS time is increasing with $O(k^3)$ as expected and the All-Reduce required for the Gram matrices scales with $O(k^2)$, becoming a significant cost for larger $k$. 
+
+In \cref{fig:ksweepneuro} we compare performance for various ranks $R$ across all 3 algorithms, again used flat MPI. 
+Starting at $R=10$ we see the largest speed up of $2\times$ for our implementation with a dimension tree over NbAO-NTF. 
+This is due to a combination of the dimension tree performing fewer flops in the MTTKRPs and KRPs. 
+However, as the rank increases this speed up diminishes to $1.6\times$. 
+The loss of speed up is a result of the fact that, as we observed in \cref{fig:ksweep4DHSI}, the multi-TTV operations do not scale as well as the partial-MTTKRPs for increasing $R$.
+Again, the performance of our implementation without the dimension tree optimization is comparable to NbAO-NTF. 
 
 \begin{figure}
 \renewcommand{\datafile}{data/ksw_4D_HSI.dat}
@@ -181,7 +188,7 @@ In Figure \ref{fig:ksweepneuro} we compare k-sweeps for $R = 10,20,...,50$ for a
 	height =.75\columnwidth,
 	%width=9cm, height=3.85cm,
 	ylabel={Time (s)}, 
-	xlabel={Rank $k$},
+	xlabel={Rank $R$},
 	y label style={yshift=-.5cm},
 	ymin=0,
 	%symbolic x coords={D10,N10,,D20,N20,,D30,N30,,D40,N40,,D50,N50},
@@ -211,10 +218,10 @@ In Figure \ref{fig:ksweepneuro} we compare k-sweeps for $R = 10,20,...,50$ for a
 	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
 	\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
 	\addplot+ [discard if not={alg}{L},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
-	\legend{DimTree,NoDimTree,Liavas}
+	\legend{DimTree,NoDimTree,NbAO-NTF}
 \end{axis}
 \end{tikzpicture}
-\caption{$k$ sweep plot for Neuroscience dataset}
+\caption{Overall running time for dFC dataset with dimensions $30{,}012\times 1200 \times 500$ on 1440 cores arranged in a $2\times 6\times 120$ processor grid and varying choices of rank $R$.}
 \label{fig:ksweepneuro}
 \end{figure}
 
