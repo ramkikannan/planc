@@ -1,4 +1,8 @@
-alg k total_time
+#this is k sweep for neuroscience data
+#but naming k to be p to be consistent
+#with plots.tex. Also D is D and N is N
+#alg k total_time
+alg k total
 L 10 1.46
 L 20 1.65
 L 30 2.07

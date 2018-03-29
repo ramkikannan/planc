@@ -45,6 +45,10 @@ The advantages of the dimension tree are more pronounced in higher
 mode tensors because of more reuse over partial MTTKRPs and avoiding unnecessary KRP computation that is more memory bound.  Also, for tensors with equal dimensions over all the
 modes, dimension trees has some advantage with favorable shapes for matrix multiplication with BLAS DGEMM.
 
+The Figure \ref{fig:stronghsi3D} shows the strong scaling on the three modes HSI real world data. We can observe
+that our proposed algorithm with dimension trees is almost 2x faster than baseline Liavas. The proposed algorithm
+with classical MTTKRP was performing better on higher number of processors over the baseline. 
+
 \begin{figure}
 \begin{tikzpicture}
 \renewcommand{\datafile}{data/str_3D_syn.dat}
@@ -65,6 +69,17 @@ modes, dimension trees has some advantage with favorable shapes for matrix multi
 \end{tikzpicture}
 \caption{Strong scaling of 5D synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$.  The rank is fixed at 32.}
 \label{fig:strongsynthetic5D}
+\end{figure}
+
+\begin{figure}
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/str_3D_HSI.dat}
+\renewcommand{\numiterations}{10}
+\liavastrue
+\strongscalingplot
+\end{tikzpicture}
+\caption{Strong scaling of 3D HSI real world data with dimension 1024 x1344 x 33 on processor grids of $1 \times k \times k$ for $k \in {1, 2, 4, 8, 16, 32}$. The rank is fixed at 32.}
+\label{fig:stronghsi3D}
 \end{figure}
 
 \subsection{Weak Scaling}
@@ -127,6 +142,19 @@ In the case of weakscaling, we wanted to understand the time it takes to solve b
 \end{tikzpicture}
 \caption{Per-iteration time breakdown of our implementation (using dimension trees) over various ranks for a time-lapse HSI dataset with dimensions $1344\times 1024\times 33 \times 9$ on 64 processors arranged in a $8\times8\times1\times1$ grid.}
 \label{fig:ksweep4DHSI}
+\end{figure}
+
+\begin{figure}
+\begin{tikzpicture}
+\begin{axis}[legend style={draw=none, anchor=north,  cells={align=left}, nodes={scale=0.7}}]
+	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
+	\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
+	\addplot+ [discard if not={alg}{L},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
+	\legend{DimTree,NoDimTree,Liavas}
+\end{axis}
+\end{tikzpicture}
+\caption{$k$ sweep plot for Neuroscience dataset}
+\label{fig:ksweepneuro}
 \end{figure}
 
 According to Kim, He and Park \cite{KHP2014}, in the case of dense tensors, as the low rank $k$ increases, the approximation 
