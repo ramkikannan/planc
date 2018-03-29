@@ -181,6 +181,8 @@ linearly. This is because, with higher $k$, the BLAS $DGEMM$ gets a bigger chunk
 compute $NLS$ is increasing as expected nearly $O(k^3)$ and the $ALL-GATHER$ required for the gram matrices over $k^2$ 
 elements, becomes significant on higher $k$'s. 
 
+In Figure \ref{fig:ksweepneuro} we compare k-sweeps for $R = 10,20,...,50$ for all 3 algorithms. Starting at $R=10$ we see the largest speed up of $2\times$ for dimensions trees over Liavas. This is due to a combination of the dimension tree performing less flops in the MTTKRPs and KRPs. However, as the rank increases this speed up diminishes to $1.6\times$. The loss of speed up is a result of the fact that, as we observed in \ref{fig:ksweep4DHSI}, the multi-TTV operations do not scale as well as the partial-MTTKRPs for increasing $R$. 
+
 %\begin{figure}
 
 % set which run to plot
