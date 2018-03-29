@@ -28,7 +28,7 @@ In this work, we are interested in NNCP models that are good approximations to $
 That is, we seek to minimize $\|\TA-\CPl\|$, where the tensor norm is a generalization of the matrix Frobenius or vector 2-norm, the square root of the sum of squares of the entries.
 
 The $n$th mode matricized tensor denoted by $\M{A}_{(n)}$ is a $I_n\times I/I_n$ matrix formed by organizing the $n$th mode fibers of a tensor $\T{X}$ with dimensions $I_{1} \times ... \times I_{N}$ (and $I=\prod I_n$) into the columns of a matrix. 
-The Matricized-Tensor Times Khatri-Rao Product or MTTKRP will be central to this work and takes the form $\Mn{M}{n} = \Mz{A}{n}( \Mn{H}{N} \Khat \cdots \Khat \Mn{H}{n+1} \Khat \Mn{H}{n-1} \Khat  \cdots \Khat \Mn{H}{1})$. 
+The Matricized-Tensor Times Khatri-Rao Product or MTTKRP will be central to this work and takes the form $\Mn{M}{n} = \Mz{A}{n} \Mn{S}{n}$, where $\Mn{S}{n}= \Mn{H}{N} \Khat \cdots \Khat \Mn{H}{n+1} \Khat \Mn{H}{n-1} \Khat  \cdots \Khat \Mn{H}{1}$. 
 
 \subsection {Block Coordinate Descent for NNCP}
 
@@ -43,7 +43,7 @@ is solved iteratively for $n = 1 \cdots N$.
 \HH^{(n)} \leftarrow \argmin_{\HH \geq 0} & \| \Mn{S}{n} \HH^T - \Mn{M}{n}^T \|_F^2
 }
 
-where, $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$. 
+%where, $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$. 
 
 \Cref{alg:nncp} shows the pseudocode for BCD applied to NNCP.
 \Cref{line:MTTKRP,line:GH,line:Gn} compute matrices involved in the gradients of the subproblem objective functions, and \cref{line:NLS} uses those matrices to update the current factor matrix.
