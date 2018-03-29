@@ -38,7 +38,7 @@ The entire experimentation was performed on Eos, a supercomputer at the Oak Ridg
 Eos is a 736-node Cray XC30 cluster of Intel Xeon E5-2670 processors with a total of 47.104TB of memory. 
 Its compute nodes are organized in blades where each blade contains 4 nodes, and every node has 2 sockets with 8 physical cores and 64GB memory. 
 The machine support Intel's hyper-threading (HT), but we restricted it because HT offers minimal improvement for BLAS and LAPACK operations. 
-In total, the Eos compute partition contains 11,776 traditional processor cores and our experiments used up to 4,096 cores (35\% of the machine).
+In total, the Eos compute partition contains 11,776 traditional processor cores and our experiments used up to 8,192 cores (70\% of the machine).
 \grey{add compiler and blas details}
 
 \subsection{Comparison Implementations}
@@ -63,27 +63,13 @@ We use an existing implementation to perform the individual MTTKRPs \cite{HBJT18
 We perform two strong scaling experiments to compare performance with NbAO-NTF.
 The experiments use a cubical synthetic tensor and the HSI image used in \cite{LK+17b}, both of which are 3D.
 
-The performance on the synthetic tensor is shown in \cref{fig:strongsynthetic3D}. 
+The performance on the cubical synthetic tensor is shown in \cref{fig:strongsynthetic3D}. 
 We can observe from the figure that all the three algorithms scale nearly linearly as the problem remains compute bound. 
 Recall from \label{sec:analysis} that the computation scales linearly with $1/P$ while the communication scales with $1/P^{1/N}=1/P^{1/3}$. 
 As is evident from the figure, the communication cost does not degrade performance even for thousands of cores. 
 Our proposed algorithm with dimension trees is 35\% faster than NbAO-NTF at 512 cores (with similar relative difference for other core counts).
 This performance improvement is due in large part to the 50\% reduction in arithmetic operations provided by the dimension tree optimization.
 There is little difference in performance between our implementation without dimension trees and NbAO-NTF.
-
-\Cref{fig:stronghsi3D} shows the strong scaling on the HSI data. 
-In this case, our proposed algorithm with dimension trees is over $2\times$ faster than NbAO-NTF, but part of this speedup is due to differences in the NLS update algorithms.
-For the low core count, the dimension tree provides a 60\% speedup compared to the MTTKRP time in NbAO-NTF.
-At the high core counts for this experiment, the local MTTKRP is no longer the dominating cost.
-%The proposed algorithm with classical MTTKRP was performing better on higher number of processors over the baseline. 
-%Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
- 
-In \cref{fig:strongsynthetic5D}, we benchmark performance for a 5D tensor, so we can no longer compare against NbAO-NTF.
-We see a $13-16\times$ speed up using a dimension tree over not using one for this problem.
-As predicted, the dimension tree optimization saves relatively more arithmetic for higher-order tensors.
-However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from avoiding  unnecessary KRP computation that is memory bound.  
-That is, although the flop count of KRP computation is lower order, it still contributes to the run time because it is inefficient.
-Also, for tensors with balanced dimensions, the dimension tree approach has some advantage with favorable shapes for BLAS's DGEMM.
 
 \begin{figure}
 \begin{tikzpicture}
@@ -96,6 +82,13 @@ Also, for tensors with balanced dimensions, the dimension tree approach has some
 \label{fig:strongsynthetic3D}
 \end{figure}
 
+\Cref{fig:stronghsi3D} shows the strong scaling on the HSI data. 
+In this case, our proposed algorithm with dimension trees is over $2\times$ faster than NbAO-NTF, but part of this speedup is due to differences in the NLS update algorithms.
+For the low core count, the dimension tree provides a 60\% speedup compared to the MTTKRP time in NbAO-NTF.
+At the high core counts for this experiment, the local MTTKRP is no longer the dominating cost.
+%The proposed algorithm with classical MTTKRP was performing better on higher number of processors over the baseline. 
+%Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
+
 \begin{figure}
 \begin{tikzpicture}
 \renewcommand{\datafile}{data/str_3D_HSI.dat}
@@ -106,6 +99,15 @@ Also, for tensors with balanced dimensions, the dimension tree approach has some
 \caption{Strong scaling of 3D HSI real world data with dimension 1024 x1344 x 33 on processor grids of $1 \times k \times k$ for $k \in {1, 2, 4, 8, 16, 32}$. The rank is fixed at 32.}
 \label{fig:stronghsi3D}
 \end{figure}
+ 
+In \cref{fig:strongsynthetic5D}, we benchmark performance for a 5D cubical tensor with each dimension set to 64.
+Because the tensor is 5D, we can no longer compare against NbAO-NTF.
+We see a $13-16\times$ speed up using a dimension tree over not using one for this problem.
+As predicted, the dimension tree optimization saves relatively more arithmetic for higher-order tensors.
+However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from avoiding  unnecessary KRP computation that is memory bound.  
+That is, although the flop count of KRP computation is lower order, it still contributes to the run time because it is inefficient.
+Also, for tensors with balanced dimensions, the dimension tree approach has some advantage with favorable shapes for BLAS's DGEMM.
+
 
 \begin{figure}
 \begin{tikzpicture}
@@ -118,14 +120,15 @@ Also, for tensors with balanced dimensions, the dimension tree approach has some
 \label{fig:strongsynthetic5D}
 \end{figure}
 
-\subsection{Weak Scaling}
+\subsection{Weak Scaling Time Breakdown}
 
-\begin{itemize}
-	\item 4D synthetic (2 algs)
-	\item 3D neuroscience, increasing one mode? (2 algs)
-\end{itemize}
-
-In the case of weakscaling, we wanted to understand the time it takes to solve bigger problems by increasing the number of nodes with the increase in data size by keeping the problem size (workload) assigned to each processing element constant. We conducted this experiment by using synthetic tensor and processor grid of dimensions $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$, and the rank is fixed at 32. For eg., in the case of 3 x 3 x 3 x 3 processor grid with 81 nodes, we ran the proposed algorithm with and without dimension trees on a four mode tensor of size 384 x 384 x 384 x 384. The results of the breakdown plot is shown in Figure \ref{fig:weaksynthetic4D}. Since, the NTF on dense tensors is compute intensive, the total time of the weak scaling is staying fixed for both the case of with and without dimension trees. The entire running is completely dominated by the MTTKRP computation.  As mentioned above, from the Figure   \ref{fig:weaksynthetic4D}, we can observe that the KRP cost of dimension trees is insignificant and it offers 2.5x speed up over classical MTTKRP. 
+We also perform a weak scaling experiment to understand the time it takes to solve bigger problems with more processors.
+In this experiment, we use a synthetic 4D tensor and keep the amount of tensor data assigned to each processor constant, with tensor and processor grid of dimensions $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$ and the rank fixed at 32. 
+%For eg., in the case of 3 x 3 x 3 x 3 processor grid with 81 nodes, we ran the proposed algorithm with and without dimension trees on a four mode tensor of size 384 x 384 x 384 x 384. 
+The results of the breakdown plot is shown in \cref{fig:weaksynthetic4D}. 
+In this case, the algorithm is compute bound with and without the use of the dimension tree, so the total time of the weak scaling remains fixed for both cases. 
+Using a dimension tree, the time is completely dominated by the MTTKRP computation.  
+Without using a dimension tree, we observe that the KRP is expensive and yields a $2.5\times$ slower total run time even in the 4D case. 
 
 \begin{figure}
 \begin{tikzpicture}
