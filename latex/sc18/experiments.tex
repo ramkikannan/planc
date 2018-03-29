@@ -38,8 +38,16 @@ The entire experimentation was performed on Eos, a supercomputer at the Oak Ridg
 Eos is a 736-node Cray XC30 cluster of Intel Xeon E5-2670 processors with a total of 47.104TB of memory. 
 Its compute nodes are organized in blades where each blade contains 4 nodes, and every node has 2 sockets with 8 physical cores and 64GB memory. 
 The machine support Intel's hyper-threading (HT), but we restricted it because HT offers minimal improvement for BLAS and LAPACK operations. 
-In total, the Eos compute partition contains 11,776 traditional processor cores and our experiments used up to 8,192 cores (70\% of the machine).
-\grey{add compiler and blas details}
+In total, the Eos compute partition contains 11,776 traditional processor cores and our experiments used up to 4,096 cores (35\% of the machine). 
+
+Our objective of the implementation is using open source software as much as possible 
+to promote reproducibility and reuse of our code.
+Unlike Liavas \cite{LK+17b} that uses Eigen matrix library, we use Armadillo \cite{sanderson2010} for matrix representation
+and operations.  
+In Armadillo, the elements of the dense matrix are stored in column major order.
+For dense BLAS and LAPACK operations, we linked Armadillo with the default LAPACK/BLAS wrappers from Cray. 
+For compiler, we use GNU C++ Compiler (g++ (GCC) 6.3.0) and MPI library is from Cray.  We could also 
+compile and run the code in RHEA the commodity cluster from OLCF with entire open source libraries such as OpenBLAS and OpenMPI. 
 
 \subsection{Comparison Implementations}
 The implementation proposed by Liavas et al. \cite{LK+17b} is the only publicly available distributed-memory software (of which we are aware) for computing the CP decomposition of dense tensors, with or without constraints.
@@ -88,6 +96,8 @@ For the low core count, the dimension tree provides a 60\% speedup compared to t
 At the high core counts for this experiment, the local MTTKRP is no longer the dominating cost.
 %The proposed algorithm with classical MTTKRP was performing better on higher number of processors over the baseline. 
 %Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
+
+Finally, we ran on 512 nodes, utilizing the 16 threads per node via parallel BLAS and OMP, for a $1024\times1024\times1024$ synthetic tensor and processor grid $8\times8\times8$. Here we observe a $253\times$ speedup which is the result of each node having less than 20 megabytes of data.
 
 \begin{figure}
 \begin{tikzpicture}
