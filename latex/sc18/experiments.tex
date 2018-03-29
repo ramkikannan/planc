@@ -41,7 +41,7 @@ The machine support Intel's hyper-threading (HT), but we restricted it because H
 In total, the Eos compute partition contains 11,776 traditional processor cores and our experiments used up to 4,096 cores (35\% of the machine).
 \grey{add compiler and blas details}
 
-\subsection{Comparison Implementation}
+\subsection{Comparison Implementations}
 The implementation proposed by Liavas et al. \cite{LK+17b} is the only publicly available distributed-memory software (of which we are aware) for computing the CP decomposition of dense tensors, with or without constraints.
 We use the acronym NbAO-NTF for Nesterov-based Alternating Optimization Nonnegative Tensor Factorization to refer to their code.
 
@@ -55,27 +55,35 @@ The Nesterov-based algorithm attempts an acceleration step using a linear combin
 This residual error cannot always be computed cheaply, using the technique described in \cref{sec:error}, and it contributes significantly (approximately 25\%) to the overall run time.
 Because the BPP algorithm does not require this extra computation, and studying convergence behavior of the different NLS algorithms is beyond the scope of this work, we remove the time spent in the acceleration step of NbAO-NTF in all our comparisons.
 
+Our proposed algorithm uses dimension trees, but we also benchmark our implementation without that optimization to highlight its importance.
+We use an existing implementation to perform the individual MTTKRPs \cite{HBJT18} with this approach.
 
 \subsection{Strong Scaling}
 
-The strong scaling on 3D synthetic tensor with baseline is shown in Figure \ref{fig:strongsynthetic3D}. 
-We can observe from the figure that all the three algorithms scale linearly as the problem is more
-compute bound in the case of dense tensors. The computation is dominated by $O(R \prod I_k / P_k)$
-and the communication scales as $P^{1/N}$. As evident from the figure, this communication cost doesn't 
-show up even for $P$ in the order of few hundreds. Our proposed algorithm with dimension trees is 1.5x faster than the baseline 
-{\em Liavas}\cite{LK+17b}. 
-The dimension trees are faster over classical MTTKRP, in both the three and five mode synthetic tensors. We are witnessing
-2.5x speed up with dimension trees over higher modes as in Figure \ref{fig:strongsynthetic5D}. 
-The advantages of the dimension tree are more pronounced in higher
-mode tensors because of more reuse over partial MTTKRPs and avoiding unnecessary KRP computation that is more memory bound.  Also, for tensors with equal dimensions over all the
-modes, dimension trees has some advantage with favorable shapes for matrix multiplication with BLAS DGEMM.
+We perform two strong scaling experiments to compare performance with NbAO-NTF.
+The experiments use a cubical synthetic tensor and the HSI image used in \cite{LK+17b}, both of which are 3D.
 
-The Figure \ref{fig:stronghsi3D} shows the strong scaling on the three modes HSI real world data. We can observe
-that our proposed algorithm with dimension trees is almost 2x faster than baseline Liavas. The proposed algorithm
-with classical MTTKRP was performing better on higher number of processors over the baseline. This is because at
-1024 processes on 64 nodes, MTTKRP is no more the dominating cost and hence there is no advantages due to
-dimension trees. Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the 
-cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
+The performance on the synthetic tensor is shown in \cref{fig:strongsynthetic3D}. 
+We can observe from the figure that all the three algorithms scale nearly linearly as the problem remains compute bound. 
+Recall from \label{sec:analysis} that the computation scales linearly with $1/P$ while the communication scales with $1/P^{1/N}=1/P^{1/3}$. 
+As is evident from the figure, the communication cost does not degrade performance even for thousands of cores. 
+Our proposed algorithm with dimension trees is 35\% faster than NbAO-NTF at 512 cores (with similar relative difference for other core counts).
+This performance improvement is due in large part to the 50\% reduction in arithmetic operations provided by the dimension tree optimization.
+There is little difference in performance between our implementation without dimension trees and NbAO-NTF.
+
+\Cref{fig:stronghsi3D} shows the strong scaling on the HSI data. 
+In this case, our proposed algorithm with dimension trees is over $2\times$ faster than NbAO-NTF, but part of this speedup is due to differences in the NLS update algorithms.
+For the low core count, the dimension tree provides a 60\% speedup compared to the MTTKRP time in NbAO-NTF.
+At the high core counts for this experiment, the local MTTKRP is no longer the dominating cost.
+%The proposed algorithm with classical MTTKRP was performing better on higher number of processors over the baseline. 
+%Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
+ 
+In \cref{fig:strongsynthetic5D}, we benchmark performance for a 5D tensor, so we can no longer compare against NbAO-NTF.
+We see a $13-16\times$ speed up using a dimension tree over not using one for this problem.
+As predicted, the dimension tree optimization saves relatively more arithmetic for higher-order tensors.
+However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from avoiding  unnecessary KRP computation that is memory bound.  
+That is, although the flop count of KRP computation is lower order, it still contributes to the run time because it is inefficient.
+Also, for tensors with balanced dimensions, the dimension tree approach has some advantage with favorable shapes for BLAS's DGEMM.
 
 \begin{figure}
 \begin{tikzpicture}
@@ -90,17 +98,6 @@ cost over MTTKRP that makes it even slower than the our proposed algorithm witho
 
 \begin{figure}
 \begin{tikzpicture}
-\renewcommand{\datafile}{data/str_5D_syn.dat}
-\renewcommand{\numiterations}{10}
-\liavasfalse
-\strongscalingplot
-\end{tikzpicture}
-\caption{Strong scaling of 5D synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$.  The rank is fixed at 32.}
-\label{fig:strongsynthetic5D}
-\end{figure}
-
-\begin{figure}
-\begin{tikzpicture}
 \renewcommand{\datafile}{data/str_3D_HSI.dat}
 \renewcommand{\numiterations}{10}
 \liavastrue
@@ -108,6 +105,17 @@ cost over MTTKRP that makes it even slower than the our proposed algorithm witho
 \end{tikzpicture}
 \caption{Strong scaling of 3D HSI real world data with dimension 1024 x1344 x 33 on processor grids of $1 \times k \times k$ for $k \in {1, 2, 4, 8, 16, 32}$. The rank is fixed at 32.}
 \label{fig:stronghsi3D}
+\end{figure}
+
+\begin{figure}
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/str_5D_syn.dat}
+\renewcommand{\numiterations}{10}
+\liavasfalse
+\strongscalingplot
+\end{tikzpicture}
+\caption{Strong scaling of 5D synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$.  The rank is fixed at 32.}
+\label{fig:strongsynthetic5D}
 \end{figure}
 
 \subsection{Weak Scaling}
