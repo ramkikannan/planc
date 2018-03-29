@@ -32,6 +32,7 @@ Edges labeled with PM correspond to partial MTTKRP computations, and edges label
 \end{figure}
 
 \subsection{Relative Error Computation}
+\label{sec:error}
 
 Given a model $\T{M}=\CP$, we compute the relative error $\|\TA - \T{M}\|/\|\TA\|$ efficiently by using the identity $\|\TA-\T{M}\|^2 = \|\TA\|^2 - 2\langle \TA, \T{M} \rangle + \|\T{M}\|^2.$
 The quantity $\|\TA\|$ is fixed, and the other two terms can be computed cheaply given the temporary matrices computed during the course of the BCD algorithm.

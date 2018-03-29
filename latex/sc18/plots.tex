@@ -117,7 +117,7 @@
 	\fi
 	\ifliavas
 		\addplot+ [discard if not={alg}{L},thick,mark options={solid}] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
-		\legend{DimTree,NoDimTree,Liavas}
+		\legend{DimTree,NoDimTree,NbAO-NTF \cite{LK+17b}}
 	\else
 		\legend{DimTree,NoDimTree,FlatDimTree,FlatNoDimTree};
 	\fi
