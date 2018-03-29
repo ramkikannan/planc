@@ -156,17 +156,17 @@ Without using a dimension tree, we observe that the KRP is expensive and yields 
 
 One of the challenges of the CP (and NNCP) decomposition in practice is the choice of decomposition rank.
 The most common technique is to compute multiple CP decompositions for various ranks.
-As the rank $k$ increases, the approximation error  $\|\TA - \T{M}\|$ decreases with the better approximation power of more parameters. 
-However, the benefit of increasing $k$ eventually diminishes if the data can be well approximated with a CP model.
-%that an increase in $k$ in lower values, say from 5 to 10, will have significant improvement in relative error over increase in higher 
+As the rank $R$ increases, the approximation error  $\|\TA - \T{M}\|$ decreases with the better approximation power of more parameters. 
+However, the benefit of increasing $R$ eventually diminishes if the data can be well approximated with a CP model.
+%that an increase in $R$ in lower values, say from 5 to 10, will have significant improvement in relative error over increase in higher 
 %values, like 100 to 105. 
 %Hence, it is common practice in the community to sweep $k$, to obtain better approximation error within the 
 %manageable computation. 
-Towards this end, we experiment with various values of $k$ to observe the relative increase in running time for two real-world data sets. 
+Towards this end, we experiment with various values of $R$ to observe the relative increase in running time for two real-world data sets. 
 
 \Cref{fig:ksweep4DHSI} shows the time breakdown of our implementation using a dimension tree on the 4D HSI dataset for $R=\{10,\dots,50\}$. 
-We observe an overall time increase with increased $k$, but each part of the computation scales slightly differently.
-The multi-TTV computation ({\em mTTV}) scales linearly with the increasing $k$,  whereas the partial MTTKRP ({\em PM}) is scaling super-linearly. 
+We observe an overall time increase with increased $R$, but each part of the computation scales slightly differently.
+The multi-TTV computation ({\em mTTV}) scales linearly with the increasing $R$,  whereas the partial MTTKRP ({\em PM}) is scaling super-linearly. 
 This is because mTTV is cast as matrix-vector products (DGEMV) and PM is cast as matrix-matrix products (DGEMM).
 As $R$ increases from 10 to 50, DGEMM performance improves but DGEMV performance is constant.  
 The local NLS time is increasing with $O(R^3)$ as expected and the All-Reduce required for the Gram matrices scales with $O(R^2)$, becoming a significant cost for larger $R$. 
