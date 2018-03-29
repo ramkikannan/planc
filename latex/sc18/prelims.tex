@@ -139,10 +139,10 @@ The parallel algorithm presented in this paper is generally agnostic to the appr
 
 \begin{algorithm}
 %\caption{$(\CPl,\epsilon) = \text{NNCP}(\TA,k)$}
-\caption{$\CP = \text{NNCP}(\TA,k)$}
+\caption{$\CP = \text{NNCP}(\TA,R)$}
 \label{alg:nncp}
 \begin{algorithmic}[1]
-\Require $\TA$ is $I_1\times \cdots \times I_N$ tensor, $k$ is approximation rank
+\Require $\TA$ is $I_1\times \cdots \times I_N$ tensor, $R$ is approximation rank
 \State \Comment{Initialize data}
 %\State $\alpha = \|\TA\|^2$
 \For{$n=2$ to $N$}

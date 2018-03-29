@@ -168,8 +168,8 @@ Towards this end, we experiment with various values of $k$ to observe the relati
 We observe an overall time increase with increased $k$, but each part of the computation scales slightly differently.
 The multi-TTV computation ({\em mTTV}) scales linearly with the increasing $k$,  whereas the partial MTTKRP ({\em PM}) is scaling super-linearly. 
 This is because mTTV is cast as matrix-vector products (DGEMV) and PM is cast as matrix-matrix products (DGEMM).
-As $k$ increases from 10 to 50, DGEMM performance improves but DGEMV performance is constant.  
-The local NLS time is increasing with $O(k^3)$ as expected and the All-Reduce required for the Gram matrices scales with $O(k^2)$, becoming a significant cost for larger $k$. 
+As $R$ increases from 10 to 50, DGEMM performance improves but DGEMV performance is constant.  
+The local NLS time is increasing with $O(R^3)$ as expected and the All-Reduce required for the Gram matrices scales with $O(R^2)$, becoming a significant cost for larger $R$. 
 
 In \cref{fig:ksweepneuro} we compare performance for various ranks $R$ across all 3 algorithms, again used flat MPI. 
 Starting at $R=10$ we see the largest speed up of $2\times$ for our implementation with a dimension tree over NbAO-NTF. 
@@ -215,7 +215,7 @@ Again, the performance of our implementation without the dimension tree optimiza
 
 \begin{figure}
 \begin{tikzpicture}
-\begin{axis}[legend style={draw=none, anchor=north,  cells={align=left}, nodes={scale=0.7}}, legend pos=north west]
+\begin{axis}[legend style={draw=none, anchor=north,  cells={align=left}, nodes={scale=0.7}}, legend pos=north west, xlabel=Low Rank $R$, ylabel=Time(s), ylabel near ticks]
 	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
 	\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
 	\addplot+ [discard if not={alg}{L},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
