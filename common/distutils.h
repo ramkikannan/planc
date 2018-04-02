@@ -21,6 +21,8 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 #define NUMROWPROCS this->m_mpicomm.pr()
 #define NUMCOLPROCS this->m_mpicomm.pc()
 
+// #define MPITIC tic()
+// #define MPITOC toc()
 #define MPITIC mpitic()
 #define MPITOC mpitoc()
 // #define MPITIC mpitic(MPI_RANK)

@@ -265,9 +265,9 @@ class DistNMFDriver {
 #endif  // ifndef USE_PACOSS
     }
     void parseCommandLine() {
-        PLANC::ParseCommandLine pc(this->m_argc, this->m_argv);
+        planc::ParseCommandLine pc(this->m_argc, this->m_argv);
         pc.parseplancopts();
-        this->m_nmfalgo       = pc.nmfalgo();
+        this->m_nmfalgo       = pc.lucalgo();
         this->m_k             = pc.lowrankk();
         this->m_Afile_name    = pc.input_file_name();
         this->m_pr            = pc.pr();

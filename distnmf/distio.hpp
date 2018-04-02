@@ -89,6 +89,7 @@ class DistIO {
 #endif
     }
 
+#ifndef BUILD_SPARSE
     /* normalization */
     void normalize(normtype i_normtype) {
         ROWVEC globalnormA = arma::zeros<ROWVEC>(m_A.n_cols);
@@ -96,12 +97,12 @@ class DistIO {
         MATTYPE normmat = arma::zeros <MATTYPE>(m_A.n_rows, m_A.n_cols);
         switch (m_distio) {
         case ONED_ROW:
-            if (i_normtype == L2) {
+            if (i_normtype == L2NORM) {
                 normc = arma::sum(arma::square(m_A));
                 MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
                               MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-            } else if (i_normtype == MAX) {
+            } else if (i_normtype == MAXNORM) {
                 normc = arma::max(m_A);
                 MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
                               MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -110,18 +111,18 @@ class DistIO {
             break;
         case ONED_COL:
         case ONED_DOUBLE:
-            if (i_normtype == L2) {
+            if (i_normtype == L2NORM) {
                 globalnormA = arma::sum(arma::square(m_Arows));
-            } else if (i_normtype == MAX) {
+            } else if (i_normtype == MAXNORM) {
                 globalnormA = arma::max(arma::square(m_Arows));
             }
             break;
         case TWOD:
-            if (i_normtype == L2) {
+            if (i_normtype == L2NORM) {
                 normc = arma::sum(arma::square(m_A));
                 MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
                               MPI_DOUBLE, MPI_SUM, this->m_mpicomm.commSubs()[1]);
-            } else if (i_normtype == MAX) {
+            } else if (i_normtype == MAXNORM) {
                 normc = arma::max(m_A);
                 MPI_Allreduce(normc.memptr(), globalnormA.memptr(), m_A.n_cols,
                               MPI_DOUBLE, MPI_SUM, this->m_mpicomm.commSubs()[1]);
@@ -134,6 +135,7 @@ class DistIO {
         normmat = arma::repmat(globalnormA, m_A.n_rows, 1);
         m_A /= normmat;
     }
+#endif
 
     /*
     * Uses the pattern from the input matrix X but
@@ -416,9 +418,11 @@ class DistIO {
 #endif
             }
         }
+#ifndef BUILD_SPARSE
         if (i_normalization != NONE) {
             normalize(i_normalization);
         }
+#endif
     }
     void writeOutput(const MAT & W, const MAT & H,
                      const std::string & output_file_name) {

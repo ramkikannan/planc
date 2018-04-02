@@ -5,6 +5,7 @@
 #include "utils.hpp"
 #include "hals.hpp"
 #include "mu.hpp"
+#include "aoadmm.hpp"
 #include <string>
 #include <omp.h>
 
@@ -73,10 +74,10 @@ void incrementalGraph(std::string AfileName, std::string WfileName) {
 }
 #endif
 void parseCommandLineandCallNMF(int argc, char *argv[]) {
-    PLANC::ParseCommandLine pc(argc, argv);
+    planc::ParseCommandLine pc(argc, argv);
     pc.parseplancopts();
-    pc.printconfig();
-    switch (pc.nmfalgo()) {
+    pc.printConfig();
+    switch (pc.lucalgo()) {
     case MU:
 #ifdef BUILD_SPARSE
         NMFDriver<MUNMF<SP_MAT > >(pc.lowrankk(), pc.globalm(), pc.globaln(),
@@ -121,6 +122,23 @@ void parseCommandLineandCallNMF(int argc, char *argv[]) {
                                  pc.output_file_name() + "_h",
                                  pc.iterations());
 #endif
+    case AOADMM:
+#ifdef BUILD_SPARSE
+        // NMFDriver<AOADMMNMF<SP_MAT > >(lowRank, m, n, AfileName, WInitfileName,
+        //                                HInitfileName, WfileName, HfileName, numIt);
+        NMFDriver<AOADMMNMF<SP_MAT > >(pc.lowrankk(), pc.globalm(), pc.globaln(),
+                                       pc.input_file_name(),
+                                       pc.output_file_name() + "_w",
+                                       pc.output_file_name() + "_h", 
+                                       pc.iterations());
+
+#else
+        NMFDriver<AOADMMNMF<MAT > >(pc.lowrankk(), pc.globalm(), pc.globaln(),
+                                       pc.input_file_name(),
+                                       pc.output_file_name() + "_w",
+                                       pc.output_file_name() + "_h", 
+                                       pc.iterations());
+#endif        
         break;
     }
 }

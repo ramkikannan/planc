@@ -42,7 +42,7 @@ class AUNTF {
     const algotype m_updalgo;
     LUC *m_luc;
     planc::Tensor *lowranktensor;
-    KobyDimensionTree *kdt;
+    // KobyDimensionTree *kdt;
     bool m_enable_dim_tree;
 
   public:
