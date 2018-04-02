@@ -1,0 +1,340 @@
+\section{Experiments}
+\label{sec:experiment}
+\newcommand{\NLS}{LUC }
+
+%In this section, we describe our implementation of \distspnmf\  and evaluate its performance.
+%We identify two popular real world data sets to experiment with dimensions that span to tens of millions.  with \distspnmf\. 
+%We compare the performance and exploring scaling behavior of \distspnmf\ against \mpifaun. 
+%The \mpifaun code for conducting the experiments can be downloaded from \url{https://github.com/ramkikannan/nmflibrary}. 
+
+In this section, we compare our algorithm \distspnmf against \mpifaun, and compare its parallel performance on two big sparse matrices formed from real world datasets.
+We analyze and compare the computation and communication timings of these algorithms on a smaller cluster, then test the scalability limits of our method on a large supercomputing environment.
+
+\subsection{Experimental Setup}
+
+\subsubsection{Datasets}\label{sec:datasets}
+
+We use two datasets from Flickr.com and Delicious.com that involves images tagged with different labels by users.
+The rows of the matrix correspond to different images, whereas the columns of the matrix represent different tags. The value of each nonzero $a_{i,j} \in \Am$ indicates the number of unique users that tagged the image $i$ with the tag $j$.
+Flickr and Delicious matrices are of size 28Mx1.6M and 17Mx2.5M, and have 112M and 72M nonzero elements, respectively.
+The current implementation of \mpifaun can only operate when $R$ and $C$ can divide $m$ and $n$, hence we trimmed the matrices slightly.
+
+\subsubsection{Implementation Platform}
+We conducted our experiments on two different parallel computing platforms.
+The first platform is the ``Rhea'' cluster at the Oak Ridge Leadership Computing Facility (OLCF), which is a commodity-type Linux cluster with a total of 512 nodes and a 4X FDR Infiniband interconnect.
+Each node contains dual-socket 8-core Intel Sandy Bridge-EP processors operating at 2GHz clock frequency and 128 GB of memory.
+Each socket has a shared 20MB L3 cache, and each core has a private 256K L2 cache. 
+There, we ran our experiments up to 3072 cores, which is the maximum allowed in the cluster.
+The second platform is an IBM BlueGene/Q supercomputer consisting of 6 racks each having 16384 cores.
+Each compute node has 16GB of memory and single socket 16-core PowerPC A2 processor at 1.6GHz clock frequency with 16KB of L1 cache per core, and 32MB shared L2 cache.
+We ran both algorithms using 16 MPI ranks per node, and set $P_c = 16$ in all partitionings.
+
+Our code for local matrix operations is developed using the matrix library Armadillo \cite{sanderson2010}. 
+We use BLAS and LAPACK for dense matrix operations by linking Armadillo with Intel MKL, OpenBLAS~\cite{xianyi2015}, or any other BLAS and LAPACK implementation.
+Both codes are compiled using the default GNU C++ Compiler (g++ (GCC) 5.3.0) and MPI library (Open MPI 1.8.4) on RHEA, and Clang compiler~(3.5.0) with IBM MPI library on BlueGene/Q.
+
+\subsubsection{Algorithms}
+
+In our experiments, we considered the following algorithms and partitionings:
+\begin{itemize}
+	\item \unp: \mpifaun Algorithm \cite{KBP16,KBP16MPIFAUN} with uniform natural  partition~(\unp) where each process holds an input matrix of size $m/P_r \times n/P_c$. 
+	\item \urp: The partitioning strategy in \unp\ could result in a significant computational load imbalance in with a skewed nonzero distribution of $\Am$. We alleviate this by randomly permuting the rows and columns of the matrix before executing \mpifaun, and call this scheme $\urp$.
+	\item \cpp: \distspnmf (\cref{alg:distnmf}) with checkerboard hypergraph partitioning explained in \cref{sec:cp1d}.
+	\item \crp: \distspnmf (\cref{alg:distnmf}) with randomized checkerboard partioning explained in \cref{sec:cp1d}.
+	
+\end{itemize}
+
+%The Figure \ref{fig:stackexchangerr} shows the comparison of these algorithms on the stack exchange dataset explained in Section \ref{sec:datasets}. 
+\subsection {Strong Scaling}
+
+In \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} we show the speedup results of all four instances on the Rhea cluster using up to 3072 MPI ranks/cores on Flickr data.
+The speedup values are with respect to slowest runtime among all four instances using 16 cores~(single node).
+We observe in \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} that all algorithms scale up to 1536 cores, yet \mpifaun instances achieve this with significantly lower parallel efficiency.
+This mostly is due to higher communication costs involved in the all-to-all communication scheme for both instances.
+We also realize that \urp significantly improves the runtime with respect to \unp, meaning that \unp indeed causes load imbalance in partitioning nonzeros of $\Am$.
+At 3072 processes, both \urp and \unp lose scalability and slow down, whereas \cpp and \crp scale to 3072 processors.
+One point to note is that for $k=16$, \cpp is considerably slower than \crp, whereas for $k=48$, \cpp starts to get faster than \crp.
+The former result is due to that \cpp typically causes more imbalance in factor matrix rows and the input matrix nonzeros, whereas in the latter result, the size of each communication unit is tripled; therefore, the reduction in the communication cost using \cpp begins to compensate for the performance loss due to load imbalance.
+
+Similarly, in \cref{fig:delicious-speedup-16,fig:delicious-speedup-48} we provide the same results for the Delicious matrix.
+We observe a similar trend in the comparisons of different methods, except that \urp and \unp scale even worse in this case.
+Our algorithm also loses scalability after 1536 processes, and similarly to the previous case \cpp starts slower than \crp due to load imbalance, and catches up for $k = 48$.
+These two test cases clearly show that employing a point-to-point communication with good partitionings is essential for obtaining high performance inNMF algorithm.
+
+To better test the scalability limit of our algorithms, we ran them on an IBM BlueGene/Q supercomputer up to 32768 processors using the same two matrices.
+The results of these two experiments are provided in \cref{fig:flickr-speedup-bgq,fig:delicious-speedup-bgq}.
+Our algorithm graciously scales up to 16384 cores in all four instances, and \cpp manages to slightly improve the runtime using 32768 cores on Flickr, while all other slowing down using 32768 ranks.
+Again, \cpp is slower than \crp using lower number of processors as the communication cost is negligible in these instances, and \cpp introduces worse load balance than \crp.
+However, using 32768 processors \cpp manages to outrun \crp by incurring less communication.
+
+%%%%%%%%%%% Strong scaling flickr %%%%%%%%
+\begin{figure}
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\renewcommand{\minvalue}{291.82}
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/flickr-speedup16.dat}
+\speedup
+\end{tikzpicture}
+\subcaption{Flickr dataset with low rank $k=16$ on Rhea}
+\label{fig:flickr-speedup-16}
+\end{subfigure}
+
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\renewcommand{\minvalue}{1513.73}
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/flickr-speedup48.dat}
+\speedup
+\end{tikzpicture}
+\subcaption{Flickr dataset low rank $k=48$ on Rhea}
+\label{fig:flickr-speedup-48}
+\end{subfigure}
+
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\bgqtrue
+\renewcommand{\minvalue}{186.1}
+\renewcommand{\numiterations}{10}
+\renewcommand{\datafile}{data/flickr-speedup-bgq.dat}
+\speedup
+\end{tikzpicture}
+\subcaption{Flickr dataset low rank $k=48$ on Bluegene/Q}
+\label{fig:flickr-speedup-bgq}
+\end{subfigure}
+
+%\begin{subfigure}[t]{0.5\textwidth}
+%\begin{tikzpicture}
+%\bgqtrue
+%\renewcommand{\minvalue}{137.1}
+%\renewcommand{\numiterations}{10}
+%\renewcommand{\datafile}{data/stackoverflow-speedup-bgq.dat}
+%\speedup
+%\end{tikzpicture}
+%\subcaption{Stackoverflow dataset Low Rank $k=48$ on Bluegene/Q}
+%\end{subfigure}
+
+\caption{Strong scaling on Flickr dataset}
+\label{fig:details}
+\end{figure}
+
+%%%%%%%%%%% Strong scaling delicious %%%%%%%%
+
+\begin{figure}
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\renewcommand{\minvalue}{400.8}
+\renewcommand{\datafile}{data/delicious-speedup16.dat}
+\speedup
+\end{tikzpicture}
+\subcaption{Delicious dataset with low rank $k=16$ on Rhea}
+\label{fig:delicious-speedup-16}
+\end{subfigure}
+
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\renewcommand{\minvalue}{1423.05}
+\renewcommand{\datafile}{data/delicious-speedup48.dat}
+\speedup
+\end{tikzpicture}
+\subcaption{Delicious dataset low rank $k=48$ on Rhea}
+\label{fig:delicious-speedup-48}
+\end{subfigure}
+
+%\begin{subfigure}[t]{0.5\textwidth}
+%\begin{tikzpicture}
+%\bgqtrue
+%\renewcommand{\minvalue}{186.1}
+%\renewcommand{\numiterations}{10}
+%\renewcommand{\datafile}{data/delicious-speedup-bgq.dat}
+%\speedup
+%\end{tikzpicture}
+%\subcaption{Flickr dataset Low Rank $k=48$ on Bluegene/Q}
+%\end{subfigure}
+%
+
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\bgqtrue
+\renewcommand{\minvalue}{186.1}
+\renewcommand{\numiterations}{10}
+\renewcommand{\datafile}{data/delicious-speedup-bgq.dat}
+\speedup
+\end{tikzpicture}
+\subcaption{Delicious dataset low rank $k=48$ on Bluegene/Q}
+\label{fig:delicious-speedup-bgq}
+\end{subfigure}
+
+\caption{Strong scaling on Delicious dataset}
+\label{fig:details}
+\end{figure}
+
+\subsection{Time Breakdown Per Iteration}\label{sec:perf-breakdown}
+
+In this section we provide the time spent on each individual operation type and communication within an NMF iteration.
+We report the averages over 30 iterations on Rhea, and 10 iterations on BlueGene/Q for each of four runs.
+As provided in \cref{alg:distnmf} there are three types computations and two types of communications within an NMF iteration, and we present timings for these steps with the following labels:
+\begin{itemize}
+	\item \textbf{Gram}: Computing the local contribution to the Gram matrix, and performing an \textsc{All-Reduce} to gather the final result.
+	\item \textbf{MM}: Computing the sparse matrix-dense-matrix multiplication using $\Amp$ and one of the factor matrices.
+	\item \textbf{\NLS}: Local NNLS computation to compute the final value of the factor matrix.
+	\item \textbf{Comm}: Total expand and fold communication time in the case of $\crp$ and $\cpp$,  and the total time spent on \textsc{All-Gather} and \textsc{Reduce-Scatter} steps for $\unp$ and $\urp$.
+	%\item \textbf{All-Gather}, to compute the global matrix multiplication;
+	%\item \textbf{Reduce-Scatter}, to compute the global matrix multiplication;
+	%\item \textbf{All-Reduce}, to compute the global Gram matrix.
+\end{itemize}
+In our results, we do not distinguish the costs of these tasks for $\WW$ and $\HH$ separately; we instead report their sum.
+
+We report the time breakdown for Flickr and Delicious datasets in \cref{fig:flickrdetails}, \cref{fig:deliciousdetails} for Rhea and \cref{fig:bgqdetailsk48} for BlueGene/Q.
+For each cluster and data set, we show the timings for the smallest and the largest number of processors used.
+Our objective in this experiment is to better analyze the speedup results and by comparing the computational and communication costs of different communication schemes and partitionings.
+
+
+\paragraph{Flickr on Rhea:} We observe in \cref{fig:flickrdetails} that in one node configuration with $p=16$, the \unp and \urp\  performs similar to \crp\ and \cpp\ in terms of computation, and the communication time takes a small portion of the execution in all instances.
+As the number of processes increases to 3072, the communication time of \crp\ and \cpp\ stays reasonably low, whereas in the case of \unp\  and \urp, we clearly observe that the communication cost dominates the execution time using both low rank values $k=16$ and $k=48$.
+Randomization offers load balance to \urp\ which gives it a slight edge over \unp, yet both instances suffer from the high communication cost associated with the all-to-all communication strategy, which explains the drop in the scalability results.
+
+\paragraph{Delicious on Rhea:} In \cref{fig:deliciousdetails}, we see that \crp\ and \cpp\ perform better than \unp\ even in single node configuration. \cref{fig:deliciousdetails} shows that \unp\ takes twice more than \crp\ and \cpp\ in the sparse matrix multiplication step, highlighting the skewed distribution of the matrix nonzeros, which is alleviated to a certain extend by randomly permuting the matrix.
+Similar to Flickr data, using 3072 processors, \crp\ and \cpp\ perform significantly better than \unp\  and \urp, whose iteration times are dominated by the communication. 
+
+\paragraph{Flickr and Delicious on BlueGene/Q:}
+In \cref{fig:bgqdetailsk48} we give the timings for computation and communication steps using our methods with two different partitionings of matrices on BlueGene/Q.
+We observe that using 512 processors, communication cost is negligible, and \crp beats \cpp thanks to better load balance.
+Using 16384 processors, however, on Flickr matrix \cpp gets faster than \crp due to significant reduction in the communication volume.
+On Delicious matrix, \cpp similarly better reduces the communication, yet this is outweighed by the load imbalance in matrix multiplications.
+
+%%%%%%%%%%% Flickr Details %%%%%%%%
+
+\renewcommand{\minvalue}{1}
+\begin{figure}
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabeltrue
+\legendfalse
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/flickr-details16-16.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=16$, Low Rank $k=16$}
+\end{subfigure}
+~
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabelfalse
+\legendtrue
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/flickr-details3072-16.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=3072$, Low Rank $k=16$}
+\end{subfigure}
+
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabeltrue
+\legendfalse
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/flickr-details16-48.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=16$, Low Rank $k=48$}
+\end{subfigure}
+~
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabelfalse
+\legendtrue
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/flickr-details3072-48.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=3072$, Low Rank $k=48$}
+\end{subfigure}
+
+
+\caption{Flickr dataset Time Split up for Low Rank $k=16, 48$ on Rhea}
+\label{fig:flickrdetails}
+\end{figure}
+
+%%%%%%%%%%% Delicious Details %%%%%%%%
+
+\renewcommand{\minvalue}{1}
+\begin{figure}
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabeltrue
+\legendfalse
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/delicious-details16-16.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=16$, Low rank $k=16$}
+\end{subfigure}
+~
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabelfalse
+\legendtrue
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/delicious-details3072-16.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=3072$, Low rank $k=16$}
+\end{subfigure}
+
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabeltrue
+\legendfalse
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/delicious-details16-48.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=16$, Low Rank $k=48$}
+\end{subfigure}
+~
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabelfalse
+\legendtrue
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/delicious-details3072-48.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=3072$, Low Rank $k=48$}
+\end{subfigure}
+
+
+\caption{Delicious dataset Time Split up for Low Rank $k=16, 48$ on Rhea}
+\label{fig:deliciousdetails}
+\end{figure}
+
+
+%%%%%%%%%%% Flickr & Delicious BGQ Details for k=48 %%%%%%%%
+\begin{figure}
+\begin{subfigure}[t]{0.25\textwidth}
+\renewcommand{\numiterations}{10}
+\begin{tikzpicture}
+\ylabeltrue
+\renewcommand{\numiterations}{10}
+\renewcommand{\datafile}{data/flickr-details-bgq-512.dat}
+\makeplotnew
+\end{tikzpicture}
+\subcaption{BlueGene/Q $p=512$}
+\end{subfigure}
+~
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabelfalse
+\renewcommand{\numiterations}{10}
+\renewcommand{\datafile}{data/flickr-details-bgq-16384.dat}
+\makeplotnew
+\end{tikzpicture}
+\subcaption{BlueGene/Q $p=16384$}
+\end{subfigure}
+
+\caption{Time Split up of Flickr and Delicious for Low Rank $k=48$ on Bluegene/Q. The left two bars are for the Flickr matrix, and the right two bars are for the Delicious matrix}
+\label{fig:bgqdetailsk48}
+\end{figure}
+
+

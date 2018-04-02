@@ -1,0 +1,5 @@
+algo gram mm nnls allgather reducescatter
+cp 2.97 6.66 6.98 0.78 0.93
+cr 2.28 6.19 5.62 1.63 1.49
+un 2.08 32.07 4.85 4.08 5.29
+ur 2.09 7.5 5.06 4.17 5.32

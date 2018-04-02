@@ -1,0 +1,141 @@
+% macros for plotting
+\newcommand{\datafile}{}
+\newcommand{\numiterations}{30}
+\newcommand{\minvalue}{1}
+%\newcommand{\xticklabels}{\unp, \urp, \crp, \cpp}
+
+\newif \ifylabel
+\newif \iflegend
+\newif \ifbgq
+
+\newcommand{\setcolors}{
+\pgfplotsset{cycle list={
+	red, fill=red \\ 
+	blue, fill=blue \\ 
+	green, fill=green \\ 
+	red, pattern=crosshatch, pattern color=red \\
+	blue, pattern=crosshatch, pattern color=blue \\
+	green, pattern=crosshatch, pattern color=green \\
+}};
+}
+% set options for grouped bar plot
+\newcommand{\plotoptions}{
+	ybar stacked,
+	reverse legend,
+	bar width=8pt,
+	width=2in, height=2in,
+	\ifylabel
+	     ylabel={Time (seconds)}, 
+	     y label style={yshift=-.5cm},
+	\fi
+         ymin=0,
+	%xticklabels/.expanded={\unp, \urp, \crp, \cnp}, 
+	symbolic x coords={un, ur, cr, cp},
+	xtick=data,
+	xticklabel style={xshift=.15cm,rotate=45,anchor=east},
+	%xlabel={Partitioning Schemes},
+	xlabel style={yshift=-0.5cm},
+	legend cell align=left,
+	legend style={nodes={scale=0.7, transform shape}, draw=none,row sep=-0.1cm},
+	%legend style={at={(1,.5)},anchor=west}
+	legend pos=north east
+}
+
+\newcommand{\plotoptionsnew}{
+	ybar stacked,
+	reverse legend,
+	bar width=8pt,
+	width=2in, height=2in,
+	\ifylabel
+	     ylabel={Time (seconds)}, 
+	     y label style={yshift=-.5cm},
+	\fi
+         ymin=0,
+	symbolic x coords={cp-fl,cr-fl,cp-dl,cr-dl},
+	xtick=data,
+	xticklabel style={xshift=.15cm,rotate=45,anchor=east},	
+	xlabel style={yshift=-0.5cm},
+	legend cell align=left,
+	legend style={nodes={scale=0.7, transform shape}, draw=none,row sep=-0.1cm},
+	%legend style={at={(1,.5)},anchor=west}
+	legend pos=north west
+}
+
+\newcommand{\speedupoptions}{
+xlabel=Processors, ylabel=Speed-up,width=3.5in, height=2.0in, 
+y label style={yshift=-.5cm}, 
+legend pos=north west, legend style={draw=none,row sep=-0.1cm},	
+xtick=data, 
+\ifbgq
+xticklabels={256, 512, 1024, 2048, 4096, 8192, 16384, 32768},
+symbolic x coords={256, 512, 1024, 2048, 4096, 8192, 16384, 32768}
+\else
+xticklabels={16, 48, 96, 192, 384, 768, 1536, 3072},
+symbolic x coords={16, 48, 96, 192, 384, 768, 1536, 3072}
+\fi
+}
+
+% grouped bar plot command
+\newcommand{\makeplot}{
+\begin{axis}[\plotoptions, xticklabels/.expand once={\cpp, \crp, \unp, \urp}]
+	\setcolors
+	\addplot table[x=algo, y expr=(\thisrow{mm}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{nnls}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{gram}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
+	%\addplot table[x=algo, y expr=(\thisrow{reducescatter}/(\minvalue*\numiterations))] {\datafile};
+	\iflegend
+	    %\legend{MM, \NLS, Gram, All-Gather, Reduce-Scatter};
+	    \legend{MM, \NLS, Gram, Comm};
+	\fi
+\end{axis}
+}
+
+\newcommand{\makeplotnew}{
+\begin{axis}[\plotoptionsnew, xticklabels/.expand once={\cpp,\crp,\cpp,\crp},
+xlabel/.expand once={Flickr \quad\quad\quad Delicious} ]
+	\setcolors
+	\addplot table[x=algo, y expr=(\thisrow{mm}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{nnls}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{gram}/(\minvalue*\numiterations))] {\datafile};
+	%\addplot table[x=algo, y expr=(\thisrow{err}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{comm}/(\minvalue*\numiterations))] {\datafile};
+	\iflegend
+	    %\legend{MM, \NLS, Gram, Err, Comm};
+	    \legend{MM, \NLS, Gram, Comm};
+	\fi
+\end{axis}
+}
+
+% labels for bar groups (manually positioned)
+\newcommand{\labels}{
+\node [align=center,text width=3cm] at (1.25cm, -.95cm){\cp};
+\node [align=center,text width=3cm] at (3cm, -0.95cm) {\cr};
+\node [align=center,text width=3cm] at (4.6cm, -0.95cm){\un};
+\node [align=center,text width=3cm] at (6.3cm, -0.95cm){\ur};
+}
+
+\newcommand{\speedup}{
+\begin{axis}[\speedupoptions]
+\addplot [red,very thick, mark=triangle] table [x={p}, y expr=(\minvalue/\thisrow{cr})] {\datafile};
+\addplot [green,very thick, mark=x] table [x={p}, y expr=(\minvalue/\thisrow{cp})] {\datafile};
+\ifbgq
+\else
+\addplot [very thick, mark=diamond] table [x={p}, y expr=(\minvalue/\thisrow{ur})] {\datafile};
+\addplot [blue,very thick, mark=*] table [x={p}, y expr=(\minvalue/\thisrow{un})] {\datafile};
+\fi
+\legend{\crp, \cpp, \urp, \unp}
+\end{axis}
+}
+
+\newcommand{\numkblocksweep}{
+
+\begin{axis}[xlabel=Number of $k$ blocks, 
+	ylabel=Sparse-Dense MM (in Secs),
+	%xticklabels={1,2,3,4,6},
+	y label style={yshift=-.25cm},
+	width=3in, height=2.4in]
+\addplot[red,very thick] table [x={numkblocks}, y expr=(\thisrow{mm}/(\minvalue*\numiterations))] {\datafile}; \label{plot_one}
+\end{axis}
+}
+
