@@ -10,6 +10,22 @@ set(NMFLIB_USE_LAPACK           false)
 set(NMFLIB_USE_BLAS             false)
 set(NMFLIB_USE_ATLAS            false)
 
+OPTION(CMAKE_IGNORE_MKL "Build Ignoring MKL" ON)
+
+#to build sparse comment or uncomment this line.
+OPTION(CMAKE_BUILD_SPARSE "Build Sparse" OFF)
+if(CMAKE_BUILD_SPARSE)
+  add_definitions(-DBUILD_SPARSE=1)
+endif()
+
+OPTION(CMAKE_WITH_BARRIER_TIMING "Barrier placed to collect time" ON)
+if(CMAKE_WITH_BARRIER_TIMING)
+  add_definitions(-D__WITH__BARRIER__TIMING__=1)
+endif()
+
+#while exception get the stack trace
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -rdynamic -g3 -O0 ")
+
 set(CMAKE_MODULE_PATH ${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/)
 message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}" )
 
@@ -50,7 +66,6 @@ if(MKL_FOUND)
   set(MKL_LIBRARIES "-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_rt -lmkl_intel_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl") 
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MKL_LIBRARIES})
 else()
-
   if(OpenBLAS_FOUND AND BLAS_FOUND)
     message(STATUS "")
     message(STATUS "*** WARNING: found both OpenBLAS and BLAS. BLAS will not be used")
@@ -77,6 +92,7 @@ else()
 
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 if(DEFINED CMAKE_CXX_COMPILER_ID AND DEFINED CMAKE_CXX_COMPILER_VERSION)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 4.8.3)
     set(NMFLIB_USE_EXTERN_CXX11_RNG true)
@@ -88,11 +104,3 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0 -DMKL_ILP64 -m64" CACHE STRING "CXX_DFLAGS_DEBUG" FORCE )
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DMKL_ILP64 -m64" CACHE STRING "CXX_FLAGS_RELEASE" FORCE )
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-as-needed")
-
-#BOOST package needed for activeset NNLS
-#set(BOOST false)
-#As advised by Wlliam Renaud note dated 4/22. There is an issue on Rhea
-#in which the system boost is found before the version in modules.
-#Ignore system boost and use module system boost
-#set(Boost_NO_BOOST_CMAKE TRUE)
-#find_package(Boost REQUIRED)

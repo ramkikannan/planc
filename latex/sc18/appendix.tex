@@ -1,0 +1,48 @@
+% !TEX root = paper.tex
+
+\appendix
+\label{sec:appendix}
+
+\begin{algorithm}
+\caption{$(\CPl,\epsilon) = \text{Par-NNCP}(\TA,R)$}
+\label{alg:Par-NNCP-long}
+\begin{algorithmic}[1]
+\Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $R$ is rank of approximation
+\State \Comment{Initialize data}
+\State $a = \text{Norm-Squared}(\TA_{\V{p}})$
+\State $\alpha = \text{All-Reduce}(a,\textsc{All-Procs})$
+\State $\epsilon = $ \texttt{Inf}
+\For{$n=2$ to $N$}
+	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times R$ 
+	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
+	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
+\EndFor
+\State \Comment{Compute NNCP approximation}
+\While{$\epsilon > $ \texttt{tol}}
+	\State \Comment{Perform outer iteration of BCD}
+	\For{$n=1$ to $N$}
+	\State \Comment{Compute new factor matrix in $n$th mode}
+	\State $\M[\overline]{M} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
+	\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M[\overline]{M},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
+	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+	\State $\Mn[\hat]{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{n},\Mn{M}{n}_{\V{p}})$
+	\State \Comment{Normalize columns}
+	\State $\V[\overline]{\lambda} = \text{Local-Col-Norms}(\Mn[\hat]{H}{n}_{\V{p}})$
+	\State $\V{\lambda} = \text{All-Reduce}(\V[\overline]{\lambda},\textsc{All-Procs})$
+	\State $\Mn{H}{n}_{\V{p}} = \text{Local-Col-Scale}(\Mn[\hat]{H}{n}_{\V{p}},\V{\lambda})$
+	\State \Comment{Organize data for later modes}
+	\State $\M[\overline]{G} = {\Mn{H}{n}_{\V{p}}}^\Tra\Mn{H}{n}_{\V{p}}$
+	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
+	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
+	\EndFor
+	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
+	\State $\overline{\beta} = \text{Inner-Product}(\Mn{M}{N}_{\V{p}},\Mn[\hat]{H}{N}_{\V{p}})$
+	\State $\beta = \text{All-Reduce}(\overline{\beta},\textsc{All-Procs})$
+	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
+	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
+\EndWhile
+\Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
+\Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times R$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
+\end{algorithmic}
+\end{algorithm}

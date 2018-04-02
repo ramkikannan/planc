@@ -23,6 +23,7 @@ static ULONG powersof10[16] = {
 };
 
 static std::stack<clock_t> tictoc_stack;
+static std::stack<double> tictoc_stack_omp_clock;
 
 inline void tic() {
     tictoc_stack.push(clock());
@@ -36,14 +37,14 @@ inline double toc() {
 }
 
 template <class T> void fixNumericalError(T *X, const double prec = EPSILON_1EMINUS16) {
-    (*X).for_each([&] (typename T::elem_type& val) {
+    (*X).for_each([&] (typename T::elem_type & val) {
         val = (val < prec) ? prec : val;
     } );
 }
 
 template <class T> void fixDecimalPlaces(T *X,
-                         const int places = NUMBEROF_DECIMAL_PLACES) {
-    (*X).for_each([&] (typename T::elem_type& val) {
+        const int places = NUMBEROF_DECIMAL_PLACES) {
+    (*X).for_each([&] (typename T::elem_type & val) {
         val = floorf(val * powersof10[places]) / powersof10[places];
     } );
 }
@@ -136,6 +137,22 @@ void printVector(const std::vector<T> &x) {
         INFO << x[i] << ' ';
     }
     INFO << std::endl;
+}
+
+std::vector<std::vector<size_t> > cartesian_product(
+    const std::vector<std::vector<size_t>>& v) {
+    std::vector<std::vector<size_t>> s = {{}};
+    for (auto& u : v) {
+        std::vector<std::vector<size_t>> r;
+        for (auto y : u) {
+            for (auto& x : s) {
+                r.push_back(x);
+                r.back().push_back(y);
+            }
+        }
+        s.swap(r);
+    }
+    return s;
 }
 
 /*

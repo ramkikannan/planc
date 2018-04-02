@@ -1,0 +1,22 @@
+#In this experiment the NF and DF are NF and DF respectively.
+#we have to mark the algorithm as NF and DF because of 
+#plots.tex that will look for it in the case of Liavas baseline
+alg p total
+DF 1 4.06555335
+L 1 8.992
+NF 1 7.37307533
+DF 4 1.07797679 
+NF 4 2.17713718
+L 4 1.81
+DF 16 0.314
+NF 16 0.5825
+L 16 0.731
+DF 64 0.1069
+NF 64 0.182
+L 64 0.21
+DF 256 0.0464 
+NF 256 0.0664
+L 256 0.108
+DF 1024 0.0238
+NF 1024 0.0289
+L 1024 0.0543

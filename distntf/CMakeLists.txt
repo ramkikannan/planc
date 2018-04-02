@@ -6,48 +6,24 @@ set(ARMA_USE_WRAPPER true)
 
 # the settings below will be automatically configured by the rest of this script
 
-project(DISTNMF CXX)
-set(NMFLIB_COMMON ${DISTNMF_SOURCE_DIR}/../common)
-set(NNLS_SRC ${DISTNMF_SOURCE_DIR}/../nnls/)
-message(STATUS "DISTNMF_SOURCE_DIR =  ${DISTNMF_SOURCE_DIR}")
+project(DISTNTF CXX)
+set(NMFLIB_COMMON ${DISTNTF_SOURCE_DIR}/../common)
+set(NNLS_SRC ${DISTNTF_SOURCE_DIR}/../nnls/)
+message(STATUS "DISTNTF_SOURCE_DIR =  ${DISTNTF_SOURCE_DIR}")
 message(STATUS "NMFLIB_COMMON =  ${NMFLIB_COMMON}")
 
 include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
-#BOOST package needed for activeset NNLS
-#set(BOOST false)
-#As advised by Wlliam Renaud note dated 4/22. There is an issue on Rhea
-#in which the system boost is found before the version in modules.
-#Ignore system boost and use module system boost
-#set(Boost_NO_BOOST_CMAKE TRUE)
-#find_package(Boost REQUIRED)
+add_definitions(-DMPI_DISTNTF=1)
 
 find_package(MPI REQUIRED)
 
 message(STATUS "   Boost_FOUND = ${Boost_FOUND}"   )
 message(STATUS " MPI_CXX_FOUND = ${MPI_CXX_FOUND}" )
 
-if(MKL_FOUND)
-  add_definitions(-DMKL_FOUND=1)
-  set(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
-endif()
-
 if(MPI_CXX_FOUND)
   set(NMFLIB_LIBS ${NMFLIB_LIBS} ${MPI_CXX_LIBRARIES})
 endif()
-
-#to build sparse comment or uncomment this line.
-OPTION(CMAKE_BUILD_SPARSE "Build Sparse" OFF)
-if(CMAKE_BUILD_SPARSE)
-  add_definitions(-DBUILD_SPARSE=1)
-endif()
-
-OPTION(CMAKE_WITH_BARRIER_TIMING "Barrier placed to collect time" ON)
-if(CMAKE_WITH_BARRIER_TIMING)
-  add_definitions(-D__WITH__BARRIER__TIMING__=1)
-endif()
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0 -rdynamic")
 
 message(STATUS "CMAKE_CXX_FLAGS           = ${CMAKE_CXX_FLAGS}"          )
 message(STATUS "CMAKE_SHARED_LINKER_FLAGS = ${CMAKE_SHARED_LINKER_FLAGS}")
@@ -61,18 +37,18 @@ message(STATUS "")
 include_directories(
   ${ARMADILLO_INCLUDE_DIR}
   ${ARMADILLO_INCLUDE_DIRS}
-  ${DISTNMF_SOURCE_DIR}
+  ${DISTNTF_SOURCE_DIR}
+  ${DISTNTF_SOURCE_DIR}/../
   ${NMFLIB_COMMON}
   ${NNLS_SRC}
-  if(MPI_CXX_FOUND)
-    ${MPI_CXX_INCLUDE_PATH}
-  endif()
+  ${MPI_CXX_INCLUDE_PATH}
   ${Boost_INCLUDE_DIR}
   ${MKL_INCLUDE_DIR}
+  ${OPENBLAS_INCLUDE_DIR}
 )
 
-add_executable(distnmf
+add_executable(distntf
   distntf.cpp
 )
 
-target_link_libraries(distnmf ${NMFLIB_LIBS})
+target_link_libraries(distntf ${NMFLIB_LIBS})

@@ -1,0 +1,174 @@
+% !TEX root = paper.tex
+
+\section{Algorithm} 
+\label{sec:algorithm}
+
+\subsection{Dimension Trees}
+\label{sec:dimtrees}
+
+An important optimization of the CP-ALS algorithm is to re-use temporary values across inner iterations \cite{PTC13a,KU16-TR,LCPSV17,Kaya17}.
+To illustrate the idea, consider a 3-way tensor $\T{X}$ approximated by $\dsquare{\M{U},\M{V},\M{W}}$ and the two MTTKRP computations $\underline{\Mz{X}{1}(\M{W}}\Khat\M{V})$ and $\underline{\Mz{X}{2}(\M{W}}\Khat\M{U})$ used to update factor matrices $\M{U}$ and $\M{V}$, respectively.
+The underlined parts of the expressions correspond to the shared dependence of the outputs on the tensor $\T{X}$ and the third factor matrix $\M{W}$.
+Indeed, a temporary quantity, which we refer to as a \emph{partial MTTKRP}, can be computed and re-used across the two MTTKRP expressions.
+We refer to the computation that combines the temporary quantity with the other factor matrix to complete the MTTKRP computation as a multi-tensor-times-vector or \emph{multi-TTV}, as it consists of multiple operations that multiply a tensor times a set of vectors, each corresponding to a different mode.
+This terminology was used in \cite{HBJT17-TR}.
+
+For a larger number of modes, a more general approach can organize the temporary quantities to be used over a maximal number of MTTKRPs.
+The general approach can yield significant benefit, decreasing the computation by a factor of approximately $N/2$ for dense $N$-way tensors.
+The idea is introduced in \cite{PTC13a}, but we adopt the terminology and notation of \emph{dimension trees} used in \cite{KU16-TR,Kaya17}.
+In this notation, the root node is labeled $\{1,\dots,N\}$ and corresponds to the original tensor, a leaf is labeled $\{n\}$ and corresponds to the $n$th MTTKRP result, and an internal node is labeled by a set of modes $\{i,\dots,j\}$ and corresponds to a temporary tensor whose values contribute to the MTTKRP results of modes $i,\dots,j$.
+
+\Cref{fig:DT} illustrates a dimension tree for the case $N=5$.
+Various shapes of binary trees are possible \cite{PTC13a,Kaya17}.
+For dense tensors, the computational cost is dominated by the root's branches, which correspond to partial MTTKRP computations.
+All other edges in a tree correspond to multi-TTVs and are typically much cheaper.
+
+\begin{figure}
+\input{fig/dim_tree.tex}
+\caption{Dimension tree example for $N=5$. 
+The data associated with the root node is the original tensor, the data associated with the leaf nodes are MTTKRP results, and the data associated with internal nodes are temporary tensors.  
+Edges labeled with PM correspond to partial MTTKRP computations, and edges labeled with mTTV correspond to multi-TTV computations.}
+\label{fig:DT}
+\end{figure}
+
+\subsection{Relative Error Computation}
+\label{sec:error}
+
+Given a model $\T{M}=\CP$, we compute the relative error $\|\TA - \T{M}\|/\|\TA\|$ efficiently by using the identity $\|\TA-\T{M}\|^2 = \|\TA\|^2 - 2\langle \TA, \T{M} \rangle + \|\T{M}\|^2.$
+The quantity $\|\TA\|$ is fixed, and the other two terms can be computed cheaply given the temporary matrices computed during the course of the BCD algorithm.
+The second term can be computed using the identity $\langle \TA, \T{M} \rangle = \langle \Mn{M}{N}, \Mn{H}{N} \rangle$, where $\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$ is the MTTKRP result in the $N$th mode.
+The third term can be computed using the identity $\|\T{M}\|^2 = \V{1}^\Tra(\Mn{S}{N} \Hada \MnTra{H}{N} \Mn{H}{N})\V{1}$ where $\Mn{S}{N}=\MnTra{H}{1} \Mn{H}{1} \Hada \cdots \Hada \MnTra{H}{N-1} \Mn{H}{N-1}$.
+Both matrices $\Mn{M}{N}$ and $\Mn{S}{N}$ are computed during the course of the BCD algorithm for updating the factor matrix $\Mn{H}{N}$.
+The extra computation involved in computing the relative error is negligible.
+These identities have been used in previous work \cite{KB09,TensorBox,SK16,LKLHS2017}.
+
+\subsection{Parallel Algorithm}
+
+\subsubsection{Algorithm Overview}
+
+The basic sequential algorithm is given in \Cref{alg:nncp}, and the parallel version is given in \Cref{alg:Par-NNCP-short}.
+We will refer to both the inner iteration, in which one factor matrix is updated (\cref{line:for} to \cref{line:endfor}), and the outer iteration, in which all factor matrices are updated (\cref{line:while} to \cref{line:endwhile}).
+In the parallel algorithm, the processors are organized into a logical multidimensional grid (tensor) with as many modes as the data tensor.
+The communication patterns used in the algorithm are all MPI collectives, including All-Reduce, Reduce-Scatter, and All-Gather.
+The processor communicators (across which the collectives are performed) include the set of all processors and the sets of processors within the same processor slice.
+Processors within a mode-$n$ slice all have the same $n$th coordinate.
+
+The method of enforcing the nonnegativity constraints of the linear least squares solve (or update) generally affects only local computation because each row of a factor matrix can be updated independently.
+In our algorithm, each processor solves the linear problem or computes the update for its subset of rows (see \cref{line:locNLS}). 
+The most expensive (and most complicated) part of the parallel algorithm is the computation of the MTTKRP, which corresponds to \cref{line:locMTTKRP,line:reduce-scatter,line:all-gather}.
+
+The details that are omitted from this presentation of the algorithm include the normalization of each factor matrix after it is computed and the computation of the residual error at the end of an outer iteration.
+The computations do involve both local computation and communication, but their costs are negligible.
+A more detailed pseudocode is given in \Cref{alg:Par-NNCP-long}.
+
+\subsubsection{Data Distribution}
+\label{sec:datadist}
+
+Given a logical processor grid of processors $P_1\times \cdots \times P_N$, we distribute the tensor $\TA$ in a block or Cartesian partition.
+Each processor owns a local tensor of dimensions $(I_1/P_1)\times \cdots \times (I_N/P_N)$, and only one copy of the tensor is stored.
+Locally, the tensor is stored linearly, with entries ordered in a natural mode-descending way that generalizes column-major layout of matrices.
+Given a processor $\V{p}=(\VE{p}{1},\dots,\VE{p}{N})$, we denote its local tensor by $\TA_{\V{p}}$.
+
+Each factor matrix is distributed across processors in a block row partition, so that each processor owns a subset of the rows.
+We use the notation $\Mn{H}{n}_{\V{p}}$, which has dimensions $I_n/P\times R$ to denote the local part of the $n$th factor matrix stored on processor $\V{p}$.
+However, we also make use a redundant distribution of the factor matrices across processors, because all processors in a mode-$n$ processor slice need access to the same entries of $\Mn{H}{n}$ to perform their computations.
+The notation $\Mn{H}{n}_{\VE{p}{n}}$ denotes the $I_n/P_n\times R$ submatrix of $\Mn{H}{n}$ that is redundantly stored on all processors whose $n$th coordinate is $\VE{p}{n}$ (there are $P/P_n$ such processors).
+
+Other matrices involved in the algorithm include $\Mn{M}{n}_{\V{p}}$, which is the result of the MTTKRP computation and has the same distribution scheme as $\Mn{H}{n}_{\V{p}}$, and $\Mn{G}{n}$, which is the $R\times R$ Gram matrix of the factor matrix $\Mn{H}{n}$ and is stored redundantly on all processors.
+
+\subsubsection{Inner Iteration}
+
+The inner iteration is displayed graphically in \Cref{fig:inner} for a 3-way example and an update of the $2$nd factor matrix.
+The main idea is that at the start of the $n$th inner iteration (\cref{fig:inner_a}), all of the data is in place for each processor to perform a local MTTKRP computation.
+This means that all processors in a slice redundantly own the same rows of the corresponding factor matrix (for all modes except $n$).
+After the local MTTKRP is computed (\cref{fig:inner_b}), each processor has computed a contribution to a subset of the rows of the global MTTKRP $\Mn{M}{n}$, but its contribution must be summed up with the contributions of all other processors in its mode-$n$ slice.
+This summation is performed with a Reduce-Scatter collective across the mode-$n$ processor slice that achieves a row-wise partition of the result (in \cref{fig:inner_c}, the light gray shading corresponds to the rows of $\Mn{M}{2}$ to which processor $(1,3,1)$ contributes and the dark gray shading corresponds to the rows it receives as output).
+The output distribution of the Reduce-Scatter is designed so that afterwards, the update of the factor matrix in that mode can be performed row-wise in parallel.
+Along with $\Mn{S}{n}$, which can be computed locally, each processor updates its own rows of the factor matrix given its rows of the MTTKRP result (\cref{fig:inner_d}).
+The remainder of the inner iteration is preparing and distributing the new factor matrix data for future inner iterations, which includes an All-Gather of the newly computed factor matrix $\Mn{H}{n}$ across mode-$n$ processor slices (\cref{fig:inner_e}) and recomputing $\Mn{G}{n}={\Mn{H}{n}}^\Tra\Mn{H}{n}$.
+
+\subsubsection{Analysis}
+
+We will analyze the cost of a single outer iteration.
+While the number of outer iterations is sensitive to the NLS method used, the outer iteration time is generally the same across NLS methods.
+
+\paragraph{\emph{Computation}}
+The local computation occurs at \cref{line:locMTTKRP,line:hadamard,line:locNLS,line:locSYRK}.
+The cost of \cref{line:hadamard} is $O(NR^2)$, the cost of \cref{line:locNLS} is $O(R^3I_n/P)$, which is a loose upper bound for BPP and other methods \cite{KBP16}, and the cost of \cref{line:locSYRK} is $O(R(I_n/P)^2)$.
+The sum of these three costs across all inner iterations is $O(R^2N^2+(R^3/P+R/P^2)\sum I_n)$, which is dominated by the cost of the MTTKRP.
+When using dimension trees to perform the MTTKRP (\cref{line:locMTTKRP}), we compute the cost amortized over all inner iterations.
+In this case, the cost is dominated by the two partial MTTKRP computations (from the root of the tree), which together are $O((R/P) \prod I_n)=O(IR/P)$ and dominate the costs of the multi-TTVs.
+We note that this cost involves the product of all the tensor dimensions, which is why it dominates, and we note that it scales linearly with $P$.
+
+\paragraph{\emph{Communication}}
+The communication within the inner iteration occurs at \cref{line:reduce-scatter,line:all-reduce,line:all-gather}.
+\Cref{line:all-reduce} involves $O(R^2)$ data and a collective across all processors.
+\Cref{line:reduce-scatter,line:all-gather} involve $O(I_nR/P_n)$ data across a subset of $P/P_n$ processors.
+Thus, the All-Reduce dominates the latency cost and the Reduce-Scatter/All-Gather dominate the bandwidth cost, for a total outer iteration communication cost of $O(R\sum I_n/P_n)$ words and $O(N\log P)$ messages.
+If the optimal processor grid can be chosen to minimize communication (assuming $P$ is sufficiently factorable), then the bandwidth cost can achieve a value of $O(RI^{1/N}/P^{1/N})$ by making the local tensors as cubical as possible.
+We note that this cost scales with $P^{1/N}$, which is far from linear scaling.
+However, it is proportional to the geometric mean of the tensor dimensions (on the order of one tensor dimension), which is much less than the computation cost dependence on the product of all dimensions.
+
+\paragraph{\emph{Memory}}
+The algorithm requires extra local memory to run.
+Aside from the memory required to store the local tensor of $O(I/P)$ words and factor matrices of cumulative size $O((R/P)\sum I_n)$, each processor must be able to store a redundant subset of the rows of the factor matrices it needs to perform MTTKRP computations.
+This corresponds to storing $P/P_n$ redundant copies of every factor matrix, which results in a local memory requirement of $O(R \sum I_n/P_n)$ for a general processor grid.
+The processor grid that minimizes communication also minimizes local memory, and the extra memory requirement can be as low as $O(RI^{1/N}/P^{1/N})$.
+
+The dimension tree algorithm also requires extra temporary memory space, but the space required tends to be much smaller than what is required to store the local tensor.
+If the tensor dimensions can be partitioned into two parts with approximately equal geometric means, the extra memory requirement for running a dimension tree is as small as $O(R\sqrt{I}/P)$, which is typically dominated by $O(I/P)$.
+
+\input{fig/Alg_header.tex}
+\begin{figure*}[t]
+\centering
+  \subfloat[Start $n$th iteration with redundant subset of rows of each input matrix. \label{fig:inner_a}]{\input{fig/AlgStart.tex}}  \quad
+  \subfloat[Compute local MTTKRP for contribution to output matrix $\Mn{M}{2}$. \label{fig:inner_b}]{\input{fig/AlgMTTKRP.tex}}  \quad
+  \subfloat[Reduce-Scatter to compute and distribute rows of $\Mn{M}{2}$. \label{fig:inner_c}]{\input{fig/AlgRS.tex}} \quad
+  \subfloat[Compute local NLS update to obtain $\Mn{H}{2}_{\V{p}}$ from $\Mn{M}{2}_{\V{p}}$ (and $\Mn{S}{2}$). \label{fig:inner_d}]{\input{fig/AlgNLS.tex}} \quad
+  \subfloat[All-Gather to collect rows of $\Mn{H}{2}$ needed for later inner iterations. \label{fig:inner_e}]{\input{fig/AlgAG.tex}}
+  \caption{Illustration of 2nd inner iteration of Par-NNCP algorithm for 3-way tensor on a $3\times3\times3$ processor grid, showing data distribution, communication, and computation across steps.  Highlighted areas correspond to processor $(1,3,1)$ and its processor slice with which it communicates.  The column normalization and computation of $\Mn{G}{2}$, which involve communication across all processors, is not shown here.}
+  \label{fig:inner} 
+\end{figure*}
+
+\begin{algorithm}
+\caption{$\CP = \text{Par-NNCP}(\TA,R)$}
+\label{alg:Par-NNCP-short}
+\begin{algorithmic}[1]
+\Require $\TA$ is an $I_1\times \cdots \times I_N$ tensor distributed across a $P_1\times \cdots \times P_N$ grid of $P$ processors, so that $\TA_{\V{p}}$ is $(I_1/P_1)\times \cdots \times (I_N/P_N)$ and is owned by processor $\V{p}=(p_1,\dots,p_N)$, $R$ is rank of approximation
+\For{$n=2$ to $N$}
+	\State Initialize $\Mn{H}{n}_{\V{p}}$ of dimensions $(I_n/P)\times R$ 
+	\State $\M[\overline]{G} = \text{Local-SYRK}(\Mn{H}{n}_{\V{p}})$
+	\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
+	\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
+\EndFor
+\State \Comment{Compute NNCP approximation}
+\While{not converged}
+	\label{line:while}
+	\State \Comment{Perform outer iteration of BCD}
+	\For{$n=1$ to $N$}
+		\label{line:for}
+		\State \Comment{Compute new factor matrix in $n$th mode}
+		\State $\M[\overline]{M} = \text{Local-MTTKRP}(\TA_{p_1\cdots p_N},\{\Mn{H}{i}_{p_i}\},n)$
+			\label{line:locMTTKRP}
+		\State $\Mn{M}{n}_{\V{p}} = \text{Reduce-Scatter}(\M[\overline]{M},\textsc{Proc-Slice}(n,\VE{p}{n}))$ 
+			\label{line:reduce-scatter}
+		\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+			\label{line:hadamard}
+		\State $\Mn{H}{n}_{\V{p}} = \text{Local-NLS-Update}(\Mn{S}{n},\Mn{M}{n}_{\V{p}})$
+			\label{line:locNLS}
+		\State \Comment{Organize data for later modes}
+		\State $\M[\overline]{G} = {\Mn{H}{n}_{\V{p}}}^\Tra\Mn{H}{n}_{\V{p}}$
+			\label{line:locSYRK}
+		\State $\Mn{G}{n} = \text{All-Reduce}(\M[\overline]{G},\textsc{All-Procs})$
+			\label{line:all-reduce}
+		\State $\Mn{H}{n}_{p_n} = \text{All-Gather}(\Mn{H}{n}_{\V{p}},\textsc{Proc-Slice}(n,\VE{p}{n}))$
+			\label{line:all-gather}
+	\EndFor 
+		\label{line:endfor}
+\EndWhile
+	\label{line:endwhile}
+\Ensure $\TA \approx \CP$
+\Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times R$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
+\end{algorithmic}
+\end{algorithm}
+

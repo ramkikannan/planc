@@ -1,0 +1,403 @@
+\documentclass[xcolor=dvipsnames]{beamer}
+
+\usepackage{setspace}
+\usepackage{beamerthemesplit}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{color}
+\usepackage{colortbl}
+%\usepackage{algorithm,algorithmic}
+\usepackage{multimedia,xmpmulti}
+\usepackage{multirow,multicol}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{multimedia,xmpmulti}
+\usepackage{tabularx}
+\usepackage{algorithm,algpseudocode}
+\usepackage{subfig}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{etoolbox}
+\usetikzlibrary{patterns}
+
+\usepackage{ourmacros}
+
+%% Tikz - For making pretty pictures
+\usepackage{tikz}
+\usetikzlibrary{3d}
+\usetikzlibrary{patterns}
+\usetikzlibrary{calc}
+\usetikzlibrary{arrows}
+
+
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+\newcommand{\multiplycolor}{blue}
+\newcommand{\zero}{}
+
+
+\graphicspath{{fig/}}
+
+\mode<presentation>
+
+\definecolor{wfugold}{rgb}{0.6196078,0.494117647,0.21960784}
+\usetheme{Warsaw}
+\usecolortheme[named=wfugold]{structure}
+%Madrid
+%\usecolortheme{dolphin}
+%\useinnertheme{rounded}
+%\usefonttheme{serif}
+\setbeamertemplate{navigation symbols}{} % gets rid of navigation bars
+\setbeamertemplate{footline}
+{
+  \hbox{
+  \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.25ex,dp=1ex,left]{author in head/foot}%
+    \usebeamerfont{author in head/foot}
+    Ballard
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}
+    
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}
+    \insertframenumber{} \hspace*{2ex} 
+  \end{beamercolorbox}}%
+}
+
+\title{Parallel Nonnegative CP Decomposition \\ of Dense Tensors}
+\author[]{Grey Ballard, Koby Hayashi, Ramakrishnan Kannan}
+\institute{}
+\date{March 26, 2018}
+%\titlegraphic{\includegraphics[scale=.15]{wfulogo}}
+
+\begin{document}
+
+\begin{frame}[plain]
+\maketitle
+\end{frame}
+\addtocounter{framenumber}{-1}
+
+\begin{frame}
+\frametitle{Nonnegative CP via Block Coordinate Descent (ALS)}
+
+\footnotesize
+\begin{itemize}
+	\item Basic algorithm is block coordinate descent, each block is factor matrix
+	\item For each block, solve nonnegative linear least squares problem
+	\begin{itemize}
+		\item \scriptsize assuming least squares loss function (Gaussian distribution)
+	\end{itemize}
+\end{itemize}
+\normalsize
+
+\vfill
+
+\only<1>{
+%\begin{algorithm}
+%\caption{$(\CPl,\epsilon) = \text{NNCP}(\TA,k)$}
+%\caption{$\CP = \text{NNCP}(\TA,k)$}
+%\label{alg:nncp}
+\begin{algorithmic}[1]
+\Require $\TA$ is $I_1\times \cdots \times I_N$ tensor, $k$ is approximation rank
+%\State \Comment{Compute NNCP approximation}
+\While{not converged}
+	\State \Comment{Perform outer iteration of BCD}
+	\For{$n=1$ to $N$}
+	\State \Comment{Compute new factor matrix in $n$th mode}
+	\State \red{$\Mn{M}{n} = \text{MTTKRP}(\TA,\{\Mn{H}{i}\},n)$}
+	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+	\State \blue{$\Mn{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$}
+%	\State $\Mn[\hat]{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$
+%	\State \Comment{Normalize columns}
+%	\State $\V{\lambda} = \text{Col-Norms}(\Mn[\hat]{H}{n})$
+%	\State $\Mn{H}{n} = \text{Col-Scale}(\Mn[\hat]{H}{n},\V{\lambda})$
+%	\State \Comment{Organize data for later modes}
+	\State $\Mn{G}{n} = \MnTra{H}{n}\Mn{H}{n}$
+	\EndFor
+%	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
+%	\State $\beta = \langle \Mn{M}{N},\Mn[\hat]{H}{N} \rangle$
+%	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
+%	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
+\EndWhile
+%\Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
+\Ensure $\TA \approx \CP$
+\end{algorithmic}
+%\end{algorithm}
+}
+\only<2>{
+\begin{itemize}
+	\item Lots of ways to solve nonnegative linear least squares 
+	\begin{enumerate}
+		\item multiplicative updates (one element at a time, Lee-Seung)
+		\item hierarchical alternating least squares (one column at a time, Cichocki et al.)
+		\item block principal pivoting (active set method, Park et al.)
+		\item Nesterov algorithm (used by Sidiropolous et al.)
+		\item alternating directions method of multipliers
+	\end{enumerate}
+	\item All are bottlenecked by MTTKRP and also need Gram 
+	\begin{itemize}	
+		\item MTTKRP bottleneck in dense case, maybe not sparse?
+	\end{itemize}
+\end{itemize}
+}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Parallel Algorithm for NNCP via BCD/ALS}
+
+\footnotesize
+\textbf{Data distribution}
+\begin{itemize}
+	\item block distribution of tensor over $N$-D logical processor grid
+	\item row-wise distribution of each factor matrix 
+\end{itemize}
+
+\vfill
+
+\textbf{Communication steps}
+\begin{itemize}
+	\item All-Gather and Reduce-Scatter across processor slices for MTTKRP
+	\item All-Reduce across all processors for Gram
+	\item All-Reduce across all processors for normalization and error comp.
+\end{itemize}
+
+\vfill
+
+\textbf{Local Computation}
+\begin{itemize}
+	\item local MTTKRP (which we do using dimension trees)
+	\item local NLS solves/updates (which we do using block principal pivoting)
+	\item normalization and error computation (very cheap)
+\end{itemize}
+
+
+\end{frame}
+
+\input{../sc18/fig/Alg_header.tex}
+
+\begin{frame}
+\frametitle{Inner Iteration of Parallel Algorithm}
+
+\begin{center}
+\scalebox{1.5}{
+\only<1>{\input{../sc18/fig/AlgStart.tex}}
+\only<2>{\input{../sc18/fig/AlgMTTKRP.tex}}
+\only<3>{\input{../sc18/fig/AlgRS.tex}}
+\only<4>{\input{../sc18/fig/AlgNLS.tex}}
+\only<5>{\input{../sc18/fig/AlgAG.tex}}
+}
+
+\vfill
+
+\only<1>{Start $n$th iteration with redundant subset of rows \\ of each input matrix.}
+\only<2>{Compute local MTTKRP for contribution to output matrix $\Mn{M}{2}$.}
+\only<3>{Reduce-Scatter to compute and distribute rows of $\Mn{M}{2}$.}
+\only<4>{Compute local NLS update to obtain $\Mn{H}{2}_{\V{p}}$ from $\Mn{M}{2}_{\V{p}}$ (and $\Mn{S}{2}$).}
+\only<5>{All-Gather to collect rows of $\Mn{H}{2}$ needed \\ for later inner iterations.}
+
+\end{center}
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Inner Iteration of Parallel Algorithm}
+
+\begin{figure}
+\centering
+  \subfloat[Start]{\input{../sc18/fig/AlgStart.tex}} \quad
+  \subfloat[Local MTTKRP]{\input{../sc18/fig/AlgMTTKRP.tex}} \quad
+  \subfloat[Reduce-Scatter]{\input{../sc18/fig/AlgRS.tex}} \quad
+  \subfloat[Local NLS]{\input{../sc18/fig/AlgNLS.tex}} \quad
+  \subfloat[All-Gather]{\input{../sc18/fig/AlgAG.tex}}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Dimension Trees}
+
+\begin{center}
+\footnotesize
+Dimension trees systematically avoid recomputation across MTTKRPs 
+\normalsize
+
+\vfill
+
+\input{../sc18/fig/dim_tree.tex}
+\end{center}
+
+\vfill
+
+\footnotesize
+Nearly all the time spent in partial MTTKRP (PM), same number of flops as MTTKRP but easier to implement/parallelize (one DGEMM call)
+\normalsize
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Error Computation}
+
+Given data tensor $\TA$ and CP model $\T{M} = \CP$, we want to compute the squared error
+$$\| \TA - \T{M}\|^2 = \|\TA\|^2 - 2\langle \TA, \T{M} \rangle + \|\T{M}\|^2$$
+which we do efficiently using the identity
+$$\langle \TA, \T{M} \rangle = \langle \Mn{M}{N}, \Mn{H}{N} \rangle$$ 
+where 
+$$\Mn{M}{N} = \Mz{A}{N} (\Mn{H}{N-1} \Khat \cdots \Khat \Mn{H}{1})$$
+
+\vfill
+
+*This technique is noted in a paper by Smith and Karypis and used in code by Phan, Tichavsky, and Cichocki
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Comparison against existing code}
+
+From paper: \\
+\footnotesize
+A. P. Liavas, G. Kostoulas, G. Lourakis, K. Huang, and N. D. Sidiropoulos, "Nesterov-based Alternating Optimization for Nonnegative Tensor Factorization: Algorithm and Parallel Implementations", \emph{IEEE Transactions on Signal Processing}, vol. 66, no. 4, Feb. 2018.
+
+\vfill
+
+Code available: \url{http://www.telecom.tuc.gr/Greek/Liavas/publications/MPI_EIGEN_Nesterov_NTF.zip}
+
+\vfill
+
+Not a whole lot of detail in paper about implementation, but data distribution and communication pattern the same as ours
+\begin{itemize}
+	\item limited to 3D tensors
+	\item uses Eigen for local dense linear algebra
+	\item no use of dimension trees
+	\item inefficient error computation
+\end{itemize}
+
+\end{frame}
+
+\input{../sc18/plots}
+
+\begin{frame}
+\frametitle{Strong Scaling on 3D Tensor}
+
+\begin{figure}
+\begin{tikzpicture}[scale=.9]
+\renewcommand{\datafile}{../sc18/data/str_3D_syn.dat}
+\renewcommand{\numiterations}{42}
+\liavastrue
+\strongscalingplot
+\end{tikzpicture}
+\caption{Strong scaling of 3D synthetic tensor with dimension $1024\times 1024\times 1024$ on processor grids $2^k\times 2^k\times 2^k$ for $k\in\{0,1,2,3\}$.  The rank is fixed at 32.}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Strong Scaling on 5D Tensor}
+
+\begin{figure}
+\begin{tikzpicture}[scale=.9]
+\renewcommand{\datafile}{../sc18/data/str_5D_syn.dat}
+\renewcommand{\numiterations}{10}
+\liavasfalse
+\strongscalingplot
+\end{tikzpicture}
+\caption{Strong scaling of 5D synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$.  The rank is fixed at 32.}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Weak Scaling Time Breakdown}
+
+\begin{figure}
+\begin{tikzpicture}
+\renewcommand{\datafile}{../sc18/data/wk_4D_syn.dat}
+\renewcommand{\numiterations}{10}
+\breakdownplot
+%\labels
+\end{tikzpicture}
+\caption{Weak scaling of 4D synthetic tensors with (D) and without (N) the use of dimension trees.  The tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$, and the rank is fixed at 32.}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Varying Rank Time Breakdown}
+
+\begin{figure}
+\renewcommand{\datafile}{../sc18/data/ksw_4D_HSI.dat}
+\renewcommand{\numiterations}{10}
+\begin{tikzpicture}[scale=.8]
+\begin{axis}[	
+	ybar stacked,
+	bar width=12pt,
+	width=\columnwidth,
+	height =.5\columnwidth,
+	%width=9cm, height=3.85cm,
+	ylabel={Time (s)}, 
+	xlabel={Rank $k$},
+	y label style={yshift=-.5cm},
+	ymin=0,
+	%symbolic x coords={D10,N10,,D20,N20,,D30,N30,,D40,N40,,D50,N50},
+	symbolic x coords={D10,D20,D30,D40,D50},
+	%xtick=data,
+	xticklabels={,10,,20,,30,,40,,50},
+	legend style={at={(0.5,1.3)},anchor=north},
+	legend columns=-1,
+]
+	\setcolors
+	\addplot table[x=alg-K, y expr=(\thisrow{mttkrp}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=(\thisrow{mttv}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=((\thisrow{nnls}+\thisrow{gram})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-K, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
+	\legend{PM,mTTV,NLS,Factor Comm,Gram Comm};
+\end{axis}
+%\labels
+\end{tikzpicture}
+\caption{Per-iteration time breakdown of our implementation (using dimension trees) over various ranks for a time-lapse HSI dataset with dimensions $1344\times 1024\times 33 \times 9$ on 64 processors arranged in a $8\times8\times1\times1$ grid.}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Conclusions (so far)}
+
+\footnotesize
+\begin{enumerate}
+	\item Hard not to be compute bound in dense case
+	\begin{itemize}
+	\scriptsize
+		\item computation is dominated by $O(R \prod I_k / P_k)$
+		\item communication is dominated by $O(R \sum I_k / P_k)$
+		\item computation scales with $P$, communication scales with $P^{1/N}$, but it doesn't matter until $P$ is huge
+	\end{itemize}
+	\vfill
+	\item Dimension trees make huge difference for higher-order tensors
+	\begin{itemize}
+	\scriptsize
+		\item dominant computation term predicts $N/2$ speedup
+		\item avoiding large Khatri-Rao products also makes a big difference
+		\item DGEMM calls have more favorable shapes
+	\end{itemize}
+	\vfill
+	\item Liavas et al.'s code has some shortcomings
+	\begin{itemize}
+	\scriptsize
+		\item limited to 3D tensors
+		\item stores each matricization separately (each in col-major)
+		\item does not use dimension trees or efficient error computation
+		\item this doesn't explain everything, but we don't have a time breakdown for further detail
+	\end{itemize}
+\end{enumerate}
+
+\end{frame}
+
+\end{document}
+

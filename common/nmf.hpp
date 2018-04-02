@@ -123,6 +123,7 @@ class NMF {
         this->H      = arma::randu<MAT>(n, k);
         this->m_regW = arma::zeros<FVEC>(2);
         this->m_regH = arma::zeros<FVEC>(2);
+        normalize_by_W();
 
         // make the random MATrix positive
         // absMAT<MAT>(W);
