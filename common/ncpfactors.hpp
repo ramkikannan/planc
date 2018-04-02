@@ -289,7 +289,17 @@ class NCPFactors {
             this->ncp_factors[mode].col(i) /= m_lambda(i);
         }
     }
-
+        /*
+    * this is for reinitializing random numbers across different
+    * processors.
+    */
+    void randu(const int i_seed) {
+        arma::arma_rng::set_seed(i_seed);
+        for (int i = 0; i < this->m_modes; i++) {
+            ncp_factors[i].randu();
+        }
+    }
+#ifdef MPI_DISTNTF
     // Distribution normalization of factor matrices
     // To be used for MPI code only
     void distributed_normalize() {
@@ -320,16 +330,8 @@ class NCPFactors {
             m_lambda(j) = global_colnorm;
         }
     }
-    /*
-    * this is for reinitializing random numbers across different
-    * processors.
-    */
-    void randu(const int i_seed) {
-        arma::arma_rng::set_seed(i_seed);
-        for (int i = 0; i < this->m_modes; i++) {
-            ncp_factors[i].randu();
-        }
-    }
+#endif
+
 }; // NCPFactors
 }  // planc
 

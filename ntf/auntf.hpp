@@ -3,6 +3,10 @@
 #ifndef NTF_AUNTF_HPP_
 #define NTF_AUNTF_HPP_
 
+#define MPITIC tic();
+#define MPITOC toc();
+
+
 #include <armadillo>
 #include <cblas.h>
 #include "tensor.hpp"
@@ -42,7 +46,7 @@ class AUNTF {
     const algotype m_updalgo;
     LUC *m_luc;
     planc::Tensor *lowranktensor;
-    // KobyDimensionTree *kdt;
+    KobyDimensionTree *kdt;
     bool m_enable_dim_tree;
 
   public:
@@ -105,7 +109,11 @@ class AUNTF {
                      << ncp_krp[j] << std::endl;
 #endif
                 if (this->m_enable_dim_tree) {
-                    kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp_t[j].memptr(), false);
+                    double multittv_time = 0;
+                    double mttkrp_time = 0;
+                    kdt->in_order_reuse_MTTKRP(j, ncp_mttkrp_t[j].memptr(),
+                                               false, multittv_time,
+                                               mttkrp_time);
                 } else {
                     m_input_tensor.mttkrp(j, ncp_krp[j], &ncp_mttkrp_t[j]);
                 }

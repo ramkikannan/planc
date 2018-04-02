@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <ios>
 #include <fstream>
+#include <cblas.h>
 
 namespace planc {
 /*
