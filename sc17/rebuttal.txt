@@ -1,0 +1,16 @@
+Reviewer 1:
+
+1.The main novelty on this paper is that using P2P communication for SP-NMF is better than 2D cartesian collective communication. The partitioning strategy for P2P does not influence significantly. Reviewer is correct that Mondriaan can work good in this case. In our observation, even random partition on some real world datasets perform well over hypergraph even at 32000 processors. 
+2.These are arbitrary and we wanted to be representative that matches with the real world scenarios. During some linear algebraic operations, low rank k closer to powers of 2 gave some computation advantages. 
+
+Reviewer 2:
+1.The key message in the paper is that for sp-nmf, P2P communication is more important than the partitioning scheme. The advantages of sophisticated partitioning schemes are not significant over random partition even at the scale of 32000 processors. 
+2.We will make the communication stats for all the algorithms available in the camera ready paper
+
+Reviewer 3:
+We are paying more attention on the real world data.  It is very difficult to perform weak scaling experiments with real world as it can be subject to many research questions on machine learning which are not the core contribution of the paper. Also it is very difficult to generate a synthetic data that is closer the real world. We will consider including it for the camera ready using some potential synthetic datasets. 
+
+Reviewer 4 : 
+1.For the kind of datasets taht we considered, setting PC to 16 was natural.
+2.We could not compile and get the baseline FAUN running on Bluegene/Q
+3.We agree with the reviewer that weak scaling offers some convincing explanations for our proposed contributions. But it is very difficult to generate a synthetic data that is closer the real world. We will consider including it for the camera ready using some potential synthetic datasets. 
