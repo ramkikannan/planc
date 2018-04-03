@@ -103,17 +103,6 @@ However, using 32768 processors \cpp manages to outrun \crp by incurring less co
 \label{fig:flickr-speedup-bgq}
 \end{subfigure}
 
-%\begin{subfigure}[t]{0.5\textwidth}
-%\begin{tikzpicture}
-%\bgqtrue
-%\renewcommand{\minvalue}{137.1}
-%\renewcommand{\numiterations}{10}
-%\renewcommand{\datafile}{data/stackoverflow-speedup-bgq.dat}
-%\speedup
-%\end{tikzpicture}
-%\subcaption{Stackoverflow dataset Low Rank $k=48$ on Bluegene/Q}
-%\end{subfigure}
-
 \caption{Strong scaling on Flickr dataset}
 \label{fig:details}
 \end{figure}
@@ -255,6 +244,50 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \caption{Flickr dataset Time Split up for Low Rank $k=16, 48$ on Rhea}
 \label{fig:flickrdetails}
 \end{figure}
+
+%%%%%%%%%%% Stackexchange Details %%%%%%%%
+\renewcommand{\minvalue}{1}
+\begin{figure}
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabelfalse
+\legendtrue
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/stkx-details1536-16.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=1536$, Low Rank $k=16$}
+\end{subfigure}
+~
+\begin{subfigure}[t]{0.25\textwidth}
+\begin{tikzpicture}
+\ylabelfalse
+\legendtrue
+\renewcommand{\numiterations}{30}
+\renewcommand{\datafile}{data/stkx-details1536-48.dat}
+\makeplot
+\end{tikzpicture}
+\subcaption{Rhea $p=1536$, Low Rank $k=48$}
+\end{subfigure}
+
+
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\bgqtrue
+\renewcommand{\minvalue}{137.1}
+\renewcommand{\numiterations}{10}
+\renewcommand{\datafile}{data/stackoverflow-speedup-bgq.dat}
+\speedup
+\end{tikzpicture}
+\subcaption{Stackoverflow dataset Low Rank $k=48$ on Bluegene/Q}
+\end{subfigure}
+
+
+
+\caption{Stack exchange dataset Time Split up for Low Rank $k=16, 48$ on Rhea and Strong scaling on Bluegene/Q}
+\label{fig:flickrdetails}
+\end{figure}
+
 
 %%%%%%%%%%% Delicious Details %%%%%%%%
 
