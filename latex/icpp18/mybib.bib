@@ -592,6 +592,21 @@ url={http://dx.doi.org/10.1007/978-3-662-44845-8_22},
   Url                      = {http://doi.acm.org/10.1145/2807591.2807624}
 }
 
+@Article{KBP17,
+  author   = {Ramakrishnan Kannan and Grey Ballard Ballard and Haesun Park},
+  title    = {{MPI-FAUN}: An {MPI}-Based Framework for Alternating-Updating Nonnegative Matrix Factorization},
+  journal  = {IEEE Transactions on Knowledge and Data Engineering},
+  year     = {2018},
+  volume   = {30},
+  number   = {3},
+  pages    = {544-558},
+  month    = {March},
+  abstract = {Non-negative matrix factorization (NMF) is the problem of determining two non-negative low rank factors W and H, for the given input matrix A, such that WH approximates A. NMF is a useful tool for many applications in different domains such as topic modeling in text mining, background separation in video analysis, and community detection in social networks. Despite its popularity in the data mining community, there is a lack of efficient parallel algorithms to solve the problem for big data sets. The main contribution of this work is a new, high-performance parallel computational framework for a broad class of NMF algorithms that iteratively solves alternating non-negative least squares (NLS) subproblems for $mathbf{W}$ and $mathbf{H}$ . It maintains the data and factor matrices in memory (distributed across processors), uses MPI for interprocessor communication, and, in the dense case, provably minimizes communication costs (under mild assumptions). The framework is flexible and able to leverage- a variety of NMF and NLS algorithms, including Multiplicative Update, Hierarchical Alternating Least Squares, and Block Principal Pivoting. Our implementation allows us to benchmark and compare different algorithms on massive dense and sparse data matrices of size that spans from few hundreds of millions to billions. We demonstrate the scalability of our algorithm and compare it with baseline implementations, showing significant performance improvements. The code and the datasets used for conducting the experiments are available online.},
+  doi      = {10.1109/TKDE.2017.2767592},
+  issn     = {1041-4347},
+  keywords = {Algorithm design and analysis;Analytical models;Approximation algorithms;Collaboration;Computational modeling;Program processors;Sparse matrices;2D;HPC;MPI;NMF},
+}
+
 @article{Williams2009,
 author = {Samuel Williams and Leonid Oliker and Richard Vuduc and John Shalf and Katherine Yelick and James Demmel},
 title = {Optimization of sparse matrix-vector multiplication on emerging multicore platforms },

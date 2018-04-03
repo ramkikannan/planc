@@ -1,5 +1,51 @@
+%!TEX root = icpp18.tex
+
 \section{Sparse Non-negative Matrix Factorization}
 \label{sec:sparsenmf}
+
+\grey{Not sure where the following paragraph should be incorporated:
+We would like to highlight that ``Non-negative'' Matrix Factorization is NOT matrix factorization in collaborative filtering for recommender systems for which many implementations exist.
+The collaborative filtering problem is different than NMF -- the focus of our paper -- because it interprets the ``{\em zero}'' entries of the input matrix as missing data, while the NMF problem is defined for a completely known input matrix and does not handle missing values.
+This leads to different optimization problems, algorithms, and computational steps.
+}
+
+\subsection{Notation}
+\label{sec:notations}
+
+\Cref{tab:notation} summarizes the notation we use throughout this paper.
+We use bold uppercase letters for matrices and lowercase letters for vectors.
+For matrix rows and columns, we employ MATLAB notation, i.e., $\AA(i, :)$ and $\AA(:, j)$ refer to the $i$th row and the $j$th column of $\AA$.
+We use subscripts to refer to sub-blocks of matrices.
+For example, $\AA_ij$ refers to the sub-block $(i, j)$ of $\AA$ in a 2D partition.
+We use $m$ and $n$ to denote the numbers of rows and columns of $\AA$, respectively, and assume without loss of generality $m\geq n$ throughout.
+
+\begin{table}%[htdp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+$\AA$ & Input matrix \\
+$\WW$ & Left low rank factor \\
+$\HH$ & Right low rank factor \\
+$m$ & Number of rows of input matrix \\
+$n$ & Number of columns of input matrix \\
+$k$ & Low rank \\
+$P$ & Number of parallel processes \\
+$P_r$ & Number of rows in processor grid \\
+$P_c$ & Number of columns in processor grid \\
+$\Ip$,$\Jp$ & Set of rows/columns of of $\Wm$/$\Hm$ owned by process $p$  \\
+$\Fp$,$\Gp$ & Set of unique row and column indices of $\Amp$ \\
+$\Amp$ & Submatrix of $\Am$ owned by process p \\
+$\Wm(\Ip,:)$ & Owned rows of initial $\Wm$ by process p \\
+$\Hm(:,\Jp)$ & Owned columns of initial $\Hm$ by process p\\
+
+\hline
+\end{tabular}
+\end{center}
+\caption{Notation}
+\label{tab:notation}
+\end{table}%
+
+\subsection{Alternating-Updating NMF}
 
 %We are extending the $AUNMF$ algorithm in \mpifaun framework \cite{KBP16MPIFAUN, KBP16} for implementing different NMF algorithms to add support for sparse input matrix.
 The Alternating-Updating NMF algorithms are those that alternate between updating one of $\WW$ and $\HH$ using the given input matrix $\AA$ and other 'fixed' factor - $\HH$ for updating $\WW$ or $\WW$ for updating $\HH$.
@@ -78,7 +124,7 @@ While we focus only on the \MU algorithms in this paper, we highlight that our a
 
 In this paper, we are considering $\ell_2$ regularization on the $\WW$ matrix and $\ell_1$ regularization on the $\HH$ matrix to address the sparsity of the input matrix. Hence, the NMF problem becomes
  \SplitN{\label{eqn:original NMF}}{
-\min_{\WW \geq 0,\HH \geq 0} & \|\AA-\WW\HH\|_F + \alpha (\| \WW \|)_F^2 + \beta \sum_{i=1}^n \| \hh_{i} \|_1^2.
+\min_{\WW \geq 0,\HH \geq 0} & \|\AA-\WW\HH\|_F + \alpha \| \WW \|_F^2 + \beta \sum_{i=1}^n \| \hh_{i} \|_1^2.
 }
 
 The values $\alpha$ and $\beta$ were fixed for the experiments. 
