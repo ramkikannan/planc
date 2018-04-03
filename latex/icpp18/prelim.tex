@@ -1,0 +1,43 @@
+\section{Preliminaries}
+\input{notations}
+
+\subsection{Communication model}
+\label{sec:comm-model}
+
+To analyze our algorithms, we use the $\alpha$-$\beta$-$\gamma$ model of distributed-memory parallel computation.
+In this model, interprocessor communication occurs in the form of messages sent between two processors across a bidirectional link (we assume a fully connected network).
+We model the cost of a message of size $n$ words as $\alpha+n\beta$, where $\alpha$ is the per-message latency cost and $\beta$ is the per-word bandwidth cost.
+Each processor can compute floating point operations (flops) on data that resides in its local memory; $\gamma$ is the per-flop computation cost.
+With this communication model, we can predict the performance of an algorithm in terms of the number of flops it performs as well as the number of words and messages it communicates.
+For simplicity, we will ignore the possibilities of overlapping computation with communication in our analysis.
+For more details on the $\alpha$-$\beta$-$\gamma$ model, see \cite{TRG05,CH+07}. Since one of the major objective of this paper is comparing the communications strategies between different distribution strategies -- point-to-point communication for $NNZ-PART$ and the collective communications for $2D$. For the collective communication for $2D$, we are observing the same communication model of the \mpifaun algorithm \cite{KBP16, KBP16MPIFAUN}. We present the communication model for P2P here. 
+
+\subsection{Point-to-Point Communication}
+
+\todo{\oguz{fill the point to point communication on pacoss}}
+
+%\subsection{MPI collectives}
+%\label{sec:collectives}
+%
+%Point-to-point messages can be organized into collective communication operations that involve more than two processors.
+%MPI provides an interface to the most commonly used collectives like broadcast, reduce, and gather, as the algorithms for these collectives can be optimized for particular network topologies and processor characteristics.
+%The baseline algorithms $MPIFAUN$ use the all-gather, reduce-scatter, and all-reduce collectives and so we review them here, along with their costs.
+%%Our analysis assumes optimal collective algorithms are used (see \cite{TRG05,CH+07}), though our implementation relies on the underlying MPI implementation.
+%
+%At the start of an all-gather collective, each of $p$ processors owns data of size $n/p$.
+%After the all-gather, each processor owns a copy of the entire data of size $n$.
+%The cost of an all-gather is $\alpha\cdot \log p + \beta \cdot \frac{p-1}{p}n$.
+%%
+%At the start of a reduce-scatter collective, each processor owns data of size $n$.
+%After the reduce-scatter, each processor owns a subset of the sum over all data, which is of size $n/p$.
+%(Note that the reduction can be computed with other associative operators besides addition.)
+%The cost of an reduce-scatter is $\alpha\cdot \log p + (\beta+\gamma) \cdot \frac{p-1}{p}n$.
+%%
+%At the start of an all-reduce collective, each processor owns data of size $n$.
+%After the all-reduce, each processor owns a copy of the sum over all data, which is also of size $n$.
+%The cost of an all-reduce is $2\alpha\cdot \log p + (2\beta+\gamma) \cdot \frac{p-1}{p}n$.
+%%
+%Note that the costs of each of the collectives are zero when $p=1$.
+
+\input{aunmf}
+%\input{hypergraph}

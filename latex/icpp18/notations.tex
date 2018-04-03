@@ -1,0 +1,35 @@
+\subsection{Notation}
+\label{sec:notations}
+
+\Cref{tab:notation} summarizes the notation we use throughout this paper.
+We use bold uppercase letters for matrices and lowercase letters for vectors.
+For matrix rows and columns, we employ MATLAB notation, i.e., $\AA(i, :)$ and $\AA(:, j)$ refer to the $i$th row and the $j$th column of $\AA$.
+We use subscripts to refer to sub-blocks of matrices.
+For example, $\AA_ij$ refers to the sub-block $(i, j)$ of $\AA$ in a 2D partition.
+We use $m$ and $n$ to denote the numbers of rows and columns of $\AA$, respectively, and assume without loss of generality $m\geq n$ throughout.
+
+\begin{table}%[htdp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+$\AA$ & Input matrix \\
+$\WW$ & Left low rank factor \\
+$\HH$ & Right low rank factor \\
+$m$ & Number of rows of input matrix \\
+$n$ & Number of columns of input matrix \\
+$k$ & Low rank \\
+$P$ & Number of parallel processes \\
+$P_r$ & Number of rows in processor grid \\
+$P_c$ & Number of columns in processor grid \\
+$\Ip$,$\Jp$ & Set of rows/columns of of $\Wm$/$\Hm$ owned by process $p$  \\
+$\Fp$,$\Gp$ & Set of unique row and column indices of $\Amp$ \\
+$\Amp$ & Submatrix of $\Am$ owned by process p \\
+$\Wm(\Ip,:)$ & Owned rows of initial $\Wm$ by process p \\
+$\Hm(:,\Jp)$ & Owned columns of initial $\Hm$ by process p\\
+
+\hline
+\end{tabular}
+\end{center}
+\caption{Notation}
+\label{tab:notation}
+\end{table}%

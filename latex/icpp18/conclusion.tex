@@ -1,0 +1,7 @@
+\section{conclusion}
+
+In this paper, we proposed a novel algorithm parallel non-negative matrix factorization of sparse matrices in distributed memory environments.
+To the best of our knowledge, this is the first high performance implementation that takes the sparsity of the input matrix into consideration in communication to reduce the communication cost, and employs effective partitionings to further enhance parallel scalability.
+We introduce effective partitioning strategies for both the sparse input matrix $\Am$ as well as factor matrices $\Wm$ and $\Hm$ that helps us achieve good computational load balance while minimizing the communication costs.
+With all the algorithmic contributions and an efficient parallel implementation, our method outperforms the state of the art by a significant margin, and gracefully scales up to 32768 cores on an IBM BlueGene/Q supercomputer.
+Our immediate next steps for extending our work involve adding shared memory parallelism to obtain further speedup.

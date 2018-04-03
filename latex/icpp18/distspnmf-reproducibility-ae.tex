@@ -1,0 +1,146 @@
+% LaTeX template for Artifact Description appendix used for SC17
+% V20170220
+%% V20170220
+% (C)opyright 2017
+
+% Derived with permission by Michael Heroux (Sandia National Laboratories, St. John's University, MN)
+% from ae-20160509.tex 
+% written by Grigori Fursin (cTuning foundation, France and dividiti, UK) 
+% and Bruce Childers (University of Pittsburgh, USA)
+% (C)opyright 2014-2016
+
+% sigplanconf.cls is available at http://www.sigplan.org/sites/default/files/sigplanconf.cls
+\documentclass[sigconf, review=false]{acmart}
+
+\usepackage{url}
+
+\newcommand{\distspnmffull}{Distributed memory Sparse NMF algorithm}
+
+\begin{document}
+
+\special{papersize=8.5in,11in}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% When adding this appendix to your paper, 
+% please remove above part
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\appendix
+\section{Artifact Description: \distspnmffull}
+
+Submission and reviewing guidelines and methodology: \\
+{\small\em http://sc17.supercomputing.org/submitters/technical-papers/reproducibility-initiatives-for-technical-papers/artifact-description-paper-title/}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Abstract}
+
+This artifact contains all the components and instruction for the paper titled \distspnmffull\ submitted to SC`2017. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Description}
+
+\subsubsection{Check-list (artifact meta information)}
+
+{\small
+\begin{itemize}
+  \item {\bf Algorithm: } \distspnmffull for Multiplicative Update(MU), Hierarchical Alternating Least Squares(HALS) and ANLS/BPP supporting multi constrained hypergraph partitions 
+  \item {\bf Program: } C/C++ code
+  \item {\bf Compilation: } C/C++ compiler with C++11 support. We tested with GCC 5.3.0 compiler. 
+  \item {\bf Transformations: }
+  \item {\bf Binary: } distnmf
+  \item {\bf Data set: } Flickr and Delicious dataset. Publicly available. 
+  \item {\bf Run-time environment: } MPI on Unix
+  \item {\bf Hardware: } Rhea on Oak Ridge Leadership Computing Platform and IBM BlueGene/Q supercomputer
+  \item {\bf Run-time state: } 
+  \item {\bf Execution: } Rhea execution - mpirun -np 16 ./distnmf \-a [0/1/2 for mu/hals/bpp] \-\-pr=[number of row processes] \-\-pc=[number of col processes] \-k [low rank value] \-i [input file] \-t [number of iterations] \\
+BGQ execution -  runjob \-\-ranks-per-node 16 \-\-np 16 : /linkhome/rech/qyy/rqyy003/nmflibrary/mpi/distnmf \-a 0 \-i /linkhome/rech/qyy/rqyy003/job-run/flickr.mtx -t 10 -k 16 \\
+  \item {\bf Output: }
+total\_allgather::m::17261568::n::2473984::k::48::SIZE::1536::algo::0::root::13.66::min::13.36::avg::13.656::max::13.79 \\
+total\_allreduce::m::17261568::n::2473984::k::48::SIZE::1536::algo::0::root::0.1::min::0.03::avg::0.106354::max::0.21 \\
+total\_reducescatter::m::17261568::n::2473984::k::48::SIZE::1536::algo::0::root::21.99::min::21.8::avg::22.0041::max::22.18 \\
+total\_gram::m::17261568::n::2473984::k::48::SIZE::1536::algo::0::root::1.48::min::1.37::avg::1.47555::max::1.64 \\
+total\_mm::m::17261568::n::2473984::k::48::SIZE::1536::algo::0::root::10.04::min::9.96::avg::10.0897::max::10.23 \\
+total\_nnls::m::17261568::n::2473984::k::48::SIZE::1536::algo::0::root::7.95::min::7.64::avg::7.93462::max::8.05 \\
+  \item {\bf Experiment workflow: }
+  \begin{enumerate}
+\item   git clone source code
+\item download dependencies
+\item build source code
+\item download datasets
+\item prepare data
+\item create scheduler scripts
+\item queue the job
+\item analyze the output.
+\end{enumerate}
+  \item {\bf Experiment customization: } Yes, the software is generalpurpose.
+  \item {\bf Publicly available?: } Yes.
+\end{itemize}
+}
+
+\subsubsection{How software can be obtained (if available):} 
+Github/Gitlab repository. The clone URL can reveal the person's identity and can violate the double blind review process. 
+
+
+\subsubsection{Hardware dependencies}. \\
+
+We have tested on two different supercomputers Rhea on Oak Ridge Leadership Computing Facility and IBM Bluegene/Q supercomputer.  
+
+\subsubsection{Software dependencies} \label{sec:dependencies}
+
+\begin{itemize}
+\item GCC 5.3.0 and above with support for C++11
+\item CMake
+\item BLAS/LAPACK libraries - Tested w/ MKL 16.0.0, OpenBLAS (https://github.com/xianyi/OpenBLAS), libblas libraries. 
+\item Boost 1.58.0  and above (Needed only for ANLS/BPP algorithm)
+\item Armadillo - http://arma.sourceforge.net/
+\item MPI Library - tested w/ OpenMPI 1.8.4 and Bluegene/Q MPI library
+\end{itemize}
+
+
+\subsubsection{Datasets} \label{sec:datasets} 
+
+Delicious - \url{https://www.dropbox.com/s/3602tin4g59n8vl/delicious.mtx.bz2?dl=0}
+Flickr - \url{https://www.dropbox.com/s/r9xn19vhq0r0dvi/flickr.tar.bz2?dl=0}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Installation} 
+
+Follow the build instruction in README.md
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Experiment workflow}
+
+\begin{enumerate}
+\item git clone source code (DistSPNMF, pacoss, tmpi)
+\item download dependencies listed in Section \ref{sec:dependencies}
+\item build source code following the README.md file
+\item download datasets listed in Section \ref{sec:datasets}
+\item prepare data - {\em pacoss partition} and {\em pacoss distribute}
+\item create scheduler scripts - PBS/Torque scripts
+\item queue the job 
+\item analyze the output.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Evaluation and expected result} 
+
+As explained in the paper experiment section, the $P2PHP$ and $P2PRP$ will provide better running time over $FAUN$ in higher number of processors. The output time can be parsed as explained in output above. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Experiment customization} 
+
+The software is implemented by extending the $MPI-FAUN$ library and the distribution strategies are available though $pacoss$ software. Users can place with the options available in these software to trying different NMF algorithms and different partition methods. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Notes} 
+
+The entire software will be available for users through github. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% When adding this appendix to your paper, 
+% please remove below part
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

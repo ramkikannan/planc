@@ -1,0 +1,57 @@
+\section{survey}
+
+%\begin{itemize}
+%\item NMF papers
+%\item HPC-NMF papers
+%\item Difference between matrix factorization and NMF
+%\item Hypergraph partitions paper
+%\end{itemize}
+
+In the data mining and machine learning literature, there is an overlap between low rank approximations and matrix factorizations due to the nature of applications.
+Despite its name, non-negative matrix ``factorization'' is in fact a low rank approximation.
+Recently, there has been a growing interest in collaborative filtering based
+recommender systems. One of the popular techniques
+for collaborative filtering is matrix factorization, often with nonnegativity constraints,
+and its implementation is widely available in many
+off-the-shelf distributed machine learning libraries
+such as GraphLab \cite{low2012}, MLLib \cite{meng2015mllib},
+and many others \cite{satish2014,yun2014}.
+However, we would like to emphasize that collaborative filtering using matrix factorization is a different problem than NMF:
+In the case of collaborative filtering, nonzeros in the matrix
+are considered to be observed ratings and zeros to be missing entries, while in the case of NMF, there is no missing entries and even zero is an observed entry.
+
+There are several recent distributed NMF algorithms in the literature \cite{liao2014cloudnmf,Faloutsos2014,Yin2014,liu2010distributed}.
+Liu et al.\ propose running Multiplicative Update (MU) for KL divergence, squared loss, and ``exponential'' loss functions \cite{liu2010distributed}.
+Matrix multiplication, element-wise multiplication, and element-wise division are the building blocks of the MU algorithm.
+The authors discuss performing these matrix operations effectively in Hadoop for sparse matrices.
+Using similar approaches, Liao et al.\ implement an open source Hadoop-based MU algorithm and study its scalability on large-scale biological data sets \cite{liao2014cloudnmf}.
+Also, Yin, Gao, and Zhang present a scalable NMF that can perform frequent updates, which aim to use the most recently updated data \cite{Yin2014}.
+Similarly Faloutsos et al.\ propose a distributed, scalable method for decomposing matrices, tensors, and coupled data sets through stochastic gradient descent on a variety of objective functions \cite{Faloutsos2014}.
+The authors also provide an implementation that can enforce non-negative constraints on the factor matrices.
+All of these works use Hadoop framework to implement their algorithms, hence are not very efficient.
+
+%We emphasize that our MPI-based approach has several advantages over Hadoop-based approaches:
+%\begin{itemize}
+%        \item efficiency -- our approach maintains data in memory, never communicating the data matrix, while Hadoop-based approaches must read/write data to/from disk and involves global shuffles of data matrix entries;
+%        \item generality -- our approach is well-designed for both dense and sparse data matrices, whereas Hadoop-based approaches generally require sparse inputs;
+%        \item privacy -- our approach allows processors to collaborate on computing an approximation without ever sharing their local input data (important for applications involving sensitive data, such as electronic health records), while Hadoop requires the user to relinquish control of data placement.
+%\end{itemize}
+
+Spark \cite{ZCFSS10} is a popular big-data processing infrastructure that is generally more efficient for iterative algorithms such as NMF than Hadoop, as it maintains data in memory and avoids file system I/O.
+Even with a Spark implementation of previously proposed Hadoop-based NMF algorithms, the performance still suffers from expensive communication of input matrix entries, and Spark does not have innate mechanisms to overcome this shortcoming. 
+Spark has collaborative filtering libraries such as MLlib \cite{meng2015mllib} which use matrix factorization and can impose non-negativity constraints. %none of them implement pure NMF, and so we do not have a direct comparison against NMF running on Spark.
+Nevertheless, as mentioned, the problem of collaborative filtering is different from NMF,  hence we do not compare our approach against these.
+
+In parallel with the Hadoop and Spark implementations, there have been growing interest in the HPC community towards efficiently computing these algorithms with tuned high performance implementations. Kannan, Ballard and Park \cite{KBP16, KBP16MPIFAUN}, have proposed \mpifaun framework to implement various NMF algorithms such as multiplicative update (MU), Hierarchical Alternating Least Squares (HALS) and Alternating Non-negative Least Squares using Block Principal Pivoting (ANLS-BPP).
+We choose this work as a baseline, as it is the only available high performance implementation of NMF, and it performs significantly faster than Hadoop and Spark-based approaches.
+To elaborate this, Gittens et.al., \cite{GDRRGKLMC16} recently benchmarked the implementations of different matrix factorization algorithms, such as NMF and Principal Component Analysis~(PCA), in Spark and in C and MPI, which is tuned for HPC platforms.
+They claim native MPI implementations on HPC platforms out perform Spark implementation by a speedup factor of 44x.
+Similar observations have been made by Sukumar, Kannan, Matheson and Lim \cite{SKLM16, SMKL16} on super computers at Oak Ridge Leadership Computing Facility. 
+Finally, there are implementations of the MU algorithm in a distributed memory setting using X10 \cite{Grove2014} and on a GPU \cite{mejia2015nmf}.
+
+
+%Given these existing literature, we would like to highlight our contribution in this paper here.
+%(a) Our proposed Algorithm \distspnmf that is agnostic to distribution strategies. In our humble opinion, this is the first high performance distributed sparse NMF algorithm in the literature. 
+%(b) We compare both the MPI collective communication and $P2P$ in real world datasets on very large number of processors
+%(c) Sparse regularized NMF which otherwise will result in numerical in-stability for large high-dimensional sparse matrices 
+%(d) The intermediate memory requirement for $MPI-FAUN$ restricts its ability to handle sparse matrices of few hundred millions and more in smaller processor and we have to extend blocking support on the low rank side.
