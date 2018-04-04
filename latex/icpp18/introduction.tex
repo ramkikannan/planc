@@ -39,8 +39,11 @@ Our goal is in this paper is to fill in this gap by providing scalable parallel 
 
 % How NMF is computed, and in sparse what is important.
 The most common method for solving \cref{eqn:origNMF} is to use an alternating optimization approach, iteratively updating $\WW$ with $\HH$ fixed and then updating $\HH$ with $\WW$ fixed.
-Specifically, updating a factor matrix involves three main operations; computing of $\WW^T\AA$ or $\AA\Hm^T$, computing the Gram matrix $\Wm^T \Wm$ or $\Hm \Hm^T$, and solving a non-negative linear least squares~(NNLS) problem using these two resulting matrices to update the factor matrix.
-The typical bottleneck is the computation that involves the input matrix, $\WW^T\AA$ and $\AA\Hm^T$, which are sparse-dense matrix multiplications (SpMMs) when the input data is sparse.
+Specifically, updating a factor matrix involves three main operations; computing of $\WW^T\AA$ or $\AA\Hm^T$, computing the Gram matrix $\Wm^T \Wm$ or $\Hm \Hm^T$, and solving a non-negative linear least squares (NLS) problem using these two resulting matrices to update the factor matrix.
+When the rank $k$ is small, the typical bottleneck is the computation that involves the input matrix, $\WW^T\AA$ and $\AA\Hm^T$, which are sparse-dense matrix multiplications (SpMMs) when the input data is sparse.
+However, for large $k$, the Gram and NLS computations can become the bottleneck, as they grow more quickly with $k$ than the SpMMs.
+Efficient parallel algorithms for NMF must load balance the computation and avoid communication overheads.
+The distribution of the input $\AA$ across processors affects the load balance and communication of the SpMMs, and the distribution of the factor matrices $\WW$ and $\HH$ affects the load balance of the Gram and NLS computations.
 
 The focus in this work is the comparison and combination of two previous approaches that can be applied to sparse NMF problems.
 The first approach is based on MPI-FAUN \cite{KBP17}, a software framework for computing the NMF of dense and sparse data.
@@ -54,7 +57,7 @@ The disadvantage is that because the partition ignores the sparsity of $\AA$, th
 
 HyperTensor solves an input-sparsity-dependent hypergraph partitioning problem to determine the parallel distribution of the entries of $\AA$.
 The advantage of this approach is that by being sensitive to the nonzero pattern, the resulting factor matrix communication required to compute the SpMMs is (approximately) minimized, and the only data that a processor receives is what it needs for its local computation.
-The disadvantages of this approach are an upfront partitioning cost (which can be amortized over the iterations of the NMF algorithm) and possible load imbalance, in terms of the rest of the computation and the number of messages communicated among processors.
+The disadvantages of this approach are an upfront partitioning cost (which can be amortized over the iterations of the NMF algorithm) and possible load imbalance, particularly in the NLS computations.
 
 The two methods differ both in their partitioning strategy and in their communication pattern.
 We also consider a compromise approach, which uses a randomized partitioning scheme, to achieve load balance without perfectly minimizing communication, and a sparsity-sensitive communication pattern, which avoids communicating unnecessary data.
