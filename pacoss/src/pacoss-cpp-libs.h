@@ -2,6 +2,7 @@
 #define PACOSS_CPP_LIBS
 
 // C libraries
+#include <cassert>
 #include <cinttypes>
 #include <cstdio>
 #include <cstdlib>

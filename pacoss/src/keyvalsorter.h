@@ -151,9 +151,9 @@ static size_t partition(
   if (left == right) { return left; }
   size_t pivot = left, i = left + 1, j = right;
   size_t order = key.size();
-  size_t randIdx1 = rand() % (right - left + 1) + left;
-  size_t randIdx2 = rand() % (right - left + 1) + left;
-  size_t randIdx3 = rand() % (right - left + 1) + left;
+  size_t randIdx1 = (size_t) rand() % (right - left + 1) + left;
+  size_t randIdx2 = (size_t) rand() % (right - left + 1) + left;
+  size_t randIdx3 = (size_t) rand() % (right - left + 1) + left;
   randIdx1 = findMedian3(randIdx1, randIdx2, randIdx3, key);
 
   // Swap the random pivot to the very left

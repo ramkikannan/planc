@@ -1,4 +1,5 @@
 #include "pacoss-sparse-struct.h"
+#include "keyvalsorter.h"
 
 template <class DataType>
 void Pacoss_SparseStruct<DataType>::load(const char * const fileName)
@@ -71,6 +72,40 @@ void Pacoss_SparseStruct<DataType>::form(
   }
   _val = val;
   if (_val.size() == 0) { _val.resize(_nnz, (DataType)1.0); }
+}
+
+template <class DataType>
+void Pacoss_SparseStruct<DataType>::fix()
+{
+  // Remove duplicates
+  KeyValSorter::sort(_idx, _val);   
+  Pacoss_Idx newNnz = 0;
+  for (Pacoss_Idx i = 0, ie = _nnz; i < ie; newNnz++) {
+    DataType newVal = 0.0;
+    while (i < _nnz && compKey(newNnz, i, _idx) == 0) { 
+      newVal += _val[i];
+      i++;
+    }
+    _val[newNnz] = newVal;
+    if (i < _nnz) {
+      for (Pacoss_Int j = 0; j < _order; j++) { _idx[j][newNnz + 1] = _idx[j][i]; }
+    }
+  }
+  _nnz = newNnz;
+  for (Pacoss_Int i = 0, ie = _order; i < ie; i++) { _idx[i].resize(_nnz); }
+  _val.resize(_nnz);
+  // Remove empty slices
+  for (Pacoss_Int dim = 0, dime = _order; dim < dime; dim++) {
+    // Detect empty slices
+    std::vector<Pacoss_Int> newLabel(_dimSize[dim]);
+    auto &idx = _idx[dim];
+    for (Pacoss_Idx i = 0, ie = _nnz; i < ie; i++) { 
+      newLabel[idx[i]] = 1;
+    }
+    // Find new labels and replace with the old ones
+    for (Pacoss_Int i = 1, ie = _dimSize[dim]; i < ie; i++) { newLabel[i] += newLabel[i - 1]; }
+    for (Pacoss_Idx i = 0, ie = _nnz; i < ie; i++) { idx[i] = newLabel[idx[i]] - 1; }
+  }
 }
 
 template class Pacoss_SparseStruct<double>;

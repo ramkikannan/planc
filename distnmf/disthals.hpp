@@ -94,6 +94,7 @@ public:
            const int numkblks) :
     DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
                             rightlowrankfactor, communicator, numkblks) {
+      PRINTROOT("DistHALS() constructor successful");
   }
 };
 

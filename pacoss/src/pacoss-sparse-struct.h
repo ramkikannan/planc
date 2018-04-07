@@ -21,6 +21,7 @@ class Pacoss_SparseStruct
         const std::vector<DataType> &val,
         const bool oneBased = true
         );
+    void fix();
 };
 
 #endif

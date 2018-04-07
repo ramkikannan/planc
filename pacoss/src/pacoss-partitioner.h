@@ -37,11 +37,12 @@ class Pacoss_Partitioner
         std::vector<std::vector<IntType>> &dimPart);
 
     static void partitionDimsBalanced(
-        const Pacoss_SparseStruct<DataType> &spStruct,
+        Pacoss_SparseStruct<DataType> &spStruct,
         const IntType numParts,
         const std::vector<IntType> &nzPart,
         std::vector<std::vector<IntType>> &dimPart,
-        double maxAllowedRowImbalance = 5.0);
+        std::vector<double> maxRowImbalance,
+        std::vector<std::vector<IntType>> procCtorIdx = std::vector<std::vector<IntType>>());
 
     // Partitioning routines for nonzeros
     static void partitionNzFineRandom(
@@ -53,7 +54,15 @@ class Pacoss_Partitioner
         const Pacoss_SparseStruct<DataType> &spStruct,
         const IntType numRowParts,
         const IntType numColParts,
-        std::vector<IntType> &nzPart);
+        std::vector<IntType> &nzPart,
+        std::vector<std::vector<IntType>> &partCtorIdx);
+
+    static void partitionNzCheckerboardUniform(
+        const Pacoss_SparseStruct<DataType> &spStruct,
+        const std::vector<IntType> &numParts,
+        std::vector<IntType> &nzPart,
+        std::vector<std::vector<IntType>> &dimPart,
+        bool randomize = true);
 
     static void partitionHypergraphFast(
         const int numVtx,
@@ -89,7 +98,8 @@ class Pacoss_Partitioner
         const IntType numColParts,
         const char * const patohSettings,
         const char * const colPartitionType,
-        std::vector<IntType> &nzPart);
+        std::vector<IntType> &nzPart,
+        std::vector<std::vector<IntType>> &partCtorIdx);
 #endif
 
     // Distribution routines

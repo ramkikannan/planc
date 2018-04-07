@@ -41,7 +41,7 @@ void _fclosee(
 std::chrono::time_point<std::chrono::high_resolution_clock> timerTic()
 {
   tic_global = std::chrono::high_resolution_clock::now();
-  return std::chrono::high_resolution_clock::now();
+  return tic_global;
 }
 
 double timerToc(const std::chrono::time_point<std::chrono::high_resolution_clock> &ticPoint)

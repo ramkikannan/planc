@@ -119,6 +119,8 @@ class DistNMFDriver {
         std::string dim_part_file_name = this->m_Afile_name;
         dim_part_file_name += ".dpart.part" + std::to_string(mpicomm.rank());
         this->m_Afile_name += ".part" + std::to_string(mpicomm.rank());
+        INFO << mpicomm.rank() << ":: part_file_name::" << dim_part_file_name
+             << "::m_Afile_name::" << this->m_Afile_name << std::endl;
         Pacoss_SparseStruct<double> ss;
         ss.load(m_Afile_name.c_str());
         std::vector<std::vector<Pacoss_IntPair> > dim_part;

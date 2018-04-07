@@ -25,9 +25,9 @@ ALL_OBJ_FILES = $(OBJ_FILES) $(OBJ_EXE_FILES) $(OBJ_TEST_FILES)
 EXE_FILES = $(addprefix $(EXE_FOLDER)/,$(notdir $(SRC_EXE_FILES:.cpp=)))
 TEST_FILES = $(addprefix $(TEST_FOLDER)/,$(notdir $(SRC_TEST_FILES:.cpp=)))
 
-CPP_FLAGS_RELEASE = -O3 -w
-CPP_FLAGS_DEBUG = -O0 -g -Wall -Wconversion
-CPP_FLAGS += $(CPP_FLAGS_$(BUILD))
+CPP_FLAGS_RELEASE = -O3
+CPP_FLAGS_DEBUG = -O0 -g
+CPP_FLAGS += $(CPP_FLAGS_$(BUILD)) -Wall -Wconversion -Werror
 CPP_FLAGS += -fpic -std=c++11 -I ${INC_FOLDER} -I ${TMPI_SRC_FOLDER}
 ifneq ("$(PATOH_FOLDER)", "")
 	CPP_FLAGS += -DPACOSS_USE_PATOH -I$(PATOH_FOLDER)/inc

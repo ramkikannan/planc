@@ -408,7 +408,7 @@ void Pacoss_Communicator<DataType>::gatherData(
     Pacoss_Int root)
 {
   Pacoss_Int ownedCount = localOwnedRowCount();
-  Pacoss_Int totalRows;
+  Pacoss_Int totalRows = 0;
   Pacoss_IntVector rowIdx;
   Pacoss_IntVector recvCount; if (_procRank == root) { recvCount.resize(_numProcs); }
   Pacoss_IntVector recvBegin; if (_procRank == root) { recvBegin.resize(_numProcs + 1); }
@@ -452,7 +452,7 @@ void Pacoss_Communicator<DataType>::scatterData(
     Pacoss_Int root)
 {
   Pacoss_Int ownedCount = localOwnedRowCount();
-  Pacoss_Int totalRows;
+  Pacoss_Int totalRows = 0;
   Pacoss_IntVector rowIdx;
   Pacoss_IntVector recvCount; if (_procRank == root) { recvCount.resize(_numProcs); }
   Pacoss_IntVector recvBegin; if (_procRank == root) { recvBegin.resize(_numProcs + 1); }

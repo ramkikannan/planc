@@ -7,19 +7,22 @@ char *sparseStructFileName;
 char *dimPartitionFileName;
 char *nzPartitionFileName;
 const char *nzPartitionMethod = "fine-random";
-const char *dimPartitionMethod = "balance-comm";
+const char *dimPartitionMethod = "balanced";
 const char *patohSettings = "default";
+std::vector<Pacoss_Int> procGridDims;
 char dimPartitionFileNameDefault[1000]; 
 char nzPartitionFileNameDefault[1000];
 char *command;
 bool oneBasedIdx = true;
+std::vector<std::vector<Pacoss_Int>> partCtorIdx;
+std::vector<double> maxRowImbalance;
 
 void printUsage()
 {
   printfe("Usage: ./pacoss -c command command-args\n");
-  printfe("  command: partition | distribute | check-stats | convert-sparse-struct\n");
+  printfe("  command: partition | partition-dims | distribute | check-stats | convert-sparse-struct | fix-sparse-struct\n");
   printfe("  partition-args: -f sparseStructFileName -m nzPartitionMethod -n dimPartitionMethod -p numParts [-z"
-      " nzPartitionFileName -d dimPartitionFileName -q numColParts -s patohSettings]\n");
+      " nzPartitionFileName -d dimPartitionFileName -q numColParts -s patohSettings -i maxRowImbalance]\n");
   printfe("  distribute-args: -f sparseStructFileName [-z nzPartitionFileName -d dimPartitionFileName]\n");
   printfe("  check-stats-args: -f sparseStructFileName [-z nzPartitionFileName -d dimPartitionFileName]\n");
   printfe("  convert-sparse-struct-args: -f sparseStructFileName [--one-based-idx]\n");
@@ -27,15 +30,15 @@ void printUsage()
   printfe("    fine-random(default): Fine-grain random partitioning of sparse structure nonzeros.\n");
   printfe("    fine-patoh: Fine-grain hypergraph partitioning using PaToH.\n");
   printfe("    checkerboard-random: Random checkerboard partitioning.\n");
+  printfe("    checkerboard-uniform: Uniform checkerboard partitioning.\n");
   printfe("    checkerboard-patoh-1d: Checkerboard partitioning using PaToH for row partitioning, and"
       " random column partitioning (to avoid multi-constraint partitioning).\n");
   printfe("    checkerboard-patoh-2d: Checkerboard partitioning using PaToH for row partitioning, and"
       " multiconstraint PaToH for column partitioning.\n");
   printfe("  dimPartitionMethod: \n");
-  printfe("    balance-comm(default): Try to balance the communication while keeping the total communication volume at"
-      " minimum. \n");
-  printfe("    balance-rows: Try to balance the communication volume while balancing the number of rows owned"
-      " by parts. This option can increase the total communication volume to establish row balance. \n");
+  printfe("    balanced(default): Try to balance the communication and number of rows while keeping the total "
+      "communication volume at minimum. \n");
+  printfe("    random: Partitions the rows randomly.");
   printfe("  patohSettings: \n");
   printfe("    quality: Uses more time for partitioning for slightly better quality.\n");
   printfe("    default(default): Default settings providing a speed/quality tradeoff.\n");
@@ -62,8 +65,9 @@ void processArguments(int argc, char **argv)
       printfe("numParts: %" PRIINT "\n", numParts);
       i++;
     } else if (strcmp(argv[i], "-q") == 0) {
-      sscanfe(argv[i + 1], " %" PRIINT, &numColParts);
-      printfe("numColParts: %" PRIINT "\n", numColParts);
+      char * p = argv[i + 1];
+      printfe("procGridDims: %s\n", p);
+      for (p = strtok(p, ","); p; p = strtok(NULL, ",")) { procGridDims.push_back(atoi(p)); }
       i++;
     } else if (strcmp(argv[i], "-z") == 0) {
       nzPartitionFileName = argv[i + 1];
@@ -75,11 +79,17 @@ void processArguments(int argc, char **argv)
       patohSettings = argv[i + 1];
       printfe("patohSettings: %s\n", patohSettings);
       i++;
+    } else if (strcmp(argv[i], "-i") == 0) {
+      printfe("maxRowImbalance: %s\n", argv[i + 1]);
+      char * p = argv[i + 1];
+      for (p = strtok(p, ","); p; p = strtok(NULL, ",")) { maxRowImbalance.push_back(atof(p)); }
+      i++;
     } else if (strcmp(argv[i], "--one-based-idx") == 0) {
       oneBasedIdx = true;
       printfe("oneBasedIdx: true\n");
-    } else if (strcmp(argv[i], "partition") == 0 || strcmp(argv[i], "distribute") == 0 || strcmp(argv[i], "check-stats")
-        == 0 || strcmp(argv[i], "convert-sparse-struct") == 0) {
+    } else if (strcmp(argv[i], "partition") == 0 || strcmp(argv[i], "partition-dims") == 0 ||strcmp(argv[i],
+          "distribute") == 0 || strcmp(argv[i], "check-stats") == 0 || strcmp(argv[i], "convert-sparse-struct") == 0 ||
+        strcmp(argv[i], "fix-sparse-struct") == 0) {
       command = argv[i];
       printfe("command: %s\n", argv[i]);
     } else {
@@ -89,16 +99,18 @@ void processArguments(int argc, char **argv)
   if (command == NULL) {
     throw Pacoss_Error("ERROR: No valid command is specified.");
   }
-  // In case no nzPartitionFileName or dimPartitionFileName is provided, use the defaults
-  strcpy(nzPartitionFileNameDefault, sparseStructFileName);
-  strcat(nzPartitionFileNameDefault, PACOSS_PARTITIONER_NZ_PARTITION_SUFFIX);
-  if (nzPartitionFileName == NULL)  { nzPartitionFileName = nzPartitionFileNameDefault; }
-  printfe("nzPartitionFileName: %s\n", nzPartitionFileName);
-  strcpy(dimPartitionFileNameDefault, sparseStructFileName);
-  strcat(dimPartitionFileNameDefault, PACOSS_PARTITIONER_DIM_PARTITION_SUFFIX);
-  if (dimPartitionFileName == NULL) { dimPartitionFileName = dimPartitionFileNameDefault; }
-  printfe("dimPartitionFileName: %s\n", dimPartitionFileName);
-  printfe("\n");
+  if (strcmp(command, "partition") == 0 || strcmp(command, "partition-dims") == 0 || strcmp(command, "distribute") == 0 || strcmp(command, "check-stats") == 0) {
+    // In case no nzPartitionFileName or dimPartitionFileName is provided, use the defaults
+    strcpy(nzPartitionFileNameDefault, sparseStructFileName);
+    strcat(nzPartitionFileNameDefault, PACOSS_PARTITIONER_NZ_PARTITION_SUFFIX);
+    if (nzPartitionFileName == NULL)  { nzPartitionFileName = nzPartitionFileNameDefault; }
+    printfe("nzPartitionFileName: %s\n", nzPartitionFileName);
+    strcpy(dimPartitionFileNameDefault, sparseStructFileName);
+    strcat(dimPartitionFileNameDefault, PACOSS_PARTITIONER_DIM_PARTITION_SUFFIX);
+    if (dimPartitionFileName == NULL) { dimPartitionFileName = dimPartitionFileNameDefault; }
+    printfe("dimPartitionFileName: %s\n", dimPartitionFileName);
+    printfe("\n");
+  }
 }
 
 void partition() {
@@ -107,44 +119,55 @@ void partition() {
   auto epoch = timerTic();
   ss.load(sparseStructFileName);
   printfe("Loading the sparse struct took %lf seconds.\n", timerToc(epoch));
-  printfe("Partitioning sparse struct...\n");
   Pacoss_IntVector nzPart;
   std::vector<Pacoss_IntVector> dimPart;
-  epoch = timerTic();
-  if (strcmp(nzPartitionMethod, "fine-random") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionNzFineRandom(ss, numParts, nzPart);
-  } else if (strcmp(nzPartitionMethod, "checkerboard-random") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardRandom(ss, numParts / numColParts, numColParts, nzPart);
-  }
+  if (strcmp(command, "partition") == 0) { // Partition the nonzeros
+    printfe("Partitioning sparse struct...\n");
+    epoch = timerTic();
+    if (strcmp(nzPartitionMethod, "fine-random") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionNzFineRandom(ss, numParts, nzPart);
+    } else if (strcmp(nzPartitionMethod, "checkerboard-random") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardRandom(ss, procGridDims[0], procGridDims[1],
+          nzPart, partCtorIdx);
+    } else if (strcmp(nzPartitionMethod, "checkerboard-uniform") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardUniform(ss, procGridDims, nzPart, dimPart, false);
+    } else if (strcmp(nzPartitionMethod, "checkerboard-uniform-randomized") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardUniform(ss, procGridDims, nzPart, dimPart, true);
+    }
 #ifdef PACOSS_USE_PATOH
-  else if (strcmp(nzPartitionMethod, "fine-patoh") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionNzFinePatoh(ss, numParts, patohSettings, nzPart);
-  } else if (strcmp(nzPartitionMethod, "checkerboard-patoh-1d") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardPatoh(ss, numParts / numColParts, numColParts, patohSettings,
-        "1d", nzPart);
-  } else if (strcmp(nzPartitionMethod, "checkerboard-patoh-2d") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardPatoh(ss, numParts / numColParts, numColParts, patohSettings,
-        "2d", nzPart);
-  }
+    else if (strcmp(nzPartitionMethod, "fine-patoh") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionNzFinePatoh(ss, numParts, patohSettings, nzPart);
+    } else if (strcmp(nzPartitionMethod, "checkerboard-patoh-1d") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardPatoh(ss, procGridDims[0], procGridDims[1],
+          patohSettings, "1d", nzPart, partCtorIdx);
+    } else if (strcmp(nzPartitionMethod, "checkerboard-patoh-2d") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionNzCheckerboardPatoh(ss, procGridDims[0], procGridDims[1],
+          patohSettings, "2d", nzPart, partCtorIdx);
+    }
 #endif
-  else {
-    char msg[1000];
-    sprintfe(msg, "ERROR: Unsupported nzPartitionMethod %s.\n", nzPartitionMethod);
-    throw Pacoss_Error(msg);
+    else {
+      char msg[1000];
+      sprintfe(msg, "ERROR: Unsupported nzPartitionMethod %s.\n", nzPartitionMethod);
+      throw Pacoss_Error(msg);
+    }
+    printfe("Partitioning nonzeros took %lf seconds\n", timerToc(epoch));
+  } else { // Load the nonzero partition
+    printfe("Loading nzPartitionFile...\n");
+    Pacoss_Partitioner<double, Pacoss_Int>::loadNzPart(nzPart, nzPartitionFileName);
   }
-  printfe("Partitioning nonzeros took %lf seconds\n", timerToc(epoch));
   printfe("Partitioning dimensions...\n");
   epoch = timerTic();
-  if (strcmp(dimPartitionMethod, "balance-comm") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionDimsBalanced(ss, numParts, nzPart, dimPart);
-  } else if (strcmp(dimPartitionMethod, "balance-rows") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionDimsBalanced(ss, numParts, nzPart, dimPart, 1.25);
-  } else if (strcmp(dimPartitionMethod, "random") == 0) {
-    Pacoss_Partitioner<double, Pacoss_Int>::partitionDimsRandom(ss, numParts, dimPart);
-  } else {
-    char msg[1000];
-    sprintfe(msg, "ERROR: Unsupported dimPartitionMethod %s.\n", dimPartitionMethod);
-    throw Pacoss_Error(msg);
+  if (dimPart.size() == 0) { // If dimPart is not already computed (using checkerboard-uniform, for instance)
+    if (strcmp(dimPartitionMethod, "balanced") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionDimsBalanced(ss, numParts, nzPart, dimPart, maxRowImbalance,
+          partCtorIdx);
+    } else if (strcmp(dimPartitionMethod, "random") == 0) {
+      Pacoss_Partitioner<double, Pacoss_Int>::partitionDimsRandom(ss, numParts, dimPart);
+    } else {
+      char msg[1000];
+      sprintfe(msg, "ERROR: Unsupported dimPartitionMethod %s.\n", dimPartitionMethod);
+      throw Pacoss_Error(msg);
+    }
   }
   printfe("Partitioning dimensions took %lf seconds.\n", timerToc(epoch));
   printfe("Saving nonzero and dimension partition files...\n");
@@ -220,6 +243,16 @@ void convertSparseStruct(bool oneBased = true) {
   fclosee(file);
 }
 
+void fixSparseStruct(bool oneBased = true) {
+  Pacoss_SparseStruct<double> ss;
+  ss.load(sparseStructFileName);
+  ss.fix();
+  std::string outFileName(sparseStructFileName);
+  outFileName += ".fix";
+  ss.save(outFileName.c_str());
+}
+
+
 int main(int argc, char **argv)
 {
   printfe("Pacoss v0.1\n\n");
@@ -227,7 +260,7 @@ int main(int argc, char **argv)
     printUsage();
   } else {
     processArguments(argc, argv);
-    if (strcmp(command, "partition") == 0) {
+    if (strcmp(command, "partition") == 0 || strcmp(command, "partition-dims") == 0) {
       partition();
     } else if (strcmp(command, "distribute") == 0) {
       distribute();
@@ -235,8 +268,11 @@ int main(int argc, char **argv)
       checkStats();
     } else if (strcmp(command, "convert-sparse-struct") == 0) {
       convertSparseStruct();
+    } else if (strcmp(command, "fix-sparse-struct") == 0) {
+      fixSparseStruct();
     }
+
   }
-  printfe("\nPacoss terminated..\n");
+  printfe("\nPacoss finished.\n");
   return 0;
 }

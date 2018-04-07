@@ -81,39 +81,39 @@ class tmpi_exception : public std::exception
 }
 #endif
 
-// MPI datatypes and templated routines that return the corresponding datatypes
-typedef enum
-{
-  type_int = MPI_INT,
-  type_long = MPI_LONG,
-  type_longlong = MPI_LONG_LONG,
-  type_float = MPI_FLOAT,
-  type_double = MPI_DOUBLE
-} TMPI_DataType;
+//// MPI datatypes and templated routines that return the corresponding datatypes
+//typedef enum
+//{
+//  type_int = MPI_INT,
+//  type_long = MPI_LONG,
+//  type_longlong = MPI_LONG_LONG,
+//  type_float = MPI_FLOAT,
+//  type_double = MPI_DOUBLE
+//} TMPI_Datatype;
 
 template <class T>
-TMPI_DataType getTMPIDataType()
+MPI_Datatype getTMPIDataType()
 { throw tmpi_exception("Data type is not supported by TMPI."); }
 
 template <>
-inline TMPI_DataType getTMPIDataType<int>()
-{ return type_int; }
+inline MPI_Datatype getTMPIDataType<int>()
+{ return MPI_INT; }
 
 template <>
-inline TMPI_DataType getTMPIDataType<long>()
-{ return type_long; }
+inline MPI_Datatype getTMPIDataType<long>()
+{ return MPI_LONG; }
 
 template <>
-inline TMPI_DataType getTMPIDataType<long long>()
-{ return type_longlong; }
+inline MPI_Datatype getTMPIDataType<long long>()
+{ return MPI_LONG_LONG; }
 
 template <>
-inline TMPI_DataType getTMPIDataType<float>()
-{ return type_float; }
+inline MPI_Datatype getTMPIDataType<float>()
+{ return MPI_FLOAT; }
 
 template <>
-inline TMPI_DataType getTMPIDataType<double>()
-{ return type_double; }
+inline MPI_Datatype getTMPIDataType<double>()
+{ return MPI_DOUBLE; }
 
 // TMPI functions
 

@@ -6,6 +6,8 @@
 #include <cstring>
 #include <exception>
 #include <chrono>
+#include <vector>
+#include <iostream>
 
 #define CppUtils_Error(msg) _CppUtils_Error(msg, __LINE__, __FILE__)
 
@@ -161,6 +163,18 @@ const char * STRCAT(T t, Args... args) // recursive variadic function
   strcpy(STRCAT_STR, t);
   strcat(STRCAT_STR, str);
   return STRCAT_STR;
+}
+
+template<class T>
+static void printVector(std::vector<T> vec) {
+  for (auto &i : vec) { std::cout << i << " "; }
+  std::cout << std::endl;
+}
+
+template<class T>
+static void printlnVector(std::vector<T> vec) {
+  for (auto &i : vec) { std::cout << i << " "; }
+  std::cout << std::endl;
 }
 
 // Timer tic-toc routines

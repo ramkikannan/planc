@@ -20,6 +20,7 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::loadDimPart(
   for (auto &curDimPart : dimPart) {
     for (auto &i : curDimPart) {
       fscanfe(file, SCNMOD<IntType>(), &i);
+      i--; // Convert to 0-based
     }
   }
   fclosee(file);
@@ -37,7 +38,7 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::saveDimPart(
   fprintfe(file, "\n");
   for (auto &curDimPart : dimPart) {
     fprintfe(file, "\n");
-    for (auto i : curDimPart) { fprintfe(file, STRCAT(PRIMOD<IntType>(), "\n"), i); }
+    for (auto i : curDimPart) { fprintfe(file, STRCAT(PRIMOD<IntType>(), "\n"), i + 1); }
   }
   fclosee(file);
 }
@@ -51,7 +52,10 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::loadNzPart(
   IntType nzPartSize;
   fscanf(file, SCNMOD<IntType>(), &nzPartSize); 
   nzPart.resize(nzPartSize);
-  for (IntType i = 0; i < nzPartSize; i++) { fscanf(file, SCNMOD<IntType>(), &nzPart[i]); }
+  for (IntType i = 0; i < nzPartSize; i++) {
+    fscanf(file, SCNMOD<IntType>(), &nzPart[i]);
+    nzPart[i]--; // Convert to 0-based
+  }
   fclosee(file);
 }
 
@@ -62,7 +66,7 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::saveNzPart(
 {
   FILE *file = fopene(nzPartFileName, "w"); 
   fprintfe(file, "%zu\n\n", nzPart.size());
-  for (auto i : nzPart) { fprintfe(file, STRCAT(PRIMOD<IntType>(), "\n"), i); }
+  for (auto i : nzPart) { fprintfe(file, STRCAT(PRIMOD<IntType>(), "\n"), i + 1); }
   fclosee(file);
 }
 
@@ -85,12 +89,34 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionDimsRandom(
 
 template <class DataType, class IntType, class IdxType>
 void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionDimsBalanced(
-    const Pacoss_SparseStruct<DataType> &spStruct,
+    Pacoss_SparseStruct<DataType> &spStruct,
     const IntType numParts,
     const std::vector<IntType> &nzPart,
     std::vector<std::vector<IntType>> &dimPart,
-    double maxAllowedRowImbalance)
+    std::vector<double> maxRowImbalance,
+    std::vector<std::vector<IntType>> partCtorIdx)
 {
+  if (maxRowImbalance.size() == 0) { // If no imbalance is specified, then set allowed imbalance to maximum.
+    for (IntType i = 0, ie = spStruct._order; i < ie; i++) { maxRowImbalance.push_back((double)numParts + 1.0); }
+  }
+  // Set up communicator groups, if not provided, then push each part to the list of available parts for that group
+  if (partCtorIdx.size() == 0) {
+    printfe("No communicator info specified; putting all partessors to the same communicator.\n");
+    for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) {
+      partCtorIdx.push_back(std::vector<IntType>(numParts)); // Put all procs to ctor 0
+    }
+  }
+  std::vector<std::vector<std::vector<IntType>>> availProcs(spStruct._order);
+  for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) {
+    auto & dimProcCtorIdx = partCtorIdx[dim];
+    auto & dimAvailProcs = availProcs[dim];
+    IntType dimNumCtors = (*std::max_element(dimProcCtorIdx.begin(), dimProcCtorIdx.end())) + 1; // Ctors are 0-based
+    availProcs[dim].resize(dimNumCtors);
+    for (IntType part = 0, parte = numParts; part < parte; part++) {
+      dimAvailProcs[dimProcCtorIdx[part]].push_back(part); // Add part to its ctor's list of parts
+    }
+  }
+
   // Find the set of owner candidate parts for each row that 'touch' that row.
   std::vector<std::vector<std::vector<IntType>>> ownerCandidate;
   for (IntType i = 0; i < spStruct._order; i++) { ownerCandidate.emplace_back(spStruct._dimSize[i]); }
@@ -110,23 +136,13 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionDimsBalanced(
   }
 
   // Find greedyRowOrder sorted with small-to-large number of owner candidates, then assign rows to parts greedily
+  srand((int)time(0));
   dimPart.clear();
   for (IntType i = 0; i < spStruct._order; i++) { dimPart.emplace_back(spStruct._dimSize[i]); }
   for (IntType j = 0; j < spStruct._order; j++) {
-    // Initialize rowCountList that keeps track of the parts having minimum number of rows at any instant.
-    std::vector<IntType> rowCountListHead(spStruct._dimSize[j], -1);
-    std::vector<IntType> rowCountListPrev(numParts, -1), rowCountListNext(numParts, -1);
-    IntType minRowCount = 0;
-    rowCountListNext[0] = rowCountListHead[0];
-    rowCountListHead[0] = 0;
-    for (IntType i = 1; i < numParts; i++) {
-      rowCountListNext[i] = rowCountListHead[0];
-      rowCountListPrev[rowCountListNext[i]] = i;
-      rowCountListHead[0] = i;
-    }
     // Sort rows with increasing number of ownerCandidates.
     std::vector<IntType> partRowCount(numParts);
-    IntType maxPartRowCount = (IntType)((spStruct._dimSize[j] * maxAllowedRowImbalance) / (double)numParts);
+    IntType maxPartRowCount = (IntType)((spStruct._dimSize[j] * maxRowImbalance[j]) / (double)numParts);
     std::vector<IntType> greedyRowOrder; greedyRowOrder.reserve(spStruct._dimSize[j]);
     for (IntType i = 0; i < spStruct._dimSize[j]; i++) { greedyRowOrder.push_back(i); }
     std::vector<std::vector<IntType>> temp;
@@ -139,44 +155,46 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionDimsBalanced(
     std::vector<IntType> partRecvCommVol(numParts);
     std::vector<IntType> partSendCommVol(numParts);
     // Assign each row to parts by balancing the send comm load
+    std::vector<IntType> cands; cands.reserve(128);
+    auto & dimProcCtorIdx = partCtorIdx[j];
+    auto & dimAvailProcs = availProcs[j];
     for (auto i : greedyRowOrder) {
       IntType minPartIdx = -1;
-      // Assign the row to the part having the least recv communication volume
-      for (auto partIdx : ownerCandidate[j][i]) {
-        if (partRowCount[partIdx] < maxPartRowCount) { 
-          if (minPartIdx == -1) { minPartIdx = partIdx; }
-          else if (partRecvCommVol[partIdx] < partRecvCommVol[minPartIdx]) { minPartIdx = partIdx; }
+      // Filter parts in ownerCandidate[j][i] that are overloaded
+      auto &curOwnerCandidate = ownerCandidate[j][i];
+      cands.clear();
+      for (auto cand : curOwnerCandidate) {
+        if (partRowCount[cand] < maxPartRowCount) { cands.push_back(cand); }
+      }
+      if (cands.size() > 0) { // Try to assign to one of these parts if possible
+        minPartIdx = cands[rand() % (int)cands.size()];
+      } else {
+        if (curOwnerCandidate.size() > 0) {
+          auto &partList = dimAvailProcs[dimProcCtorIdx[curOwnerCandidate[0]]];
+          if (partList.size() > 0) { // Try to assign to an underloaded part in the same ctor if possible
+            auto minPartIdxIdx = rand() % (int)partList.size();
+            minPartIdx = partList[minPartIdxIdx];
+            if (partRowCount[minPartIdx] + 1 >= maxPartRowCount) {
+              std::swap(partList[minPartIdxIdx], partList[partList.size() - 1]);
+              partList.resize(partList.size() - 1);
+            }
+          } else { // All parts are overloaded in the current ctor; assign the row to one of them randomly.
+            auto minPartIdxIdx = rand() % (int)curOwnerCandidate.size();
+            minPartIdx = curOwnerCandidate[minPartIdxIdx];
+          }
+        } else { // Row has no owner candidates; assign to the part having minimum number of rows.
+          minPartIdx = rand() % (int)numParts;
         }
       }
-      // If could not assign the row(due to imbalance or empty slice), assign it to a part having minimal num of rows
-      if (minPartIdx == -1) { minPartIdx = rowCountListHead[minRowCount]; }
+      Pacoss_AssertGe(minPartIdx, 0); Pacoss_AssertLt(minPartIdx, numParts);
       // Assign to minPartIdx, increase the recv comm volume accordingly
       dimPart[j][i] = minPartIdx;
       partRowCount[minPartIdx]++;
-      partRecvCommVol[minPartIdx] += (IntType)std::max((size_t)0, ownerCandidate[j][i].size() - 1);
+      partRecvCommVol[minPartIdx] += (IntType)std::max((size_t)0, curOwnerCandidate.size() - 1);
       // Increase send comm volume of other parts
-      for (auto partIdx : ownerCandidate[j][i]) {
+      for (auto partIdx : curOwnerCandidate) {
         if (partIdx != minPartIdx) { partSendCommVol[partIdx]++; }
       }
-      // Update rowCountList according to the added row to minPartIdx
-      // Add to the new list first
-      IntType prev = rowCountListPrev[minPartIdx];
-      IntType next = rowCountListNext[minPartIdx];
-      if (rowCountListHead[partRowCount[minPartIdx]] != -1) {
-        rowCountListPrev[rowCountListHead[partRowCount[minPartIdx]]] = minPartIdx;
-      }
-      rowCountListNext[minPartIdx] = rowCountListHead[partRowCount[minPartIdx]];
-      rowCountListPrev[minPartIdx] = -1;
-      rowCountListHead[partRowCount[minPartIdx]] = minPartIdx;
-      // Remove from the old list
-      if (prev != -1) { rowCountListNext[prev] = next; }
-      else { 
-        rowCountListHead[partRowCount[minPartIdx] - 1] = next;
-        if (partRowCount[minPartIdx] - 1 == minRowCount) {
-          while (rowCountListHead[minRowCount] == -1) { minRowCount++; }
-        }
-      }
-      if (next != -1) { rowCountListPrev[next] = prev; }
     }
   }
 }
@@ -201,7 +219,8 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardRand
     const Pacoss_SparseStruct<DataType> &spStruct,
     const IntType numRowParts,
     const IntType numColParts,
-    std::vector<IntType> &nzPart)
+    std::vector<IntType> &nzPart,
+    std::vector<std::vector<IntType>> &partCtorIdx)
 {
   Pacoss_AssertEq(spStruct._order, 2);
   printfe(STRCAT("Partitioning with a ", PRIMOD<IntType>(), "x", PRIMOD<IntType>(), " checkerboard topology.\n"),
@@ -217,11 +236,90 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardRand
   nzPart.resize(spStruct._nnz);
   for (IdxType i = 0; i < spStruct._nnz; i++) {
     nzPart[i] = rowPart[rowIdx[i]] * numColParts + colPart[colIdx[i]];
+    Pacoss_AssertGe(nzPart[i], 0); Pacoss_AssertLt(nzPart[i], numRowParts * numColParts);
+  }
+  // Put each process to its row and column communicator
+  partCtorIdx.resize(2);
+  partCtorIdx[0].resize(numRowParts * numColParts);
+  partCtorIdx[1].resize(numRowParts * numColParts);
+  for (IntType i = 0, ie = numRowParts; i < ie; i++) {
+    for (IntType j = 0, je = numColParts; j < je; j++) {
+      IntType procIdx = i * numColParts + j; 
+      partCtorIdx[0][procIdx] = i;
+      partCtorIdx[1][procIdx] = j;
+    }
   }
 }
 
-
-#define PACOSS_PARTITIONER_TOPK_PART 5
+template <class DataType, class IntType, class IdxType>
+void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardUniform(
+        const Pacoss_SparseStruct<DataType> &spStruct,
+        const std::vector<IntType> &procDims,
+        std::vector<IntType> &nzPart,
+        std::vector<std::vector<IntType>> &dimPart,
+        bool randomize)
+{
+  std::vector<IntType> rowsPerProcDim(spStruct._order);
+  std::vector<IntType> dimProcIdMultiplier(spStruct._order);
+  std::vector<std::vector<IntType>> dimPerm(spStruct._order);
+  for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) {
+    auto &perm = dimPerm[dim];
+    for (IntType i = 0, ie = spStruct._dimSize[dim]; i < ie; i++) { perm.push_back(i); }
+    if (randomize) {
+      srand((unsigned int)time(NULL));
+      for (IntType i = 0, ie = spStruct._dimSize[dim]; i < ie; i++) {
+        IntType j = rand() % spStruct._dimSize[dim];
+        std::swap(perm[i], perm[j]);
+      }
+    }
+  }
+  dimProcIdMultiplier[spStruct._order - 1] = 1;
+  for (IntType dim = spStruct._order - 2, dime = 0; dim >= dime; dim--) {
+    dimProcIdMultiplier[dim] = dimProcIdMultiplier[dim + 1] * procDims[dim + 1];
+  }
+  for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) {
+    rowsPerProcDim[dim] = (spStruct._dimSize[dim] + procDims[dim] - 1) / procDims[dim];
+  }
+  // Partition dimensions
+  dimPart.resize(spStruct._order);
+  std::vector<std::vector<std::vector<IntType>>> procList(spStruct._order);
+  IntType numProcs = 1;
+  for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) { 
+    dimPart[dim].resize(spStruct._dimSize[dim]); 
+    procList[dim].resize(procDims[dim]);
+    numProcs *= procDims[dim];
+  }
+  for (IntType i = 0, ie = numProcs; i < ie; i++) {
+    for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) {
+      IntType procRowIdx = (i / dimProcIdMultiplier[dim]) % procDims[dim];
+      procList[dim][procRowIdx].push_back(i);
+    }
+  }
+  printVector(procList[1][0]);
+  for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) {
+    auto &curDimPerm = dimPerm[dim];
+    for (IntType row = 0, rowe = procDims[dim]; row < rowe; row++) {
+      IntType rowNumProcs = (IntType)procList[dim][row].size();
+      IntType rowBeg = row * rowsPerProcDim[dim];
+      IntType rowEnd = std::min((row + 1) * rowsPerProcDim[dim], (IntType)spStruct._dimSize[dim]);
+      IntType rowsPerProc = (rowEnd - rowBeg + rowNumProcs - 1) / rowNumProcs;
+      for (IntType i = 0, ie = (IntType)procList[dim][row].size(); i < ie; i++) {
+        for (IntType j = i * rowsPerProc, je = std::min((i + 1) * rowsPerProc, rowEnd); j < je; j++) {
+          dimPart[dim][curDimPerm[rowBeg + j]] = procList[dim][row][i];
+        }
+      }
+    }
+  }
+  // Partition nonzeros
+  nzPart.resize(spStruct._nnz);
+  for (IdxType i = 0, ie = (IdxType)spStruct._nnz; i < ie; i++) {
+    nzPart[i] = 0;
+    for (IntType dim = 0, dime = spStruct._order; dim < dime; dim++) {
+      IntType idx = dimPerm[dim][spStruct._idx[dim][i]];
+      nzPart[i] += (idx / rowsPerProcDim[dim]) * dimProcIdMultiplier[dim];
+    }
+  }
+}
 
 template <class DataType, class IntType, class IdxType>
 void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionHypergraphFast(
@@ -251,6 +349,10 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionHypergraphPatoh(
     const char * const patohSettings,
     int *partVec)
 {
+  if (numParts == 1) { // Patoh seems to have a bug for numParts = 1
+    for (int i = 0; i < numParts; i++) { partVec[i] = 0; }
+    return;
+  }
   int patohParams;
   if (strcmp(patohSettings, "speed") == 0) {
     patohParams = PATOH_SUGPARAM_SPEED;
@@ -283,6 +385,7 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionHypergraphPatoh(
   }
   printfe("Partitioning is finished with cutsize %d.\n", cutSize);
   patohErr = PaToH_Free();
+  for (int i = 0; i < numVtx; i++) { Pacoss_AssertLt(partVec[i], numParts); }
   if (patohErr != 0) {
     char msg[1000]; sprintf(msg, "ERROR: PaToH_Free returned with the error code %d.\n", patohErr);
     throw Pacoss_Error(msg);
@@ -349,7 +452,8 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardPato
     const IntType numColParts,
     const char * const patohSettings,
     const char * const colPartitionType,
-    std::vector<IntType> &nzPart)
+    std::vector<IntType> &nzPart,
+    std::vector<std::vector<IntType>> &partCtorIdx)
 {
   Pacoss_AssertEq(spStruct._order, 2); // Checkerboard partitioning works only for matrices
   printfe(STRCAT("Partitioning with a ", PRIMOD<IntType>(), "x", PRIMOD<IntType>(), " checkerboard topology.\n"),
@@ -368,9 +472,10 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardPato
   std::vector<bool> sample(spStruct._nnz);
   srand((unsigned)time(NULL));
   for (IdxType i = 0; i < spStruct._nnz; i++) { sample[i] = 1 - (rand() % 1); }
+  std::fill(vertexWeights.begin(), vertexWeights.end(), 1); // Balancing the number of rows
   for (IdxType i = 0; i < spStruct._nnz ; i++) {
     if (sample[i]) {
-      vertexWeights[rowIdx[i]]++;
+//      vertexWeights[rowIdx[i]]++; // Balancing the number of nonzeros
       pinBegin[colIdx[i]]++;
     }
   }
@@ -380,14 +485,49 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardPato
   for (IdxType i = 0; i < spStruct._nnz; i++) { 
     if (sample[i]) { pinIdx[--pinBegin[colIdx[i]]] = (int)rowIdx[i]; }
   }
-//  Pacoss_AssertEq(pinBegin[0], 0); Pacoss_AssertEq(pinBegin[numHedges], pinIdx.size());
   printfe("Partitioning the column-net hypergraph using PaToH...\n"); 
   partitionHypergraphPatoh(numVertex, numHedges, &pinBegin[0], &pinIdx[0], &vertexWeights[0], NULL, 1, (int)numRowParts,
       patohSettings, &rowPart[0]);
+  for (auto i : rowPart) { Pacoss_AssertLt(i, numRowParts); }
+  printfe("DONE!\n");
 
   if (strcmp(colPartitionType, "1d") == 0) { // Partition the columns randomly
     srand((unsigned)time(NULL));
-    for (IntType i = 0; i < spStruct._dimSize[1]; i++) { colPart[i] = rand() % (int)numColParts; }
+    // Compute the comm cost of each column
+    std::vector<IntType> colCommCost(spStruct._dimSize[1], -1); // connectivity-1 is the comm cost for each hedge
+    std::vector<IntType> partVisited(numRowParts, -1);
+    for (IntType i = 0, ie = spStruct._dimSize[1]; i < ie; i++) {
+      for (int j = pinBegin[i], je = pinBegin[i + 1]; j < je; j++) {
+        int pinPart = rowPart[pinIdx[j]];
+        if (partVisited[pinPart] < i) { // a part in the cut for this hedge
+          partVisited[pinPart] = i;
+          colCommCost[i]++;
+        }
+      }
+      if (colCommCost[i] == -1) { colCommCost[i] = 0; }
+    }
+//    std::vector<IntType> colCommCost(spStruct._dimSize[1], 0); // Cost of a column is the number of its nonzeros.
+//    for (IdxType i = 0, ie = (IdxType)spStruct._nnz; i < ie; i++) { colCommCost[spStruct._idx[1][i]]++; }
+    IntType totalCommCost = std::accumulate(colCommCost.begin(), colCommCost.end(), 0);
+    IntType commPerPart = (totalCommCost + numColParts - 1) / numColParts;
+    std::vector<IntType> randColOrder(spStruct._dimSize[1]);
+    for (IntType i = 0, ie = spStruct._dimSize[1]; i < ie; i++) { randColOrder[i] = i; }
+    srand((int)time(0));
+    for (IntType i = 0, ie = spStruct._dimSize[1]; i < ie; i++) { 
+      std::swap(randColOrder[i], randColOrder[rand() % spStruct._dimSize[1]]);
+    }
+    int curPartIdx = 0;
+    IntType curPartLoad = 0;
+    for (IntType i = 0, ie = spStruct._dimSize[1]; i < ie; i++) {
+      IntType colIdx = randColOrder[i];
+      colPart[colIdx] = curPartIdx;
+      curPartLoad += colCommCost[colIdx];
+      if (curPartLoad > commPerPart) {
+        curPartIdx++;
+        curPartLoad = 0;
+      }
+    }
+//    for (IntType i = 0; i < spStruct._dimSize[1]; i++) { colPart[i] = rand() % (int)numColParts; }
   } else { // Partition the columns using multi-constraint PaToH
     printfe("Creating the row-net hypergraph...\n"); 
     numVertex = spStruct._dimSize[1];
@@ -396,7 +536,7 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardPato
     pinBegin.resize(numHedges + 1); std::fill(pinBegin.begin(), pinBegin.end(), 0);
     // Make the first pass to compute vertex weights and pinBegin
     for (IdxType i = 0; i < spStruct._nnz; i++) {
-      vertexWeights[colIdx[i] * numRowParts + rowPart[rowIdx[i]]]++;
+//      vertexWeights[colIdx[i] * numRowParts + rowPart[rowIdx[i]]]++;
       pinBegin[rowIdx[i]]++;
     }
     // Perform a prefix sum to compute the pinBegin pointers
@@ -408,10 +548,24 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::partitionNzCheckerboardPato
     partitionHypergraphPatoh(numVertex, numHedges, &pinBegin[0], &pinIdx[0], &vertexWeights[0], NULL, (int)numRowParts,
         (int)numColParts, patohSettings, &colPart[0]);
   }
-  // Finally, generate the nzPart vector according to the 2-D checkerboard partition
+  // Generate the nzPart vector according to the 2-D checkerboard partition
   nzPart.resize(spStruct._nnz);
   for (IdxType i = 0; i < spStruct._nnz; i++) {
     nzPart[i] = rowPart[rowIdx[i]] * numColParts + colPart[colIdx[i]];
+    Pacoss_AssertLt(colPart[colIdx[i]], numColParts);
+    Pacoss_AssertLt(rowPart[rowIdx[i]], numRowParts);
+    Pacoss_AssertGe(nzPart[i], 0); Pacoss_AssertLt(nzPart[i], numRowParts * numColParts);
+  }
+  // Put each process to its row and column communicator
+  partCtorIdx.resize(2);
+  partCtorIdx[0].resize(numRowParts * numColParts);
+  partCtorIdx[1].resize(numRowParts * numColParts);
+  for (IntType i = 0, ie = numRowParts; i < ie; i++) {
+    for (IntType j = 0, je = numColParts; j < je; j++) {
+      IntType procIdx = i * numColParts + j; 
+      partCtorIdx[0][procIdx] = i;
+      partCtorIdx[1][procIdx] = j;
+    }
   }
 }
 #endif
@@ -556,31 +710,35 @@ void Pacoss_Partitioner<DataType, IntType, IdxType>::distributeSparseStruct(
 {
   std::vector<IdxType> partNnz(numParts);
   for (auto i : nzPart) { partNnz[i]++; }
-
   // Open partitioned spStruct files, write their headers
+  IntType maxOpenFileCount = 512;
   std::vector<FILE *> partTensorFile(numParts);
-  for (IntType i = 0; i < numParts; i++) {
-    std::string partTensorFileName(outputFileNamePrefix);
-    partTensorFileName += ".part";
-    { char numStr[100]; sprintfe(numStr, PRIMOD<IntType>(), i); partTensorFileName += numStr; }
-    partTensorFile[i] = fopene(partTensorFileName.c_str(), "w");
-    fprintfe(partTensorFile[i], STRCAT(PRIMOD<IntType>(), " ", PRIMOD<IdxType>(), "\n"), spStruct._order, partNnz[i]);
-    for (IntType j = 0; j < spStruct._order; j++) { 
-      fprintfe(partTensorFile[i], STRCAT(PRIMOD<IntType>(), " "), spStruct._dimSize[j]);
+  for (IntType k = 0; k < (numParts + maxOpenFileCount - 1) / maxOpenFileCount; k++) {
+    IntType partBegin = k * maxOpenFileCount;
+    IntType partEnd = std::min((k + 1) * maxOpenFileCount, numParts);
+    for (IntType i = partBegin, ie = partEnd; i < ie; i++) {
+      std::string partTensorFileName(outputFileNamePrefix);
+      partTensorFileName += ".part";
+      { char numStr[100]; sprintfe(numStr, PRIMOD<IntType>(), i); partTensorFileName += numStr; }
+      partTensorFile[i] = fopene(partTensorFileName.c_str(), "w");
+      fprintfe(partTensorFile[i], STRCAT(PRIMOD<IntType>(), " ", PRIMOD<IdxType>(), "\n"), spStruct._order, partNnz[i]);
+      for (IntType j = 0; j < spStruct._order; j++) { 
+        fprintfe(partTensorFile[i], STRCAT(PRIMOD<IntType>(), " "), spStruct._dimSize[j]);
+      }
+      fprintfe(partTensorFile[i], "\n");
     }
-    fprintfe(partTensorFile[i], "\n");
-  }
-
-  for (IdxType i = 0; i < spStruct._nnz; i++) {
-    IntType partIdx = nzPart[i];
-    for (IntType k = 0; k < spStruct._order; k++) {
-      fprintfe(partTensorFile[partIdx], STRCAT(PRIMOD<IntType>(), " "), spStruct._idx[k][i] + 1); // 1-based conversion
+    for (IdxType j = 0; j < spStruct._nnz; j++) {
+      IntType partIdx = nzPart[j];
+      if (partIdx >= partBegin && partIdx < partEnd) {
+        for (IntType k = 0; k < spStruct._order; k++) {
+          fprintfe(partTensorFile[partIdx], STRCAT(PRIMOD<IntType>(), " "), spStruct._idx[k][j] + 1); // 1-based conversion
+        }
+        fprintfe(partTensorFile[partIdx], PRIMOD<DataType>(), spStruct._val[j]);
+        fprintfe(partTensorFile[partIdx], "\n");
+      }
     }
-    fprintfe(partTensorFile[partIdx], PRIMOD<DataType>(), spStruct._val[i]);
-    fprintfe(partTensorFile[partIdx], "\n");
+    for (IntType i = partBegin, ie = partEnd; i < ie; i++) { fclosee(partTensorFile[i]); }
   }
-
-  for (IntType i = 0; i < numParts; i++) { fclosee(partTensorFile[i]); }
 }
 
 template <class DataType, class IntType, class IdxType>

@@ -82,6 +82,7 @@ class DistMU : public DistAUNMF<INPUTMATTYPE>{
     HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
     localWnorm.zeros(this->k);
     Wnorm.zeros(this->k);
+    PRINTROOT("DistMU() constructor successful");
   }
 };
 #endif  // MPI_DISTMU_HPP_
