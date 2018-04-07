@@ -6,6 +6,8 @@ find_path(ARMADILLO_INCLUDE_DIR
   PATHS "$ENV{ProgramFiles}/Armadillo/include"
   )
 
+message(STATUS "     ARMA_FOUND = ${ARMADILLO_INCLUDE_DIR}")
+
 set(NMFLIB_USE_LAPACK           false)
 set(NMFLIB_USE_BLAS             false)
 set(NMFLIB_USE_ATLAS            false)
