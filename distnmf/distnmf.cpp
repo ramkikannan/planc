@@ -212,6 +212,7 @@ class DistNMFDriver {
         // rand initialization hurts ANLS BPP running time. For a better
         // initializer we run couple of iterations of HALS.
 
+#ifndef USE_PACOS
 #ifdef BUILD_SPARSE
         if (m_nmfalgo == ANLSBPP) {
             DistHALS<SP_MAT> lrinitializer(A,
@@ -226,6 +227,7 @@ class DistNMFDriver {
             H = lrinitializer.getRightLowRankFactor();
         }
 #endif  // ifdef BUILD_SPARSE
+#endif
 
 #ifdef MPI_VERBOSE
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
