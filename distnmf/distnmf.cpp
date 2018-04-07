@@ -211,8 +211,8 @@ class DistNMFDriver {
         // sometimes for really very large matrices starting w/
         // rand initialization hurts ANLS BPP running time. For a better
         // initializer we run couple of iterations of HALS.
-
-#ifdef BUILD_SPARSE
+#ifndef USE_PACOSS
+#ifdef BUILD_SPARSE 
         if (m_nmfalgo == ANLSBPP) {
             DistHALS<SP_MAT> lrinitializer(A,
                                            W,
@@ -226,6 +226,7 @@ class DistNMFDriver {
             H = lrinitializer.getRightLowRankFactor();
         }
 #endif  // ifdef BUILD_SPARSE
+#endif  //ifndef USE_PACOSS
 
 #ifdef MPI_VERBOSE
         INFO << mpicomm.rank() << "::" << __PRETTY_FUNCTION__ << "::" \
