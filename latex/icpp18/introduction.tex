@@ -29,7 +29,8 @@ the resulting low rank factors are expected to have a natural interpretation. Th
 In most real-world applications $m$ and $n$ are on the order of millions or more while $k$ is much smaller, on the order of tens to thousands.
 Furthermore, data sets from these applications are often quite sparse and have highly irregular nonzero patterns.
 NMF is an effective tool for analyzing such data in many applications, yet there is a lack of high performance algorithms and software that can compute it efficiently.
-Our goal is in this paper is to fill in this gap by providing scalable parallel algorithms that employ efficient communication schemes and can scale to thousands of processes.
+There are scalable tensor factorization algorithms resembling NMF kernels with sparse irregular computational patterns, yet they require an expensive partitioning step and do not necessarily yield the optimal performance in the context of NMF.
+Our goal is in this paper is to fill in this gap by comparing the existing approaches and providing scalable parallel algorithms that employ efficient communication and partitioning schemes enabling scaling to thousands of processes.
 
 %In the recent years, there has been an explosion in the size of collected data particularly with the widespread use of internet and social media.
 %Such collected data has big dimensions~(from millions to billions) and is extremely sparse, which is either implied by the nature of the data~(e.g., most web content are not visited by users), or because capturing every possible data point is impractical.
