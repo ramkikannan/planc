@@ -71,7 +71,8 @@ However, using 32768 processors \cpp manages to outrun \crp by incurring less co
 %%%%%%%%%%% NNZ Sweep %%%%%%%%
 
 \begin{figure}
-
+\renewcommand{\numiterations}{30}
+\renewcommand{\minvalue}{1}
 \begin{subfigure}[t]{0.5\textwidth}
 \begin{tikzpicture}
 \begin{axis}[xlabel=Edge Factor, ylabel=Time(in Secs),width=3.5in, height=2.0in, 
@@ -81,13 +82,13 @@ y label style={yshift=-.5cm},
 %legend columns = -1,
 %legend pos=outer north west, legend style={draw=none,row sep=-0.1cm},
 xtick=data, 
-xticklabels={4, 8, 16, 32, 64}]
+xticklabels={4, 8, 16, 32, 64}
 ]
-\addplot  table [x={edgefactor}, y={collective}] {data/nnzsweepall_k48_p4096_comp.dat};
-\addplot  table [x={edgefactor}, y={cp1d}] {data/nnzsweepall_k48_p4096_comp.dat};
-\addplot  table [x={edgefactor}, y={cp2d}] {data/nnzsweepall_k48_p4096_comp.dat};
-\addplot  table [x={edgefactor}, y={cr}] {data/nnzsweepall_k48_p4096_comp.dat};
-\addplot  table [x={edgefactor}, y={cu}] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{collective}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cp1d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cp2d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cr}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cu}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comp.dat};
 %\legend{collective, cp1d, cp2d, cr, cu}
 \end{axis}
 \end{tikzpicture}
@@ -101,17 +102,17 @@ xticklabels={4, 8, 16, 32, 64}]
 \begin{axis}[xlabel=Edge Factor, ylabel=Time(in Secs),width=3.5in, height=2.0in, 
 y label style={yshift=-.5cm}, 
 %legend pos=outer north west, legend style={draw=none,row sep=-0.1cm},
+xtick=data, 
+xticklabels={4, 8, 16, 32, 64},
 legend style={draw=none,at={(0.5,-0.3)},anchor=north},
 legend columns = -1
-xtick=data, 
-xticklabels={4, 8, 16, 32, 64}]
 ]
-\addplot  table [x={edgefactor}, y={collective}] {data/nnzsweepall_k48_p4096_comm.dat};
-\addplot  table [x={edgefactor}, y={cp1d}] {data/nnzsweepall_k48_p4096_comm.dat};
-\addplot  table [x={edgefactor}, y={cp2d}] {data/nnzsweepall_k48_p4096_comm.dat};
-\addplot  table [x={edgefactor}, y={cr}] {data/nnzsweepall_k48_p4096_comm.dat};
-\addplot  table [x={edgefactor}, y={cu}] {data/nnzsweepall_k48_p4096_comm.dat};
-\legend{collective, cp1d, cp2d, cr, cu}
+
+\addplot  table [x={edgefactor}, y expr=(\thisrow{collective}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cp1d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cp2d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cr}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cu}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};\legend{collective, cp1d, cp2d, cr, cu}
 \end{axis}
 \end{tikzpicture}
 \subcaption{Communication cost for low rank $k$=48 on 4096 procs}
@@ -120,43 +121,19 @@ xticklabels={4, 8, 16, 32, 64}]
 
 \end{figure}
 
-%\begin{figure}
-%\begin{subfigure}[t]{0.5\textwidth}
-%\begin{tikzpicture}
-%\renewcommand{\minvalue}{1}
-%\renewcommand{\numiterations}{30}
-%\renewcommand{\datafile}{data/nnzsweepall_k48_p4096_comm.dat}
-%\speedup
-%\end{tikzpicture}
-%\subcaption{Communication cost for low rank $k$=48 on 4096 procs}
-%\label{fig:flickr-speedup-16}
-%\end{subfigure}
-%
-%\begin{subfigure}[t]{0.5\textwidth}
-%\begin{tikzpicture}
-%\renewcommand{\minvalue}{1}
-%\renewcommand{\numiterations}{30}
-%\renewcommand{\datafile}{data/nnzsweepall_k48_p4096_comp.dat}
-%\speedup
-%\end{tikzpicture}
-%\subcaption{Communication cost for low rank $k$=48 on 4096 procs}
-%\label{fig:flickr-speedup-48}
-%\end{subfigure}
-%\end{figure}
-
 
 %%%%%%%%%%% Strong scaling flickr %%%%%%%%
 \begin{figure}
-\begin{subfigure}[t]{0.5\textwidth}
-\begin{tikzpicture}
-\renewcommand{\minvalue}{291.82}
-\renewcommand{\numiterations}{30}
-\renewcommand{\datafile}{data/flickr-speedup16.dat}
-\speedup
-\end{tikzpicture}
-\subcaption{Flickr dataset with low rank $k=16$ on Rhea}
-\label{fig:flickr-speedup-16}
-\end{subfigure}
+%\begin{subfigure}[t]{0.5\textwidth}
+%\begin{tikzpicture}
+%\renewcommand{\minvalue}{291.82}
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/flickr-speedup16.dat}
+%\speedup
+%\end{tikzpicture}
+%\subcaption{Flickr dataset with low rank $k=16$ on Rhea}
+%\label{fig:flickr-speedup-16}
+%\end{subfigure}
 
 \begin{subfigure}[t]{0.5\textwidth}
 \begin{tikzpicture}
@@ -188,15 +165,15 @@ xticklabels={4, 8, 16, 32, 64}]
 %%%%%%%%%%% Strong scaling delicious %%%%%%%%
 
 \begin{figure}
-\begin{subfigure}[t]{0.5\textwidth}
-\begin{tikzpicture}
-\renewcommand{\minvalue}{400.8}
-\renewcommand{\datafile}{data/delicious-speedup16.dat}
-\speedup
-\end{tikzpicture}
-\subcaption{Delicious dataset with low rank $k=16$ on Rhea}
-\label{fig:delicious-speedup-16}
-\end{subfigure}
+%\begin{subfigure}[t]{0.5\textwidth}
+%\begin{tikzpicture}
+%\renewcommand{\minvalue}{400.8}
+%\renewcommand{\datafile}{data/delicious-speedup16.dat}
+%\speedup
+%\end{tikzpicture}
+%\subcaption{Delicious dataset with low rank $k=16$ on Rhea}
+%\label{fig:delicious-speedup-16}
+%\end{subfigure}
 
 \begin{subfigure}[t]{0.5\textwidth}
 \begin{tikzpicture}
@@ -219,7 +196,7 @@ xticklabels={4, 8, 16, 32, 64}]
 %\subcaption{Flickr dataset Low Rank $k=48$ on Bluegene/Q}
 %\end{subfigure}
 %
-
+~
 \begin{subfigure}[t]{0.5\textwidth}
 \begin{tikzpicture}
 \bgqtrue
@@ -274,27 +251,28 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 
 \renewcommand{\minvalue}{1}
 \begin{figure}
-\begin{subfigure}[t]{0.25\textwidth}
-\begin{tikzpicture}
-\ylabeltrue
-\legendfalse
-\renewcommand{\numiterations}{30}
-\renewcommand{\datafile}{data/flickr-details16-16.dat}
-\makeplot
-\end{tikzpicture}
-\subcaption{Rhea $p=16$, Low Rank $k=16$}
-\end{subfigure}
-~
-\begin{subfigure}[t]{0.25\textwidth}
-\begin{tikzpicture}
-\ylabelfalse
-\legendtrue
-\renewcommand{\numiterations}{30}
-\renewcommand{\datafile}{data/flickr-details3072-16.dat}
-\makeplot
-\end{tikzpicture}
-\subcaption{Rhea $p=3072$, Low Rank $k=16$}
-\end{subfigure}
+
+%\begin{subfigure}[t]{0.25\textwidth}
+%\begin{tikzpicture}
+%\ylabeltrue
+%\legendfalse
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/flickr-details16-16.dat}
+%\makeplot
+%\end{tikzpicture}
+%\subcaption{Rhea $p=16$, Low Rank $k=16$}
+%\end{subfigure}
+%~
+%\begin{subfigure}[t]{0.25\textwidth}
+%\begin{tikzpicture}
+%\ylabelfalse
+%\legendtrue
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/flickr-details3072-16.dat}
+%\makeplot
+%\end{tikzpicture}
+%\subcaption{Rhea $p=3072$, Low Rank $k=16$}
+%\end{subfigure}
 
 \begin{subfigure}[t]{0.25\textwidth}
 \begin{tikzpicture}
@@ -324,19 +302,20 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \end{figure}
 
 %%%%%%%%%%% Stackexchange Details %%%%%%%%
-\renewcommand{\minvalue}{1}
+%\renewcommand{\minvalue}{1}
 \begin{figure}
-\begin{subfigure}[t]{0.25\textwidth}
-\begin{tikzpicture}
-\ylabelfalse
-\legendtrue
-\renewcommand{\numiterations}{30}
-\renewcommand{\datafile}{data/stkx-details1536-16.dat}
-\makeplot
-\end{tikzpicture}
-\subcaption{Rhea $p=1536$, Low Rank $k=16$}
-\end{subfigure}
-~
+
+%\begin{subfigure}[t]{0.25\textwidth}
+%\begin{tikzpicture}
+%\ylabelfalse
+%\legendtrue
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/stkx-details1536-16.dat}
+%\makeplot
+%\end{tikzpicture}
+%\subcaption{Rhea $p=1536$, Low Rank $k=16$}
+%\end{subfigure}
+
 \begin{subfigure}[t]{0.25\textwidth}
 \begin{tikzpicture}
 \ylabelfalse
@@ -347,7 +326,6 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \end{tikzpicture}
 \subcaption{Rhea $p=1536$, Low Rank $k=48$}
 \end{subfigure}
-
 
 \begin{subfigure}[t]{0.5\textwidth}
 \begin{tikzpicture}
@@ -369,29 +347,30 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 
 %%%%%%%%%%% Delicious Details %%%%%%%%
 
-\renewcommand{\minvalue}{1}
+%\renewcommand{\minvalue}{1}
 \begin{figure}
-\begin{subfigure}[t]{0.25\textwidth}
-\begin{tikzpicture}
-\ylabeltrue
-\legendfalse
-\renewcommand{\numiterations}{30}
-\renewcommand{\datafile}{data/delicious-details16-16.dat}
-\makeplot
-\end{tikzpicture}
-\subcaption{Rhea $p=16$, Low rank $k=16$}
-\end{subfigure}
-~
-\begin{subfigure}[t]{0.25\textwidth}
-\begin{tikzpicture}
-\ylabelfalse
-\legendtrue
-\renewcommand{\numiterations}{30}
-\renewcommand{\datafile}{data/delicious-details3072-16.dat}
-\makeplot
-\end{tikzpicture}
-\subcaption{Rhea $p=3072$, Low rank $k=16$}
-\end{subfigure}
+
+%\begin{subfigure}[t]{0.25\textwidth}
+%\begin{tikzpicture}
+%\ylabeltrue
+%\legendfalse
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/delicious-details16-16.dat}
+%\makeplot
+%\end{tikzpicture}
+%\subcaption{Rhea $p=16$, Low rank $k=16$}
+%\end{subfigure}
+%~
+%\begin{subfigure}[t]{0.25\textwidth}
+%\begin{tikzpicture}
+%\ylabelfalse
+%\legendtrue
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/delicious-details3072-16.dat}
+%\makeplot
+%\end{tikzpicture}
+%\subcaption{Rhea $p=3072$, Low rank $k=16$}
+%\end{subfigure}
 
 \begin{subfigure}[t]{0.25\textwidth}
 \begin{tikzpicture}
