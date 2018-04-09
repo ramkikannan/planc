@@ -67,6 +67,84 @@ Our algorithm graciously scales up to 16384 cores in all four instances, and \cp
 Again, \cpp is slower than \crp using lower number of processors as the communication cost is negligible in these instances, and \cpp introduces worse load balance than \crp.
 However, using 32768 processors \cpp manages to outrun \crp by incurring less communication.
 
+
+%%%%%%%%%%% NNZ Sweep %%%%%%%%
+
+\begin{figure}
+
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\begin{axis}[xlabel=Edge Factor, ylabel=Time(in Secs),width=3.5in, height=2.0in, 
+y label style={yshift=-.5cm}, 
+%legend pos=outer, legend style={draw=none,row sep=-0.1cm},
+%legend style={draw=none,at={(0.5,-0.1)},anchor=north},
+%legend columns = -1,
+%legend pos=outer north west, legend style={draw=none,row sep=-0.1cm},
+xtick=data, 
+xticklabels={4, 8, 16, 32, 64}]
+]
+\addplot  table [x={edgefactor}, y={collective}] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y={cp1d}] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y={cp2d}] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y={cr}] {data/nnzsweepall_k48_p4096_comp.dat};
+\addplot  table [x={edgefactor}, y={cu}] {data/nnzsweepall_k48_p4096_comp.dat};
+%\legend{collective, cp1d, cp2d, cr, cu}
+\end{axis}
+\end{tikzpicture}
+\subcaption{Computation cost for low rank $k$=48 on 4096 procs}
+\label{fig:nnzsweepcomp}
+\end{subfigure}
+
+
+\begin{subfigure}[t]{0.5\textwidth}
+\begin{tikzpicture}
+\begin{axis}[xlabel=Edge Factor, ylabel=Time(in Secs),width=3.5in, height=2.0in, 
+y label style={yshift=-.5cm}, 
+%legend pos=outer north west, legend style={draw=none,row sep=-0.1cm},
+legend style={draw=none,at={(0.5,-0.3)},anchor=north},
+legend columns = -1
+xtick=data, 
+xticklabels={4, 8, 16, 32, 64}]
+]
+\addplot  table [x={edgefactor}, y={collective}] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y={cp1d}] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y={cp2d}] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y={cr}] {data/nnzsweepall_k48_p4096_comm.dat};
+\addplot  table [x={edgefactor}, y={cu}] {data/nnzsweepall_k48_p4096_comm.dat};
+\legend{collective, cp1d, cp2d, cr, cu}
+\end{axis}
+\end{tikzpicture}
+\subcaption{Communication cost for low rank $k$=48 on 4096 procs}
+\label{fig:nnzsweepcomm}
+\end{subfigure}
+
+\end{figure}
+
+%\begin{figure}
+%\begin{subfigure}[t]{0.5\textwidth}
+%\begin{tikzpicture}
+%\renewcommand{\minvalue}{1}
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/nnzsweepall_k48_p4096_comm.dat}
+%\speedup
+%\end{tikzpicture}
+%\subcaption{Communication cost for low rank $k$=48 on 4096 procs}
+%\label{fig:flickr-speedup-16}
+%\end{subfigure}
+%
+%\begin{subfigure}[t]{0.5\textwidth}
+%\begin{tikzpicture}
+%\renewcommand{\minvalue}{1}
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/nnzsweepall_k48_p4096_comp.dat}
+%\speedup
+%\end{tikzpicture}
+%\subcaption{Communication cost for low rank $k$=48 on 4096 procs}
+%\label{fig:flickr-speedup-48}
+%\end{subfigure}
+%\end{figure}
+
+
 %%%%%%%%%%% Strong scaling flickr %%%%%%%%
 \begin{figure}
 \begin{subfigure}[t]{0.5\textwidth}
