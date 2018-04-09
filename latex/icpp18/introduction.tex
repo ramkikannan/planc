@@ -28,9 +28,6 @@ It is a natural fit for many real world problems as the non-negativity is inhere
 the resulting low rank factors are expected to have a natural interpretation. The applications of NMF range from text mining \cite{pauca2004text},  computer vision \cite{hoyer2004non}, and bioinformatics \cite{kim2007sparse} to blind source separation  \cite{cichocki2009nonnegative}, unsupervised clustering \cite{kuang2012symmetric,kuang2013symnmf}  and many other areas.
 In most real-world applications $m$ and $n$ are on the order of millions or more while $k$ is much smaller, on the order of tens to thousands.
 Furthermore, data sets from these applications are often quite sparse and have highly irregular nonzero patterns.
-NMF is an effective tool for analyzing such data in many applications, yet there is a lack of high performance algorithms and software that can compute it efficiently.
-There are scalable tensor factorization algorithms resembling NMF kernels with sparse irregular computational patterns, yet they require an expensive partitioning step and do not necessarily yield the optimal performance in the context of NMF.
-Our goal is in this paper is to fill in this gap by comparing the existing approaches and providing scalable parallel algorithms that employ efficient communication and partitioning schemes enabling scaling to thousands of processes.
 
 %In the recent years, there has been an explosion in the size of collected data particularly with the widespread use of internet and social media.
 %Such collected data has big dimensions~(from millions to billions) and is extremely sparse, which is either implied by the nature of the data~(e.g., most web content are not visited by users), or because capturing every possible data point is impractical.
@@ -46,23 +43,15 @@ However, for large $k$, the Gram and NLS computations can become the bottleneck,
 Efficient parallel algorithms for NMF must load balance the computation and avoid communication overheads.
 The distribution of the input $\AA$ across processors affects the load balance and communication of the SpMMs, and the distribution of the factor matrices $\WW$ and $\HH$ affects the load balance of the Gram and NLS computations.
 
-The focus in this work is the comparison and combination of two previous approaches that can be applied to sparse NMF problems.
-The first approach is based on MPI-FAUN \cite{KBP17}, a software framework for computing the NMF of dense and sparse data.
-The second approach is based on HyperTensor \cite{KU15}, a library for computing a CP decomposition of a sparse tensor.
-In the former case, the algorithm is optimized for dense input matrices, but it can be used for sparse data.
-In the latter case, the algorithm is optimized for tensor data and unconstrained linear least squares problem, but it can be applied to matrices (2D tensors) and combined with NLS updates.
-
-MPI-FAUN uses a regular, Cartesian partitioning of the input matrix $\AA$ across processors that is oblivious to the nonzero pattern.
+There is a lack of highly scalable parallel algorithms and software for computing sparse NMF.
+MPI-FAUN \cite{KBP17} software framework enables computing the NMF for dense and sparse data, yet the algorithm is optimized for dense input matrices and employs the same communication scheme to carry out sparse NMF computations.
+It uses a regular, Cartesian partitioning of the input matrix $\AA$ across processors that is oblivious to the nonzero pattern.
 The advantages of this approach are that the resulting factor matrix communication (to compute the SpMMs) is also regular and cast as low-latency MPI collective operations and that the rest of the computation (including NLS updates) is load-balanced.
 The disadvantage is that because the partition ignores the sparsity of $\AA$, the approach will often communicate more data than necessary, as some processors will receive data that they do not need for local computation.
-
-HyperTensor solves an input-sparsity-dependent hypergraph partitioning problem to determine the parallel distribution of the entries of $\AA$.
-The advantage of this approach is that by being sensitive to the nonzero pattern, the resulting factor matrix communication required to compute the SpMMs is (approximately) minimized, and the only data that a processor receives is what it needs for its local computation.
-The disadvantages of this approach are an upfront partitioning cost (which can be amortized over the iterations of the NMF algorithm) and possible load imbalance, particularly in the NLS computations.
-
-The two methods differ both in their partitioning strategy and in their communication pattern.
-We also consider a compromise approach, which uses a randomized partitioning scheme, to achieve load balance without perfectly minimizing communication, and a sparsity-sensitive communication pattern, which avoids communicating unnecessary data.
-We show that this compromise avoids heavy upfront partitioning costs and effectively balances the efficiency constraints of the different NMF computations.
+For sparse tensor factorization, there are scalable algorithms and software resembling NMF kernels with sparse irregular computational patterns~\cite{KU15}, yet they require an expensive partitioning step and do not necessarily yield the optimal performance for NMF.
+The main advantage of this approach is that it minimizes the communication cost of the SpMM step through hypergraph partitioning, and that it employs point-to-point communication scheme which communicates elements of $\WW$ and $\HH$ only to processors in need.
+The disadvantages of this approach are an upfront hypergraph partitioning cost, possible load imbalance~(particularly in the NLS computations) and communication imbalance.
+Our goal is in this paper is to fill in this gap between two approaches by comparing and evaluating them in the context of NMF, then proposing a synthesis involving parallel algorithms as well as communication and partitioning schemes enabling scalability to thousands of processes.
 
 %To the best of our knowledge, the only high performance software available for parallelizing this computation is \mpifaun~\cite{KBP16MPIFAUN} which operates both on sparse and dense input matrices.
 %For parallelism, it employs a fixed 2D uniform partitioning on $\Am$, and partitions factor matrices $\Wm$ and $\Hm$ conformally with this 2D partition.
@@ -95,14 +84,14 @@ We show that this compromise avoids heavy upfront partitioning costs and effecti
 %
 %Towards this end, we are proposing a novel Algorithm \distspnmffull(\distspnmf) that handles both the distribution strategies $NNZ-PART$ and $2D$. We are proposing two $NNZ-PART$ schemes (i) Checkerboard-PaTOH (\cpp)  and (ii) Checkerboard Random (\crp). These schemes consider multiple constraints such as (a) effective for the three operations in NMF algorithm (b) reducing the number of messages between nodes  as the communication within a computational node is insignificant and (c) \todo{\oguz{add additional constraints}}. It is important to notice that our algorithm is independent of the partition schemes employed for $NNZ-PART$ and it is not restricted to only the proposed $\cpp$ and $\crp$.
 
-\grey{I have not edited the following contribution list yet, we may want to wait until we have new data...
-We summarize our main contributions as follows:
-\begin{itemize}
-\item We propose an efficient parallel NMF algorithm called \distspnmf for sparse matrices that employs a point-to-point communication scheme to leverage the sparsity of the input matrix, and eliminate any redundant communication existing in \mpifaun.
-The algorithm is flexible to work with any partition of the input matrix $\Am$ as well as factor matrices $\Wm$ and $\Hm$.
-\item We employ a 2D cartesion process topology to eliminate the communication cost of parallel NMF in one dimension, and bound the maximum number of messages sent per process in our MPI implementation.
-\item We introduce effective partitioning strategies to further reduce the communication cost and enhance the parallel scalability of our algorithm.
-\item We introduce regularization to NMF computations to prevent potential numerical instabilities using large matrices.
-\item We compare our implementation with a state-of-the-art NMF library, and report scalability results up to 32678 processors on two different parallel computing platforms using real-world datasets.
-\end{itemize}
-}
+%\grey{I have not edited the following contribution list yet, we may want to wait until we have new data...
+%We summarize our main contributions as follows:
+%\begin{itemize}
+%\item We propose an efficient parallel NMF algorithm called \distspnmf for sparse matrices that employs a point-to-point communication scheme to leverage the sparsity of the input matrix, and eliminate any redundant communication existing in \mpifaun.
+%The algorithm is flexible to work with any partition of the input matrix $\Am$ as well as factor matrices $\Wm$ and $\Hm$.
+%\item We employ a 2D cartesion process topology to eliminate the communication cost of parallel NMF in one dimension, and bound the maximum number of messages sent per process in our MPI implementation.
+%\item We introduce effective partitioning strategies to further reduce the communication cost and enhance the parallel scalability of our algorithm.
+%\item We introduce regularization to NMF computations to prevent potential numerical instabilities using large matrices.
+%\item We compare our implementation with a state-of-the-art NMF library, and report scalability results up to 32678 processors on two different parallel computing platforms using real-world datasets.
+%\end{itemize}
+%}
