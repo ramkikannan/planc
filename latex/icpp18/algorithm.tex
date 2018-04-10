@@ -121,24 +121,23 @@ Here, we compare different partitioning strategies, employed by \mpifaun, \hyper
 \subsubsection{Partitioning $\Am$} \label{sec:cp1d}
 
 \paragraph{Checkerboard hypergraph partitioning~(\textbf{CH2})}
-To this end, we adopt hypergraph partitioning techniques used in parallel sparse matrix literature to our case~\cite{caay:99,aycu:08}.
 A hypergraph consists of vertices with associated weights and hyperedges that connect two or more vertices.
 In the literature, a hypergraph is typically formed by adding a vertex for each computational task with the associated execution cost, adding a hyperedge for each data element, and connecting the vertex to a hyperedge whenever the associated task and the data are dependent.
 Then, the vertices of the hypergraph is partitioned using a hypergraph partitioner to distribute vertex loads to parts equitably while reducing a metric called \emph{cutsize}, which amounts to minimizing the total number of different parts each hyperedge connects.
 This corresponds in the actual computation to minimizing the data dependencies between tasks, hence the communication volume.
 
-Traditional checkerboard hypergraph partitioning aims to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next to obtain an $P_r \times P_c$ checkerboard partition.
+Traditional checkerboard hypergraph partitioning aims to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next to obtain an $P_r \times P_c$ checkerboard partition~\cite{caay:99,aycu:08}.
 The first partitioning phase is done using a column-net hypergraph model, in which for each row $\Am(i, :)$, a vertex $v_i$ with weight equaling to the number of nonzeros in $\Am(i, :)$ is created.
 Each column $j$ is represented with a hyperedge $h_j$ and for each nonzero $(i, j) \in \Am$, which implies a dependency to $\Hm(:, j)$ in computing $\Wmt(i, :)$ at \cref{line:ah}, we connect $v_i$ to $h_j$.
 This hypergraph is partitioned into $P_r$ parts giving the row partition of the checkerboard topology.
 The second partitioning phase uses a row-net hypergraph model induced by this row partition, where each column is represented with a vertex with $P_r$ weights corresponding to the number of nonzeros in that column in all $P_r$ row segments.
 Partitioning this hypergraph into $P_c$ parts finalizes the $P_r \times P_c$ checkerboard partitionin by balancing the weights~(number of nonzeros of $\Am_{(r, c)}$) of each part while minimizing the communication volume.
-In the context of NMF, one potential issue arises when the matrix has a large variance in the numbe r of nonzeros in its rows/columns, which in turns yields unbalanced row/column strides.
-This in turn creates an imbalance in the NLS computations as rows/cols of $\HH$/$\WW$ are distributed to the processes in the same stride.
-To alleviate this issue, we modify this scheme slightly, which we call \textbf{CH2}.
+In the context of NMF, one issue arises when the matrix has some variance in the number of nonzeros in its rows/columns, which in turns yields unbalanced row/column strides.
+This in turn creates an imbalance in the NNLS computations as rows/cols of $\WW$/$\HH$ are partitioned to the processes in the same stride.
+To alleviate this issue, we modify this scheme slightly as follows.
 In both row and column partitioning phases, we add an additional constant weight to vertices.
 Balancing this additional constraint in hypergraph partitioning is expected to prevent such imbalanced strides.
-This partitioning model succesfully grasps the computation~(both SpMM and NLS) and communication requirements using checkerboard topology for sparse NMF, yet it is very costly to compute in practice due to high number of constraints in the row-net hypergraph.
+This partitioning model~(which we call \textbf{CH2}) succesfully grasps the computation~(both SpMM and NNLS) and communication requirements using checkerboard topology for sparse NMF, yet is costly to compute in practice due to high number of constraints~($P_r + 1$) in the row-net hypergraph.
 
 %We assign the value $(nnz(\Am) / m + nnz(\Am(i, :))$ to each vertex $v_i$.
 %This weighting is preferred to find a tradeoff between balancing the number of vertices, which corresponds to the cost of dense matrix operations, and balancing the number of nonzeros per part, which corresponds to the cost of sparse matrix-dense matrix multiplication.
@@ -154,17 +153,23 @@ This partitioning model succesfully grasps the computation~(both SpMM and NLS) a
 %Therefore, we instead partition columns randomly, which is expected to provide balance the number of nonzeros of $\Am$, number of columns of $\Hm$ and $\Hmt$, the amount of column communication volume due to columns of $\Hm$ and $\Hmt$.
 
 \paragraph{1D-like checkerboard hypergraph partitioning~(\textbf{CH1})}
+This variant partitions rows same as $\textbf{CH2}$, then partitions columns randomly to avoid multi-constraint partitioning.
+Random column partition provides load and communication balance yet increases the communication volume for the rows of $\WW$.
 
+\paragraph{Randomized checkerboard partitioning(\textbf{CR})}
+This scheme corresponds to partitioning both the rows and the columns of $\Am$ into $P_r$ and $P_c$ segments randomly.
+It is expected to provide good load and communication balance both in sparse and dense matrix operations, but it overlooks the communication volume.
 
-\paragraph{Randomized checkerboard partitioning(\textbf{CRD})}
-This scheme corresponds to partitioning both the rows and the columns of $\Am$ into $R$ segments randomly.
-It is expected to provide good load balance both in sparse and dense matrix operations, but it overlooks the communication cost.
+\paragraph{Uniform checkerboard partitioning(\textbf{CN})}
+This partitioning variant forms an $P_R \times P_C$ partition of $\Am$ by putting a contiguous set of $m / P_R$ and $n / P_C$ rows and columns in each slice.
+$\Wm$ and $\Hm$ are partitioned conformally with this topology; each process is assigned a contiguous set of  $m / P_R P_C$ and $n / P_R P_C$ rows and columns of $\Wm$ and $\Hm$.
+This is the partitioning scheme employed by $\mpifaun$~\cite{KBP16, KBP16MPIFAUN}.
+It provides perfect balance in NNLS step yet may incur high communication cost.
+We also use a randomized variant (\urp) of this scheme in which the rows and columns of $\Am$ are permuted randomly to balance its nonzeros among parts.
 
-\paragraph{Uniform checkerboard partitioning(\textbf{CUN})}
-This partitioning variant forms an $R \times C$ partition of $\Am$ by putting a contiguous set of $m / R$ and $n / C$ rows and columns in each slice.
-$\Wm$ and $\Hm$ are partitioned conformally with this topology; each process is assigned a contiguous set of  $m / P$ and $n / P$ rows and columns, respectively, belonging to the corresponding row and column blocks of $\Hm$.
-This is the only partitioning scheme employed by $\mpifaun$ \cite{KBP16, KBP16MPIFAUN}, hence we only use it for this implementation.
-We also use a randomized variant (\urp) of this scheme in which the rows and columns of $\Am$ are permuted randomly before executing $\mpifaun$ to better balance its nonzeros.
+\paragraph{Fine-grain hypergraph partitioning~(\textbf{FH})}
+This is the partitioning strategy employed by \hypertensor.
+
 
 \subsubsection{Partitioning $\Wm$ and $\Hm$}
 Once $\Am$ is partitioned with an $R \times C$ checkerboard topology, one has to partition rows and columns of factor matrices conformally with this topology to form the sets $\Ip$ and $\Jp$ in \cref{alg:distnmf}.
