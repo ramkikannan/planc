@@ -156,7 +156,7 @@ This partitioning model~(which we call \textbf{CH2}) succesfully grasps the comp
 This variant partitions rows same as $\textbf{CH2}$, then partitions columns randomly to avoid multi-constraint partitioning.
 Random column partition provides load and communication balance yet increases the communication volume for the rows of $\WW$.
 
-\paragraph{Randomized checkerboard partitioning(\textbf{CR})}
+\paragraph{Randomized checkerboard partitioning(\textbf{CRD})}
 This scheme corresponds to partitioning both the rows and the columns of $\Am$ into $P_r$ and $P_c$ segments randomly.
 It is expected to provide good load and communication balance both in sparse and dense matrix operations, but it overlooks the communication volume.
 
@@ -169,6 +169,8 @@ We also use a randomized variant (\urp) of this scheme in which the rows and col
 
 \paragraph{Fine-grain hypergraph partitioning~(\textbf{FH})}
 This is the partitioning strategy employed by \hypertensor.
+It forms a fine-grain hypergraph involving a vertex for each nonzero $(\Am(i, j)$ and a hyperedge for each row and column index $i = 1, \dots, m$ and $j = 1, \dots, n$.
+The resulting hypergraph is typically very large and is costly to partition, and unlike checkerboard variants fingerprint of processes are not restricted to a row/column stride.
 
 
 \subsubsection{Partitioning $\Wm$ and $\Hm$}
