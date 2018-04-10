@@ -120,28 +120,33 @@ Here, we compare different partitioning strategies, employed by \mpifaun, \hyper
 
 \subsubsection{Partitioning $\Am$} \label{sec:cp1d}
 
-\paragraph{Checkerboard hypergraph partitioning~(\textbf{CH2})} \textbf{CH2} aims to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next, to obtain an $P_r \times P_c$ checkerboard partition.
-The first partitioning is done using a column-net hypergraph model, in which for each row $\Am(i, :)$, a vertex $v_i$ with weight equaling to the number of nonzeros in $\Am(i, :)$ is created.
-Each column $j$ is represented with a hyperedge $h_j$,  and e
-
-To this end, we adopt hypergraph partitioning techniques used in parallel sparse matrix literature to our case~\cite{caay:99}.
+\paragraph{Checkerboard hypergraph partitioning~(\textbf{CH2})}
+To this end, we adopt hypergraph partitioning techniques used in parallel sparse matrix literature to our case~\cite{caay:99,aycu:08}.
 A hypergraph consists of vertices with associated weights and hyperedges that connect two or more vertices.
 In the literature, a hypergraph is typically formed by adding a vertex for each computational task with the associated execution cost, adding a hyperedge for each data element, and connecting the vertex to a hyperedge whenever the associated task and the data are dependent.
 Then, the vertices of the hypergraph is partitioned using a hypergraph partitioner to distribute vertex loads to parts equitably while reducing a metric called \emph{cutsize}, which amounts to minimizing the total number of different parts each hyperedge connects.
 This corresponds in the actual computation to minimizing the data dependencies between tasks, hence the communication volume.
-Here, we form a \emph{column-net} hypergraph model; for each row $i$ and column $j$ of  $\Am$, we add a vertex $v_i$ and a hyperedge $h_j$ to the hypergraph, and for each nonzero $(i, j) \in \Am$, which implies a dependency to $\Hm(:, j)$ in computing $\Wmt(i, :)$ at \cref{line:ah}, we connect $v_i$ to $h_j$.
-We assign the value $(nnz(\Am) / m + nnz(\Am(i, :))$ to each vertex $v_i$.
-This weighting is preferred to find a tradeoff between balancing the number of vertices, which corresponds to the cost of dense matrix operations, and balancing the number of nonzeros per part, which corresponds to the cost of sparse matrix-dense matrix multiplication.
-We establish these two load balance goals by assigning a fixed cost to each vertex in the first summand, and increasing the cost of the vertices corresponding to denser rows in the second summand.
-We then partition this hypergraph into $R$ parts by balancing the vertex weights, and minimizing the cutsize of the hypergraph.
-In \cref{fig:partition} we also show this hypergraph construction for a $3 \times 3$ subset of the $A$ where rows corresponding to each vertex are highlighted and connected to related hyperedges.
-In this partitioning, minimizing the cutsize of this hypergraph exactly corresponds to minimizing the total communication volume due to columns of $\Hm$ and $\Hmt$ as is clear in \cref{fig:partition}, whereas balancing the vertex weights corresponds to balancing the cost of sparse matrix-dense matrix multiplications as well as dense matrix operations in computing Gram matrices and $\textsc{Nnls}$ in each process row.
 
-Once the matrix is partitioned into $R$ row slices, one can similarly partition columns of $\Am$ into $C$ parts using a multi-constraint formulation~\cite{aycu:08} using a \emph{row-net} hypergraph.
-Yet in our case, we skip this common approach for two reasons.
-First, existing multi-constraint partitioning tools are known to be not as efficient nor effective as single-constraint partitioners in practice.
-Second, the main goal of hypergraph partitioning of columns is to minimize the communication volume due to rows, whereas in our case communication of rows of $\Wm$ and $\Wmt$ stays within a node with a proper mapping of processes, and this communication cost would be negligible.
-Therefore, we instead partition columns randomly, which is expected to provide balance the number of nonzeros of $\Am$, number of columns of $\Hm$ and $\Hmt$, the amount of column communication volume due to columns of $\Hm$ and $\Hmt$.
+Traditional checkerboard hypergraph partitioning aims to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next to obtain an $P_r \times P_c$ checkerboard partition.
+The first partitioning phase is done using a column-net hypergraph model, in which for each row $\Am(i, :)$, a vertex $v_i$ with weight equaling to the number of nonzeros in $\Am(i, :)$ is created.
+Each column $j$ is represented with a hyperedge $h_j$ and for each nonzero $(i, j) \in \Am$, which implies a dependency to $\Hm(:, j)$ in computing $\Wmt(i, :)$ at \cref{line:ah}, we connect $v_i$ to $h_j$.
+This hypergraph is partitioned into $P_r$ parts giving the row partition of the checkerboard topology.
+The second partitioning phase uses a row-net hypergraph model induced by this row partition, where each column is represented with a vertex with $P_r$ weights corresponding to the number of nonzeros in that column in all $P_r$ row segments.
+Partitioning this hypergraph into $P_c$ parts finalizes the $P_r \times P_c$ checkerboard partitionin by balancing the weights~(number of nonzeros of $\Am_{(r, c)}$) of each part while minimizing the communication volume.
+In \textbf{CH2}, 
+
+%We assign the value $(nnz(\Am) / m + nnz(\Am(i, :))$ to each vertex $v_i$.
+%This weighting is preferred to find a tradeoff between balancing the number of vertices, which corresponds to the cost of dense matrix operations, and balancing the number of nonzeros per part, which corresponds to the cost of sparse matrix-dense matrix multiplication.
+%We establish these two load balance goals by assigning a fixed cost to each vertex in the first summand, and increasing the cost of the vertices corresponding to denser rows in the second summand.
+%We then partition this hypergraph into $R$ parts by balancing the vertex weights, and minimizing the cutsize of the hypergraph.
+%In \cref{fig:partition} we also show this hypergraph construction for a $3 \times 3$ subset of the $A$ where rows corresponding to each vertex are highlighted and connected to related hyperedges.
+%In this partitioning, minimizing the cutsize of this hypergraph exactly corresponds to minimizing the total communication volume due to columns of $\Hm$ and $\Hmt$ as is clear in \cref{fig:partition}, whereas balancing the vertex weights corresponds to balancing the cost of sparse matrix-dense matrix multiplications as well as dense matrix operations in computing Gram matrices and $\textsc{Nnls}$ in each process row.
+
+%Once the matrix is partitioned into $R$ row slices, one can similarly partition columns of $\Am$ into $C$ parts using a multi-constraint formulation~\cite{aycu:08} using a \emph{row-net} hypergraph.
+%Yet in our case, we skip this common approach for two reasons.
+%First, existing multi-constraint partitioning tools are known to be not as efficient nor effective as single-constraint partitioners in practice.
+%Second, the main goal of hypergraph partitioning of columns is to minimize the communication volume due to rows, whereas in our case communication of rows of $\Wm$ and $\Wmt$ stays within a node with a proper mapping of processes, and this communication cost would be negligible.
+%Therefore, we instead partition columns randomly, which is expected to provide balance the number of nonzeros of $\Am$, number of columns of $\Hm$ and $\Hmt$, the amount of column communication volume due to columns of $\Hm$ and $\Hmt$.
 
 \paragraph{1D-like checkerboard hypergraph partitioning~(\textbf{CH1})}
 
