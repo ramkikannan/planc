@@ -55,7 +55,10 @@ The advantages of this approach are that the resulting factor matrix communicati
 The disadvantage is that because the partition ignores the sparsity of $\AA$, the approach will often communicate more data than necessary, as some processors will receive data that they do not need for local computation.
 For sparse tensor factorization, there are scalable algorithms and software resembling NMF kernels with sparse irregular computational patterns~\cite{KU15}, yet they require an expensive partitioning step and do not necessarily yield the optimal performance for NMF.
 The main advantage of this approach is that it minimizes the communication cost of the SpMM step through hypergraph partitioning, and that it employs point-to-point communication scheme which communicates elements of $\WW$ and $\HH$ only to processors in need.
-The disadvantages of this approach are an upfront hypergraph partitioning cost, possible load imbalance~(particularly in the NLS computations) and communication imbalance.
+The disadvantages of this approach are an upfront hypergraph partitioning cost, possible load imbalance~(particularly in the NLS 
+computations) and communication imbalance. We would like to iterate that in the case of machine learning workflow, the 
+computations after SpMM must deal with dense matrices, as Sparse-Dense matrix multiplication will result in a dense matrix. 
+Hence, the partitioning strategy considering only SpMM will result in a huge imbalance and in this specific case of NMF on NLS computations. 
 Our goal is in this paper is to fill in this gap between two approaches by comparing and evaluating them in the context of NMF, then proposing a synthesis involving parallel algorithms as well as communication and partitioning schemes enabling scalability to thousands of processes.
 
 %To the best of our knowledge, the only high performance software available for parallelizing this computation is \mpifaun~\cite{KBP16MPIFAUN} which operates both on sparse and dense input matrices.
