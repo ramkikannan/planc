@@ -1,4 +1,4 @@
-\section{Algorithm}
+\section{Distributed Sparse NMF}
 
 % Notation for frequently used matrices and indices. Defined in spdistnmfsc17.tex, commented out here for reference.
 % \newcommand{\mat}[1]{\mathbf{#1}}  % Denote a matrix
@@ -16,10 +16,10 @@
 
 Here, we first introduce our parallel NMF algorithm that operates on a partition of the matrices $\Am$, $\Wm$, and $\Hm$.
 For a given partition, we describe how parallel computations and communications take place within the algorithm, and illustrate computational and communication costs associated with a partition.
-In doing so, we elaborate the advantages of our parallelization scheme compared with the state of the art.
-We then discuss efficient partitioning strategies to better establish computational load balance and reduce communication.
+We then discuss efficient partitioning strategies to better establish computational load balance and reduce communication in NMF.
+In doing so, we also explain how existing methods compare to this scheme with their advantages and disadvantages in terms of partitioning.
 
-\subsection{Distributed Parallel Sparse NMF Algorithm}
+\subsection{Distributed Sparse NMF Algorithm}
 
 \begin{algorithm}
 \caption{\distspnmf: \distspnmffull}
@@ -29,9 +29,9 @@ We then discuss efficient partitioning strategies to better establish computatio
     \REQUIRE {$\Amp$: An $m \times n$ sparse matrix \\
       $\Ip$,$\Jp$: Set of rows/columns of $\Wm$ and $\Hm$ owned by process $p$ \\
       $\Fp$,$\Gp$: Footprints of process $p$ on $\Wm$ and $\Hm$ \\
-      $\Wm(\Ip,:)$,$\Hm(:,\Jp)$: Owned rows and columns of initial $\Wm$ and $\Hm$ \\
+      $\Wm(\Ip,:)$,$\Hm(:,\Jp)$: Owned rows/columns of $\Wm$ and $\Hm$ \\
       $k$: The NMF rank}
-    \ENSURE {Process $p$ gets the final value of $\Wm(\Ip,:)$ and $\Hm(:,\Jp)$}
+    \ENSURE {Process $p$ gets final values of $\Wm(\Ip,:)$ and $\Hm(:,\Jp)$}
       \REPEAT
         \STATE $\Cexpand (\Hm(:,\Gp))$ \label{line:exph}
         \STATE $\Wmt(\Fp, :) \gets \Amp \Hm(:, \Gp)$ \label{line:ah}
@@ -47,13 +47,12 @@ We then discuss efficient partitioning strategies to better establish computatio
   \end{algorithmic}
 \end{algorithm}
 
-Parallellizing NMF involves partitioning data and computational tasks to processes, and communicating results wherever necessary, just as any parallel algorithm.
-Specifically for NMF, one needs to partition the sparse matrix $\Am$ as well as the factor matrices $\Wm$ and $\Hm$, where the former partitioning distributes the computational load of sparse matrix-dense matrix multiplications $\Am \Hm$ and $\Wm^T \Am$, whereas the latter divides the workload of NNLS computations to processes.
+Parallelizing sparse NMF involves partition the sparse matrix $\Am$ as well as the factor matrices $\Wm$ and $\Hm$, where the former partitioning distributes the computational load of sparse matrix-dense matrix multiplications $\Am \Hm$ and $\Wm^T \Am$, whereas the latter divides the workload of NNLS computations to processes.
 We provide the execution of our parallel algorithm for computing a rank-$k$ NMF of a sparse matrix $\Am \in \R^{m \times n}$ in \cref{alg:distnmf}, which is executed by each process $p$ for $1 \le p \le P$.
-The algorithm starts with an arbitrary partition of the input matrix and the factor matrices; process $p$ owns the submatrices $\Wm(\Ip, :)$ and $\Hm(:, \Jp)$ as well as the nonzero elements of the sparse matrix $\Am_p$ where $\Am = \bigcup_{i=1}^{P}\Am_i$, i.e., $\Am_1, \dots, \Am_p$ partitions the nonzeros of $\Am$.
-The sets $\Fp$ and $\Gp$ denote the ``footprints'' of the process $p$ on the rows and the columns of matrices $\Wm$ and $\Hm$, respectively, in the course of the algorithm.
-That is, we have $i \in \Fp$ or $j \in \Gp$ if only if $i \in \Ip$ or $j \in \Jp$~(row/column is owned), or there is a nonzero element $a_{i,j} \in \Amp$~(row/column is used in local computations).
-At each iteration, the process $p$ is responsible for gathering the new value of submatrices $\Wm(\Ip, :)$ and $\Hm(:, \Jp)$, and sending these values to processes in need.
+The algorithm starts with an arbitrary partition of the input matrix and the factor matrices; process $p$ owns the submatrices $\Wm(\Ip, :)$ and $\Hm(:, \Jp)$ as well as the nonzero elements of the sparse matrix $\Am_p$ where $\Am = \bigcup_{i=1}^{P}\Am_i$, i.e., $\Am_1, \dots, \Am_P$ partitions the nonzeros of $\Am$.
+The sets $\Fp$ and $\Gp$ denote the ``footprints'' of the process $p$ on the rows and the columns of matrices $\Wm$ and $\Hm$, respectively; hence, these rows need to be stored by this process.
+Specifically, we have $i \in \Fp$ or $j \in \Gp$ if only if $i \in \Ip$ or $j \in \Jp$~(row/column is owned), or there is a nonzero element $a_{i,j} \in \Amp$~(row/column is used in local computations).
+At each iteration, the process $p$ is responsible for gathering the new value of submatrices $\Wm(\Ip, :)$ and $\Hm(:, \Jp)$, and sending them to processes in need.
 
 In an iteration of \cref{alg:distnmf}, each process $p$ possesses three types of computational tasks as well as associated pre- and post-communication steps.
 The first task involves performing sparse matrix-dense matrix multiplications $\Am_p \Hm(:, \Gp)$ and $\Wm(\Fp, :)^T \Am_p$, whose results are stored in distributed matrices $\Wmt$ and $\Hmt$, which follow the same row-/column-wise data distribution as $\Wm$ and $\Hm$.
@@ -70,28 +69,32 @@ The first type of communication in \cref{alg:distnmf} pertains to an \textsc{All
 The other two communication types involve (i) transferring the partial row results of $\Wmt$ and $\Hmt$ to their owner processes at \cref{line:foldw,line:foldh} to accumulate at the owners, (ii) sending the updated rows of $\Wm$ and $\Hm$ to processes in need at \cref{line:expw,line:exph}.
 We respectively call these steps \emph{fold} and \emph{expand} communications, following the convention used by the sparse matrix community.
 The way these two communications are carried out plays a vital role in obtaining parallel scalability as they dominate the communication cost of the algorithm.
-Here, we employ an efficient point-to-point communication framework to effectuate fold and expand communications.
-In this scheme, after determining a partition of the matrix, each process $p$ determines the sets $\Fp$ and $\Gp$ using the row and column indices in its local matrix $\Amp$ and its sets $\Ip$ and $\Jp$ of owned row indices, then identifies the owners of these rows in order to request these rows from the corresponding processes in the expand step.
-Next, these requests are exchanged in a communication step so that each process $p$ determines the unique row indices that it needs to send to or receive from each other process in expand and fold steps.
-Once this communication structure is formed, it is reused througout all iterations in \cref{alg:distnmf}.
-This is possible thanks to the data partition staying fixed during the algorithm, hence data dependencies do not change.
 
-The existing work in the literature \cite{KBP16,KBP16MPIFAUN} amounts to employing an all-to-all communication strategy for both expand and fold steps of \cref{alg:distnmf} for dense as well as sparse $\Am$.
+
+%Here, we employ an efficient point-to-point communication framework to effectuate fold and expand communications.
+%In this scheme, after determining a partition of the matrix, each process $p$ determines the sets $\Fp$ and $\Gp$ using the row and column indices in its local matrix $\Amp$ and its sets $\Ip$ and $\Jp$ of owned row indices, then identifies the owners of these rows in order to request these rows from the corresponding processes in the expand step.
+%Next, these requests are exchanged in a communication step so that each process $p$ determines the unique row indices that it needs to send to or receive from each other process in expand and fold steps.
+%Once this communication structure is formed, it is reused througout all iterations in \cref{alg:distnmf}.
+%This is possible thanks to the data partition staying fixed during the algorithm, hence data dependencies do not change.
+
+%For convenience of the reader, \cref{tab:costs} discusses the computation, communication and memory complexity of this partitioning scheme that is observed in the \mpifaun algorithm. 
+%To illustrate, in \cref{fig:partition} we provide a sparse matrix partitioned using a $5 \times 5$ checkerboard scheme where each process owns a subblock of the matrix, and show only the nonzero elements belonging to three columns with indices $j_1$, $j_2$, and $j_3$.
+%Here, in performing the expand communication of \cref{line:exph}, the all-to-all strategy sends these column vectors to all processes in the same column, whereas point-to-point communication identifies the exact set of proceses in need beforehand, indicated with the same color, and communicates the data only with these processes.
+%In this example, all-to-all scheme incurs 4, 3, and 2 units of redundant communication for columns $j_3$, $j_2$, and $j_1$, respectively, and this redundancy only worsens with the increasing number of processes.
+
+\subsection{Communication Scheme}
+\mpifaun employs collective communication strategies for both expand and fold steps of \cref{alg:distnmf} for dense as well as sparse $\Am$, and partitions $\Am$ using a uniform checkerboard topology.
 In this strategy, the rows and the columns indices $1, \dots, m$ and $1, \dots, n$ are divided into $P_r$ and $P_c$~($P = P_r P_c$) sets $I_1, \dots, I_{P_r}$ and $J_1, \dots, J_{P_c}$ of equal size and having contiguous indices.
 This effectively defines a 2D uniform checkerboard partition of $\Am$ with matrix blocks $\Am_{(r,c)} = \Am(I_r, J_c)$ for all $1 \le r \le P_r$ and $1 \le c \le P_c$, as well as a row partition of $\Wm$ and $\Hm$.
 Here, process $p$ owns the matrix subblock $\Am_{(r, c)}$, where $r = \lfloor P/P_c \rfloor + 1$ and $c = (P \mod P_c) + 1$, as well as $m / P$ and $n / P$ rows of $\Wm(I_r, :)$ and $\Hm(J_c, :)$.
 The communication is performed within each process row and column using \textsc{All-Gather} and \textsc{Reduce-Scatter} routines, in which the process $p$ receives all matrix rows $\Wm(I_r, :)$ and $\Hm(I_c, :)$ belonging to processes in the same row and column of the process grid.
 Despite being favorable due to small number of exchanged messages in all-to-all routines, in this strategy processes receive many rows that they do not need in their local sparse matrix dense matrix multiplication, and this redundancy dramatically increases the communication volume, thus preventing scalability. 
-%For convenience of the reader, \cref{tab:costs} discusses the computation, communication and memory complexity of this partitioning scheme that is observed in the \mpifaun algorithm. 
-To illustrate, in \cref{fig:partition} we provide a sparse matrix partitioned using a $5 \times 5$ checkerboard scheme where each process owns a subblock of the matrix, and show only the nonzero elements belonging to three columns with indices $j_1$, $j_2$, and $j_3$.
-Here, in performing the expand communication of \cref{line:exph}, the all-to-all strategy sends these column vectors to all processes in the same column, whereas point-to-point communication identifies the exact set of proceses in need beforehand, indicated with the same color, and communicates the data only with these processes.
-In this example, all-to-all scheme incurs 4, 3, and 2 units of redundant communication for columns $j_3$, $j_2$, and $j_1$, respectively, and this redundancy only worsens with the increasing number of processes.
 
-\begin{figure}
-\caption{A 5x5 checkerboard partition of a sparse matrix.}
-\label{fig:partition}
-\includegraphics[width=0.8\linewidth]{figures/matrix-partition.png}
-\end{figure}
+%\begin{figure}
+%\caption{A 5x5 checkerboard partition of a sparse matrix.}
+%\label{fig:partition}
+%\includegraphics[width=0.8\linewidth]{figures/matrix-partition.png}
+%\end{figure}
 
 \subsection{Partitioning}
 \Cref{alg:distnmf} requires a partitioning of the nonzeros of $\Am$ as well as the rows and the columns of $\Wm$ and $\Hm$, and these three partitions completely determine its computational and communication costs.
