@@ -83,12 +83,17 @@ The way these two communications are carried out plays a vital role in obtaining
 %In this example, all-to-all scheme incurs 4, 3, and 2 units of redundant communication for columns $j_3$, $j_2$, and $j_1$, respectively, and this redundancy only worsens with the increasing number of processes.
 
 \subsection{Communication Scheme}
+\paragraph{Collective communication~(\textbf{COL}):} 
 \mpifaun employs collective communication strategies for both expand and fold steps of \cref{alg:distnmf} for dense as well as sparse $\Am$, and partitions $\Am$ using a uniform checkerboard topology.
 In this strategy, the rows and the columns indices $1, \dots, m$ and $1, \dots, n$ are divided into $P_r$ and $P_c$~($P = P_r P_c$) sets $I_1, \dots, I_{P_r}$ and $J_1, \dots, J_{P_c}$ of equal size and having contiguous indices.
-This effectively defines a 2D uniform checkerboard partition of $\Am$ with matrix blocks $\Am_{(r,c)} = \Am(I_r, J_c)$ for all $1 \le r \le P_r$ and $1 \le c \le P_c$, as well as a row partition of $\Wm$ and $\Hm$.
-Here, process $p$ owns the matrix subblock $\Am_{(r, c)}$, where $r = \lfloor P/P_c \rfloor + 1$ and $c = (P \mod P_c) + 1$, as well as $m / P$ and $n / P$ rows of $\Wm(I_r, :)$ and $\Hm(J_c, :)$.
-The communication is performed within each process row and column using \textsc{All-Gather} and \textsc{Reduce-Scatter} routines, in which the process $p$ receives all matrix rows $\Wm(I_r, :)$ and $\Hm(I_c, :)$ belonging to processes in the same row and column of the process grid.
-Despite being favorable due to small number of exchanged messages in all-to-all routines, in this strategy processes receive many rows that they do not need in their local sparse matrix dense matrix multiplication, and this redundancy dramatically increases the communication volume, thus preventing scalability. 
+Here, process $p$ owns the matrix subblock $\Am_{(r, c)}$, where $r = \lfloor P/P_c \rfloor + 1$ and $c = (P \mod P_c) + 1$, as well as $m / P$ and $n / P$ rows of $\Wm(I_r, :)$ and $\Hm(J_c, :)$.  
+As $\Am_{(r, c)}$ only touches the rows/columns of processes in the same row/column of the processor grid, the communication of $\WW$ and $\HH$ are performed within each process row and column using \textsc{All-Gather} and \textsc{Reduce-Scatter} routines, in which the process $p$ receives all matrix rows $\Wm(I_r, :)$ and $\Hm(J_c, :)$ belonging to processes in the same row and column of the process grid.
+Despite being favorable due to small number of exchanged messages in collective routines, in this strategy processes might receive rows that they do not need in their local sparse matrix dense matrix multiplication~(particularly if $\AA$ is very sparse), and this redundancy dramatically increases the communication volume, thus preventing scalability. 
+
+\paragraph{Point-to-point communication~(\textbf{P2P}):} 
+\hypertensor employs point-to-point communication for fold and expand steps by precomputing set of processes having a row/column in its footprint for each row/column of $\WW$/$\HH$.
+This reduces the communication volume at the cost of increased number of messages with respect to the strategy of \mpifaun.
+
 
 %\begin{figure}
 %\caption{A 5x5 checkerboard partition of a sparse matrix.}
@@ -97,19 +102,25 @@ Despite being favorable due to small number of exchanged messages in all-to-all 
 %\end{figure}
 
 \subsection{Partitioning}
+
+%This effectively defines a 2D uniform checkerboard partition of $\Am$ with matrix blocks $\Am_{(r,c)} = \Am(I_r, J_c)$ for all $1 \le r \le P_r$ and $1 \le c \le P_c$, as well as a row partition of $\Wm$ and $\Hm$.
+%Here, process $p$ owns the matrix subblock $\Am_{(r, c)}$, where $r = \lfloor P/P_c \rfloor + 1$ and $c = (P \mod P_c) + 1$, as well as $m / P$ and $n / P$ rows of $\Wm(I_r, :)$ and $\Hm(J_c, :)$.
+%
+
 \Cref{alg:distnmf} requires a partitioning of the nonzeros of $\Am$ as well as the rows and the columns of $\Wm$ and $\Hm$, and these three partitions completely determine its computational and communication costs.
-Here, we compare different partitioning strategies, and argue how they relate to these two performance metrics.
+Here, we compare different partitioning strategies, employed by \mpifaun, \hypertensor, and SpMV kernels, and argue how they relate to these two performance metrics.
 
-Our algorithm is fine-grained; meaning that it can work any fine-grain, 1D, or 2D/checkerboard partition of the sparse matrix $\Am$.
-Here, however, we exclusively focus on $P_r \times P_c$~(where $P = P_r P_c$) checkerboard partitionings, and always set $P_c$ to the number of cores available per compute node in the cluster.
-This helps us reduce the communication cost in two ways.
-The first one corresponds to that we do not employ shared-memory parallelism in our implementation, hence assign one MPI rank per core.
-In this scenario, by assigning each group of $P_c$ processes owning the same row block of $\Am$ to the same node, and similarly assigning the corresponding row blocks of $\Wm$ and $\Wmt$ to these processes, we effectively eliminate the communication in the row dimension of the process grid~(which pertains to communicating matrices $\Wm$ and $\Wmt$) as these row exchanges stay within a node.
-This enables us to focus solely on reducing the communication due to columns of $\Hm$ and $\Hmt$.
-Second, this topology bounds the maximum number of messages sent per process by $P_r-1$ and $P_c-1$, thereby significantly reduce the communication latency by a factor of $P_c$ in compare with a fine-grain or a 1D partition, which incurs up to $P-1$ messages per process.
+%Our algorithm is fine-grained; meaning that it can work any fine-grain, 1D, or 2D/checkerboard partition of the sparse matrix $\Am$.
+%Here, however, we exclusively focus on $P_r \times P_c$~(where $P = P_r P_c$) checkerboard partitionings, and always set $P_c$ to the number of cores available per compute node in the cluster.
+%This helps us reduce the communication cost in two ways.
+%The first one corresponds to that we do not employ shared-memory parallelism in our implementation, hence assign one MPI rank per core.
+%In this scenario, by assigning each group of $P_c$ processes owning the same row block of $\Am$ to the same node, and similarly assigning the corresponding row blocks of $\Wm$ and $\Wmt$ to these processes, we effectively eliminate the communication in the row dimension of the process grid~(which pertains to communicating matrices $\Wm$ and $\Wmt$) as these row exchanges stay within a node.
+%This enables us to focus solely on reducing the communication due to columns of $\Hm$ and $\Hmt$.
+%Second, this topology bounds the maximum number of messages sent per process by $P_r-1$ and $P_c-1$, thereby significantly reduce the communication latency by a factor of $P_c$ in compare with a fine-grain or a 1D partition, which incurs up to $P-1$ messages per process.
 
-\subsubsection{Partitioning sparse input matrix $\Am$} \label{sec:cp1d}
-\paragraph{Hypergraph partitioning~(\cpp)} We aim to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next, to obtain an $P_r \times P_c$ checkerboard partition.
+\subsubsection{Partitioning $\Am$} \label{sec:cp1d}
+
+\paragraph{Checkerboard hypergraph partitioning~(\textbf{CH2})} We aim to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next, to obtain an $P_r \times P_c$ checkerboard partition.
 To this end, we adopt hypergraph partitioning techniques used in parallel sparse matrix literature to our case~\cite{caay:99}.
 A hypergraph consists of vertices with associated weights and hyperedges that connect two or more vertices.
 In the literature, a hypergraph is typically formed by adding a vertex for each computational task with the associated execution cost, adding a hyperedge for each data element, and connecting the vertex to a hyperedge whenever the associated task and the data are dependent.
@@ -129,17 +140,19 @@ First, existing multi-constraint partitioning tools are known to be not as effic
 Second, the main goal of hypergraph partitioning of columns is to minimize the communication volume due to rows, whereas in our case communication of rows of $\Wm$ and $\Wmt$ stays within a node with a proper mapping of processes, and this communication cost would be negligible.
 Therefore, we instead partition columns randomly, which is expected to provide balance the number of nonzeros of $\Am$, number of columns of $\Hm$ and $\Hmt$, the amount of column communication volume due to columns of $\Hm$ and $\Hmt$.
 
-\paragraph{Randomized checkerboard partitioning(\crp)}
+\paragraph{1D-like checkerboard hypergraph partitioning~(\textbf{CH1})}
+
+\paragraph{Randomized checkerboard partitioning(\textbf{CRD})}
 This scheme corresponds to partitioning both the rows and the columns of $\Am$ into $R$ segments randomly.
 It is expected to provide good load balance both in sparse and dense matrix operations, but it overlooks the communication cost.
 
-\paragraph{Uniform checkerboard partitioning(\unp)}
+\paragraph{Uniform checkerboard partitioning(\textbf{CUN})}
 This partitioning variant forms an $R \times C$ partition of $\Am$ by putting a contiguous set of $m / R$ and $n / C$ rows and columns in each slice.
 $\Wm$ and $\Hm$ are partitioned conformally with this topology; each process is assigned a contiguous set of  $m / P$ and $n / P$ rows and columns, respectively, belonging to the corresponding row and column blocks of $\Hm$.
 This is the only partitioning scheme employed by $\mpifaun$ \cite{KBP16, KBP16MPIFAUN}, hence we only use it for this implementation.
-We also use a randomized variant (\urp) of this scheme in which the rows and columns of $\Am$ are permuted randomly befor executing $\mpifaun$ to better balance its nonzeros.
+We also use a randomized variant (\urp) of this scheme in which the rows and columns of $\Am$ are permuted randomly before executing $\mpifaun$ to better balance its nonzeros.
 
-\subsubsection{Partitioning factors $\Wm$ and $\Hm$}
+\subsubsection{Partitioning $\Wm$ and $\Hm$}
 Once $\Am$ is partitioned with an $R \times C$ checkerboard topology, one has to partition rows and columns of factor matrices conformally with this topology to form the sets $\Ip$ and $\Jp$ in \cref{alg:distnmf}.
 In doing so, we are interested in assigning rows and columns to processes in the corresponding process row or column equitably.
 For this purpose, we specify imbalance parameters $\alpha_r$ and $\alpha_c$ that correspond to maximum imbalance we allow in this partitioning; i.e., $|\Ip| \le \alpha_r m / P$ and $|\Jp| \le \alpha_c n / P$ for each process $p$.
