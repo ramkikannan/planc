@@ -172,16 +172,16 @@ This is the partitioning strategy employed by \hypertensor.
 
 
 \subsubsection{Partitioning $\Wm$ and $\Hm$}
-Once $\Am$ is partitioned with an $R \times C$ checkerboard topology, one has to partition rows and columns of factor matrices conformally with this topology to form the sets $\Ip$ and $\Jp$ in \cref{alg:distnmf}.
-In doing so, we are interested in assigning rows and columns to processes in the corresponding process row or column equitably.
-For this purpose, we specify imbalance parameters $\alpha_r$ and $\alpha_c$ that correspond to maximum imbalance we allow in this partitioning; i.e., $|\Ip| \le \alpha_r m / P$ and $|\Jp| \le \alpha_c n / P$ for each process $p$.
-We normally set these imbalance parameters to $1.1$.
-However, when $m >> n$, we increase $\alpha_c$ proportionally in order to give more flexibility in column partitioning which results in smaller communication volume.
+Once $\Am$ is partitioned, one has to partition rows and columns of factor matrices to form the sets $\Ip$ and $\Jp$ in \cref{alg:distnmf}.
+In doing so, we are interested in assigning rows and columns to processes equitably.
+For this purpose, we specify imbalance parameters $\alpha$ that correspond to maximum imbalance we allow in this partitioning; i.e., $|\Ip| \le \alpha m / P$ and $|\Jp| \le \alpha n / P$ for each process $p$, and set $\alpha = 1.05$ in the experiments.
 
 Next, for each row and column of $\Wm$ and $\Hm$ we create a list of processes that has a dependency to that row or column, which corresponds to processes owning the matrix blocks of same color in \cref{fig:partition}.
 Finally, we randomly assign each row and column to one of the processes satisfying the imbalance constraint in this list.
-If all processes in the list are overloaded, we randomly assign it to a process that is not overloaded in the same process row or column.
-Note that the latter assignment increases the communication volume due to that row or column by 1; hence, in general larger imbalance parameters yield smaller communication volume by reducing this type of assignment.
+If all processes in the list are overloaded, we assign it to the process that has the minimum number of rows/columns assigned.
+For a checkerboard partition, the minimum is always chosen from the same processor row/column so that 2D communication topology is not disturbed.
+Note that such an assignment increases the communication volume due to that row or column by 1; hence, in general smaller imbalance parameters yield larger communication volume due to increasing this type of assignment.
+On the other hand, we desire to keep $\alpha$ small as it pertains to the load imbalance in the NNLS step.
 
 %%\newcommand{\smaller}{\scriptsize}
 %\begin{table*}[t!]
