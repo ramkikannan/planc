@@ -84,22 +84,22 @@ to higher number of nodes.
 We conclude that even though \krchb correctly models computation and communication costs of distributed sparse NMF, it does not yield better results in practice due to having too many constraints in the partitioning problem, which also renders it impractical due to costly precomputation for partitioning.
 \krcha yields a smaller hypergraph with reasonable partitioning cost and provides some benefits in terms of communication reduction.
 \krcr seems to produce good results overall as it provides good computation and communication balance.
-We provide partition statistics with respect to these strategies in Table ?? which justify these observations.
+We provide partition statistics with respect to these strategies in Table ref{tab:loadcomm} which justify these observations.
 
 \begin{table}
 \begin{center}
-\caption{Load balance and communication statistics for 256-way partitioning.\label{tab:loadcomm}}
+\caption{Load balance and communication statistics for 4096-way partitioning with edge factor 64.\label{tab:loadcomm}}
 \vspace*{-1ex}
 \begin{footnotesize}
   \begin{tabular}{ l | r | r | r | r | r }
 %    \multirow{2}{*}{Partitioning} & \multicolumn{2}{|c|}{Nnz } & \multicolumn{2}{|c|}{Comp. Load} & \multicolumn{2}{|c|}{Comm. Vol.} & \multicolumn{2}{|c}{Num. Msg} \\ \cline{2-9}
     Partitioning & nz-ib  & row-ib      & col-ib     & com-max.      & com-avg \\ \hline
 %    \multicolumn{6}{c}{\emph{Delicious}} \\ \hline
-    \krcun & 547K      & 547K        & 1947K      & 1807K         & 199K      \\ \hline
-    \krcha & 564K      & 547K        & 1849K      & 1737K         & 309K      \\ \hline
-    \krchb & 550K      & 547K        & 2747K      & 2737K         & 1083K     \\ \hline
-    \krcr  & 598K      & 547K        & 2353K      & 2214K         & 624K      \\ \hline
-    \krfh  & 598K      & 547K        & 2353K      & 2214K         & 624K      \\ \hline
+    \krcun & 1.30987      & 1        & 1.00392      & 15366         & 11876      \\ \hline
+    \krcha & 1.21477      & 1.27734        & 1.05098      & 20800         & 11038      \\ \hline
+    \krchb & 1.06479      & 1.30469        & 1.53725      & 23484         & 10853     \\ \hline
+    \krcr  & 1.38681      & 1.04688        & 1.05098      & 15475         & 11341      \\ \hline
+    \krfh  & 1.00115      & 1.05078        & 1.0549      & 47925         & 13802      \\ \hline
   \end{tabular}
   \end{footnotesize}
 \end{center}
