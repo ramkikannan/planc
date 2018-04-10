@@ -101,7 +101,7 @@ This reduces the communication volume at the cost of increased number of message
 \includegraphics[width=0.8\linewidth]{figures/matrix-partition.png}
 \end{figure}
 
-\subsection{Partitioning}
+\subsection{Partitioning} \label{sec:partitioning}
 
 %This effectively defines a 2D uniform checkerboard partition of $\Am$ with matrix blocks $\Am_{(r,c)} = \Am(I_r, J_c)$ for all $1 \le r \le P_r$ and $1 \le c \le P_c$, as well as a row partition of $\Wm$ and $\Hm$.
 %Here, process $p$ owns the matrix subblock $\Am_{(r, c)}$, where $r = \lfloor P/P_c \rfloor + 1$ and $c = (P \mod P_c) + 1$, as well as $m / P$ and $n / P$ rows of $\Wm(I_r, :)$ and $\Hm(J_c, :)$.

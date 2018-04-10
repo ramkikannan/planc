@@ -1,11 +1,13 @@
 \section{Experiments}
 \label{sec:experiment}
+
 \newcommand{\NLS}{LUC }
 \newcommand{\krfaun}{\textbf{COL}\xspace}
 \newcommand{\krcun}{\textbf{CN}\xspace}
+\newcommand{\krcha}{\textbf{CH1}\xspace}
+\newcommand{\krchb}{\textbf{CH2}\xspace}
 \newcommand{\krcr}{\textbf{CR}\xspace}
-\newcommand{\krch1}{\textbf{CH1}\xspace}
-\newcommand{\krch2}{\textbf{CH2}\xspace}
+\newcommand{\krfh}{\textbf{FH}\xspace}
 
 %In this section, we describe our implementation of \distspnmf\  and evaluate its performance.
 %We identify two popular real world data sets to experiment with dimensions that span to tens of millions.  with \distspnmf\. 
@@ -44,33 +46,56 @@ Our code for local matrix operations is developed using the matrix library Armad
 We use BLAS and LAPACK for dense matrix operations by linking Armadillo with Intel MKL, OpenBLAS~\cite{xianyi2015}, or any other BLAS and LAPACK implementation.
 Both codes are compiled using the default GNU C++ Compiler (g++ (GCC) 5.3.0) and MPI library (Open MPI 1.8.4) on RHEA, and Clang compiler~(3.5.0) with IBM MPI library on BlueGene/Q.
 
-\subsubsection{Algorithms}
-
-In our experiments, we considered the following algorithms and partitionings:
-\begin{itemize}
-	\item \unp: \mpifaun Algorithm \cite{KBP16,KBP16MPIFAUN} with uniform natural  partition~(\unp) where each process holds an input matrix of size $m/P_r \times n/P_c$. 
-	\item \urp: The partitioning strategy in \unp\ could result in a significant computational load imbalance in with a skewed nonzero distribution of $\Am$. We alleviate this by randomly permuting the rows and columns of the matrix before executing \mpifaun, and call this scheme $\urp$.
-	\item \cpp: \distspnmf (\cref{alg:distnmf}) with checkerboard hypergraph partitioning explained in \cref{sec:cp1d}.
-	\item \crp: \distspnmf (\cref{alg:distnmf}) with randomized checkerboard partioning explained in \cref{sec:cp1d}.
-	
-\end{itemize}
-
 %The Figure \ref{fig:stackexchangerr} shows the comparison of these algorithms on the stack exchange dataset explained in Section \ref{sec:datasets}. 
 
+%\subsection {Effect of communication scheme}
 \subsection {Effect of communication scheme}
-In \cref{fig:nnzsweep} we provide per-iteration computation and communication timings for different partitionings and communication schemes using $4096$ processors and a $64x64$ processor grid.
+To understand the effect of partitioning and its impact on communication and computation, we performed
+experiments on synthetic Kronecker graph and the results are presented in \cref{fig:nnzsweep}. 
+For $2^{20}$ vertices, we chose the edge factor of the kronecker graph as \{4,8,16,32,64\} and in
+this setting as the edge factor increases,  higher the number of  non-zeros making the sparse matrix
+denser. We ran the baseline FAUN algorithm and the proposed algorithm with different partitioning 
+scheme as explained in \cref{sec:partitioning} on 4096 processors using a $64 \times 64$ processor grid on Rhea for low rank $k=48$. 
+
+In \cref{fig:nnzsweep}, we provide per-iteration computation and communication timings for different partitionings and communication schemes using $4096$ processors and a $64x64$ processor grid.
 \krfaun is the is the implementation of \mpifaun and is the only instance that uses collective communication.
-Comparing it with the \krcun that also uses uniform partitioning but with point-to-point communication, we notice that \mpifaun always incurs significantly higher communication cost.
-As the edge factor increases and matrix becomes denser, the communication cost of \mpifaun does not change as expected since it does not depend on the matrix sparsity.
-The communication cost of \krcun progressively increases with the edge factor, but even with an edge factor of $64$ \mpifaun takes about more time by a factor of two.
-Therefore, we conclude that even though there is a converging trend between the cost of collective and point-to-point communication, it is a rather slow convergence, and the point-to-point scheme should be the method of choice unless the matrix gets very dense.
+Comparing it with the \krcun that also uses uniform partitioning but with point-to-point communication.
+\krcr decides the checkerboard topology randomly and uses point-to-point scheme as well.
+\krcha and \krchb correspond to 1D-like and 2D checkerboard hypergraph partitioning models with point-to-point communication.
+Finally, \krfh is the fine-graph hypergraph partitioning with point-to-point scheme, for which we only provide partition statistics for comparison and not the actual run time.
+
+We notice in \cref{fig:nnzsweep} that \krfaun always incurs significantly higher communication cost.
+As the edge factor increases and matrix becomes denser, the communication cost of \krfaun does not change as expected since it does not depend on the matrix sparsity.
+The communication cost of \krcun progressively increases with the edge factor, but even with an edge factor of $64$ \krfaun is about two times more costly.
+Therefore, we conclude that even though there is a converging trend between the cost of collective and point-to-point communication, it is a rather slow convergence, and the point-to-point scheme should be the method of choice unless matrix gets very dense.
 
 \subsection {Effect of partitioning strategies}
 In \cref{fig:nnzsweepcomm}, our first observation is that all partitionings except \krfaun yield comparable results in terms of communication, while there is some variation  in the computation times provided in \cref{fig:nnzsweepcomp}.
-
 \krcun gives similar k
 
+From the Figure \ref{fig:nnzsweepcomm},  it is evident that checkerboard partitioning with point-to-point
+communication is approximately 4x faster over the 2D partition with collective communication. In the case of
+computation, from Figure \ref{fig:nnzsweepcomp}, we can observe that in the case of denser matrices
+with higher edge factors, the load imbalance in 2D is becoming more evident over the checkerboard partition. 
+Thus checker board with point-to-point communicates less and has better load balance over 2D partition
+with collective communication. These advantages  give scope for the checkerboard partition with point-to-point scale
+to higher number of nodes.
+
+Therefore, we conclude that even though \krchb correctly models computation and communication costs of distributed sparse NMF, it does not yield better results in practice due to having too many constraints in the partitioning problem, which also renders it impractical due to costly precomputation for partitioning.
+\krcha yields a smaller hypergraph with reasonable partitioning cost and provides some benefits in terms of communication reduction.
+\krcr seems to produce good results overall as it provides good computation and communication balance.
+With these observations, we provide strong scalability experiments on real-world datasets in the next section with a detailed comparison of point-to-point and collective strategies as well has randomized and hypergraph checkerboard~(1d-like) partitioning.
+
 \subsection {Strong scaling}
+
+In this experiment, we considered the following algorithms and partitionings:
+\begin{itemize}
+	\item \unp: \mpifaun algorithm \cite{KBP16,KBP16MPIFAUN} with uniform partitioning~(\unp) where each process holds an input matrix of size $m/P_r \times n/P_c$. 
+	\item \urp: The partitioning strategy in \unp\ could result in a significant computational load imbalance in with a skewed nonzero distribution of $\Am$. We alleviate this by randomly permuting the rows and columns of the matrix before executing \mpifaun, and call this scheme $\urp$.
+	\item \cpp: \distspnmf (\cref{alg:distnmf}) with 1D-like checkerboard hypergraph partitioning explained in \cref{sec:cp1d}.
+	\item \crp: \distspnmf (\cref{alg:distnmf}) with randomized checkerboard partioning explained in \cref{sec:cp1d}.
+	
+\end{itemize}
 
 %In \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} we show the speedup results of all four instances on the Rhea cluster using up 
 In \cref{fig:flickr-speedup-48} we show the speedup results of all four instances on the Rhea cluster using up 
@@ -148,8 +173,7 @@ legend columns = -1
 \subcaption{Communication cost for $k$=48 on 4096 procs}
 \label{fig:nnzsweepcomm}
 \end{subfigure}
-
-\caption{Communication and computation costs of different partitioning strategies on Kronecker graphs}
+\caption{Communication and computation costs of different partitioning strategies on Kronecker graphs on 4096 processors Rhea for $k=48$}
 \label{fig:nnzsweep}
 \end{figure}
 
