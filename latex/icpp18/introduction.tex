@@ -58,7 +58,7 @@ The main advantage of this approach is that it minimizes the communication cost 
 The disadvantages of this approach are an upfront hypergraph partitioning cost, possible load imbalance~(particularly in the NLS 
 computations) and communication imbalance. We would like to iterate that in the case of machine learning workflow, the 
 computations after SpMM must deal with dense matrices, as Sparse-Dense matrix multiplication will result in a dense matrix. 
-Hence, the partitioning strategy considering only SpMM will result in a huge imbalance and in this specific case of NMF on NLS computations. 
+Hence, the partitioning strategy considering only SpMM will result in a huge imbalance in the overall workflow especially on computations after SpMM and in this specific case of NMF on NLS computations. 
 Our goal is in this paper is to fill in this gap between two approaches by comparing and evaluating them in the context of NMF, then proposing a synthesis involving parallel algorithms as well as communication and partitioning schemes enabling scalability to thousands of processes.
 
 %To the best of our knowledge, the only high performance software available for parallelizing this computation is \mpifaun~\cite{KBP16MPIFAUN} which operates both on sparse and dense input matrices.
