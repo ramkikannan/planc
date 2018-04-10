@@ -3,6 +3,9 @@
 \newcommand{\NLS}{LUC }
 \newcommand{\krfaun}{\textbf{COL}\xspace}
 \newcommand{\krcun}{\textbf{CN}\xspace}
+\newcommand{\krcr}{\textbf{CR}\xspace}
+\newcommand{\krch1}{\textbf{CH1}\xspace}
+\newcommand{\krch2}{\textbf{CH2}\xspace}
 
 %In this section, we describe our implementation of \distspnmf\  and evaluate its performance.
 %We identify two popular real world data sets to experiment with dimensions that span to tens of millions.  with \distspnmf\. 
@@ -15,6 +18,7 @@ We analyze and compare the computation and communication timings of these algori
 \subsection{Experimental Setup}
 In this paper, we use both synthetic and realworld datasets. The synthetic datasets are used to evaluate the communication
  strategies with the increase in number of non-zeros of the sparse matrices. 
+ We used PaToH~\cite{caay:99} for partitioning hypergraphs.
 \subsubsection{Datasets}\label{sec:datasets}
 
 
@@ -62,6 +66,9 @@ The communication cost of \krcun progressively increases with the edge factor, b
 Therefore, we conclude that even though there is a converging trend between the cost of collective and point-to-point communication, it is a rather slow convergence, and the point-to-point scheme should be the method of choice unless the matrix gets very dense.
 
 \subsection {Effect of partitioning strategies}
+In \cref{fig:nnzsweepcomm}, our first observation is that all partitionings except \krfaun yield comparable results in terms of communication, while there is some variation  in the computation times provided in \cref{fig:nnzsweepcomp}.
+
+\krcun gives similar k
 
 \subsection {Strong scaling}
 
