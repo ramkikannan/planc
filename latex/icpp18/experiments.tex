@@ -52,19 +52,24 @@ In our experiments, we considered the following algorithms and partitionings:
 
 \subsection {Strong scaling}
 
-In \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} we show the speedup results of all four instances on the Rhea cluster using up to 3072 MPI ranks/cores on Flickr data.
+%In \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} we show the speedup results of all four instances on the Rhea cluster using up 
+In \cref{fig:flickr-speedup-48} we show the speedup results of all four instances on the Rhea cluster using up 
+to 3072 MPI ranks/cores on Flickr data.
 The speedup values are with respect to slowest runtime among all four instances using 16 cores~(single node).
-We observe in \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} that all algorithms scale up to 1536 cores, yet \mpifaun instances achieve this with significantly lower parallel efficiency.
+%We observe in \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} that all algorithms scale up to 1536 cores, yet \mpifaun instances 
+We observe in \cref{fig:flickr-speedup-48} that all algorithms scale up to 1536 cores, yet \mpifaun instances 
+achieve this with significantly lower parallel efficiency.
 This mostly is due to higher communication costs involved in the all-to-all communication scheme for both instances.
 We also realize that \urp significantly improves the runtime with respect to \unp, meaning that \unp indeed causes load imbalance in partitioning nonzeros of $\Am$.
 At 3072 processes, both \urp and \unp lose scalability and slow down, whereas \cpp and \crp scale to 3072 processors.
 %One point to note is that for $k=16$, \cpp is considerably slower than \crp, whereas for $k=48$, \cpp starts to get faster than \crp.
 %The former result is due to that \cpp typically causes more imbalance in factor matrix rows and the input matrix nonzeros, whereas in the latter result, the size of each communication unit is tripled; therefore, the reduction in the communication cost using \cpp begins to compensate for the performance loss due to load imbalance.
 
-Similarly, in \cref{fig:delicious-speedup-16,fig:delicious-speedup-48} we provide the same results for the Delicious matrix.
+%Similarly, in \cref{fig:delicious-speedup-16,fig:delicious-speedup-48} we provide the same results for the Delicious matrix.
+Similarly, in \cref{fig:delicious-speedup-48} we provide the same results for the Delicious matrix.
 We observe a similar trend in the comparisons of different methods, except that \urp and \unp scale even worse in this case.
 Our algorithm also loses scalability after 1536 processes, and similarly to the previous case \cpp starts slower than \crp due to load imbalance, and catches up for $k = 48$.
-These two test cases clearly show that employing a point-to-point communication with good partitionings is essential for obtaining high performance inNMF algorithm.
+These two test cases clearly show that employing a point-to-point communication with good partitionings is essential for obtaining high performance in NMF algorithm.
 
 To better test the scalability limit of our algorithms, we ran them on an IBM BlueGene/Q supercomputer up to 32768 processors using the same two matrices.
 The results of these two experiments are provided in \cref{fig:flickr-speedup-bgq,fig:delicious-speedup-bgq}.
@@ -117,7 +122,7 @@ legend columns = -1
 \addplot  table [x={edgefactor}, y expr=(\thisrow{cp1d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
 \addplot  table [x={edgefactor}, y expr=(\thisrow{cp2d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
 \addplot  table [x={edgefactor}, y expr=(\thisrow{cr}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
-\addplot  table [x={edgefactor}, y expr=(\thisrow{cu}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};\legend{collective, cp1d, cp2d, cr, cu}
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cu}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};\legend{COL, CH1, CH2, CRD, CUN}
 \end{axis}
 \end{tikzpicture}
 \subcaption{Communication cost for $k$=48 on 4096 procs}
