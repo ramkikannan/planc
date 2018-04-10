@@ -81,10 +81,29 @@ Thus checker board with point-to-point communicates less and has better load bal
 with collective communication. These advantages  give scope for the checkerboard partition with point-to-point scale
 to higher number of nodes.
 
-Therefore, we conclude that even though \krchb correctly models computation and communication costs of distributed sparse NMF, it does not yield better results in practice due to having too many constraints in the partitioning problem, which also renders it impractical due to costly precomputation for partitioning.
+We conclude that even though \krchb correctly models computation and communication costs of distributed sparse NMF, it does not yield better results in practice due to having too many constraints in the partitioning problem, which also renders it impractical due to costly precomputation for partitioning.
 \krcha yields a smaller hypergraph with reasonable partitioning cost and provides some benefits in terms of communication reduction.
 \krcr seems to produce good results overall as it provides good computation and communication balance.
 We provide partition statistics with respect to these strategies in Table ?? which justify these observations.
+
+\begin{table}
+\begin{center}
+\caption{Load balance and communication statistics for 256-way partitioning.\label{tab:loadcomm}}
+\vspace*{-1ex}
+\begin{footnotesize}
+  \begin{tabular}{ l | r | r | r | r | r }
+%    \multirow{2}{*}{Partitioning} & \multicolumn{2}{|c|}{Nnz } & \multicolumn{2}{|c|}{Comp. Load} & \multicolumn{2}{|c|}{Comm. Vol.} & \multicolumn{2}{|c}{Num. Msg} \\ \cline{2-9}
+    Partitioning & nz-ib  & row-ib      & col-ib     & com-max.      & com-avg \\ \hline
+%    \multicolumn{6}{c}{\emph{Delicious}} \\ \hline
+    fine-hp   & 547K      & 547K        & 1947K      & 1807K         & 199K      \\ \hline
+    fine-lb   & 564K      & 547K        & 1849K      & 1737K         & 309K      \\ \hline
+    fine-rd   & 550K      & 547K        & 2747K      & 2737K         & 1083K     \\ \hline
+    medium-gd & 598K      & 547K        & 2353K      & 2214K         & 624K      \\ \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{center}
+\vspace*{-1ex}
+\end{table}
 
 \subsection {Strong scaling}
 In this section, we provide strong scalability experiments on real-world datasets in the next section with a detailed comparison of point-to-point and collective strategies as well has randomized and hypergraph checkerboard~(1d-like) partitioning.
