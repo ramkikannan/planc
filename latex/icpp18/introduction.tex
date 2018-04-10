@@ -26,8 +26,13 @@ where $\|\M{X}\|_F=(\sum_{ij} x_{ij}^2)^{1/2}$ is the Frobenius norm.
 NMF is widely used in data mining and machine learning as a dimension reduction and factor analysis method.
 It is a natural fit for many real world problems as the non-negativity is inherent in many representations of real-world data and
 the resulting low rank factors are expected to have a natural interpretation. The applications of NMF range from text mining \cite{pauca2004text},  computer vision \cite{hoyer2004non}, and bioinformatics \cite{kim2007sparse} to blind source separation  \cite{cichocki2009nonnegative}, unsupervised clustering \cite{kuang2012symmetric,kuang2013symnmf}  and many other areas.
-In most real-world applications $m$ and $n$ are on the order of millions or more while $k$ is much smaller, on the order of tens to thousands.
-Furthermore, data sets from these applications are often quite sparse and have highly irregular nonzero patterns.
+In most real-world applications $m$ and $n$ are on the order of millions or more while $k$ is much smaller, on the order of tens to thousands. Furthermore, data sets from these applications are often quite sparse and have highly irregular nonzero patterns.
+We would like to highlight that ``Non-negative'' Matrix Factorization is NOT matrix factorization in collaborative filtering for recommender systems for which many implementations exist.
+The collaborative filtering problem is different than NMF -- the focus of our paper -- because it interprets the ``{\em zero}'' entries of the input matrix as missing data, while the NMF problem is defined for a completely known input matrix and does not handle missing values.
+This leads to different optimization problems, algorithms, and computational steps.
+
+
+%However, we would like to clarify that collaborative filtering in recommender systems using matrix factorization is a different problem than NMF: in the case of collaborative filtering, non-nonzeros in the matrix are considered to be missing entries, while in the case of NMF, non-nonzeros in the matrix correspond to true zero values.
 
 %In the recent years, there has been an explosion in the size of collected data particularly with the widespread use of internet and social media.
 %Such collected data has big dimensions~(from millions to billions) and is extremely sparse, which is either implied by the nature of the data~(e.g., most web content are not visited by users), or because capturing every possible data point is impractical.
