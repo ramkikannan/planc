@@ -1,7 +1,8 @@
 \section{conclusion}
 
-In this paper, we proposed a novel algorithm parallel non-negative matrix factorization of sparse matrices in distributed memory environments.
-To the best of our knowledge, this is the first high performance implementation that takes the sparsity of the input matrix into consideration in communication to reduce the communication cost, and employs effective partitionings to further enhance parallel scalability.
-We introduce effective partitioning strategies for both the sparse input matrix $\Am$ as well as factor matrices $\Wm$ and $\Hm$ that helps us achieve good computational load balance while minimizing the communication costs.
-With all the algorithmic contributions and an efficient parallel implementation, our method outperforms the state of the art by a significant margin, and gracefully scales up to 32768 cores on an IBM BlueGene/Q supercomputer.
+In this paper, we compared various partitioning and communication strategies used in the literature in the context of non-negative matrix factorization.
+We showed that an important difference in the parallel NMF algorithms is balancing matrix rows among processors, and this constraint renders state-of-the-art hypergraph partitioning methods less effective.
+We employed variations of the MPI-FAUN implementation with point-to-point communication, and concluded that unless matrix at hand is quite dense, point-to-point communication significantly improves the scalability by reducing the communication volume.
+With optimized implementations, we achieved scalability up to 32K nodes on a BG/Q supercomputer using partitioning schemes that are cheap to compute.
+To the best of our knowledge, our work is the first high performance implementation of distributed NMF that takes the sparsity of the input matrix into consideration in communication to reduce the communication cost, and employs effective partitionings to further enhance parallel scalability.
 Our immediate next steps for extending our work involve adding shared memory parallelism to obtain further speedup.
