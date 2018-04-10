@@ -58,8 +58,8 @@ We observe in \cref{fig:flickr-speedup-16,fig:flickr-speedup-48} that all algori
 This mostly is due to higher communication costs involved in the all-to-all communication scheme for both instances.
 We also realize that \urp significantly improves the runtime with respect to \unp, meaning that \unp indeed causes load imbalance in partitioning nonzeros of $\Am$.
 At 3072 processes, both \urp and \unp lose scalability and slow down, whereas \cpp and \crp scale to 3072 processors.
-One point to note is that for $k=16$, \cpp is considerably slower than \crp, whereas for $k=48$, \cpp starts to get faster than \crp.
-The former result is due to that \cpp typically causes more imbalance in factor matrix rows and the input matrix nonzeros, whereas in the latter result, the size of each communication unit is tripled; therefore, the reduction in the communication cost using \cpp begins to compensate for the performance loss due to load imbalance.
+%One point to note is that for $k=16$, \cpp is considerably slower than \crp, whereas for $k=48$, \cpp starts to get faster than \crp.
+%The former result is due to that \cpp typically causes more imbalance in factor matrix rows and the input matrix nonzeros, whereas in the latter result, the size of each communication unit is tripled; therefore, the reduction in the communication cost using \cpp begins to compensate for the performance loss due to load imbalance.
 
 Similarly, in \cref{fig:delicious-speedup-16,fig:delicious-speedup-48} we provide the same results for the Delicious matrix.
 We observe a similar trend in the comparisons of different methods, except that \urp and \unp scale even worse in this case.
@@ -97,7 +97,7 @@ xticklabels={4, 8, 16, 32, 64}
 %\legend{collective, cp1d, cp2d, cr, cu}
 \end{axis}
 \end{tikzpicture}
-\subcaption{Computation cost for low rank $k$=48 on 4096 procs}
+\subcaption{Computation cost for $k$=48 on 4096 procs}
 \label{fig:nnzsweepcomp}
 \end{subfigure}
 
@@ -120,7 +120,7 @@ legend columns = -1
 \addplot  table [x={edgefactor}, y expr=(\thisrow{cu}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};\legend{collective, cp1d, cp2d, cr, cu}
 \end{axis}
 \end{tikzpicture}
-\subcaption{Communication cost for low rank $k$=48 on 4096 procs}
+\subcaption{Communication cost for $k$=48 on 4096 procs}
 \label{fig:nnzsweepcomm}
 \end{subfigure}
 
@@ -147,7 +147,7 @@ legend columns = -1
 \renewcommand{\datafile}{data/flickr-speedup48.dat}
 \speedup
 \end{tikzpicture}
-\subcaption{Flickr dataset low rank $k=48$ on Rhea}
+\subcaption{Flickr dataset $k=48$ on Rhea}
 \label{fig:flickr-speedup-48}
 \end{subfigure}
 
@@ -159,7 +159,7 @@ legend columns = -1
 \renewcommand{\datafile}{data/flickr-speedup-bgq.dat}
 \speedup
 \end{tikzpicture}
-\subcaption{Flickr dataset low rank $k=48$ on Bluegene/Q}
+\subcaption{Flickr dataset $k=48$ on Bluegene/Q}
 \label{fig:flickr-speedup-bgq}
 \end{subfigure}
 
@@ -186,7 +186,7 @@ legend columns = -1
 \renewcommand{\datafile}{data/delicious-speedup48.dat}
 \speedup
 \end{tikzpicture}
-\subcaption{Delicious dataset low rank $k=48$ on Rhea}
+\subcaption{Delicious dataset $k=48$ on Rhea}
 \label{fig:delicious-speedup-48}
 \end{subfigure}
 
@@ -210,7 +210,7 @@ legend columns = -1
 \renewcommand{\datafile}{data/delicious-speedup-bgq.dat}
 \speedup
 \end{tikzpicture}
-\subcaption{Delicious dataset low rank $k=48$ on Bluegene/Q}
+\subcaption{Delicious dataset $k=48$ on Bluegene/Q}
 \label{fig:delicious-speedup-bgq}
 \end{subfigure}
 
@@ -240,7 +240,7 @@ Our objective in this experiment is to better analyze the speedup results and by
 
 
 \paragraph{Flickr on Rhea:} We observe in \cref{fig:flickrdetails} that in one node configuration with $p=16$, the \unp and \urp\  performs similar to \crp\ and \cpp\ in terms of computation, and the communication time takes a small portion of the execution in all instances.
-As the number of processes increases to 3072, the communication time of \crp\ and \cpp\ stays reasonably low, whereas in the case of \unp\  and \urp, we clearly observe that the communication cost dominates the execution time using both low rank values $k=16$ and $k=48$.
+As the number of processes increases to 3072, the communication time of \crp\ and \cpp\ stays reasonably low, whereas in the case of \unp\  and \urp, we clearly observe that the communication cost dominates the execution time using both low rank values  $k=48$.
 Randomization offers load balance to \urp\ which gives it a slight edge over \unp, yet both instances suffer from the high communication cost associated with the all-to-all communication strategy, which explains the drop in the scalability results.
 
 \paragraph{Delicious on Rhea:} In \cref{fig:deliciousdetails}, we see that \crp\ and \cpp\ perform better than \unp\ even in single node configuration. \cref{fig:deliciousdetails} shows that \unp\ takes twice more than \crp\ and \cpp\ in the sparse matrix multiplication step, highlighting the skewed distribution of the matrix nonzeros, which is alleviated to a certain extend by randomly permuting the matrix.
@@ -287,7 +287,7 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \renewcommand{\datafile}{data/flickr-details16-48.dat}
 \makeplot
 \end{tikzpicture}
-\subcaption{Rhea $p=16$, Low Rank $k=48$}
+\subcaption{Rhea $p=16$ for $k=48$}
 \end{subfigure}
 ~
 \begin{subfigure}[t]{0.25\textwidth}
@@ -298,17 +298,18 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \renewcommand{\datafile}{data/flickr-details3072-48.dat}
 \makeplot
 \end{tikzpicture}
-\subcaption{Rhea $p=3072$, Low Rank $k=48$}
+\subcaption{Rhea $p=3072$ for $k=48$}
 \end{subfigure}
 
 
-\caption{Flickr dataset Time Split up for Low Rank $k=16, 48$ on Rhea}
+%\caption{Flickr dataset Time Split up for Low Rank $k=16, 48$ on Rhea}
+\caption{Flickr dataset Time Breakdown for $k=48$ on Rhea}
 \label{fig:flickrdetails}
 \end{figure}
 
 %%%%%%%%%%% Stackexchange Details %%%%%%%%
 %\renewcommand{\minvalue}{1}
-\begin{figure}
+%\begin{figure}
 
 %\begin{subfigure}[t]{0.25\textwidth}
 %\begin{tikzpicture}
@@ -321,34 +322,34 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 %\subcaption{Rhea $p=1536$, Low Rank $k=16$}
 %\end{subfigure}
 
-\begin{subfigure}[t]{0.25\textwidth}
-\begin{tikzpicture}
-\ylabelfalse
-\legendtrue
-\renewcommand{\numiterations}{30}
-\renewcommand{\datafile}{data/stkx-details1536-48.dat}
-\makeplot
-\end{tikzpicture}
-\subcaption{Rhea $p=1536$, Low Rank $k=48$}
-\end{subfigure}
-
-\begin{subfigure}[t]{0.5\textwidth}
-\begin{tikzpicture}
-\bgqtrue
-\renewcommand{\minvalue}{137.1}
-\renewcommand{\numiterations}{10}
-\renewcommand{\datafile}{data/stackoverflow-speedup-bgq.dat}
-\speedup
-\end{tikzpicture}
-\subcaption{Stackoverflow dataset Low Rank $k=48$ on Bluegene/Q}
-\end{subfigure}
-
-
-
-\caption{Stack exchange dataset Time Split up for Low Rank $k=16, 48$ on Rhea and Strong scaling on Bluegene/Q}
-\label{fig:flickrdetails}
-\end{figure}
-
+%\begin{subfigure}[t]{0.25\textwidth}
+%\begin{tikzpicture}
+%\ylabelfalse
+%\legendtrue
+%\renewcommand{\numiterations}{30}
+%\renewcommand{\datafile}{data/stkx-details1536-48.dat}
+%\makeplot
+%\end{tikzpicture}
+%\subcaption{Rhea $p=1536$, Low Rank $k=48$}
+%\end{subfigure}
+%
+%\begin{subfigure}[t]{0.5\textwidth}
+%\begin{tikzpicture}
+%\bgqtrue
+%\renewcommand{\minvalue}{137.1}
+%\renewcommand{\numiterations}{10}
+%\renewcommand{\datafile}{data/stackoverflow-speedup-bgq.dat}
+%\speedup
+%\end{tikzpicture}
+%\subcaption{Stackoverflow dataset Low Rank $k=48$ on Bluegene/Q}
+%\end{subfigure}
+%
+%
+%
+%\caption{Stack exchange dataset Time Split up for Low Rank $k=16, 48$ on Rhea and Strong scaling on Bluegene/Q}
+%\label{fig:flickrdetails}
+%\end{figure}
+%
 
 %%%%%%%%%%% Delicious Details %%%%%%%%
 
@@ -385,7 +386,7 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \renewcommand{\datafile}{data/delicious-details16-48.dat}
 \makeplot
 \end{tikzpicture}
-\subcaption{Rhea $p=16$, Low Rank $k=48$}
+\subcaption{Rhea $p=16$ for $k=48$}
 \end{subfigure}
 ~
 \begin{subfigure}[t]{0.25\textwidth}
@@ -396,11 +397,12 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \renewcommand{\datafile}{data/delicious-details3072-48.dat}
 \makeplot
 \end{tikzpicture}
-\subcaption{Rhea $p=3072$, Low Rank $k=48$}
+\subcaption{Rhea $p=3072$ for $k=48$}
 \end{subfigure}
 
 
-\caption{Delicious dataset Time Split up for Low Rank $k=16, 48$ on Rhea}
+%\caption{Delicious dataset Time Split up for Low Rank $k=16, 48$ on Rhea}
+\caption{Delicious dataset Time Breakdown for $k=48$ on Rhea}
 \label{fig:deliciousdetails}
 \end{figure}
 
@@ -428,7 +430,7 @@ On Delicious matrix, \cpp similarly better reduces the communication, yet this i
 \subcaption{BlueGene/Q $p=16384$}
 \end{subfigure}
 
-\caption{Time Split up of Flickr and Delicious for Low Rank $k=48$ on Bluegene/Q. The left two bars are for the Flickr matrix, and the right two bars are for the Delicious matrix}
+\caption{Time Breakdown of Flickr and Delicious for $k=48$ on Bluegene/Q. The left two bars are for the Flickr matrix, and the right two bars are for the Delicious matrix}
 \label{fig:bgqdetailsk48}
 \end{figure}
 
