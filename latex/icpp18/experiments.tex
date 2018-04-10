@@ -127,13 +127,14 @@ legend columns = -1
 \addplot  table [x={edgefactor}, y expr=(\thisrow{cp1d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
 \addplot  table [x={edgefactor}, y expr=(\thisrow{cp2d}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
 \addplot  table [x={edgefactor}, y expr=(\thisrow{cr}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};
-\addplot  table [x={edgefactor}, y expr=(\thisrow{cu}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};\legend{COL, CH1, CH2, CRD, CUN}
+\addplot  table [x={edgefactor}, y expr=(\thisrow{cu}/(\minvalue*\numiterations))] {data/nnzsweepall_k48_p4096_comm.dat};\legend{COL, CH1, CH2, CR, CN}
 \end{axis}
 \end{tikzpicture}
 \subcaption{Communication cost for $k$=48 on 4096 procs}
 \label{fig:nnzsweepcomm}
 \end{subfigure}
 
+\caption{Communication and computation costs of different partitioning strategies on Kronecker graphs}
 \end{figure}
 
 
