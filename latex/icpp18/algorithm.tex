@@ -95,11 +95,11 @@ Despite being favorable due to small number of exchanged messages in collective 
 This reduces the communication volume at the cost of increased number of messages with respect to the strategy of \mpifaun.
 
 
-%\begin{figure}
-%\caption{A 5x5 checkerboard partition of a sparse matrix.}
-%\label{fig:partition}
-%\includegraphics[width=0.8\linewidth]{figures/matrix-partition.png}
-%\end{figure}
+\begin{figure}
+\caption{A 5x5 checkerboard partition of a sparse matrix.}
+\label{fig:partition}
+\includegraphics[width=0.8\linewidth]{figures/matrix-partition.png}
+\end{figure}
 
 \subsection{Partitioning}
 
@@ -133,7 +133,12 @@ Each column $j$ is represented with a hyperedge $h_j$ and for each nonzero $(i, 
 This hypergraph is partitioned into $P_r$ parts giving the row partition of the checkerboard topology.
 The second partitioning phase uses a row-net hypergraph model induced by this row partition, where each column is represented with a vertex with $P_r$ weights corresponding to the number of nonzeros in that column in all $P_r$ row segments.
 Partitioning this hypergraph into $P_c$ parts finalizes the $P_r \times P_c$ checkerboard partitionin by balancing the weights~(number of nonzeros of $\Am_{(r, c)}$) of each part while minimizing the communication volume.
-In \textbf{CH2}, 
+In the context of NMF, one potential issue arises when the matrix has a large variance in the numbe r of nonzeros in its rows/columns, which in turns yields unbalanced row/column strides.
+This in turn creates an imbalance in the NLS computations as rows/cols of $\HH$/$\WW$ are distributed to the processes in the same stride.
+To alleviate this issue, we modify this scheme slightly, which we call \textbf{CH2}.
+In both row and column partitioning phases, we add an additional constant weight to vertices.
+Balancing this additional constraint in hypergraph partitioning is expected to prevent such imbalanced strides.
+This partitioning model succesfully grasps the computation~(both SpMM and NLS) and communication requirements using checkerboard topology for sparse NMF, yet it is very costly to compute in practice due to high number of constraints in the row-net hypergraph.
 
 %We assign the value $(nnz(\Am) / m + nnz(\Am(i, :))$ to each vertex $v_i$.
 %This weighting is preferred to find a tradeoff between balancing the number of vertices, which corresponds to the cost of dense matrix operations, and balancing the number of nonzeros per part, which corresponds to the cost of sparse matrix-dense matrix multiplication.
@@ -149,6 +154,7 @@ In \textbf{CH2},
 %Therefore, we instead partition columns randomly, which is expected to provide balance the number of nonzeros of $\Am$, number of columns of $\Hm$ and $\Hmt$, the amount of column communication volume due to columns of $\Hm$ and $\Hmt$.
 
 \paragraph{1D-like checkerboard hypergraph partitioning~(\textbf{CH1})}
+
 
 \paragraph{Randomized checkerboard partitioning(\textbf{CRD})}
 This scheme corresponds to partitioning both the rows and the columns of $\Am$ into $R$ segments randomly.
