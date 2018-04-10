@@ -84,9 +84,10 @@ to higher number of nodes.
 Therefore, we conclude that even though \krchb correctly models computation and communication costs of distributed sparse NMF, it does not yield better results in practice due to having too many constraints in the partitioning problem, which also renders it impractical due to costly precomputation for partitioning.
 \krcha yields a smaller hypergraph with reasonable partitioning cost and provides some benefits in terms of communication reduction.
 \krcr seems to produce good results overall as it provides good computation and communication balance.
-With these observations, we provide strong scalability experiments on real-world datasets in the next section with a detailed comparison of point-to-point and collective strategies as well has randomized and hypergraph checkerboard~(1d-like) partitioning.
+We provide partition statistics with respect to these strategies in Table ?? which justify these observations.
 
 \subsection {Strong scaling}
+In this section, we provide strong scalability experiments on real-world datasets in the next section with a detailed comparison of point-to-point and collective strategies as well has randomized and hypergraph checkerboard~(1d-like) partitioning.
 
 In this experiment, we considered the following algorithms and partitionings:
 \begin{itemize}
