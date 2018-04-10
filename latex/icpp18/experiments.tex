@@ -1,6 +1,8 @@
 \section{Experiments}
 \label{sec:experiment}
 \newcommand{\NLS}{LUC }
+\newcommand{\krfaun}{\textbf{COL}\xspace}
+\newcommand{\krcun}{\textbf{CN}\xspace}
 
 %In this section, we describe our implementation of \distspnmf\  and evaluate its performance.
 %We identify two popular real world data sets to experiment with dimensions that span to tens of millions.  with \distspnmf\. 
@@ -52,8 +54,14 @@ In our experiments, we considered the following algorithms and partitionings:
 %The Figure \ref{fig:stackexchangerr} shows the comparison of these algorithms on the stack exchange dataset explained in Section \ref{sec:datasets}. 
 
 \subsection {Effect of communication scheme}
+In \cref{fig:nnzsweep} we provide per-iteration computation and communication timings for different partitionings and communication schemes using $4096$ processors and a $64x64$ processor grid.
+\krfaun is the is the implementation of \mpifaun and is the only instance that uses collective communication.
+Comparing it with the \krcun that also uses uniform partitioning but with point-to-point communication, we notice that \mpifaun always incurs significantly higher communication cost.
+As the edge factor increases and matrix becomes denser, the communication cost of \mpifaun does not change as expected since it does not depend on the matrix sparsity.
+The communication cost of \krcun progressively increases with the edge factor, but even with an edge factor of $64$ \mpifaun takes about more time by a factor of two.
+Therefore, we conclude that even though there is a converging trend between the cost of collective and point-to-point communication, it is a rather slow convergence, and the point-to-point scheme should be the method of choice unless the matrix gets very dense.
 
-\subsection {Effect of partitioning}
+\subsection {Effect of partitioning strategies}
 
 \subsection {Strong scaling}
 
@@ -135,6 +143,7 @@ legend columns = -1
 \end{subfigure}
 
 \caption{Communication and computation costs of different partitioning strategies on Kronecker graphs}
+\label{fig:nnzsweep}
 \end{figure}
 
 
