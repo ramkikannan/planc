@@ -51,9 +51,22 @@ In our experiments, we considered the following algorithms and partitionings:
 
 %The Figure \ref{fig:stackexchangerr} shows the comparison of these algorithms on the stack exchange dataset explained in Section \ref{sec:datasets}. 
 
-\subsection {Effect of communication scheme}
+%\subsection {Effect of communication scheme}
 
 \subsection {Effect of partitioning}
+To understand the effect of partitioning and its impact on communication and computation, we performed
+experiments on synthetic Kronecker graph and the results are presented in Figure \ref{fig:kronecker}. 
+For $2^{20}$ vertices, we chose the edge factor of the kronecker graph as \{4,8,16,32,64\} and in
+this setting as the edge factor increases,  higher the number of  non-zeros making the sparse matrix
+denser. We ran the baseline FAUN algorithm and the proposed algorithm with different partitioning 
+scheme as explained in Section \ref{sec:partitioning} on 4096 processors in Rhea for low rank $k=48$. 
+From the Figure \ref{fig:nnzsweepcomm},  it is evident that checkerboard partitioning with point-to-point
+communication is approximately 4x faster over the 2D partition with collective communication. In the case of
+computation, from Figure \ref{fig:nnzsweepcomp}, we can observe that in the case of denser matrices
+with higher edge factors, the load imbalance in 2D is becoming more evident over the checkerboard partition. 
+Thus checker board with point-to-point communicates less and has better load balance over 2D partition
+with collective communication. These advantages  give scope for the checkerboard partition with point-to-point scale
+to higher number of nodes.
 
 \subsection {Strong scaling}
 
@@ -134,7 +147,8 @@ legend columns = -1
 \label{fig:nnzsweepcomm}
 \end{subfigure}
 
-\caption{Communication and computation costs of different partitioning strategies on Kronecker graphs}
+\caption{Communication and computation costs of different partitioning strategies on Kronecker graphs on 4096 processors Rhea for $k=48$}
+\label{fig:kronecker}
 \end{figure}
 
 

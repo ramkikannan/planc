@@ -3,13 +3,12 @@
 \begin{abstract}
 Non-negative matrix factorization (NMF), the problem of finding two non-negative low-rank factors whose product approximates an input matrix, is a useful tool for many data mining and scientific applications such as topic modeling in text mining and blind source separation in microscopy.
 In this paper, we focus on scaling algorithms for NMF to very large sparse datasets and massively parallel machines by employing effective algorithms, communication patterns, and partitioning schemes that leverage the sparsity of the input matrix.
-In particular, we consider two previous works developed for related problems, one that uses a fine-grained partitioning strategy using a point-to-point communication pattern and on that uses a checkerboard partitioning strategy using a collective-based communication pattern.
-We show that a combination of the previous approaches balances the demands of the various computations within NMF algorithms and achieves high efficiency and scalability.
-\grey{To be completed...
-
-We present experiments on (THESE DATASETS), running on up to (YY) cores of a Cray XK7 supercomputer.
-(MAYBE STATE SIMPLE VERSION OF CONCLUSIONS?)
-}
+In the case of machine learning workflow, the 
+computations after SpMM must deal with dense matrices, as Sparse-Dense matrix multiplication will result in a dense matrix. 
+Hence, the partitioning strategy considering only SpMM will result in a huge imbalance in the overall workflow especially on computations after SpMM and in this specific case of NMF on non-negative least squares computations. 
+Towards this, we consider two previous works developed for related problems, one that uses a fine-grained partitioning strategy using a point-to-point communication pattern and on that uses a checkerboard partitioning strategy using a collective-based communication pattern.
+We show that a combination of the previous approaches balances the demands of the various computations within NMF algorithms and achieves high efficiency and scalability. From the experiments, we could see that our proposed algorithm communicates atleast
+4x less than the collective and achieves upto 100x speed over the baseline FAUN on real world datasets. Our algorithm was experimented in two different super computing platforms and we could scale up to 32000 processors on Bluegene/Q.  
 
 %We propose a fine-grain communication scheme that can utilize arbitrary partitions of the matrices. For a more scalable parallel NMF algorithm, we employ effective 2D and fine-grain hypergraph partitions. If hypergraph partitioning gets expensive for the purpose of the application, researchers can resort to the proposed uniform and random 2D partitioning NMF algorithms. But in the latter, memory growth of intermediate dense matrices is exorbitant -- a major bottleneck to run in lesser number of nodes. Toward this, we propose memory efficient blocking 2D matrix multiplication for sparse NMF. We compare the performance of 2D and the hypergraph partitions on real-world datasets. 
 \end{abstract}
