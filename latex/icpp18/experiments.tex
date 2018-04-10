@@ -78,7 +78,8 @@ In \cref{fig:nnzsweepcomm}, our first observation is that all partitionings exce
 We conclude that even though \krchb correctly models computation and communication costs of distributed sparse NMF, it does not yield better results in practice due to having too many constraints in the partitioning problem, which also renders it impractical due to costly precomputation for partitioning.
 \krcha yields a smaller hypergraph with reasonable partitioning cost and provides some benefits in terms of communication reduction.
 \krcr seems to produce good results overall as it provides good computation and communication balance.
-We provide partition statistics with respect to these strategies in Table ref{tab:loadcomm} which justify these observations.
+We provide partition statistics with respect to these strategies in \cref{tab:loadcomm} which justify these observations.
+We observe that \krfh incurs a significant communication imbalance with respect to other methods preventing scalability and increasing memory consumption of the bottleneck processor, and these results confirm those reported in \cite{KU15}.
 
 \begin{table}
 \begin{center}
