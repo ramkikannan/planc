@@ -120,7 +120,10 @@ Here, we compare different partitioning strategies, employed by \mpifaun, \hyper
 
 \subsubsection{Partitioning $\Am$} \label{sec:cp1d}
 
-\paragraph{Checkerboard hypergraph partitioning~(\textbf{CH2})} We aim to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next, to obtain an $P_r \times P_c$ checkerboard partition.
+\paragraph{Checkerboard hypergraph partitioning~(\textbf{CH2})} \textbf{CH2} aims to partition the matrix $\Am$ into $P_r$ row slices first, and $P_c$ column slices next, to obtain an $P_r \times P_c$ checkerboard partition.
+The first partitioning is done using a column-net hypergraph model, in which for each row $\Am(i, :)$, a vertex $v_i$ with weight equaling to the number of nonzeros in $\Am(i, :)$ is created.
+Each column $j$ is represented with a hyperedge $h_j$,  and e
+
 To this end, we adopt hypergraph partitioning techniques used in parallel sparse matrix literature to our case~\cite{caay:99}.
 A hypergraph consists of vertices with associated weights and hyperedges that connect two or more vertices.
 In the literature, a hypergraph is typically formed by adding a vertex for each computational task with the associated execution cost, adding a hyperedge for each data element, and connecting the vertex to a hyperedge whenever the associated task and the data are dependent.
