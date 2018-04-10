@@ -71,15 +71,9 @@ Therefore, we conclude that even though there is a converging trend between the 
 
 \subsection {Effect of partitioning strategies}
 In \cref{fig:nnzsweepcomm}, our first observation is that all partitionings except \krfaun yield comparable results in terms of communication, while there is some variation  in the computation times provided in \cref{fig:nnzsweepcomp}.
-\krcun gives similar k
-
-From the Figure \ref{fig:nnzsweepcomm},  it is evident that checkerboard partitioning with point-to-point
-communication is approximately 4x faster over the 2D partition with collective communication. In the case of
-computation, from Figure \ref{fig:nnzsweepcomp}, we can observe that in the case of denser matrices
-with higher edge factors, the load imbalance in 2D is becoming more evident over the checkerboard partition. 
-Thus checker board with point-to-point communicates less and has better load balance over 2D partition
-with collective communication. These advantages  give scope for the checkerboard partition with point-to-point scale
-to higher number of nodes.
+\krcun gives similar computation time to \krcr since matrix is randomly permuted.
+\krcha yields slightly higher computation time and no notable improvement in the communication time, as it involves multi-constraint partitioning with too many constraints, which is a difficult partitioning problem that partitioners such as PaToH might not solve very effectively.
+\krchb provides some advantage both in terms of computation and communication time, and this partitioning is feasible to compute as it involves hypergraph partitioning with only two constraints.
 
 We conclude that even though \krchb correctly models computation and communication costs of distributed sparse NMF, it does not yield better results in practice due to having too many constraints in the partitioning problem, which also renders it impractical due to costly precomputation for partitioning.
 \krcha yields a smaller hypergraph with reasonable partitioning cost and provides some benefits in terms of communication reduction.
