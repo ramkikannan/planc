@@ -5,8 +5,13 @@
 #include "bppnnls.hpp"
 #include "aunmf.hpp"
 
+#ifdef BUILD_CUDA
+#define ONE_THREAD_MATRIX_SIZE 1000
+#include <omp.h>
+#endif
+
 template<class INPUTMATTYPE>
-class DistANLSBPP : public DistAUNMF<INPUTMATTYPE>{
+class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
  private:
   ROWVEC localWnorm;
   ROWVEC Wnorm;
@@ -14,14 +19,67 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE>{
   void allocateMatrices() {
   }
 
+  void updateOtherGivenOneMultipleRHS(MAT &giventGiven, MAT &giventInput,
+                                      MAT *othermat) {
+    UINT numThreads = (giventInput.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
+    #pragma omp parallel for schedule(dynamic)
+    for (UINT i = 0; i < numThreads; i++) {
+      UINT spanStart = i * ONE_THREAD_MATRIX_SIZE;
+      UINT spanEnd = (i + 1) * ONE_THREAD_MATRIX_SIZE - 1;
+      if (spanEnd > giventInput.n_cols - 1) {
+        spanEnd = giventInput.n_cols - 1;
+      }
+      // if it is exactly divisible, the last iteration is unnecessary.
+      BPPNNLS<MAT, VEC > *subProblem;
+      if (spanStart <= spanEnd) {
+        if (spanStart == spanEnd) {
+          subProblem = new BPPNNLS<MAT, VEC >(giventGiven,
+                                              (VEC)giventInput.col(spanStart),
+                                              true);
+        } else {  // if (spanStart < spanEnd)
+          subProblem = new BPPNNLS<MAT, VEC >(giventGiven,
+                                              (MAT)giventInput.cols(spanStart, spanEnd),
+                                              true);
+        }
+#ifdef MPI_VERBOSE
+        #pragma omp parallel
+        {
+          DISTPRINTINFO ("Scheduling " << worh << " start=" << spanStart
+                         << ", end=" << spanEnd
+                         << ", tid=" << omp_get_thread_num());
+        }
+#endif
+        subProblem->solveNNLS();
+#ifdef MPI_VERBOSE
+        #pragma omp parallel
+        {
+          DISTPRINTINFO ("completed " << worh << " start="
+                         << spanStart << ", end=" << spanEnd << ", tid="
+                         << omp_get_thread_num()
+                         << " cpu=" << sched_getcpu());
+        }
+#endif
+        if (spanStart == spanEnd) {
+          ROWVEC solVec = subProblem->getSolutionVector().t();
+          (*othermat).row(i) = solVec;
+        } else {  // if (spanStart < spanEnd)
+          (*othermat).rows(spanStart, spanEnd) = subProblem->getSolutionMatrix().t();
+        }
+        subProblem->clear();
+        delete subProblem;
+      }
+    }
+  }
+
  protected:
-  // updateW given HtH and AHt
+// updateW given HtH and AHt
   void updateW() {
-    BPPNNLS<MAT, VEC> subProblem(this->HtH, this->AHtij, true);
-    subProblem.solveNNLS();
-    this->Wt = subProblem.getSolutionMatrix();
-    fixNumericalError<MAT>(&(this->Wt));
-    this->W = this->Wt.t();
+    updateOtherGivenOneMultipleRHS(this->HtH, this->AHtij, &this->W);
+    // BPPNNLS<MAT, VEC> subProblem(this->HtH, this->AHtij, true);
+    // subProblem.solveNNLS();
+    // this->Wt = subProblem.getSolutionMatrix();
+    // fixNumericalError<MAT>(&(this->Wt));
+    this->Wt = this->W.t();
 
     // localWnorm = sum(this->W % this->W);
     // tic();
@@ -35,13 +93,14 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE>{
     // this->Wt = this->W.t();
   }
 
-  // updateH given WtW and WtA
+// updateH given WtW and WtA
   void updateH() {
-    BPPNNLS<MAT, VEC> subProblem1(this->WtW, this->WtAij, true);
-    subProblem1.solveNNLS();
-    this->Ht = subProblem1.getSolutionMatrix();
-    fixNumericalError<MAT>(&(this->Ht));
-    this->H = this->Ht.t();
+    updateOtherGivenOneMultipleRHS(this->WtW, this->WtAij, &this->H);
+    // BPPNNLS<MAT, VEC> subProblem1(this->WtW, this->WtAij, true);
+    // subProblem1.solveNNLS();
+    // this->Ht = subProblem1.getSolutionMatrix();
+    // fixNumericalError<MAT>(&(this->Ht));
+    this->Ht = this->H.t();
   }
 
  public:

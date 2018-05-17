@@ -41,6 +41,7 @@ Other Macros
   For sparse NMF - cmake -DBUILD_SPARSE=1 - Default dense build
   For timing with barrier after mpi calls - cmake -DCMAKE_WITH_BARRIER_TIMING - Default with barrier timing
   For performance, disable the WITH__BARRIER__TIMING. Run as "cmake -DCMAKE_WITH_BARRIER_TIMING:BOOL=OFF"
+  For building cuda - -DCMAKE_BUILD_CUDA=1 - Default is off.
 
 * Code level macros - Defined in distutils.h
 

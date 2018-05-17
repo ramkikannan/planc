@@ -10,6 +10,10 @@
 #include "naiveanlsbpp.hpp"
 #include "utils.hpp"
 #include "parsecommandline.hpp"
+#ifdef BUILD_CUDA
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
 
 class DistNMFDriver {
   private:
@@ -31,6 +35,45 @@ class DistNMFDriver {
     int m_num_k_blocks;
     static const int kprimeoffset = 17;
     normtype m_input_normalization;
+
+#ifdef BUILD_CUDA
+    void printDevProp(cudaDeviceProp devProp) {
+        printf("Major revision number: %d\n", devProp.major);
+        printf("Minor revision number: %d\n", devProp.minor);
+        printf("Name: %s\n", devProp.name);
+        printf("Total global memory: %u\n", devProp.totalGlobalMem);
+        printf("Total shared memory per block: %u\n", devProp.sharedMemPerBlock);
+        printf("Total registers per block: %d\n", devProp.regsPerBlock);
+        printf("Warp size: %d\n", devProp.warpSize);
+        printf("Maximum memory pitch: %u\n", devProp.memPitch);
+        printf("Maximum threads per block: %d\n", devProp.maxThreadsPerBlock);
+        for (int i = 0; i < 3; ++i)
+            printf("Maximum dimension %d of block: %d\n", i, devProp.maxThreadsDim[i]);
+        for (int i = 0; i < 3; ++i)
+            printf("Maximum dimension %d of grid: %d\n", i, devProp.maxGridSize[i]);
+        printf("Clock rate: %d\n", devProp.clockRate);
+        printf("Total constant memory: %u\n", devProp.totalConstMem);
+        printf("Texture alignment: %u\n", devProp.textureAlignment);
+        printf("Concurrent copy and execution: %s\n", (devProp.deviceOverlap ? "Yes" : "No"));
+        printf("Number of multiprocessors: %d\n", devProp.multiProcessorCount);
+        printf("Kernel execution timeout: %s\n", (devProp.kernelExecTimeoutEnabled ? "Yes" : "No"));
+        return;
+    }
+    void gpuQuery() {
+        int devCount;
+        cudaGetDeviceCount(&devCount);
+        printf("CUDA Device Query...\n");
+        printf("There are %d CUDA devices.\n", devCount);
+        // Iterate through devices
+        for (int i = 0; i < devCount; ++i) {
+            // Get device properties
+            printf("\nCUDA Device #%d\n", i);
+            cudaDeviceProp devProp;
+            cudaGetDeviceProperties(&devProp, i);
+            printDevProp(devProp);
+        }
+    }
+#endif
 
     void printConfig() {
         cout  << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
@@ -115,6 +158,11 @@ class DistNMFDriver {
         std::string rand_prefix("rand_");
         MPICommunicator mpicomm(this->m_argc, this->m_argv,
                                 this->m_pr, this->m_pc);
+// #ifdef BUILD_CUDA
+//         if (mpicomm.rank()==0){
+//             gpuQuery();
+//         }
+// #endif
 #ifdef USE_PACOSS
         std::string dim_part_file_name = this->m_Afile_name;
         dim_part_file_name += ".dpart.part" + std::to_string(mpicomm.rank());
@@ -291,7 +339,6 @@ class DistNMFDriver {
         }
         this->m_input_normalization = pc.input_normalization();
         pc.printConfig();
-
         switch (this->m_nmfalgo) {
         case MU:
 #ifdef BUILD_SPARSE
