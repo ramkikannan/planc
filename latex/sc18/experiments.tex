@@ -226,6 +226,42 @@ Again, the performance of our implementation without the dimension tree optimiza
 \label{fig:ksweepneuro}
 \end{figure}
 
+
+\begin{figure}
+\renewcommand{\datafile}{data/comm_sweep_scale_pgf_10.dat}
+\renewcommand{\numiterations}{10}
+\begin{tikzpicture}
+\begin{axis}[	
+	ybar stacked,
+	bar width=8pt,
+	width=\columnwidth,
+	height =.75\columnwidth,
+	%width=9cm, height=3.85cm,
+	ylabel={Time (s)}, 
+	xlabel={Rank $R$},
+	y label style={yshift=-.5cm},
+	ymin=0,
+	%symbolic x coords={D10,N10,,D20,N20,,D30,N30,,D40,N40,,D50,N50},
+	symbolic x coords={81x1x1x1-10, 27x3x1x1-10,9x9x1x1-10,9x3x3x1-10,3x3x3x3-10,},
+	%xtick=data,
+	xticklabels={,27x3x1x1,3x3x3x3,81x1x1x1,9x3x3x1,9x9x1x1},
+	legend style={at={(0.5,1.3)},anchor=north},
+	legend columns=-1,
+]
+	\setcolors
+	\addplot table[x=algo-k, y expr=(\thisrow{mttkrp}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo-k, y expr=(\thisrow{mttv}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo-k, y expr=((\thisrow{nnls}+\thisrow{gram})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo-k, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=algo-k, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
+	\legend{PM,mTTV,NLS,Factor Comm,Gram Comm};
+\end{axis}
+%\labels
+\end{tikzpicture}
+\caption{Comm scheme for low rank $k$=10}
+\label{fig:commsweep10}
+\end{figure}
+
 %\begin{figure}
 
 % set which run to plot
