@@ -95,7 +95,7 @@ While the number of outer iterations is sensitive to the NLS method used, the ou
 \paragraph{\emph{Computation}}
 The local computation occurs at \cref{line:locMTTKRP,line:hadamard,line:locNLS,line:locSYRK}.
 The cost of \cref{line:hadamard} is $O(NR^2)$, the cost of \cref{line:locNLS} is $O(R^3I_n/P)$, which is a loose upper bound for BPP and other methods \cite{KBP16}, and the cost of \cref{line:locSYRK} is $O(R(I_n/P)^2)$.
-The sum of these three costs across all inner iterations is $O(R^2N^2+(R^3/P+R/P^2)\sum I_n)$, which is dominated by the cost of the MTTKRP.
+The sum of these three costs across all inner iterations is $O(R^2N^2+(R^3/P)\sum I_n+(R/P^2)\sum I_n^2)$, which is dominated by the cost of the MTTKRP.
 When using dimension trees to perform the MTTKRP (\cref{line:locMTTKRP}), we compute the cost amortized over all inner iterations.
 In this case, the cost is dominated by the two partial MTTKRP computations (from the root of the tree), which together are $O((R/P) \prod I_n)=O(IR/P)$ and dominate the costs of the multi-TTVs.
 We note that this cost involves the product of all the tensor dimensions, which is why it dominates, and we note that it scales linearly with $P$.
