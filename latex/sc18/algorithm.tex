@@ -7,21 +7,52 @@
 \label{sec:dimtrees}
 
 An important optimization of the CP-ALS algorithm is to re-use temporary values across inner iterations \cite{PTC13a,KU16-TR,LCPSV17,Kaya17}.
-To illustrate the idea, consider a 3-way tensor $\T{X}$ approximated by $\dsquare{\M{U},\M{V},\M{W}}$ and the two MTTKRP computations $\underline{\Mz{X}{1}(\M{W}}\Khat\M{V})$ and $\underline{\Mz{X}{2}(\M{W}}\Khat\M{U})$ used to update factor matrices $\M{U}$ and $\M{V}$, respectively.
+To illustrate the idea, consider a 3-way tensor $\T{X}$ approximated by $\dsquare{\M{U},\M{V},\M{W}}$ and the two MTTKRP computations $\Mn{M}{1}=\underline{\Mz{X}{1}(\M{W}}\Khat\M{V})$ and $\Mn{M}{2}=\underline{\Mz{X}{2}(\M{W}}\Khat\M{U})$ used to update factor matrices $\M{U}$ and $\M{V}$, respectively.
 The underlined parts of the expressions correspond to the shared dependence of the outputs on the tensor $\T{X}$ and the third factor matrix $\M{W}$.
 Indeed, a temporary quantity, which we refer to as a \emph{partial MTTKRP}, can be computed and re-used across the two MTTKRP expressions.
 We refer to the computation that combines the temporary quantity with the other factor matrix to complete the MTTKRP computation as a multi-tensor-times-vector or \emph{multi-TTV}, as it consists of multiple operations that multiply a tensor times a set of vectors, each corresponding to a different mode.
-This terminology was used in \cite{HBJT17-TR}.
+This terminology was used in \cite{HBJT18}.
+
+To understand the steps of the partial MTTKRP and multi-TTV operations in more detail, we consider $\T{X}$ to be $I\times J\times K$ and $\M{U}$, $\M{V}$, and $\M{W}$ to have $R$ columns.
+Then 
+\begin{equation*}
+\MnE{M}{1}{ir} = \sum_{i,j} \TE{X}{ijk} \ME{V}{jr} \ME{W}{kr} 
+= \sum_{j} \ME{V}{jr} \sum_k \TE{X}{ijk} \ME{W}{kr} 
+= \sum_{j} \ME{V}{jr} \TE{T}{ijr}
+\end{equation*}
+where $\T{T}$ is an $I\times J\times R$ tensor that is the result of a partial MTTKRP between tensor $\T{X}$ and the single factor matrix $W$.
+Likewise,
+\begin{equation*}
+\MnE{M}{2}{jr} = \sum_{i,k} \TE{X}{ijk} \ME{U}{ir} \ME{W}{kr} 
+= \sum_{i} \ME{U}{ir} \sum_k \TE{X}{ijk} \ME{W}{kr} 
+= \sum_{i} \ME{U}{ir} \TE{T}{ijr}
+\end{equation*}
+and we see that the temporary tensor $\T{T}$ can be re-used.
+From these expressions, we can also see that computing $\T{T}$ (a partial MTTKRP) corresponds to a matrix-matrix multiplication, and computing each of $\Mn{M}{1}$ and $\Mn{M}{2}$ from $\T{T}$ (a multi-TTV) corresponds to $R$ independent matrix-vector multiplications.
+In this case, we compute $\Mn{M}{3}$ using a full MTTKRP.
 
 For a larger number of modes, a more general approach can organize the temporary quantities to be used over a maximal number of MTTKRPs.
 The general approach can yield significant benefit, decreasing the computation by a factor of approximately $N/2$ for dense $N$-way tensors.
-The idea is introduced in \cite{PTC13a}, but we adopt the terminology and notation of \emph{dimension trees} used in \cite{KU16-TR,Kaya17}.
+The idea is introduced in \cite{PTC13a}, but we adopt the terminology and notation of \emph{dimension trees} used for sparse tensors in \cite{KU16-TR,Kaya17}.
 In this notation, the root node is labeled $\{1,\dots,N\}$ and corresponds to the original tensor, a leaf is labeled $\{n\}$ and corresponds to the $n$th MTTKRP result, and an internal node is labeled by a set of modes $\{i,\dots,j\}$ and corresponds to a temporary tensor whose values contribute to the MTTKRP results of modes $i,\dots,j$.
 
 \Cref{fig:DT} illustrates a dimension tree for the case $N=5$.
 Various shapes of binary trees are possible \cite{PTC13a,Kaya17}.
 For dense tensors, the computational cost is dominated by the root's branches, which correspond to partial MTTKRP computations.
+We perform the splitting of modes at the root so that modes are chosen contiguously with the respect to the layout of the tensor entries in memory.
+In this way, each partial MTTKRP can be performed via BLAS's GEMM interface without reordering tensor entries in memory.
 All other edges in a tree correspond to multi-TTVs and are typically much cheaper.
+By organizing the memory layout of temporary quantities, the multi-TTV operations can be performed via a sequence of calls using BLAS's GEMV interface.
+By using the BLAS in our implementation, we are able to obtain high performance and on-node parallelism.
+
+No matter how the dimension tree is designed, the computational cost of each partial MTTKRP is $O(IR)$, where $I$ is the number of tensor entries and $R$ is the rank of the CP decomposition.
+This is the same operation count as a full MTTKRP.
+The computational cost of a multi-TTV is the number of entries in the temporary tensor, which is the product of a \emph{subset} of the original tensor dimensions multiplied by $R$.
+Thus, it is computationally cheaper than the partial MTTKRPs, but it is also typically bandwidth bound.
+
+The other subroutine necessary for implementing the dimension tree approach is the Khatri-Rao product of sets of factor matrices.
+We implement the operation as a row-wise Hadamard product of a set of factor matrix rows, and we use OpenMP parallelization to obtain on-node parallelism.
+The computational cost of this operation is also typically lower order, but the running time in practice suffers from being bandwidth bound.
 
 \begin{figure}
 \input{fig/dim_tree.tex}
