@@ -18,6 +18,8 @@ Note that this analysis does not consider the type of local computation; for sma
 We can also conclude from the performance results that the dimension tree optimization is the key to performance improvement over the state-of-the-art approaches.
 For 3D tensors, we observe a benefit larger than the theoretical 50\% reduction in computation, and for larger numbers of modes, the improvement is only magnified.
 Besides the reduction in flops, the dimension tree approach enjoys better DGEMM performance and avoids memory-bound KRP computations.
+Furthermore, we see that tuning the processor grid had much less effect on overall performance.
+Not only do reductions in communication not matter as much as computation, but different local tensor sizes can also cause variations in local performance that outweigh the savings in communication. 
 
 Given an efficient parallel algorithm for NNCP, it is now possible to compare the convergence properties of various NLS algorithms on large-scale tensor data that is too large to fit on single servers or would require too much computational time to analyze interactively.
 We hope to explore this in future work.
