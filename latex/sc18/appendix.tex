@@ -46,3 +46,16 @@
 \Ensure Local matrices: $\Mn{H}{n}_{\V{p}}$ is $(I_n/P)\times R$ and owned by processor $\V{p}=(p_1,\dots,p_N)$, for $1\leq n \leq N$, $\V{\lambda}$ stored redundantly on every processor
 \end{algorithmic}
 \end{algorithm}
+
+\begin{figure}
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/wk_3D_syn2_scale_pgf.dat}
+\renewcommand{\numiterations}{10}
+\weakthreeDtrue
+\breakdownplot
+%\labels
+\end{tikzpicture}
+\caption{Weak scaling of 3D synthetic tensors with (D) and without (N) the use of dimension trees.  The tensor and processor grid dimensions are $128k\times 128k\times 128k$ and $k\times k\times k$ for $k\in\{1,2,3,4\}$, and the rank is fixed at 32.  The reported times are per iteration.}
+\label{fig:weaksynthetic3D}
+\end{figure}
+
