@@ -2,15 +2,19 @@
 
 \section{Introduction}
 
-The CP decomposition is a low-rank approximation of a multi-dimensional array, or tensor, which generalizes matrix approximations like the truncated singular value decomposition. As in Figure \ref{fig:cpdecomposition}, CP decomposition approximates the given input matrix as sum of $k$ rank-1 tensors.  CP is often used for finding hidden patterns, or latent factors, within tensor data, particularly when the goal is to interpret the factors, and it is popular within the signal processing, machine learning, and scientific computing communities.
+%The CP decomposition is a low-rank approximation of a multi-dimensional array, or tensor, which generalizes matrix approximations like the truncated singular value decomposition. 
+%As in Figure \ref{fig:cpdecomposition}, CP decomposition approximates the given input matrix as sum of $k$ rank-1 tensors.  
+The CP decomposition is a low-rank approximation of a multi-dimensional array, or tensor, which generalizes matrix approximations like the truncated singular value decomposition.
+It approximates the input tensor by a sum of rank-one tensors, which are outer-products of vectors. 
+CP is often used for finding hidden patterns, or latent factors, within tensor data, particularly when the goal is to interpret the factors, and it is popular within the signal processing, machine learning, and scientific computing communities.
 
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=3in, height=1.5in]{fig/cpdecomposition.pdf}
-\caption{CP Decomposition}
-\label{fig:cpdecomposition}
-\end{center}
-\end{figure}
+%\begin{figure}[htbp]
+%\begin{center}
+%\includegraphics[width=3in, height=1.5in]{fig/cpdecomposition.pdf}
+%\caption{CP Decomposition}
+%\label{fig:cpdecomposition}
+%\end{center}
+%\end{figure}
 
 
 To aid in interpretability, domain-specific constraints are often imposed on the computed factors.
