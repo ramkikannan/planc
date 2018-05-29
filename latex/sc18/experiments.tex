@@ -98,7 +98,7 @@ At the high core counts for this experiment, the local MTTKRP is no longer the d
 %The proposed algorithm with classical MTTKRP was performing better on higher number of processors over the baseline. 
 %Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
 
-Finally, we ran on 512 nodes, utilizing the 16 threads per node via parallel BLAS and OMP, for a $1024\times1024\times1024$ synthetic tensor and processor grid $8\times8\times8$. Here we observe a $253\times$ speedup which is the result of each node having less than 20 megabytes of data.
+\textcolor{red}{Finally, we ran on 512 nodes, utilizing the 16 threads per node via parallel BLAS and OMP, for a $1024\times1024\times1024$ synthetic tensor and processor grid $8\times8\times8$. Here we observe a $253\times$ speedup which is the result of each node having less than 20 megabytes of data.}
 
 \begin{figure}
 \begin{tikzpicture}
