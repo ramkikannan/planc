@@ -40,14 +40,15 @@ The parallelization must load balance the computation, minimize communication ac
 In our algorithm, not only do we load balance the computation, but we also compute and store temporary values that can be used across MTTKRPs of different modes using a technique known as dimension trees, significantly reducing the computational cost compared to standard approaches.
 Our parallelization strategy also avoids communicating tensor entries and minimizes the communication of factor matrix entries, helping the algorithm to remain computation bound and scalable to high core counts.
 
-As we detail in the related work, the general techniques for reducing computation and communication are not new.
-The recomputation avoidance was proposed in a sequential algorithm \cite{PTC13a}, and the parallelization scheme was proposed and analyzed for general tensors \cite{BKR17-TR} and the algorithm was implemented for 3D tensors \cite{LK+17b}.
-The main contribution of this paper is the combination and implementation of these ideas for general $N$D tensors, and we demonstrate superior performance to the existing implementation for 3D tensors \cite{LK+17b}.
+As we detail in the related work, the general techniques for reducing computation and communication have been used in similar contexts.
+The recomputation avoidance was proposed in a sequential algorithm \cite{PTC13a}, the parallelization scheme was proposed and analyzed for general tensors \cite{BKR17-TR}, and the algorithm was implemented for 3D tensors \cite{LK+17b}.
+%The main contribution of this paper is the combination and implementation of these ideas for general $N$-D tensors, and we demonstrate superior performance to the existing implementation for 3D tensors \cite{LK+17b}.
 
 We summarize our main contributions as follows:
 \begin{itemize}
-		\item we present a computation- and communication-efficient algorithm for NNCP with detailed cost analysis,
-		\item our algorithm is designed for general $N$-way tensors,
+		\item we present the first distributed-memory parallel implementation of NNCP algorithms for arbitrary-dimension dense tensors,
+		\item we optimize the use of dimension trees for dense tensors, avoiding recomputation across multiple MTTKRPs,
+		\item our parallel algorithm is communication optimal with a carefully chosen processor grid,
 		\item we demonstrate a performance improvement of up to $2.2\times$ over the existing state-of-the-art parallel software on 3D tensors,
-		\item we demonstrate efficient parallel scaling of up to $253\times$ on $512$ cores.
+		\item our implementation obtains efficient parallel scaling of up to $253\times$ on $512$ cores.
 \end{itemize}
