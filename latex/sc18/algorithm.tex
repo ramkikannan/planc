@@ -13,7 +13,7 @@ Indeed, a temporary quantity, which we refer to as a \emph{partial MTTKRP}, can 
 We refer to the computation that combines the temporary quantity with the other factor matrix to complete the MTTKRP computation as a multi-tensor-times-vector or \emph{multi-TTV}, as it consists of multiple operations that multiply a tensor times a set of vectors, each corresponding to a different mode.
 %This terminology was used in \cite{HBJT18}.
 
-To understand the steps of the partial MTTKRP and multi-TTV operations in more detail, we consider $\T{X}$ to be $I\times J\times K$ and $\M{U}$, $\M{V}$, and $\M{W}$ to have $R$ columns.
+\red{To understand the steps of the partial MTTKRP and multi-TTV operations in more detail, we consider $\T{X}$ to be $I\times J\times K$ and $\M{U}$, $\M{V}$, and $\M{W}$ to have $R$ columns.
 Then 
 \begin{equation*}
 \MnE{M}{1}{ir} = \sum_{i,j} \TE{X}{ijk} \ME{V}{jr} \ME{W}{kr} 
@@ -29,7 +29,7 @@ Likewise,
 \end{equation*}
 and we see that the temporary tensor $\T{T}$ can be re-used.
 From these expressions, we can also see that computing $\T{T}$ (a partial MTTKRP) corresponds to a matrix-matrix multiplication, and computing each of $\Mn{M}{1}$ and $\Mn{M}{2}$ from $\T{T}$ (a multi-TTV) corresponds to $R$ independent matrix-vector multiplications.
-In this case, we compute $\Mn{M}{3}$ using a full MTTKRP.
+In this case, we compute $\Mn{M}{3}$ using a full MTTKRP.}
 
 For a larger number of modes, a more general approach can organize the temporary quantities to be used over a maximal number of MTTKRPs.
 The general approach can yield significant benefit, decreasing the computation by a factor of approximately $N/2$ for dense $N$-way tensors.
@@ -47,35 +47,35 @@ Edges labeled with PM correspond to partial MTTKRP computations, and edges label
 \Cref{fig:DT} illustrates a dimension tree for the case $N=5$.
 Various shapes of binary trees are possible \cite{PTC13a,Kaya17}.
 For dense tensors, the computational cost is dominated by the root's branches, which correspond to partial MTTKRP computations.
-We perform the splitting of modes at the root so that modes are chosen contiguously with the respect to the layout of the tensor entries in memory.
+\red{We perform the splitting of modes at the root so that modes are chosen contiguously with the respect to the layout of the tensor entries in memory.
 In this way, each partial MTTKRP can be performed via BLAS's GEMM interface without reordering tensor entries in memory.
 All other edges in a tree correspond to multi-TTVs and are typically much cheaper.
 By organizing the memory layout of temporary quantities, the multi-TTV operations can be performed via a sequence of calls using BLAS's GEMV interface.
-By using the BLAS in our implementation, we are able to obtain high performance and on-node parallelism.
+By using the BLAS in our implementation, we are able to obtain high performance and on-node parallelism.}
 
 \begin{figure}
-\subfloat[Partial MTTKRP to compute node $\{3,4,5\}$ from root node $\{1,2,3,4,5\}$, executed via one GEMM call. \label{fig:DT-PM}]{\includegraphics[width=\columnwidth]{fig/PM}} \\
-\subfloat[Multi-TTV to compute node $\{3\}$ from node $\{3,4,5\}$, executed via $R$ GEMV calls.  Here $\Mz{T}{1} \lbrack r\rbrack$ refers to the $r$th contiguous block of $\Mz{T}{1}$. \label{fig:DT-mTTV}]{\includegraphics[width=\columnwidth]{fig/mTTV}}
-\caption{Data layout and dimensions for two example computations in dimension tree shown in \Cref{fig:DT}.  In this notation, $\Mz{X}{3:5}$ is the matricization of input tensor $\T{X}$ with respect to modes 3 through 5, $\M{K}_{1:2} = \Mn{H}{2} \Khat \Mn{H}{1}$, $\T T$ is the temporary $I_3 \times I_4 \times I_5 \times R$ tensor corresponding to node $\{3,4,5\}$ in the dimension tree, $\M{K}_{4:5} = \Mn{H}{5} \Khat \Mn{H}{4}$, and $\Mn{M}{3}$ is the MTTKRP result for mode 3.}
+\subfloat[\red{Partial MTTKRP to compute node $\{3,4,5\}$ from root node $\{1,2,3,4,5\}$, executed via one GEMM call.} \label{fig:DT-PM}]{\includegraphics[width=\columnwidth]{fig/PM}} \\
+\subfloat[\red{Multi-TTV to compute node $\{3\}$ from node $\{3,4,5\}$, executed via $R$ GEMV calls.  Here $\Mz{T}{1} \lbrack r\rbrack$ refers to the $r$th contiguous block of $\Mz{T}{1}$.} \label{fig:DT-mTTV}]{\includegraphics[width=\columnwidth]{fig/mTTV}}
+\caption{\red{Data layout and dimensions for two example computations in dimension tree shown in \Cref{fig:DT}.  In this notation, $\Mz{X}{3:5}$ is the matricization of input tensor $\T{X}$ with respect to modes 3 through 5, $\M{K}_{1:2} = \Mn{H}{2} \Khat \Mn{H}{1}$, $\T T$ is the temporary $I_3 \times I_4 \times I_5 \times R$ tensor corresponding to node $\{3,4,5\}$ in the dimension tree, $\M{K}_{4:5} = \Mn{H}{5} \Khat \Mn{H}{4}$, and $\Mn{M}{3}$ is the MTTKRP result for mode 3.}}
 \label{fig:DTcartoon}
 \end{figure}
 
-\Cref{fig:DTcartoon} shows the data layout and dimensions of a partial MTTKRP and a multi-TTV taken from the example dimension tree in \Cref{fig:DT}.
+\red{\Cref{fig:DTcartoon} shows the data layout and dimensions of a partial MTTKRP and a multi-TTV taken from the example dimension tree in \Cref{fig:DT}.
 \Cref{fig:DT-PM} shows a partial MTTKRP between the input tensor $\T{X}$ and the Khatri-Rao product of the factor matrices in modes 1 and 2, which produces a temporary tensor $\T{T}$ corresponding to the $\{3,4,5\}$ node in the dimension tree.
 The key to efficiency in this computation is that the matricization of $\T{X}$ that assigns modes 1 through 2 to rows and modes 3 through 5 to columns is already column-major in memory.
 Thus, we can use the GEMM interface and compute the temporary tensor $\T{T}$ without reordering any tensor entries.
 \Cref{fig:DT-mTTV} depicts a multi-TTV that computes the results $\Mn{M}{3}$ from $\T{T}$ and the factor matrices in modes 4 and 5.
 Here, the tensor $\T{T}$ is matricized with respect to only its first mode (of dimension $I_3$), but this matricization is also column-major in memory.
-We choose the ordering of the modes of $\T{T}$ such that each of $R$ contiguous blocks is used to compute one column of the output matrix via a matrix-vector operation with a corresponding column of the Khati-Rao product of the other factor matrices.
+We choose the ordering of the modes of $\T{T}$ such that each of $R$ contiguous blocks is used to compute one column of the output matrix via a matrix-vector operation with a corresponding column of the Khati-Rao product of the other factor matrices.}
 
-No matter how the dimension tree is designed, the computational cost of each partial MTTKRP is $O(IR)$, where $I$ is the number of tensor entries and $R$ is the rank of the CP decomposition.
+\red{No matter how the dimension tree is designed, the computational cost of each partial MTTKRP is $O(IR)$, where $I$ is the number of tensor entries and $R$ is the rank of the CP decomposition.
 This is the same operation count as a full MTTKRP.
 The computational cost of a multi-TTV is the number of entries in the temporary tensor, which is the product of a \emph{subset} of the original tensor dimensions multiplied by $R$.
-Thus, it is computationally cheaper than the partial MTTKRPs, but it is also memory bandwidth bound.
+Thus, it is computationally cheaper than the partial MTTKRPs, but it is also memory bandwidth bound.}
 
-The other subroutine necessary for implementing the dimension tree approach is the Khatri-Rao product of sets of factor matrices.
+\red{The other subroutine necessary for implementing the dimension tree approach is the Khatri-Rao product of sets of factor matrices.
 We implement the operation as a row-wise Hadamard product of a set of factor matrix rows, and we use OpenMP parallelization to obtain on-node parallelism.
-The computational cost of this operation is also typically lower order, but the running time in practice suffers from also being memory bandwidth bound.
+The computational cost of this operation is also typically lower order, but the running time in practice suffers from also being memory bandwidth bound.}
 
 
 
@@ -181,13 +181,13 @@ Other matrices involved in the algorithm include $\Mn{M}{n}_{\V{p}}$, which is t
 \subsubsection{Inner Iteration}
 
 The inner iteration is displayed graphically in \Cref{fig:inner} for a 3-way example and an update of the $2$nd factor matrix.
-The main idea is that at the start of the $n$th inner iteration (\cref{fig:inner_a}), all of the data is in place for each processor to perform a local MTTKRP computation.
+The main idea is that at the start of the $n$th inner iteration (\Cref{fig:inner_a}), all of the data is in place for each processor to perform a local MTTKRP computation.
 This means that all processors in a slice redundantly own the same rows of the corresponding factor matrix (for all modes except $n$).
-After the local MTTKRP is computed (\cref{fig:inner_b}), each processor has computed a contribution to a subset of the rows of the global MTTKRP $\Mn{M}{n}$, but its contribution must be summed up with the contributions of all other processors in its mode-$n$ slice.
-This summation is performed with a Reduce-Scatter collective across the mode-$n$ processor slice that achieves a row-wise partition of the result (in \cref{fig:inner_c}, the light gray shading corresponds to the rows of $\Mn{M}{2}$ to which processor $(1,3,1)$ contributes and the dark gray shading corresponds to the rows it receives as output).
+After the local MTTKRP is computed (\Cref{fig:inner_b}), each processor has computed a contribution to a subset of the rows of the global MTTKRP $\Mn{M}{n}$, but its contribution must be summed up with the contributions of all other processors in its mode-$n$ slice.
+This summation is performed with a Reduce-Scatter collective across the mode-$n$ processor slice that achieves a row-wise partition of the result (in \Cref{fig:inner_c}, the light gray shading corresponds to the rows of $\Mn{M}{2}$ to which processor $(1,3,1)$ contributes and the dark gray shading corresponds to the rows it receives as output).
 The output distribution of the Reduce-Scatter is designed so that afterwards, the update of the factor matrix in that mode can be performed row-wise in parallel.
-Along with $\Mn{S}{n}$, which can be computed locally, each processor updates its own rows of the factor matrix given its rows of the MTTKRP result (\cref{fig:inner_d}).
-The remainder of the inner iteration is preparing and distributing the new factor matrix data for future inner iterations, which includes an All-Gather of the newly computed factor matrix $\Mn{H}{n}$ across mode-$n$ processor slices (\cref{fig:inner_e}) and recomputing $\Mn{G}{n}={\Mn{H}{n}}^\Tra\Mn{H}{n}$.
+Along with $\Mn{S}{n}$, which can be computed locally, each processor updates its own rows of the factor matrix given its rows of the MTTKRP result (\Cref{fig:inner_d}).
+The remainder of the inner iteration is preparing and distributing the new factor matrix data for future inner iterations, which includes an All-Gather of the newly computed factor matrix $\Mn{H}{n}$ across mode-$n$ processor slices (\Cref{fig:inner_e}) and recomputing $\Mn{G}{n}={\Mn{H}{n}}^\Tra\Mn{H}{n}$.
 
 \subsubsection{Analysis}
 
@@ -205,18 +205,18 @@ Par-NNCP w/o dim.~tree opt. & $\mathbf{\frac{NIR}{P}}$ & $\displaystyle \mathbf{
 \hline
 \end{tabular}
 \smallskip
-\caption{Leading-order per-iteration costs in terms of computation (flops), communication (words moved), and memory (words).  We ignore constants but omit big-Oh notation for clarity.  The first line corresponds to \cref{alg:Par-NNCP-short} with an optimal choice of processor grid and applying the dimension tree optimization locally.  The second line corresponds to the changes in communication and memory for a general processor grid.  The third line corresponds to the changes in computation and memory if the dimension tree optimization is not applied.}
+\caption{\red{Leading-order per-iteration costs in terms of computation (flops), communication (words moved), and memory (words).  We ignore constants but omit big-Oh notation for clarity.  The first line corresponds to \cref{alg:Par-NNCP-short} with an optimal choice of processor grid and applying the dimension tree optimization locally.  The second line corresponds to the changes in communication and memory for a general processor grid.  The third line corresponds to the changes in computation and memory if the dimension tree optimization is not applied.}}
 \label{tab:costs}
 \end{table*}
 
 We will analyze the cost of a single outer iteration.
 While the number of outer iterations is sensitive to the NLS method used, the outer iteration time is generally the same across NLS methods.
-We summarize the analysis in \cref{tab:costs}, showing the differences with and without an optimal processor grid and with and without using a dimension tree.
+\red{We summarize the analysis in \cref{tab:costs}, showing the differences with and without an optimal processor grid and with and without using a dimension tree.}
 
 \paragraph{\emph{Computation}}
 The local computation occurs at \cref{line:locMTTKRP,line:hadamard,line:locNLS,line:locSYRK}.
 The cost of \cref{line:hadamard} is $O(NR^2)$, the cost of \cref{line:locNLS} is $O(R^3I_n/P)$, which is a loose upper bound for BPP and other methods \cite{KBP16}, and the cost of \cref{line:locSYRK} is $O(R(I_n/P)^2)$.
-The sum of these three costs across all inner iterations is $O(R^2N^2+(R^3/P)\sum I_n+(R/P^2)\sum I_n^2)$, which is dominated by the cost of the MTTKRP.
+The sum of these three costs across all inner iterations is \red{$O(R^2N^2+(R^3/P)\sum I_n+(R/P^2)\sum I_n^2)$}, which is dominated by the cost of the MTTKRP.
 When using dimension trees to perform the MTTKRP (\cref{line:locMTTKRP}), we compute the cost amortized over all inner iterations.
 In this case, the cost is dominated by the two partial MTTKRP computations (from the root of the tree), which together are $O((R/P) \prod I_n)=O(IR/P)$ and dominate the costs of the multi-TTVs.
 We note that this cost involves the product of all the tensor dimensions, which is why it dominates, and we note that it scales linearly with $P$.
