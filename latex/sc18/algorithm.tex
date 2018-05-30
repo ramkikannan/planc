@@ -191,19 +191,17 @@ The remainder of the inner iteration is preparing and distributing the new facto
 
 \subsubsection{Analysis}
 
-\textcolor{red}{fill in blanks with duplicate values}
-
 \begin{table*}
 \centering
 \begin{tabular}{|c|cccc|}
 \hline
  & \textbf{Computation} & \textbf{Memory - Local MTTKRP} & \textbf{Communication} & \textbf{Memory - Par.~Algorithm}  \\
 \hline
-Par-NNCP w/ opt.~proc.~grid & $\frac{IR}{P}$ & $\frac{RI^{1/2}}{P^{1/2}}$& $\frac{NRI^{1/N}}{P^{1/N}}$ & $\frac{NRI^{1/N}}{P^{1/N}}$  \\
+Par-NNCP w/ opt.~proc.~grid & $\frac{IR}{P}$ & $\frac{RI^{1/2}}{P^{1/2}}$ & $\frac{NRI^{1/N}}{P^{1/N}}$ & $\frac{NRI^{1/N}}{P^{1/N}}$  \\
 %\hline
-Par-NNCP w/ gen.~proc.~grid & & & $R\sum_n \frac{I_n}{P_n}$ & $R\sum_n \frac{I_n}{P_n}$  \\
+Par-NNCP w/ gen.~proc.~grid & $\frac{IR}{P}$ & $\frac{RI^{1/2}}{P^{1/2}}$ & $\mathbf{R\sum_n \frac{I_n}{P_n}}$ & $\mathbf{R\sum_n \frac{I_n}{P_n}}$  \\
 %\hline
-Par-NNCP w/o dim.~tree opt. & $\frac{NIR}{P}$ & $\displaystyle \max_n \frac{RI/I_n}{P/P_n}$  &  & \\
+Par-NNCP w/o dim.~tree opt. & $\mathbf{\frac{NIR}{P}}$ & $\displaystyle \mathbf{\max_n \frac{RI/I_n}{P/P_n}}$  &  $\frac{NRI^{1/N}}{P^{1/N}}$ & $\frac{NRI^{1/N}}{P^{1/N}}$ \\
 \hline
 \end{tabular}
 \smallskip

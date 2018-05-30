@@ -39,12 +39,13 @@ In BCD, the variables are partitioned into blocks, and each variable block is cy
 For details on the convergence properties and comparisons of BCD methods for nonnegative matrix and tensor decomposition problems, see \cite{KHP2014}.
 We consider BCD methods for NNCP that choose the entire factor matrices as the blocks, which is also often referred to as Alternating Least Squares.
 In this case, every subproblem is a linear nonnegative least squares problem. Formally, the following problem 
-is solved iteratively for $n = 1 \cdots N$.
+is solved iteratively for $n = 1 \cdots N$:
 
 %\SplitN{\label{eqn:bcdnncp}}{
-$$\HH^{(n)} \leftarrow \argmin_{\HH \geq 0}  \| \Mn{S}{n} \HH^T - {\Mn{M}{n}}^T \|_F^2$$
+$$\HH^{(n)} \leftarrow \argmin_{\HH \geq 0}  \| \Mn{S}{n} \HH^T - {\Mn{M}{n}}^T \|_F^2.$$
 %}
-\textcolor{red}{Add a sentence detailing how many iterations we expect to take.}
+The BCD iteration is guaranteed to converge to a stationary point, but there is no guarantee that it converges to a global minimum.
+The number of outer iterations to convergence is problem dependent but typically ranges from the 10s to the 1000s.
 
 %where, $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$. 
 
