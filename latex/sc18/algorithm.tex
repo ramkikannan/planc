@@ -193,7 +193,7 @@ The remainder of the inner iteration is preparing and distributing the new facto
 
 \begin{table*}
 \centering
-\begin{tabular}{|c|cccc|}
+\red{\begin{tabular}{|c|cccc|}
 \hline
  & \textbf{Computation} & \textbf{Memory - Local MTTKRP} & \textbf{Communication} & \textbf{Memory - Par.~Algorithm}  \\
 \hline
@@ -203,7 +203,7 @@ Par-NNCP w/ gen.~proc.~grid & $\frac{IR}{P}$ & $\frac{RI^{1/2}}{P^{1/2}}$ & $\ma
 %\hline
 Par-NNCP w/o dim.~tree opt. & $\mathbf{\frac{NIR}{P}}$ & $\displaystyle \mathbf{\max_n \frac{RI/I_n}{P/P_n}}$  &  $\frac{NRI^{1/N}}{P^{1/N}}$ & $\frac{NRI^{1/N}}{P^{1/N}}$ \\
 \hline
-\end{tabular}
+\end{tabular}}
 \smallskip
 \caption{\red{Leading-order per-iteration costs in terms of computation (flops), communication (words moved), and memory (words).  We ignore constants but omit big-Oh notation for clarity.  The first line corresponds to \cref{alg:Par-NNCP-short} with an optimal choice of processor grid and applying the dimension tree optimization locally.  The second line corresponds to the changes in communication and memory for a general processor grid.  The third line corresponds to the changes in computation and memory if the dimension tree optimization is not applied.}}
 \label{tab:costs}
@@ -211,7 +211,7 @@ Par-NNCP w/o dim.~tree opt. & $\mathbf{\frac{NIR}{P}}$ & $\displaystyle \mathbf{
 
 We will analyze the cost of a single outer iteration.
 While the number of outer iterations is sensitive to the NLS method used, the outer iteration time is generally the same across NLS methods.
-\red{We summarize the analysis in \cref{tab:costs}, showing the differences with and without an optimal processor grid and with and without using a dimension tree.}
+\red{We summarize the analysis in \Cref{tab:costs}, showing the differences with and without an optimal processor grid and with and without using a dimension tree.}
 
 \paragraph{\emph{Computation}}
 The local computation occurs at \cref{line:locMTTKRP,line:hadamard,line:locNLS,line:locSYRK}.
