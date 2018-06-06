@@ -15,7 +15,7 @@ We use $\circ$ to denote the outer product of two or more vectors.
 The Hadamard product is the element-wise matrix product and will be denoted using $\Hada$. 
 The Khatri-Rao product, abbreviated KRP, will be denoted with $\Khat$. 
 Given matrices $\M{A}$ and $\M{B}$ that are $I_{A} \times R$ and $I_{B} \times R$, the KRP $\M{K} = \M{A} \Khat \M{B}$ is $I_{A}I_{B} \times R$. 
-It can be thought of as a row-wise Hadamard product, where $\M{K}(i+I_{A}(j{-}1),:) = \M{A}(i,:) \Hada \M{B}(j,:)$, or a column-wise Kronecker product, where $\M{K}(,c) =  \M{A}(:,c) \Kron \M{B}(:,c)$.
+It can be thought of as a row-wise Hadamard product, where $\M{K}(i+I_{A}(j{-}1),:) = \M{A}(i,:) \Hada \M{B}(j,:)$, or a column-wise Kronecker product, where \red{$\M{K}(:,c) =  \M{A}(:,c) \Kron \M{B}(:,c)$}.
 
 The CP decomposition of a tensor (also referred to as the CANDECOMP/PARAFAC or canonical polyadic decomposition) is a low-rank approximation of a tensor, where the approximation is a sum of rank-one tensors and each rank-one tensor is the outer product of vectors.
 We use the notation
@@ -30,7 +30,7 @@ $$\min_{\HH^{(i)} \geq 0}  \| \TA - \CPl \|,$$
 where the tensor norm is a generalization of the matrix Frobenius or vector 2-norm, the square root of the sum of squares of the entries.
 
 The $n$th mode matricized tensor denoted by $\M{A}_{(n)}$ is a $I_n\times I/I_n$ matrix formed by organizing the $n$th mode fibers of a tensor $\T{X}$ with dimensions $I_{1} \times ... \times I_{N}$ (and $I=\prod I_n$) into the columns of a matrix. 
-The Matricized-Tensor Times Khatri-Rao Product or MTTKRP will be central to this work and takes the form $\Mn{M}{n} = \Mz{A}{n} \Mn{S}{n}$, where $\Mn{S}{n}= \Mn{H}{N} \Khat \cdots \Khat \Mn{H}{n+1} \Khat \Mn{H}{n-1} \Khat  \cdots \Khat \Mn{H}{1}$. 
+The Matricized-Tensor Times Khatri-Rao Product or MTTKRP will be central to this work and takes the form \red{$\Mn{M}{n} = \Mz{A}{n} \Mn{K}{n}$, where $\Mn{K}{n}= \Mn{H}{N} \Khat \cdots \Khat \Mn{H}{n+1} \Khat \Mn{H}{n-1} \Khat  \cdots \Khat \Mn{H}{1}$}. 
 
 \subsection {Block Coordinate Descent for NNCP}
 
@@ -39,11 +39,13 @@ In BCD, the variables are partitioned into blocks, and each variable block is cy
 For details on the convergence properties and comparisons of BCD methods for nonnegative matrix and tensor decomposition problems, see \cite{KHP2014}.
 We consider BCD methods for NNCP that choose the entire factor matrices as the blocks, which is also often referred to as Alternating Least Squares.
 In this case, every subproblem is a linear nonnegative least squares problem. Formally, the following problem 
-is solved iteratively for $n = 1 \cdots N$.
+is solved iteratively for $n = 1 \cdots N$:
 
 %\SplitN{\label{eqn:bcdnncp}}{
-$$\HH^{(n)} \leftarrow \argmin_{\HH \geq 0}  \| \Mn{S}{n} \HH^T - {\Mn{M}{n}}^T \|_F^2$$
+$$\HH^{(n)} \leftarrow \argmin_{\HH \geq 0}  \| \Mn{S}{n} \HH^T - {\Mn{M}{n}}^T \|_F^2.$$
 %}
+\red{The BCD iteration is guaranteed to converge to a stationary point, but there is no guarantee that it converges to a global minimum.
+The number of outer iterations to convergence is problem dependent but typically ranges from 10s to 1000s.}
 
 %where, $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$. 
 
