@@ -3,25 +3,23 @@
 #ifndef COMMON_PARSECOMMANDLINE_H_
 #define COMMON_PARSECOMMANDLINE_H_
 
-#include "utils.h"
 #include <getopt.h>
+#include "utils.h"
 
 // usage scenarios
 // NMFLibrary algotype lowrank AfileName numIteration
 // NMFLibrary algotype lowrank m n numIteration
 // NMFLibrary algotype lowrank Afile WInitfile HInitfile numIteration
-// NMFLibrary algotype lowrank Afile WInitfile HInitfile WoutputFile HoutputFile numIteration
-// #define WINITFLAG 1000
-// #define HINITFLAG 1001
-// #define REGWFLAG  1002
-// #define REGHFLAG  1003
+// NMFLibrary algotype lowrank Afile WInitfile HInitfile WoutputFile HoutputFile
+// numIteration #define WINITFLAG 1000 #define HINITFLAG 1001 #define REGWFLAG
+// 1002 #define REGHFLAG  1003
 
-//distnmf related defines
+// distnmf related defines
 // #define PROCROWS        2002
 // #define PROCCOLS        2003
-#define NUMKBLOCKS      2004
-#define NORMALIZATION   2005
-#define DIMTREE         2006 
+#define NUMKBLOCKS 2004
+#define NORMALIZATION 2005
+#define DIMTREE 2006
 
 // enum factorizationtype{FT_NMF, FT_DISTNMF, FT_NTF, FT_DISTNTF};
 
@@ -72,20 +70,20 @@
 // mpirun -np 12 distnmf algotype lowrank Afile  outputfile numIteration pr pc
 
 struct option plancopts[] = {
-    {"algo",          optional_argument, 0, 'a'},
-    {"dimensions",    required_argument, 0, 'd'},
-    {"error",         optional_argument, 0, 'e'},
-    {"input",         required_argument, 0, 'i'},
-    {"lowrank",       required_argument, 0, 'k'},    
-    {"output",        optional_argument, 0, 'o'},    
-    {"processors",    optional_argument, 0, 'p'},
-    {"regularizer",   optional_argument, 0, 'r'},
-    {"sparsity",      optional_argument, 0, 's'},
-    {"iter",          optional_argument, 0, 't'},
-    {"numkblocks",    optional_argument, 0, NUMKBLOCKS},
-    {"normalization", optional_argument, 0, NORMALIZATION}, 
-    {"dimtree",       optional_argument, 0, DIMTREE}, 
-    {0,             0,                 0,  0 }
-};
+    {"algo", optional_argument, 0, 'a'},
+    {"dimensions", required_argument, 0, 'd'},
+    {"error", optional_argument, 0, 'e'},
+    {"input", required_argument, 0, 'i'},
+    {"lowrank", required_argument, 0, 'k'},
+    {"output", optional_argument, 0, 'o'},
+    {"processors", optional_argument, 0, 'p'},
+    {"regularizer", optional_argument, 0, 'r'},
+    {"sparsity", optional_argument, 0, 's'},
+    {"iter", optional_argument, 0, 't'},
+    {"numkblocks", optional_argument, 0, NUMKBLOCKS},
+    {"normalization", optional_argument, 0, NORMALIZATION},
+    {"dimtree", optional_argument, 0, DIMTREE},
+    {0, 0, 0, 0}};
 
 #endif  // COMMON_PARSECOMMANDLINE_H_
+

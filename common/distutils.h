@@ -1,6 +1,6 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_DISTUTILS_H_
-#define MPI_DISTUTILS_H_
+#ifndef COMMON_DISTUTILS_H_
+#define COMMON_DISTUTILS_H_
 
 // #define MPI_VERBOSE       1
 // #define WRITE_RAND_INPUT  1
@@ -9,7 +9,7 @@
 
 // ONED_DOUBLE for naive ANLS-BPP
 // TWOD for HPC-NMF
-enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
+enum iodistributions { ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD };
 
 #define ISROOT this->m_mpicomm.rank() == 0
 #define MPI_SIZE this->m_mpicomm.size()
@@ -28,16 +28,17 @@ enum iodistributions {ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD};
 // #define MPITIC mpitic(MPI_RANK)
 // #define MPITOC mpitoc(MPI_RANK)
 
+// #define PRINTROOT(MSG)
+#define PRINTROOT(MSG)                                      \
+  if (ISROOT)                                               \
+    INFO << "::" << __PRETTY_FUNCTION__ << "::" << __LINE__ \
+         << "::" << std::endl                               \
+         << MSG << std::endl;
+#define DISTPRINTINFO(MSG)                                            \
+  INFO << MPI_RANK << "::" << __PRETTY_FUNCTION__ << "::" << __LINE__ \
+       << "::" << std::endl                                           \
+       << MSG << std::endl;
+#define PRINTTICTOCTOP \
+  if (ISROOT) INFO << "tictoc::" << tictoc_stack.top() << std::endl;
 
-// #define PRINTROOT(MSG) 
-#define PRINTROOT(MSG) if (ISROOT) INFO << "::" << __PRETTY_FUNCTION__ \
-                                       << "::" << __LINE__ \
-                                       << "::" << std::endl << MSG << std::endl;
-#define DISTPRINTINFO(MSG) INFO << MPI_RANK << "::" << __PRETTY_FUNCTION__ \
-                                << "::" << __LINE__ \
-                                << "::" << std::endl << MSG << std::endl;
-#define PRINTTICTOCTOP if (ISROOT) INFO << "tictoc::" << tictoc_stack.top() \
-                                         << std::endl;
-
-#endif  // MPI_DISTUTILS_H_
-
+#endif  // COMMON_DISTUTILS_H_
