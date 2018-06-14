@@ -18,15 +18,17 @@
 \newif\ifwider
 % toggles including liavas results
 \newif\ifliavas
+% toggles weak 3D 
+\newif\ifweakthreeD
 
 
 \newcommand{\setcolors}{
 \pgfplotsset{cycle list={
 	red, fill=red \\ 
 	blue, fill=blue \\ 
-	green, fill=green \\ 
+	teal, fill=teal \\ 
 	red, pattern=crosshatch, pattern color=red \\
-	green, pattern=crosshatch, pattern color=green \\
+	teal, pattern=crosshatch, pattern color=teal \\
 	blue, pattern=crosshatch, pattern color=blue \\
 }};
 }
@@ -41,7 +43,11 @@
 	ylabel={Time (s)}, 
 	y label style={yshift=-.5cm},
 	ymin=0,
-	symbolic x coords={D1,N1,D16,N16,D81,N81,D256,N256},
+	\ifweakthreeD
+		symbolic x coords={D1,N1,D8,N8,D27,N27,D64,N64},
+	\else
+		symbolic x coords={D1,N1,D16,N16,D81,N81,D256,N256},
+	\fi	
 	xtick=data,
 	legend style={at={(0.5,1.3)},anchor=north},
 	legend columns=-1,
