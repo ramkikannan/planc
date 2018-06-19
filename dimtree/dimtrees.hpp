@@ -172,8 +172,8 @@ void partial_MTTKRP_with_KRP(Output_Layout OL, long int s, direction D,
     KRP = tempY.factors[0];
     free_KRP = 0;
   } else {
-    KRP = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank *
-                                            tempY.dims_product);
+    KRP = reinterpret_cast<double *>(
+        malloc(sizeof(double) * Y->rank * tempY.dims_product));
     wrapper_Parallel_Multi_revKRP(&tempY, num_threads, KRP);
     destruct_Ktensor(&tempY, 0);
     free_KRP = 1;
@@ -399,8 +399,8 @@ void multi_TTV_with_KRP(Output_Layout OL, long int s, direction D, tensor *T,
     KRP = tempY.factors[0];
     free_KRP = 0;
   } else {
-    KRP = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank *
-                                            tempY.dims_product);
+    KRP = reinterpret_cast<double *>(
+        malloc(sizeof(double) * Y->rank * tempY.dims_product));
 
     wrapper_Parallel_Multi_revKRP(&tempY, num_threads, KRP);
     destruct_Ktensor(&tempY, 0);

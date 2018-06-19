@@ -308,13 +308,13 @@ void Multi_KR_RowMajor(ktensor *Y, double *C, long int n) {
     double *partial_Hadamards, **reordered_Factors;
 
     reordered_Factors =
-        reinterpret_cast<double **> malloc(sizeof(double *) * Y->nmodes - 1);
+        reinterpret_cast<double **>(malloc(sizeof(double *) * Y->nmodes - 1));
     reordered_Dims = (long int *)malloc(sizeof(long int) * Y->nmodes - 1);
     indexers = (long int *)malloc(sizeof(long int) * Y->nmodes -
                                   1);  // an indexer for each mode-1
-    partial_Hadamards = reinterpret_cast<double *> malloc(
-        sizeof(double) * Y->rank * (Y->nmodes) -
-        3);  // N-3 extra vectors, for partials
+    partial_Hadamards = reinterpret_cast<double *>(
+        malloc(sizeof(double) * Y->rank * (Y->nmodes) -
+               3));  // N-3 extra vectors, for partials
 
     // reorder the Factors and Dimensions
     reorder_Factors(Y, reordered_Factors, reordered_Dims, n);
@@ -386,9 +386,9 @@ void Upper_Hadamard_RowMajor(long int nRows, long int nCols, double *A,
   A function for comparing two matrices to see if they differ
   significantly in some value. The last long intput option is your tollerance
   for the difference between A[i,j] and B[i,j]. if you make it a -1 the matlab
-  eps*100 will be used. 1 -> true, 0 -> false 
-  Variables -- 
-  A) matrix to compare against B 
+  eps*100 will be used. 1 -> true, 0 -> false
+  Variables --
+  A) matrix to compare against B
   B) matrix to compare against A nRows) the number of rows in A and B
   nCols) the number of colums in A and B
   eps) the tolerance for differences between A and B
@@ -450,18 +450,18 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
     /*
       This degemm call performs the column wise matrix multiply between
       the first mode matricization of the tensor and the matrix K. Operation is
-      X_1 x K 
-      Inputs -- 
-      1) CblasColMajor indicates the matrices are in column major format 
-      2) CblasNoTrans do not transpose the left matrix, T->data 
-      3) CblasNoTrans do not transpose the right matrix, K 
-      4) nDim, the number of rows in T-data 
-      5) rank, the number of columns in K 
-      6) ncols, the shared dimension, the number of columns in T->data 
-         and rows in K 
-      7) alpha 
-      8) T->data, the left matrix, first mode matricization of the tensor 
-      9) nDim, the leading dimension of T->data, the distance between 
+      X_1 x K
+      Inputs --
+      1) CblasColMajor indicates the matrices are in column major format
+      2) CblasNoTrans do not transpose the left matrix, T->data
+      3) CblasNoTrans do not transpose the right matrix, K
+      4) nDim, the number of rows in T-data
+      5) rank, the number of columns in K
+      6) ncols, the shared dimension, the number of columns in T->data
+         and rows in K
+      7) alpha
+      8) T->data, the left matrix, first mode matricization of the tensor
+      9) nDim, the leading dimension of T->data, the distance between
          columns of T->data
       10) K, the right matrix, khatri rao product
       11) ncols, the disctance between columns in the K matrix
@@ -508,23 +508,23 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
       /*
         This dgemm call is more complex
         1) CblasColMajor - treat matrices as if they are in column major
-           order 
+           order
         2) CblasTrans - transpose the left matrix because we want it in
-           row major ordering 
+           row major ordering
         3) CblasNoTrans - still treat K as a column major
-           matrix 
-        4) nDim - the number of rows in a submatrix 
-        5) rank - the number of columns in K 
-        6) ncols - the number of columns in a submatrix and rows in K 
-        7) alpha 
+           matrix
+        4) nDim - the number of rows in a submatrix
+        5) rank - the number of columns in K
+        6) ncols - the number of columns in a submatrix and rows in K
+        7) alpha
         8) T->data + i*ncols*nDim, ncols*nDim is the size of
            a submatrix, a submatix is stored in contiguous memory,
-           T->datancols*nDims*i indicates which submatrix we are on, 
+           T->datancols*nDims*i indicates which submatrix we are on,
         9) ncols -
            the distance between rows of a submatrix, but remember its transposed
            so it could also be thought of as the number distance between columns
-           of a transposed submatrix. 
-        10) K+i*ncols - starting polong int of the khatri rao submatrix 
+           of a transposed submatrix.
+        10) K+i*ncols - starting polong int of the khatri rao submatrix
         11) ncols*nmats - the distance between columns of
          the K  matrix, ncols*nmats is the number of rows in the full K matrix
         12) beta
@@ -674,8 +674,8 @@ Full_nMode_Matricization_RowMajor();
 void Full_nMode_Matricization_RowMajor(tensor *T, ktensor *Y, long int n) {
   double *KR, alpha, beta;
 
-  KR = reinterpret_cast<double *> malloc(
-      sizeof(double) * (Y->dims_product / Y->dims[n]) * Y->rank);
+  KR = reinterpret_cast<double *>(
+      malloc(sizeof(double) * (Y->dims_product / Y->dims[n]) * Y->rank));
 
   Multi_KR_RowMajor(Y, KR, n);
 
@@ -722,7 +722,7 @@ double CP_ALS_efficient_error_computation(ktensor *Y, long int n,
                                           double *MTTKRP, double *V, double *S,
                                           double tensor_norm) {
   double dotXY, dotYY, *lambda_array, e;
-  lambda_array = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank);
+  lambda_array = reinterpret_cast<double *>(malloc(sizeof(double) * Y->rank));
 
   dotXY = cblas_ddot(Y->dims[n] * Y->rank, Y->factors[n], 1, MTTKRP, 1);
 
@@ -792,8 +792,8 @@ void dims_check(long int *dims, long int length) {
 reoder_Ktensor();
   Reoders the factor matrices and dimension of a ktensor by removing the
   nth mode. Only shuffles polong inters, no deep copies of factor matrices are
-  made. 
-  1) Y the original ktnensor 
+  made.
+  1) Y the original ktnensor
   2) nY the kentsor without the nth mode
   Example: [0,1,2,3,4], n = 3
            [0,1,2,4]
@@ -802,9 +802,9 @@ void reorder_Ktensor(ktensor *Y, ktensor *nY, long int n) {
   long int i, j;
   nY->nmodes = Y->nmodes - 1;
   nY->factors =
-      reinterpret_cast<double **> malloc(sizeof(double *) * nY->nmodes);
+      reinterpret_cast<double **>(malloc(sizeof(double *) * nY->nmodes));
   nY->dims = (long int *)malloc(sizeof(long int) * nY->nmodes);
-  nY->lambdas = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank);
+  nY->lambdas = reinterpret_cast<double *>(malloc(sizeof(double) * Y->rank));
   nY->rank = Y->rank;
   nY->dims_product = Y->dims_product / Y->dims[n];
 
@@ -896,28 +896,30 @@ void Gen_Tensor(ktensor *Y, tensor *T, long int R, long int N, long int *D,
   Y->nmodes = N;
   Y->rank = R;
   Y->dims = (long int *)malloc(sizeof(long int) * Y->nmodes);
-  Y->factors = reinterpret_cast<double **> malloc(sizeof(double *) * Y->nmodes);
+  Y->factors =
+      reinterpret_cast<double **>(malloc(sizeof(double *) * Y->nmodes));
   for (i = 0; i < Y->nmodes; i++) Y->dims[i] = D[i];
 
   Y->dims_product = 1;
   for (i = 0; i < Y->nmodes; i++) {
-    Y->factors[i] = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank *
-                                                      Y->dims[i]);
+    Y->factors[i] = reinterpret_cast<double *>(
+        malloc(sizeof(double) * Y->rank * Y->dims[i]));
     Y->dims_product *= Y->dims[i];
     for (j = 0; j < Y->rank * Y->dims[i]; j++) {
-      Y->factors[i][j] = ((reinterpret_cast<double> rand() /
-                           reinterpret_cast<double> RAND_MAX) *
+      Y->factors[i][j] = ((reinterpret_cast<double>(rand()) /
+                           reinterpret_cast<double>(RAND_MAX)) *
                           2) -
                          1;
     }
   }
-  Y->lambdas = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank);
+  Y->lambdas = reinterpret_cast<double *>(malloc(sizeof(double) * Y->rank));
   memset(Y->lambdas, 0, sizeof(double) * Y->rank);
 
   // Set up the tensor T
   T->nmodes = N;
   T->dims = (long int *)malloc(sizeof(long int) * Y->nmodes);
-  T->data = reinterpret_cast<double *> malloc(sizeof(double) * Y->dims_product);
+  T->data =
+      reinterpret_cast<double *>(malloc(sizeof(double) * Y->dims_product));
   T->dims_product = Y->dims_product;
 
   for (i = 0; i < T->nmodes; i++) T->dims[i] = D[i];
@@ -984,10 +986,10 @@ void parallel_Multi_KR_RowMajor(ktensor *Y, double *C, long int start,
 
     indexers = (long int *)malloc(sizeof(long int) *
                                   nmodes);  // An indexer for each mode-1
-    partial_Hadamards = reinterpret_cast<double *> malloc(
-        sizeof(double) * Y->rank *
-        (nmodes)-2);  // N-3 extra vectors, for storing
-                      // inermediate hadamard prducts
+    partial_Hadamards = reinterpret_cast<double *>(
+        malloc(sizeof(double) * Y->rank *
+               (nmodes)-2));  // N-3 extra vectors, for storing
+                              // inermediate hadamard prducts
 
     memset(indexers, 0, sizeof(long int) * (nmodes));
 
@@ -1252,10 +1254,10 @@ void LR_Ktensor_Reordering_newY(ktensor *Y, ktensor *nY, long int n,
   }
 
   nY->factors =
-      reinterpret_cast<double **> malloc(sizeof(double *) * nY->nmodes);
+      reinterpret_cast<double **>(malloc(sizeof(double *) * nY->nmodes));
   nY->dims = (long int *)malloc(sizeof(long int) * nY->nmodes);
   nY->rank = Y->rank;
-  nY->lambdas = reinterpret_cast<double *> malloc(sizeof(double) * nY->rank);
+  nY->lambdas = reinterpret_cast<double *>(malloc(sizeof(double) * nY->rank));
 
   for (i = 0; i < nY->nmodes; i++) {
     nY->factors[i] = Y->factors[i + jump];
@@ -1396,8 +1398,8 @@ void ktensor_copy_constructor(ktensor *Y, ktensor *nY) {
 
   nY->dims = (long int *)malloc(sizeof(long int) * nY->nmodes);
   nY->factors =
-      reinterpret_cast<double **> malloc(sizeof(double *) * nY->nmodes);
-  nY->lambdas = reinterpret_cast<double *> malloc(sizeof(double) * nY->rank);
+      reinterpret_cast<double **>(malloc(sizeof(double *) * nY->nmodes));
+  nY->lambdas = reinterpret_cast<double *>(malloc(sizeof(double) * nY->rank));
 
   nY->dims_product = 1;
   for (i = 0; i < nY->nmodes; i++) {

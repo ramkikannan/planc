@@ -20,22 +20,22 @@ class KobyDimensionTree {
   long int ldp;
   long int rdp;
 
- public:
+public:
   KobyDimensionTree(const planc::Tensor &i_input_tensor,
                     const planc::NCPFactors &i_ncp_factors,
                     long int split_mode) {
-    m_local_T = reinterpret_cast<tensor *> malloc(sizeof *m_local_T);
-    m_local_Y = reinterpret_cast<ktensor *> malloc(sizeof *m_local_Y);
+    m_local_T = reinterpret_cast<tensor *>(malloc(sizeof *m_local_T));
+    m_local_Y = reinterpret_cast<ktensor *>(malloc(sizeof *m_local_Y));
     projection_Tensor =
-        reinterpret_cast<tensor *> malloc(sizeof *projection_Tensor);
-    buffer_Tensor = reinterpret_cast<tensor *> malloc(sizeof *buffer_Tensor);
+        reinterpret_cast<tensor *>(malloc(sizeof *projection_Tensor));
+    buffer_Tensor = reinterpret_cast<tensor *>(malloc(sizeof *buffer_Tensor));
     projection_Ktensor =
-        reinterpret_cast<ktensor *> malloc(sizeof *projection_Ktensor);
+        reinterpret_cast<ktensor *>(malloc(sizeof *projection_Ktensor));
     m_local_T->data = i_input_tensor.m_data;
     m_local_T->nmodes = i_input_tensor.modes();
     m_local_T->dims_product = i_input_tensor.numel();
-    m_local_Y->factors = reinterpret_cast<double **> malloc(sizeof(double *) *
-                                                            m_local_T->nmodes);
+    m_local_Y->factors = reinterpret_cast<double **>(
+        malloc(sizeof(double *) * m_local_T->nmodes));
     m_local_Y->dims = (long int *)malloc(sizeof(long int) * m_local_T->nmodes);
     m_local_T->dims = (long int *)malloc(sizeof(long int) * m_local_T->nmodes);
     m_local_Y->nmodes = i_ncp_factors.modes();
@@ -47,23 +47,23 @@ class KobyDimensionTree {
     for (long int i = 0; i < m_local_T->nmodes; i++) {
       m_local_T->dims[i] = i_input_tensor.dimensions()[i];
       m_local_Y->dims[i] = i_input_tensor.dimensions()[i];
-      m_local_Y->factors[i] = reinterpret_cast<double *> malloc(
-          sizeof(double) * i_ncp_factors.rank() * m_local_T->dims[i]);
+      m_local_Y->factors[i] = reinterpret_cast<double *>(
+          malloc(sizeof(double) * i_ncp_factors.rank() * m_local_T->dims[i]));
     }
     num_threads = 16;
     s = split_mode;
     // Allocate memory for the larger of two partial MTTKRP
     set_left_right_product(s);
     if (ldp <= rdp) {
-      projection_Tensor->data = reinterpret_cast<double *> malloc(
-          sizeof(double) * rdp * m_local_Y->rank);
-      buffer_Tensor->data = reinterpret_cast<double *> malloc(
-          sizeof(double) * m_local_Y->rank * rdp);
+      projection_Tensor->data = reinterpret_cast<double *>(
+          malloc(sizeof(double) * rdp * m_local_Y->rank));
+      buffer_Tensor->data = reinterpret_cast<double *>(
+          malloc(sizeof(double) * m_local_Y->rank * rdp));
     } else {
-      projection_Tensor->data = reinterpret_cast<double *> malloc(
-          sizeof(double) * ldp * m_local_Y->rank);
-      buffer_Tensor->data = reinterpret_cast<double *> malloc(
-          sizeof(double) * m_local_Y->rank * ldp);
+      projection_Tensor->data = reinterpret_cast<double *>(
+          malloc(sizeof(double) * ldp * m_local_Y->rank));
+      buffer_Tensor->data = reinterpret_cast<double *>(
+          malloc(sizeof(double) * m_local_Y->rank * ldp));
     }
 
     projection_Tensor->nmodes = m_local_T->nmodes;
@@ -143,12 +143,12 @@ class KobyDimensionTree {
       /**
           Updating the first factor matrix, do a partial MTTKRP
       */
-      D = ::direction::right;  //   Contracting over the right modes
+      D = ::direction::right; //   Contracting over the right modes
       LR_Ktensor_Reordering_existingY(
           m_local_Y, projection_Ktensor, s + 1,
-          opposite_direction(D));  // s+1 because s is included in the left
+          opposite_direction(D)); // s+1 because s is included in the left
 
-      if (projection_Ktensor->nmodes == 1) {  // factor matrix output PM
+      if (projection_Ktensor->nmodes == 1) { // factor matrix output PM
         /**
             PM is a factor matrix update
             D) right, tells the function that 0 is being updated
@@ -160,7 +160,7 @@ class KobyDimensionTree {
         partial_MTTKRP_with_KRP_output_FM(D, m_local_Y, m_local_T, num_threads);
         mttkrp_time += MPITOC;
 
-      } else {  // tensor output PM
+      } else { // tensor output PM
         /**
             PM outputs an intermediate tensor
             T) the original tensor, PM always takes the original tensor
@@ -183,11 +183,11 @@ class KobyDimensionTree {
       /**
           Updating the first left side, do a partial MTTKRP
       */
-      D = ::direction::left;  //    Contracting over the left modes
+      D = ::direction::left; //    Contracting over the left modes
       LR_Ktensor_Reordering_existingY(
           m_local_Y, projection_Ktensor, s,
-          opposite_direction(D));  // s because s is not included on the right
-      if (projection_Ktensor->nmodes == 1) {  // factor matrix output PM
+          opposite_direction(D)); // s because s is not included on the right
+      if (projection_Ktensor->nmodes == 1) { // factor matrix output PM
         MPITIC;
         partial_MTTKRP_with_KRP_output_FM(D, m_local_Y, m_local_T, num_threads);
         mttkrp_time += MPITOC;
@@ -226,8 +226,8 @@ class KobyDimensionTree {
         tensor_data_swap(projection_Tensor, buffer_Tensor);
 
         remove_mode_Ktensor(projection_Ktensor,
-                            0);  // remove the 0th factor matrix and mode from
-                                 // the projection_Ktensor
+                            0); // remove the 0th factor matrix and mode from
+                                // the projection_Ktensor
         MPITIC;
         multi_TTV_with_KRP_output_FM(::direction::right, projection_Tensor,
                                      projection_Ktensor, num_threads);
@@ -244,4 +244,4 @@ class KobyDimensionTree {
   }
 };
 
-#endif  // DIMTREE_KOBYDT_HPP_
+#endif // DIMTREE_KOBYDT_HPP_

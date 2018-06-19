@@ -3,15 +3,15 @@
 #ifndef DISTNTF_DISTNTFIO_HPP_
 #define DISTNTF_DISTNTFIO_HPP_
 
+#include <unistd.h>
+#include <armadillo>
+#include <string>
+#include <vector>
 #include "distntfmpicomm.hpp"
 #include "distutils.hpp"
 #include "ncpfactors.hpp"
 #include "npyio.hpp"
 #include "tensor.hpp"
-#include <armadillo>
-#include <string>
-#include <unistd.h>
-#include <vector>
 
 /*
  * File name formats
@@ -25,7 +25,7 @@
  */
 namespace planc {
 class DistNTFIO {
-private:
+ private:
   const NTFMPICommunicator &m_mpicomm;
   Tensor m_A;
   // don't start getting prime number from 2;
@@ -105,7 +105,7 @@ private:
     this->m_A = local_tensor;
   }
 
-public:
+ public:
   explicit DistNTFIO(const NTFMPICommunicator &mpic) : m_mpicomm(mpic) {}
   ~DistNTFIO() {
     // delete this->m_A;
@@ -181,6 +181,6 @@ public:
   const Tensor &A() const { return m_A; }
   const NTFMPICommunicator &mpicomm() const { return m_mpicomm; }
 };
-} // namespace planc
+}  // namespace planc
 
-#endif // DISTNTF_DISTNTFIO_HPP_
+#endif  // DISTNTF_DISTNTFIO_HPP_
