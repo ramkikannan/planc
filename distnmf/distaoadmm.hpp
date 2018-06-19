@@ -1,12 +1,13 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_DISTAOADMM_HPP_
-#define MPI_DISTAOADMM_HPP_
+
+#ifndef DISTNMF_DISTAOADMM_HPP_
+#define DISTNMF_DISTAOADMM_HPP_
 
 #include "aunmf.hpp"
 
 template<class INPUTMATTYPE>
 class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
-  private:
+ private:
     MAT tempHtH;
     MAT tempWtW;
     MAT tempAHtij;
@@ -72,7 +73,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         this->tempHtaux.zeros(size(this->Ht));
     }
 
-  protected:
+ protected:
     // updateW given HtH and AHt
     void updateW() {
         // Calculate modified Gram Matrix
@@ -107,7 +108,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             this->Wt = this->Wt - this->Ut;
             this->Wt.for_each([](MAT::elem_type & val) {
                 val = val > 0.0 ? val : 0.0;
-            } );
+            });
             this->W = this->Wt.t();
 
             // Update Dual Variable
@@ -119,7 +120,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             r *= r;
             double globalr;
             mpitic();
-            MPI_Allreduce (&r, &globalr, 1, MPI_DOUBLE,
+            MPI_Allreduce(&r, &globalr, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             double temp = mpitoc();
             this->time_stats.communication_duration(temp);
@@ -130,7 +131,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             s *= s;
             double globals;
             mpitic();
-            MPI_Allreduce (&s, &globals, 1, MPI_DOUBLE,
+            MPI_Allreduce(&s, &globals, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globals = sqrt(globals);
@@ -139,7 +140,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             normW *= normW;
             double globalnormW;
             mpitic();
-            MPI_Allreduce (&normW, &globalnormW, 1, MPI_DOUBLE,
+            MPI_Allreduce(&normW, &globalnormW, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globalnormW = sqrt(globalnormW);
@@ -148,7 +149,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             normU *= normU;
             double globalnormU;
             mpitic();
-            MPI_Allreduce (&normU, &globalnormU, 1, MPI_DOUBLE,
+            MPI_Allreduce(&normU, &globalnormU, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globalnormU = sqrt(globalnormU);
@@ -163,7 +164,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         // Calculate the Gram Matrix
         tempWtW = arma::conv_to<MAT>::from(this->WtW);
         beta = trace(tempWtW) / this->k;
-        beta = beta > 0 ? beta : 0.01; 
+        beta = beta > 0 ? beta : 0.01;
         tempWtW.diag() += beta;
         // L = arma::conv_to<MAT >::from(arma::chol(tempWtW, "lower"));
         L = arma::chol(tempWtW, "lower");
@@ -191,7 +192,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             this->Ht = this->Ht - this->Vt;
             this->Ht.for_each([](MAT::elem_type & val) {
                 val = val > 0.0 ? val : 0.0;
-            } );
+            });
             this->H = this->Ht.t();
 
             // Update Dual Variable
@@ -203,7 +204,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             r *= r;
             double globalr;
             mpitic();
-            MPI_Allreduce (&r, &globalr, 1, MPI_DOUBLE,
+            MPI_Allreduce(&r, &globalr, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             double temp = mpitoc();
             this->time_stats.communication_duration(temp);
@@ -214,7 +215,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             s *= s;
             double globals;
             mpitic();
-            MPI_Allreduce (&s, &globals, 1, MPI_DOUBLE,
+            MPI_Allreduce(&s, &globals, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globals = sqrt(globals);
@@ -223,7 +224,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             normH *= normH;
             double globalnormH;
             mpitic();
-            MPI_Allreduce (&normH, &globalnormH, 1, MPI_DOUBLE,
+            MPI_Allreduce(&normH, &globalnormH, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globalnormH = sqrt(globalnormH);
@@ -232,7 +233,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
             normV *= normV;
             double globalnormV;
             mpitic();
-            MPI_Allreduce (&normV, &globalnormV, 1, MPI_DOUBLE,
+            MPI_Allreduce(&normV, &globalnormV, 1, MPI_DOUBLE,
                            MPI_SUM, MPI_COMM_WORLD);
             temp = mpitoc();
             globalnormV = sqrt(globalnormV);
@@ -243,7 +244,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         }
     }
 
-  public:
+ public:
     DistAOADMM(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
                const MAT &rightlowrankfactor,
                const MPICommunicator& communicator,
@@ -266,4 +267,4 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
     }
 };  // class DistAOADMM2D
 
-#endif  // MPI_DISTAOADMM_HPP_
+#endif  // DISTNMF_DISTAOADMM_HPP_

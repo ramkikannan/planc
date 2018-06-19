@@ -1,6 +1,7 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_DISTHALS_HPP_
-#define MPI_DISTHALS_HPP_
+
+#ifndef DISTNMF_DISTHALS_HPP_
+#define DISTNMF_DISTHALS_HPP_
 
 #include "aunmf.hpp"
 
@@ -64,11 +65,11 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE>{
                    ((this->WtAij.row(i)).t() - this->H * this->WtW.col(i));
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("b4 fixNumericalError::" << endl << updHi);
-#endif // ifdef MPI_VERBOSE
+#endif   // ifdef MPI_VERBOSE
       fixNumericalError<VEC>(&updHi);
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("after fixNumericalError::" << endl << updHi);
-#endif // ifdef MPI_VERBOSE
+#endif  // ifdef MPI_VERBOSE
       double normHi = arma::norm(updHi, 2);
       normHi *= normHi;
       double globalnormHi;
@@ -86,8 +87,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE>{
     this->Ht = this->H.t();
   }
 
-public:
-
+ public:
   DistHALS(const INPUTMATTYPE& input, const MAT& leftlowrankfactor,
            const MAT& rightlowrankfactor,
            const MPICommunicator& communicator,
@@ -98,4 +98,4 @@ public:
   }
 };
 
-#endif // MPI_DISTHALS_HPP_
+#endif  // DISTNMF_DISTHALS_HPP_

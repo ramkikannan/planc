@@ -1,10 +1,11 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_DISTNMF1D_HPP_
-#define MPI_DISTNMF1D_HPP_
+
+#ifndef DISTNMF_DISTNMF1D_HPP_
+#define DISTNMF_DISTNMF1D_HPP_
 
 #include <string>
-#include "utils.h"
 #include "distutils.hpp"
+#include "utils.h"
 #include "utils.hpp"
 
 template <class INPUTMATTYPE>
@@ -12,7 +13,7 @@ class DistNMF1D {
  protected:
   INPUTMATTYPE m_Arows;
   INPUTMATTYPE m_Acols;
-  const MPICommunicator& m_mpicomm;
+  const MPICommunicator &m_mpicomm;
   UWORD m_globalm, m_globaln;
   MAT m_W, m_H;
   MAT m_Wt, m_Ht;
@@ -21,26 +22,28 @@ class DistNMF1D {
   double m_objective_err;
   double m_globalsqnormA;
   int m_num_iterations;
-  int m_k;    // low rank k
+  int m_k;  // low rank k
   DistNMFTime time_stats;
-  MAT m_prevH;     // this is needed for error computation
-  MAT m_prevHtH;   // this is needed for error computation
+  MAT m_prevH;    // this is needed for error computation
+  MAT m_prevHtH;  // this is needed for error computation
   uint m_compute_error;
   algotype m_algorithm;
 
  private:
   MAT HAtW;        // needed for error computation
   MAT globalHAtW;  // needed for error computation
-  MAT err_matrix;   // needed for error computation.
-
+  MAT err_matrix;  // needed for error computation.
 
  public:
   DistNMF1D(const INPUTMATTYPE &Arows, const INPUTMATTYPE &Acols,
-            const  MAT &leftlowrankfactor, const MAT &rightlowrankfactor,
-            const MPICommunicator& mpicomm):
-    m_Arows(Arows), m_Acols(Acols), m_W(leftlowrankfactor),
-    m_H(rightlowrankfactor),
-    m_mpicomm(mpicomm), time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
+            const MAT &leftlowrankfactor, const MAT &rightlowrankfactor,
+            const MPICommunicator &mpicomm)
+      : m_Arows(Arows),
+        m_Acols(Acols),
+        m_W(leftlowrankfactor),
+        m_H(rightlowrankfactor),
+        m_mpicomm(mpicomm),
+        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     this->m_globalm = Arows.n_rows * MPI_SIZE;
     this->m_globaln = Arows.n_cols;
     this->m_Wt = this->m_W.t();
@@ -77,7 +80,8 @@ class DistNMF1D {
                   this->m_globalWt.memptr(), recvcnt, MPI_DOUBLE,
                   0, MPI_COMM_WORLD);
     sendcnt = this->m_globalWt.n_rows * this->m_globalWt.n_cols;
-    MPI_Bcast(this->m_globalWt.memptr(), sendcnt, MPI_DOUBLE, 0, MPI_COMM_WORLD);*/
+    MPI_Bcast(this->m_globalWt.memptr(), sendcnt, MPI_DOUBLE, 0,
+    MPI_COMM_WORLD);*/
     double commTime = mpitoc();
     DISTPRINTINFO(PRINTMATINFO(this->m_Wt) << PRINTMATINFO(this->m_globalWt));
     this->m_globalW = this->m_globalWt.t();
@@ -98,7 +102,8 @@ class DistNMF1D {
                   this->m_globalHt.memptr(), recvcnt, MPI_DOUBLE,
                   0, MPI_COMM_WORLD);
     sendcnt = this->m_globalHt.n_rows * this->m_globalHt.n_cols;
-    MPI_Bcast(this->m_globalHt.memptr(), sendcnt, MPI_DOUBLE, 0, MPI_COMM_WORLD);*/
+    MPI_Bcast(this->m_globalHt.memptr(), sendcnt, MPI_DOUBLE, 0,
+    MPI_COMM_WORLD);*/
     double commTime = mpitoc();
     this->m_globalH = this->m_globalHt.t();
     DISTPRINTINFO(PRINTMATINFO(this->m_Ht) << PRINTMATINFO(this->m_globalHt));
@@ -131,8 +136,8 @@ class DistNMF1D {
     mpitic();
     double tHAtW = trace(globalHAtW);
     double tWtWHtH = trace(WtW * HtH);
-    PRINTROOT("normA::" << this->m_globalsqnormA << "::tHAtW::" << 2 * tHAtW \
-              << "::tWtWHtH::" << tWtWHtH);
+    PRINTROOT("normA::" << this->m_globalsqnormA << "::tHAtW::" << 2 * tHAtW
+                        << "::tWtWHtH::" << tWtWHtH);
     this->m_objective_err = this->m_globalsqnormA - 2 * tHAtW + tWtWHtH;
     mpitoc();
     this->time_stats.err_compute_duration(temp);
@@ -156,29 +161,28 @@ class DistNMF1D {
   }*/
 
   virtual void computeNMF() = 0;
-  const int num_iterations() const {return this->m_num_iterations;}
-  void num_iterations(int it) {m_num_iterations = it;}
-  const UWORD globalm() const {return m_globalm;}
-  const UWORD globaln() const {return m_globaln;}
-  MAT getLeftLowRankFactor() {return this->m_W;}
-  MAT getRightLowRankFactor() {return this->m_H;}
-  void compute_error(const uint &ce) {this->m_compute_error = ce;}
-  const bool is_compute_error() const {return (this->m_compute_error);}
-  void algorithm(algotype dat) {this->m_algorithm = dat;}
+  const int num_iterations() const { return this->m_num_iterations; }
+  void num_iterations(int it) { m_num_iterations = it; }
+  const UWORD globalm() const { return m_globalm; }
+  const UWORD globaln() const { return m_globaln; }
+  MAT getLeftLowRankFactor() { return this->m_W; }
+  MAT getRightLowRankFactor() { return this->m_H; }
+  void compute_error(const uint &ce) { this->m_compute_error = ce; }
+  const bool is_compute_error() const { return (this->m_compute_error); }
+  void algorithm(algotype dat) { this->m_algorithm = dat; }
   void reportTime(const double temp, const std::string &reportstring) {
     double mintemp, maxtemp, sumtemp;
     MPI_Allreduce(&temp, &maxtemp, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&temp, &mintemp, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&temp, &sumtemp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    PRINTROOT(reportstring \
-              << "::m::" << this->m_globalm << "::n::" << this->m_globaln \
-              << "::k::" << this->m_k << "::SIZE::" << MPI_SIZE \
-              << "::algo::" << this->m_algorithm \
-              << "::root::" << temp \
-              << "::min::" << mintemp \
-              << "::avg::" << (sumtemp) / (MPI_SIZE) \
-              << "::max::" << maxtemp);
+    PRINTROOT(reportstring << "::m::" << this->m_globalm
+                           << "::n::" << this->m_globaln << "::k::" << this->m_k
+                           << "::SIZE::" << MPI_SIZE
+                           << "::algo::" << this->m_algorithm
+                           << "::root::" << temp << "::min::" << mintemp
+                           << "::avg::" << (sumtemp) / (MPI_SIZE)
+                           << "::max::" << maxtemp);
   }
 };
 
-#endif  // MPI_DISTNMF1D_HPP_
+#endif  // DISTNMF_DISTNMF1D_HPP_

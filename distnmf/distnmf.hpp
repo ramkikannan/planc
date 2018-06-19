@@ -1,11 +1,12 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_DISTNMF_HPP_
-#define MPI_DISTNMF_HPP_
+
+#ifndef DISTNMF_DISTNMF_HPP_
+#define DISTNMF_DISTNMF_HPP_
 
 #include <string>
+#include "distnmftime.hpp"
 #include "mpicomm.hpp"
 #include "nmf.hpp"
-#include "distnmftime.hpp"
 #ifdef USE_PACOSS
 #include "pacoss.h"
 #endif
@@ -20,11 +21,10 @@
  * H is nxk matrix
  */
 
-
 template <typename INPUTMATTYPE>
 class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
-  const MPICommunicator& m_mpicomm;
+  const MPICommunicator &m_mpicomm;
 #ifdef USE_PACOSS
   Pacoss_Communicator<double> *m_rowcomm;
   Pacoss_Communicator<double> *m_colcomm;
@@ -42,20 +42,21 @@ class DistNMF : public NMF<INPUTMATTYPE> {
 
  public:
   DistNMF(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
-          const MAT &rightlowrankfactor, const MPICommunicator& communicator):
-    NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
-    m_mpicomm(communicator), time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
+          const MAT &rightlowrankfactor, const MPICommunicator &communicator)
+      : NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
+        m_mpicomm(communicator),
+        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     double sqnorma = this->normA * this->normA;
     this->m_globalm = 0;
     this->m_globaln = 0;
-    MPI_Allreduce(&sqnorma, &(this->m_globalsqnormA), 1, MPI_DOUBLE,
-                  MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&sqnorma, &(this->m_globalsqnormA), 1, MPI_DOUBLE, MPI_SUM,
+                  MPI_COMM_WORLD);
     this->m_ownedm = this->W.n_rows;
     this->m_ownedn = this->H.n_rows;
 #ifdef USE_PACOSS
-    // TODO: This is a hack for now. Talk to Ramki.
-    this->m_globalm = this->W.n_rows * this->m_mpicomm.size(); 
-    this->m_globaln = this->H.n_rows * this->m_mpicomm.size(); 
+    // TODO(kayaogz): This is a hack for now. Talk to Ramki.
+    this->m_globalm = this->W.n_rows * this->m_mpicomm.size();
+    this->m_globaln = this->H.n_rows * this->m_mpicomm.size();
 #else
     MPI_Allreduce(&(this->m), &(this->m_globalm), 1, MPI_INT, MPI_SUM,
                   this->m_mpicomm.commSubs()[0]);
@@ -73,28 +74,31 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   }
 
 #ifdef USE_PACOSS
-  void set_rowcomm(Pacoss_Communicator<double> *rowcomm) { this->m_rowcomm = rowcomm; }
-  void set_colcomm(Pacoss_Communicator<double> *colcomm) { this->m_colcomm = colcomm; }
+  void set_rowcomm(Pacoss_Communicator<double> *rowcomm) {
+    this->m_rowcomm = rowcomm;
+  }
+  void set_colcomm(Pacoss_Communicator<double> *colcomm) {
+    this->m_colcomm = colcomm;
+  }
 #endif
-  const int globalm() const {return m_globalm;}
-  const int globaln() const {return m_globaln;}
-  const double globalsqnorma() const {return m_globalsqnormA;}
-  void compute_error(const uint &ce) {this->m_compute_error = ce;}
-  const bool is_compute_error() const {return (this->m_compute_error);}
-  void algorithm(algotype dat) {this->m_algorithm = dat;}
+  const int globalm() const { return m_globalm; }
+  const int globaln() const { return m_globaln; }
+  const double globalsqnorma() const { return m_globalsqnormA; }
+  void compute_error(const uint &ce) { this->m_compute_error = ce; }
+  const bool is_compute_error() const { return (this->m_compute_error); }
+  void algorithm(algotype dat) { this->m_algorithm = dat; }
   void reportTime(const double temp, const std::string &reportstring) {
     double mintemp, maxtemp, sumtemp;
     MPI_Allreduce(&temp, &maxtemp, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&temp, &mintemp, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&temp, &sumtemp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    PRINTROOT(reportstring \
-              << "::m::" << this->m_globalm << "::n::" << this->m_globaln \
-              << "::k::" << this->k << "::SIZE::" << MPI_SIZE \
-              << "::algo::" << this->m_algorithm \
-              << "::root::" << temp \
-              << "::min::" << mintemp \
-              << "::avg::" << (sumtemp) / (MPI_SIZE) \
-              << "::max::" << maxtemp);
+    PRINTROOT(reportstring << "::m::" << this->m_globalm
+                           << "::n::" << this->m_globaln << "::k::" << this->k
+                           << "::SIZE::" << MPI_SIZE
+                           << "::algo::" << this->m_algorithm
+                           << "::root::" << temp << "::min::" << mintemp
+                           << "::avg::" << (sumtemp) / (MPI_SIZE)
+                           << "::max::" << maxtemp);
   }
   void normalize_by_W() {
     localWnorm = sum(this->W % this->W);
@@ -112,4 +116,5 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     }
   }
 };
-#endif  // MPI_DISTNMF_HPP_
+
+#endif  // DISTNMF_DISTNMF_HPP_

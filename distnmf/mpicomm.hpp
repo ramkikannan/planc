@@ -1,6 +1,7 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_MPICOMM_HPP_
-#define MPI_MPICOMM_HPP_
+
+#ifndef DISTNMF_MPICOMM_HPP_
+#define DISTNMF_MPICOMM_HPP_
 
 #include <mpi.h>
 #include <vector>
@@ -12,7 +13,7 @@
 #endif
 
 class MPICommunicator {
-  private:
+ private:
     int m_rank;
     int m_numProcs;
     int m_row_rank, m_row_size;
@@ -34,7 +35,7 @@ class MPICommunicator {
              row_rank() << ":colrank" << col_rank() << std::endl;
     }
 
-  public:
+ public:
     // Violating the cpp guidlines. Other functions need
     // non const pointers.
     MPICommunicator(int argc, char *argv[]) {
@@ -115,4 +116,5 @@ class MPICommunicator {
     const int pc() const {return m_pc;}
     const MPI_Comm* commSubs() const {return m_commSubs;}
 };
-#endif  // MPI_MPICOMM_HPP_
+
+#endif  // DISTNMF_MPICOMM_HPP_
