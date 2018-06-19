@@ -66,7 +66,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     if (ISROOT) {
       INFO << "globalsqnorma::" << this->m_globalsqnormA
            << "::globalm::" << this->m_globalm
-           << "::globaln::" << this->m_globaln << endl;
+           << "::globaln::" << this->m_globaln << std::endl;
     }
     this->m_compute_error = 0;
     localWnorm.zeros(this->k);

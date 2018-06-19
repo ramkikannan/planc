@@ -906,10 +906,8 @@ void Gen_Tensor(ktensor *Y, tensor *T, long int R, long int N, long int *D,
         malloc(sizeof(double) * Y->rank * Y->dims[i]));
     Y->dims_product *= Y->dims[i];
     for (j = 0; j < Y->rank * Y->dims[i]; j++) {
-      Y->factors[i][j] = ((reinterpret_cast<double>(rand()) /
-                           reinterpret_cast<double>(RAND_MAX)) *
-                          2) -
-                         1;
+      Y->factors[i][j] = (static_cast<double>(rand()) /
+                           static_cast<double>(RAND_MAX)) * 2 - 1;
     }
   }
   Y->lambdas = reinterpret_cast<double *>(malloc(sizeof(double) * Y->rank));
@@ -935,8 +933,8 @@ void Gen_Tensor(ktensor *Y, tensor *T, long int R, long int N, long int *D,
     double U1, U2, Z1, Z2;
     for (i = 0; i < Y->dims_product - 1; i += 2) {
       // Generate 2 uniformly random numbers in range 0 to 1
-      U1 = (static_cast<double> rand() / static_cast<double> RAND_MAX);
-      U2 = (static_cast<double> rand() / static_cast<double> RAND_MAX);
+      U1 = (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
+      U2 = (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
 
       // Transform to 2 normally distributed numbers in range 0 to 1
       Z1 = sqrt(-2.0 * log(U1)) * cos(2 * M_PI * U2);
@@ -952,8 +950,8 @@ void Gen_Tensor(ktensor *Y, tensor *T, long int R, long int N, long int *D,
     if ((Y->dims_product % 2) == 0) {
       // do the last element
       // Generate 2 uniformly random numbers in range 0 to 1
-      U1 = (static_cast<double> rand() / static_cast<double> RAND_MAX);
-      U2 = (static_cast<double> rand() / static_cast<double> RAND_MAX);
+      U1 = (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
+      U2 = (static_cast<double>(rand()) / static_cast<double>(RAND_MAX));
 
       // Transform to 2 normally distributed numbers in range 0 to 1
       Z1 = sqrt(-2.0 * log(U1)) * cos(2 * M_PI * U2);

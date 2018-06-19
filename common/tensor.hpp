@@ -8,9 +8,9 @@
 #include <fstream>
 #include <ios>
 #include <random>
-#include <type_traits>
 #include <string>
-
+#include <type_traits>
+#include "common/utils.h"
 
 namespace planc {
 /*
@@ -362,4 +362,3 @@ class Tensor {
 }  // namespace planc
 
 #endif  // COMMON_TENSOR_HPP_
-

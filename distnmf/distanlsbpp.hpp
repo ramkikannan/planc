@@ -9,6 +9,8 @@
 #ifdef BUILD_CUDA
 #define ONE_THREAD_MATRIX_SIZE 1000
 #include <omp.h>
+#else
+#define ONE_THREAD_MATRIX_SIZE giventInput.n_cols + 5
 #endif
 
 template <class INPUTMATTYPE>

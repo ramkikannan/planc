@@ -4,12 +4,14 @@
 #define DISTNTF_DISTAUNTF_HPP_
 
 #include <armadillo>
-#include <vector>
 #include <string>
+#include <vector>
 #include "dimtree/kobydt.hpp"
+#include "distntf/distntfmpicomm.hpp"
 #include "distntftime.hpp"
 #include "luc.hpp"
-#include "ntf_utils.h"
+#include "common/ntf_utils.hpp"
+#include "common/distutils.hpp"
 
 /*
  * Tensor A of size is M1 x M2 x... x Mn is distributed among
@@ -346,8 +348,11 @@ class DistAUNTF {
             const UVEC &i_global_dims, const UVEC &i_local_dims,
             const NTFMPICommunicator &i_mpicomm)
       : m_input_tensor(i_tensor.dimensions(), i_tensor.m_data),
-        m_low_rank_k(i_k), m_updalgo(i_algo), m_mpicomm(i_mpicomm),
-        m_modes(m_input_tensor.modes()), m_global_dims(i_global_dims),
+        m_low_rank_k(i_k),
+        m_updalgo(i_algo),
+        m_mpicomm(i_mpicomm),
+        m_modes(m_input_tensor.modes()),
+        m_global_dims(i_global_dims),
         m_factor_local_dims(i_local_dims),
         m_local_ncp_factors(i_local_dims, i_k, false),
         m_local_ncp_factors_t(i_local_dims, i_k, true),
