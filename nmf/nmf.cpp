@@ -1,6 +1,7 @@
 /* Copyright 2016 Ramakrishnan Kannan */
 
-#include <omp.h>
+#include "nmf.hpp"
+#include <stdio.h>
 #include <string>
 #include "aoadmm.hpp"
 #include "bppnmf.hpp"

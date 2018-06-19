@@ -4,15 +4,12 @@
 #define NMF_BPPNMF_HPP_
 
 #include <omp.h>
-#include <stdio.h>
-#include "bppnnls.hpp"
-#include "hals.hpp"
 #include "nmf.hpp"
-#include "utils.hpp"
-#ifdef MKL_FOUND
-#include <mkl.h>
-#else
-#include <lapacke.h>
+#include "bppnnls.hpp"
+
+// needed for precondition with hals
+#ifdef BUILD_SPARSE
+#include "hals.hpp"
 #endif
 
 #define ONE_THREAD_MATRIX_SIZE 2000
