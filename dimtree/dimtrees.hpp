@@ -70,7 +70,7 @@ void partial_MTTKRP(Output_Layout OL, long int s, direction D, tensor *T,
 
   if (D == ::direction::left) {
     m = right_dims_product;  // Tensor->data is m x k, A is k x n
-                             // n   		= r;
+                             // n = r;
     k = left_dims_product;
     tensor_stride = left_dims_product;
     if (OL == RowMajor) {
@@ -87,7 +87,7 @@ void partial_MTTKRP(Output_Layout OL, long int s, direction D, tensor *T,
     }
   } else {  // D == right
     m = left_dims_product;
-    // n 		= r;
+    // n = r;
     k = right_dims_product;
     tensor_stride = left_dims_product;
     if (OL == RowMajor) {
@@ -172,7 +172,8 @@ void partial_MTTKRP_with_KRP(Output_Layout OL, long int s, direction D,
     KRP = tempY.factors[0];
     free_KRP = 0;
   } else {
-    KRP = (double *)malloc(sizeof(double) * Y->rank * tempY.dims_product);
+    KRP = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank *
+                                            tempY.dims_product);
     wrapper_Parallel_Multi_revKRP(&tempY, num_threads, KRP);
     destruct_Ktensor(&tempY, 0);
     free_KRP = 1;
@@ -398,7 +399,8 @@ void multi_TTV_with_KRP(Output_Layout OL, long int s, direction D, tensor *T,
     KRP = tempY.factors[0];
     free_KRP = 0;
   } else {
-    KRP = (double *)malloc(sizeof(double) * Y->rank * tempY.dims_product);
+    KRP = reinterpret_cast<double *> malloc(sizeof(double) * Y->rank *
+                                            tempY.dims_product);
 
     wrapper_Parallel_Multi_revKRP(&tempY, num_threads, KRP);
     destruct_Ktensor(&tempY, 0);
