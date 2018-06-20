@@ -1,0 +1,585 @@
+\section{Experiments}
+\label{sec:experiment}
+\newcommand{\NLS}{LUC }
+
+In this section, we describe our implementation of \ParNMF\ and evaluate its performance.
+We identify a few synthetic and real world data sets to experiment with \ParNMF\ with dimensions that span from hundreds to millions. 
+We compare the performance and exploring scaling behavior of different NMF algorithms -- \MU, \HALS, and ANLS/BPP (\BPP), implemented using the parallel \ParNMF\ framework.  
+The code and the  datasets used for conducting the experiments can be downloaded from \url{https://github.com/ramkikannan/nmflibrary}. 
+
+\subsection{Experimental Setup}
+
+\subsubsection{Data Sets}\label{sec:datasets}
+
+We used sparse and dense matrices that are either synthetically generated or from real world applications. We explain the data sets in this section.
+
+\begin{itemize}
+\item Dense Synthetic Matrix: We generate a low rank matrix as the product of two uniform random matrices of size 207,360 $\times$ 100 and 100 $\times$ 138,240. 
+The dimensions of this matrix are chosen to be evenly divisible for a particular set of processor grids.  
+\item Sparse Synthetic Matrix: We generate a random sparse Erd\H{o}s-R\'{e}nyi matrix of the size 207,360 $\times$ 138,240 with density of 0.001.  That is, every entry is nonzero with probability 0.001.
+\item Dense Real World Matrix ({\em Video}):  NMF is used on video data for background subtraction in order to detect moving objects. The low rank matrix $\hat{\AA} = \WW \HH$ represents background and the error matrix $\AA - \hat{\AA}$ represents moving objects.  %Detecting moving objects has many real-world applications such as traffic estimation \cite{Fujimoto2014} and security monitoring \cite{BSJJZ2015}.
+In the case of detecting moving objects in streaming videos, the last several minutes of video is taken from the live video camera to construct the non-negative matrix. 
+An algorithm to incrementally adjust the NMF based on the streaming video is presented in \cite{kim2013nonnegative}. 
+To simulate this scenario, we collected a video in a busy intersection of the Georgia Tech campus at 20 frames per second. 
+From this video, we took video for approximately 12 minutes and  then reshaped the matrix such that every RGB frame is a column of our matrix, so that the matrix is dense with size 1,013,400 $\times$ 13,824. 
+\item Sparse Real World Matrix ({\em Webbase}): This data set is a directed sparse graph whose nodes correspond to webpages (URLs) and edges correspond to hyperlinks from one webpage to another.
+The NMF output of this directed graph helps us understand clusters in graphs.
+We consider two versions of the data set: {\em webbase-1M} and {\em webbase-2001}.
+The dataset webbase-1M contains about 1 million nodes (1,000,005) and 3.1 million edges (3,105,536), and was first reported by Williams et al. \cite{Williams2009}.  
+The version webbase-2001 has about 118 million nodes (118,142,155) and over 1 billion edges (1,019,903,190); it was first reported by Boldi and Vigna  \cite{Boldi2004}.  
+Both data sets are available in the University of Florida Sparse Matrix Collection \cite{DH11} and the latter {\em webbase-2001} being the largest among the entire collection.
+\item Text data ({\em Stack Exchange}): 
+Stack Exchange is a network of question-and-answer websites on topics in varied fields, each site covering a specific topic, where questions, answers, and users are subject to a reputation award process. There are many Stack Exchange forums, such as {\em ask ubuntu, mathematics, latex}. 
+We downloaded the latest anonymized dump of all 
+user-contributed content on the Stack Exchange network from \cite{stkxchngdataset}. 
+%Each site is formatted as a separate archive consisting of XML files zipped via 7-zip using bzip2 compression. 
+%Each site archive includes Posts, Users, Votes, Comments, PostHistory and PostLinks. 
+%For complete schema information, see the included readme.txt. 
+We used only the questions from the most popular site called Stackoverflow and did not include the answers and comments. 
+We removed the standard 571 English stop words (such as {\em are, am, be, above, below}) and then used snowball stemming available through the Natural Language Toolkit (NLTK) package \cite{LB2002}.
+After this initial pre-processing, we deleted HTML tags (such as {\em lt, gt, em}) from the posts. 
+The resulting bag-of-words matrix has a vocabulary of size 627,047 over 11,708,841 documents with 365,168,945 non-zero entries. 
+In this data, the vocabulary is larger than the typical set of English words because it includes variables, constants, and other programming constructs of various programming languages from the user questions.
+%We ran NMF on this dataset for finding 50 topics whose sample topic words are presented at the end of this section. 
+\end{itemize}
+
+The size of all the real world data sets were adjusted to the nearest size for uniformly distributing the matrix. 
+
+\subsubsection{Implementation Platform}
+
+We conducted our experiments on ``Rhea'' at the Oak Ridge Leadership Computing Facility (OLCF).
+Rhea is a commodity-type Linux cluster with a total of 512 nodes and a 4X FDR Infiniband interconnect.
+Each node contains dual-socket 8-core Intel Sandy Bridge-EP processors and 128 GB of memory.
+Each socket has a shared 20MB L3 cache, and each core has a private 256K L2 cache. 
+
+%\grey{Do we want to start using the acronym for our software and discuss it here? We will park this for camera ready}
+
+Our objective of the implementation is using open source software as much as possible 
+to promote reproducibility and reuse of our code.
+The entire C++ code is developed using the matrix library Armadillo \cite{sanderson2010}. 
+In Armadillo, the elements of the dense matrix are stored in column major order and the sparse matrices in Compressed Sparse Column (CSC) format.
+For dense BLAS and LAPACK operations, we linked Armadillo with Intel MKL -- the default LAPACK/BLAS library in RHEA. It is also easy to link Armadillo with OpenBLAS \cite{xianyi2015}. 
+We use Armadillo's own implementation of sparse matrix-dense matrix multiplication, the default GNU C++ Compiler (g++ (GCC) 4.8.2) and MPI library (Open MPI 1.8.4)  on RHEA.  We chose the commodity cluster with open source software so that the numbers presented here are representative of common use. 
+
+%\grey{Need to update this last phrase with compilation setup on Rhea}. 
+
+\subsubsection{Algorithms}
+
+In our experiments, we considered the following algorithms: 
+\begin{itemize}
+	\item \MU: \ParNMF\ (Algorithm \ref{alg:2D}) with MU (Equation \eqref{eqn:muupdate})
+	\item \HALS: \ParNMF\ (Algorithm \ref{alg:2D}) with HALS (Equation \eqref{eqn:halsupdate})
+	\item \BPP: \ParNMF\ (Algorithm \ref{alg:2D}) with BPP (Section \ref{sec:BPP})
+	\item \Naive: \NaiveAlg\ (Algorithm \ref{alg:naive}, Section \ref{sec:naive})
+\end{itemize}
+
+Our implementation of \Naive\ (Algorithm \ref{alg:naive}) uses BPP but can be easily to extended to \MU, \HALS, and other NMF algorithms. 
+%A detailed comparison of \NaiveAlg\ with \ParNMF\ is made in our earlier work \cite{KBP16}. 
+%We include some benchmark results from \Naive\ to reiterate the point that communication efficiency is key to obtaining reasonable performance, but we also omit other \Naive\ results in order to focus attention on comparisons among other algorithms.
+
+For the algorithms based on \ParNMF, we use the processor grid that is closest to the theoretical optimum (see Section \ref{sec:alg:comm}) in order to minimize communication costs.
+See Section \ref{sec:procgrid} for an empirical evaluation of varying processor grids for a particular algorithm and data set.
+
+%We choose these three algorithms to confirm the following conclusions from the analysis of Section \ref{sec:parNMF}: the performance of a naive parallelization of \NaiveAlg\ (Algorithm \ref{alg:naive}) will be severely limited by communication overheads, and the correct choice of processor grid within Algorithm \ref{alg:2D} is necessary to optimize performance.
+%To demonstrate the latter conclusion, we choose the two extreme choices of processor grids and test some data sets where a 1D processor grid is optimal (e.g., the Video matrix) and some where a squarish 2D grid is optimal (e.g., the Webbase matrix).
+
+To ensure fair comparison among algorithms, the same random seed is used across different methods appropriately. 
+That is, the initial random matrix $\HH$ is generated with the same random seed when testing with 
+different algorithms (note that $\WW$ need not be initialized). 
+In our experiments, we use number of iterations as the stopping criteria for all the algorithms.
+
+%\grey{Need to update the following paragraph for our running times, maybe consider moving it elsewhere...}
+While we would like to compare against other high-performance NMF algorithms in the literature, the only other distributed-memory implementations of which we're aware are implemented using Hadoop and are designed only for sparse matrices \cite{liao2014cloudnmf},
+\cite{liu2010distributed}, \cite{gemulla2011large}, \cite{Yin2014} and \cite{Faloutsos2014}.
+We stress that Hadoop is not designed for high performance computing of iterative numerical 
+algorithms, requiring disk I/O between steps, so a run time comparison between a Hadoop 
+implementation and a C++/MPI implementation is not a fair comparison of parallel algorithms.
+A qualitative example of differences in run time is that a Hadoop implementation of the MU algorithm on 
+a large sparse matrix of size $2^{17} \times 2^{16}$ with $2 \times {10^8}$ nonzeros (with k=8) 
+takes on the order of 50 minutes per iteration \cite{liu2010distributed}, while our MU implementation 
+takes 0.065 seconds per iteration for the synthetic data set (which is an order of magnitude larger in 
+terms of rows, columns, and nonzeros) running on only 16 nodes. 
+%Based on our survey, we are the fastest distributed NMF algorithm in the literature. 
+
+% input file with plotting macros
+\input{plots.tex}
+
+\subsection{Relative Error over Time} \label{sec:convergence}
+
+There are various metrics to compare the quality of the 
+NMF algorithms \cite{kim2013nonnegative}. The most common among these metrics are (a) relative error and (b) projected 
+gradient. The former represents the closeness of the low rank approximation $\hat{\AA}\approx\WW\HH$, which is generally the optimization objective. 
+The latter 
+represent the quality of the produced low rank factors and the stationarity of the final solution. These 
+metrics are also used as the stopping criterion for terminating the iteration of the NMF algorithm as in 
+line \ref{algo:nmfloop} of Algorithm \ref{alg:aunmf}. Typically a combination of the number of iterations 
+along with improvement of these metrics until a tolerance is met is used as stopping criterion. In this paper, we use 
+relative error for the comparison as it is monotonically decreasing, as opposed to projected gradient of the 
+low rank factors, which shows oscillations over iterations. The relative error can be formally defined as 
+$\|\AA-\WW\HH\|_F/\|\AA\|_F$. 
+
+In Figure \ref{fig:convergence}, we measure the relative error at the end of every iteration (i.e., after the updates of both $\WW$ and $\HH$) for all three algorithms \MU, \HALS, and 
+\BPP, and we plot the relative error over time (each mark represents an iteration).
+We consider three real world datasets, \emph{video}, \emph{stack exchange} and \emph{webbase-1M}, and set $k=50$. 
+We used only the number of iterations as stopping criterion and,  
+just for this section, ran all the algorithms for 30 iterations. 
+We note that the convergence behavior and computed factors can vary over different initializations; we used the same initial values across all three algorithms in these experiments.
+Also, we observed that for these data sets, the convergence behavior was not sensitive to initialization (the final residual errors varied by less than 1\% in our experiments).
+NMF solutions are guaranteed to be unique in certain cases, with mild assumptions on the input data \cite{BLRG14,HFS2016}, but we do not check those assumptions for these datasets.
+
+To begin with, we explain the observations on the dense \emph{video} dataset presented in Figure \ref{fig:denserwerr}. 
+The relative error of \MU\ is highest at 0.1812 after 30 iterations and \HALS's is the least with 0.1273; \BPP's relative error
+is  0.1716 after 30 iterations. 
+%For this data, although the per-iteration times vary across algorithms and \BPP\ has the longest per-iteration time, it converged more quickly than \HALS\ or \MU\ because it solves subproblems exactly.
+%From the figure, we can observe that \BPP\  error didn't change after 29 iterations where as \HALS\ and \MU\ was still improving marginally at the 4th decimal even after 30 iterations.  
+
+We can observe that the relative error of \emph{stack exchange} from Figure \ref{fig:stackexchangeerr} is better 
+than \emph{webbase-1M} from Figure \ref{fig:sparserwerr} over all three algorithms. 
+In the case of the \emph{stack exchange} dataset, the relative errors after 30 iterations follow the pattern \MU\ $>$ \HALS\ $>$ \BPP, with values 0.8509, 0.8395, and 0.8377 respectively. 
+%Unlike the \emph{video} dataset, both \MU\ and \HALS\ stopped improving after 23 iterations, 
+%where as \BPP\ was still improving in the 4th decimal even though its error was better than the others. 
+However, the difference in relative error for the \emph{webbase-1M} dataset is negligible, though the relative ordering of \MU\ $>$ \HALS\ $>$ \BPP\ is consistent, with values of 0.99927 for \MU\, 0.99920 for \HALS\ and 0.99919 for \BPP. 
+
+In general, for these datasets \BPP\ identifies better approximations and converges faster than \MU\ and \HALS\ despite the extra per-iteration time, which is consistent with the 
+literature \cite{kim2013nonnegative,kim2011fast}. 
+However, for the sparse datasets, the differences in relative error are small across the NMF algorithms. 
+
+%The Figure \ref{fig:stackexchangerr} shows the comparison of these algorithms on the stack exchange dataset explained in Section \ref{sec:datasets}. 
+
+%\captionsetup[subfigure]{labelfont=normalfont,textfont=normalfont,singlelinecheck=off,justification=raggedright}
+
+\begin{figure}
+
+% set which run to plot
+\renewcommand{\run}{3}
+
+\begin{subfigure}{0.3 \columnwidth}
+\ylabeltrue
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/denserwerr-time.dat}
+\renewcommand{\run}{1}
+\relerrplot
+\renewcommand{\run}{3}
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{Video}
+\label{fig:denserwerr}
+\end{subfigure}
+~
+\begin{subfigure}{0.3 \columnwidth}
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/stkx-5runs-err.dat}
+\legendtrue
+\relerrplot
+\legendfalse
+\end{tikzpicture}
+\subcaption{Stack Exchange}
+\label{fig:stackexchangeerr}
+\end{subfigure}
+~
+\begin{subfigure}{0.3 \columnwidth}
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/webbase1M-5runs-err.dat}
+\relerrplot
+\end{tikzpicture}
+\subcaption{Webbase}
+\label{fig:sparserwerr}
+\end{subfigure}
+
+\caption{Relative error comparison of \MU, \HALS, \BPP\ on real world datasets.}
+\label{fig:convergence}
+\end{figure}
+
+\subsection{Time Per Iteration}
+
+In this section we focus on per-iteration time of all the algorithms.
+We report four types of experiments, varying the number of processors (Section \ref{sec:scaling}), the rank of the approximation (Section \ref{sec:ksweep}), the shape of the processor grid (Section \ref{sec:procgrid}), and scaling up the dataset size.
+For each experiment we report a time breakdown in terms of the overall computation and communication steps (described in Section \ref{sec:perf-breakdown}) shared by all algorithms.
+
+\subsubsection{Time Breakdown}
+\label{sec:perf-breakdown}
+
+To differentiate the computation and communication costs among the algorithms, we present the time breakdown among the various tasks within the algorithms for all performance experiments.
+For Algorithm \ref{alg:2D}, there are three local computation tasks and three communication tasks to compute each of the factor matrices:
+\begin{itemize}
+	\item \textbf{MM}, computing a matrix multiplication with the local data matrix and one of the factor matrices;
+	\item \textbf{\LUC}, local updates either using \BPP\ or applying the remaining work of the \MU\ or \HALS\ updates (i.e., the total time for both $UpdateW$ and $UpdateH$ functions); 
+	\item \textbf{Gram}, computing the local contribution to the Gram matrix;
+	\item \textbf{All-Gather}, to compute the global matrix multiplication;
+	\item \textbf{Reduce-Scatter}, to compute the global matrix multiplication;
+	\item \textbf{All-Reduce}, to compute the global Gram matrix.
+\end{itemize}
+In our results, we do not distinguish the costs of these tasks for $\WW$ and $\HH$ separately; we report their sum, though we note that we do not always expect balance between the two contributions for each task.
+Algorithm \ref{alg:naive} performs all of these tasks except Reduce-Scatter and All-Reduce; all of its communication is in All-Gather.
+
+\subsubsection{Scaling \texorpdfstring{$p$}{p}: Strong Scaling}
+\label{sec:scaling}
+
+Figure \ref{fig:scaling} presents a strong scaling experiment with four data sets: \emph{sparse synthetic}, \emph{dense synthetic}, \emph{webbase-1M}, and \emph{video}.
+In this experiment, for each data set and algorithm, we use low rank $k=50$ and vary the number of processors (with fixed problem size).
+We use $\{1,6,24,54,96\}$ nodes; since each node has 16 cores, this corresponds to $\{16,96,384,864,1536\}$ cores.
+We report average per-iteration times.
+
+We highlight three main observations from these experiments:
+\begin{enumerate}
+	\item \label{obs:1} \Naive\ is slower than all other algorithms for large $p$;
+	\item \label{obs:2} \MU, \HALS, and \BPP\ (algorithms based on \ParNMF) scale up to over 1000 processors;
+	\item \label{obs:3} the relative per-iteration cost of \LUC\ decreases as $p$ increases (for all algorithms), and therefore the extra per-iteration cost of \BPP\ (compared with \MU\ and \HALS) becomes negligible.
+\end{enumerate}
+
+\paragraph{Observation \ref{obs:1}} 
+%We report \Naive\ performance only for the synthetic data sets (Figures \ref{fig:sparsesynstrongscale} and \ref{fig:densesynscaling}); the results for the real-world data sets are similar.
+For the Sparse Synthetic data set, \Naive\ is $4.2\times$ slower than the fastest algorithm (\BPP) on 1536 processors; for the Dense Synthetic data set, \Naive\ is $1.6\times$ slower than the fastest algorithm (\MU) at that scale.
+The slowdown increases to $7.7\times$ and $3.6\times$ for the sparse and dense real-world datasets, respectively.
+Nearly all of this slowdown is due to the communication costs of \Naive.
+Theoretical and practical evidence supporting the first observation is also reported in our previous paper \cite{KBP16}.
+However, we also note that \Naive\ is the fastest algorithm for the smallest $p$ for each problem, which is largely due to reduced MM time.
+Each algorithm performs exactly the same number of flops per MM; the efficiency of \Naive\ for small $p$ is due to cache effects.
+For example, for the Dense Synthetic problem on 96 processors, the output matrix of \Naive's MM fits in L2 cache, but the output matrix of \ParNMF's MM does not; these effects disappear as $p$ increases.
+
+\paragraph{Observation \ref{obs:2}}
+Algorithms based on \ParNMF\ (\MU, \HALS, \BPP) scale well, up to over 1000 processors.
+All algorithms' run times decrease as $p$ increases, with the exception of the Sparse Real World data set, in which case all algorithms slow down scaling from $p=864$ to $p=1536$ (we attribute this lack of scaling to load imbalance).
+For sparse problems, comparing $p=16$ to $p=1536$ (a factor increase of 96), we observe speedups from \BPP\ of $59\times$ (synthetic) and $22\times$ (real world).
+For dense problems, comparing $p=96$ to $p=1536$ (a factor increase of 16), \BPP's speedup is $12\times$ for both problems.
+\MU\ and \HALS\ demonstrate similar scaling results.
+For comparison, speedups for \Naive\ were $8\times$ and $3\times$ (sparse) and $6\times$ and $4\times$ (dense).
+
+\paragraph{Observation \ref{obs:3}}
+\MU, \HALS, and \BPP\ share all the same subroutines except those that are characterized as \LUC.
+Considering only \LUC\ subroutines, \MU\ and \HALS\ require fewer operations than \BPP. However, \HALS\ has to make one additional communication for normalization of $\WW$. 
+For small $p$, these cost differences are apparent in Figure \ref{fig:scaling}.
+For example, for the sparse real world data set on 16 processors, \BPP's \LUC\ time is $16\times$ that of $\MU$, and the per iteration time differs by a factor of $4.5$.
+However, as $p$ increases, the relative time spent in \LUC\ decreases, so the extra time taken by \BPP\ has less of an effect on the total per iteration time.
+By contrast, for the dense real world data set on 1536 processors, \BPP\ spends a factor of 27 times more time in \LUC\ than \MU\ but only $11\%$ longer over the entire iteration.
+For the synthetic data sets, \LUC\ takes $24\%$ (sparse) on 16 processors and $84\%$ (dense) on 96 processors, and that percentage drops to $11\%$ (sparse) and $15\%$ (dense) on 1536 processors.
+
+These trends can also be seen theoretically (Table \ref{tab:costs}).
+We expect local computations like MM, \LUC, and Gram to scale like $1/p$, assuming load balance is preserved.
+If communication costs are dominated by the number of words being communicated (i.e., the communication is bandwidth bound), then we expect time spent in communication to scale like $1/\sqrt p$, and at least for dense problems, this scaling is the best possible.
+Thus, communication costs will eventually dominate computation costs for all NMF problems, for sufficiently large $p$.
+(Note that if communication is latency bound and proportional to the number of messages, then time spent communicating actually increases with $p$.)
+
+The overall conclusion from this empirical and theoretical observation is that the extra per-iteration cost of \BPP\ over alternatives like \MU\ and \HALS\ decreases as the number of processors $p$ increases.
+As shown in Section \ref{sec:convergence} the faster error reduction of \BPP\ typically reduces the overall time to solution compared with the alternatives even it requires more time for each iteration.
+Our conclusion is that as we scale up $p$, this tradeoff is further relaxed so that \BPP\ becomes more and more advantageous for both quality and performance.
+
+%\captionsetup[subfigure]{labelfont=normalfont,textfont=normalfont,singlelinecheck=off,justification=raggedright}
+
+\begin{figure}
+
+\naivetrue
+\ksweepfalse
+\legendtrue
+
+\begin{subfigure}{\columnwidth}
+%\centering
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/sparsesynstrong_scale_pgf.dat}
+\makeplot
+\labels
+\end{tikzpicture}
+\subcaption{Sparse Synthetic}
+\label{fig:sparsesynstrongscale}
+\end{subfigure}
+\legendfalse
+
+\begin{subfigure}{\columnwidth}
+%\centering
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/densesynstrong_scale_pgf.dat}
+\makeplot
+\labels
+\end{tikzpicture}
+\subcaption{Dense Synthetic}
+\label{fig:densesynscaling}
+\end{subfigure}
+
+%\naivefalse
+
+\begin{subfigure}{\columnwidth}
+%\centering
+\renewcommand{\datafile}{data/sparserwstrong_scale_pgf.dat}
+\begin{tikzpicture}
+\makeplot
+\labels
+\end{tikzpicture}
+\subcaption{Sparse Real World (webbase-1M)}
+\label{fig:sparserwscaling}
+\end{subfigure}
+
+\begin{subfigure}{\columnwidth}
+%\centering
+\renewcommand{\datafile}{data/denserwstrong_scale_pgf.dat}
+\begin{tikzpicture}
+\makeplot
+\labels
+\end{tikzpicture}
+\subcaption{Dense Real World (Video)}
+\label{fig:denserwscaling}
+\end{subfigure}
+
+\caption{Per-iteration times with $k=50$, varying $p$ (strong scaling).}
+\label{fig:scaling}
+\end{figure}
+
+\subsubsection{Scaling \texorpdfstring{$k$}{k}}
+\label{sec:ksweep}
+
+Figure \ref{fig:ksweep} presents an experiment scaling up the low rank value $k$ from 10 to 50 with each of the four data sets.
+In this experiment, for each data set and algorithm, the problem size is fixed and the number of processors is fixed to $p=864$.
+As in Section \ref{sec:scaling}, we report the average per-iteration times.
+%We also omit \Naive\ data for the real world data sets to highlight the comparisons among \MU, \HALS, and \BPP.
+
+We highlight two observations from these experiments:
+\begin{enumerate}
+	\item \label{obs:a} \Naive\ is plagued by communication time that increases linearly with $k$;
+	\item \label{obs:b} \BPP's time increases more quickly with $k$ than those of \MU\ or \HALS;
+\end{enumerate}
+
+\paragraph{Observation \ref{obs:a}} 
+We see from the synthetic data sets (Figures \ref{fig:sparsesynksweep} and \ref{fig:densesynksweep}) that the overall time of \Naive\ increases more rapidly with $k$ than any other algorithm and that the increase in time is due mainly to communication (All-Gather).
+Table \ref{tab:costs} predicts that \Naive\ communication volume scales linearly with $k$, and we see that in practice the prediction is almost perfect with the synthetic problems.
+This confirms that the communication is dominated by bandwidth costs and not latency costs (which are constant with respect to $k$).
+We note that the communication cost of \ParNMF\ scales like $\sqrt k$, which is why we don't see as dramatic an increase in communication time for \MU, \HALS, or \BPP\ in Figure \ref{fig:ksweep}.
+
+\paragraph{Observation \ref{obs:b}}
+ Focusing attention on time spent in \NLS computations, we can compare how \MU, \HALS, and \BPP\ scale differently with $k$.
+ We see a more rapid increase of \NLS time for \BPP\ than \MU\ or \HALS; this is expected because the \NLS computations unique to \BPP\ require between $O(k^3)$ and $O(k^4)$ operations (depending on the data) while the unique \NLS computations for \MU\ and \HALS\ are $O(k^2)$, with all other parameters fixed.
+%It is generally observed that in both dense and sparse datasets, higher the low rank $k$ lesser the error \cite{kim2011fast}. For eg., the relative error of NMF algorithm with low rank $k=10$ will be more than the low rank $k=50$. 
+Thus, the extra per-iteration cost of \BPP\ increases with $k$, so the advantage of \BPP\ of better error reduction must also increase with $k$ for it to remain superior at large values of $k$.
+%\grey{can we confirm this in convergence section?}
+We also note that although the number of operations within MM grows linearly with $k$, we do not observe much increase in time from $k=10$ to $k=50$; this is due to the improved efficiency of local MM for larger values of $k$.
+
+\begin{figure}
+
+\naivetrue
+\ksweeptrue
+\legendtrue
+
+\begin{subfigure}{\columnwidth}
+%\centering
+\renewcommand{\datafile}{data/sparsesyn864_ksweep_scale_pgf.dat}
+\begin{tikzpicture}
+\makeplot
+\labels
+\end{tikzpicture}
+\subcaption{Sparse Synthetic}
+\label{fig:sparsesynksweep}
+\end{subfigure}
+\legendfalse
+
+\begin{subfigure}{\columnwidth}
+%\centering
+\renewcommand{\datafile}{data/densesyn864_ksweep_scale_pgf.dat}
+\begin{tikzpicture}
+\makeplot
+\labels
+\end{tikzpicture}
+\subcaption{Dense Synthetic}
+\label{fig:densesynksweep}
+\end{subfigure}
+
+%\naivefalse
+
+\begin{subfigure}{\columnwidth}
+%\centering
+\renewcommand{\datafile}{data/sparserwksweep_scale_pgf.dat}
+\begin{tikzpicture}
+\makeplot
+\labels
+\end{tikzpicture}
+\subcaption{Sparse Real World (webbase-1M)}
+\label{fig:sparserwksweep}
+\end{subfigure}
+
+\begin{subfigure}{\columnwidth}
+\renewcommand{\datafile}{data/denserw_ksweep_scale_pgf.dat}
+\begin{tikzpicture}
+\makeplot
+\labels
+\end{tikzpicture}
+\caption{Dense Real World (Video)}
+\label{fig:denserwksweep}
+\end{subfigure}
+
+\caption{Per-iteration times with $p=864$, varying low rank $k$.}
+\label{fig:ksweep}
+\end{figure}
+
+\subsubsection{Varying Processor Grid}
+\label{sec:procgrid}
+
+In this section we demonstrate the effect of the dimensions of the processor grid on per-iteration performance.
+%As described in Section \ref{sec:alg:comm}, Algorithm \ref{alg:2D} is correct for any $p_r$ and $p_c$, but 
+For a fixed total number of processors $p$, the communication cost of Algorithm \ref{alg:2D} varies with the choice of $p_r$ and $p_c$.
+To minimize the amount of data communicated, the theoretical analysis suggests that the processor grid should be chosen to make the sizes of the local data matrix as square as possible.
+This implies that if $m/p > n$, $p_r=p$ and $p_c=1$ is the optimal choice (a 1D processor grid); likewise if $n/p > m$ then a 1D processor grid with $p_r=1$ and $p_c=p$ is the optimal choice.
+Otherwise, a 2D processor grid minimizes communication with $p_r \approx \sqrt{mp/n}$ and $p_c \approx \sqrt{np/m}$ (subject to integrality and $p_rp_c=p$).
+
+Figure \ref{fig:procsweep} presents a benchmark of \BPP\ for the Sparse Synthetic data set for fixed values of $p$ and $k$.
+We vary the processor grid dimensions from both 1D grids to the 2D grid that matches the theoretical optimum exactly.
+Because the sizes of the Sparse Synthetic matrix are $172{,}800\times115{,}200$ and the number of processors is 1536, the theoretically optimal grid is $p_r = \sqrt{mp/n} = 48$ and $p_c = \sqrt{np/m} = 32$.
+The experimental results confirm that this processor grid is optimal, and we see that the time spent communicating increases as the processor grid deviates from the optimum, with the 1D grids performing the worst.
+
+\begin{figure}
+\renewcommand{\datafile}{data/sparsesynpsweep_scale_pgf.dat}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar stacked,
+	reverse legend,
+	bar width=12pt,
+	width=7cm, height=5cm,
+	ylabel={Time (seconds)}, 
+	y label style={yshift=-0.5cm},
+	x label style={yshift=-0.5cm},
+	ymin=0,
+	symbolic x coords={1-1536,8-192,16-96,32-48,48-32,96-16,192-8,1536-1},
+	xticklabels={$1{\times}1536$,$8{\times}192$,$16{\times}96$,$32{\times}48$,$48{\times}32$,$96{\times}16$,$192{\times}8$,$1536{\times}1$},
+	xtick=data,
+	xticklabel style={xshift=.1cm,rotate=45,anchor=east},
+	xlabel={Processor Grid}, 
+	%legend style={draw=none,row sep=-0.1cm},
+	%legend style={at={(1,.5)},anchor=west}
+	legend style={at={(0.5,1.2)},anchor=north},
+	legend columns=-1,
+	legend style={draw=none, cells={align=left}, nodes={scale=0.8}},
+]
+	\setcolors
+	\addplot table[x=pg, y expr=(\thisrow{mm}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=pg, y expr=(\thisrow{nnls}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=pg, y expr=(\thisrow{gram}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=pg, y expr=(\thisrow{allgather}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=pg, y expr=(\thisrow{reducescatter}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=pg, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
+	\legend{MM, \NLS, Gram, All-Gather, Reduce-Scatter, All-Reduce};
+\end{axis}
+\end{tikzpicture}
+\caption{Tuning processor grid for \BPP\ on Sparse Synthetic data set with $p=1536$ and $k=50$.}
+\label{fig:procsweep}
+\end{figure}
+
+\subsubsection{Scaling up to Very Large Sparse Datasets}\label{sec:webbase-2001}
+
+In this section, we test \ParNMF\ by scaling up the problem size.
+While we've used \emph{webbase-1M} in previous experiments, we consider \emph{webbase-2001} in this section as it is the largest sparse data in University of Florida Sparse Matrix Collection \cite{DH11}.
+The former dataset has about 1 million nodes and 3 million edges, whereas the latter dataset has over 100 million nodes and  1 billion edges (see Section \ref{sec:datasets} for more details).
+Not only is the size of the input matrix increased by two orders of magnitude (because of the increase in the number of edges), but also the size of the output matrices is increased by two orders of magnitude (because of the increase in the number of nodes).
+
+In fact, with a low rank of $k=50$, the size of the output matrices dominates that of the input matrix: $\WW$ and $\HH$ together require a total of 88 GB, while $\AA$ (stored in compressed column format) is only 16 GB.
+At this scale, because each node (consisting of 16 cores) of Rhea has 128 GB of memory, multiple nodes are required to store the input and output matrices with room for other intermediate values.
+As mentioned in Section \ref{sec:new_memory}, \ParNMF\ requires considerably more temporary memory than necessary when the output matrices require more memory than the input matrix.
+While we were not limited by this property for the other sparse matrices, the \emph{webbase-2001} matrix dimensions are so large that we need the memories of tens of nodes to run the algorithm.
+Thus, we report results only for the largest number of processors in our experiments: 1536 processors (96 nodes).
+The extra temporary memory used by \ParNMF\ is a latency-minimizing optimization; the algorithm can be updated to avoid this extra memory cost using a blocked matrix multiplication algorithm.
+The extra memory can be reduced to a negligible amount at the expense of more messages between processors and synchronizations across the parallel machine.
+%We have not yet implemented this update.
+
+%In the real-world, it is difficult to acquire very large dense datasets. Most of the very large dense 
+%datasets will be either be image/video data or collected out of very large scientific experiments. It is 
+%common in the DM/ML community to have very large sparse dataset. In this section, to benefit the Data 
+%mining and machine learning community, we report the scalability of \ParNMF\ on very directed sparse 
+%webgraph over 118 million nodes and nearly 1 billion edges.  In Section \ref{sec:datasets},  we 
+%discussed the details of this {\em webbase-2001} dataset. 
+
+%It can be observed from our \ParNMF\ that we hold the dense matrices $\WW, \HH, (\WW_i)_j, 
+%(\HH_j)_i, \WW^T\AA$ and $\AA \HH^T$ in memory for computation. As discussed in Section 
+%{\ref{sec:memory}}, the estimated per process memory footprint of all the matrices together is $O(xx)$. In the 
+%case of {\em Webbase-2001},  matrix of size 118,000,000 with low rank $k=$50 over 864 process, every 
+%process  required xx GB and approximately 2GB for input sparse matrix. \ramki{Grey can we discuss to fill this up. I wanted this to be consistent with the table and the section.} We were running 16 process on every node, the estimated memory per-process along with temporary allocations,  the experiment couldn't run in 54 nodes with each node having 128GB. Hence, we are reporting the wall clock time for different tasks and the error plot for {\em Webbase-2001} over 96 nodes and 1536 processors in Figure \ref{fig:webbase2001}. 
+
+We present results for \emph{webbase-2001} in Figure \ref{fig:webbase2001}.
+The average per-iteration timing results are consistent with the observations from other synthetic and real world sparse datasets as discussed in Section \ref{sec:scaling}, though the raw times are about 2 orders of magnitude larger, as expected. 
+In the case of the error plot, as observed in other experiments, \BPP\ achieves smaller error (by 1\%) than other algorithms after converging; however \MU\ and \HALS\ initially outperform \BPP. 
+We also see that \MU\ outperforms \HALS\ in the first 30 iterations. 
+At the 30th iteration, the error for \HALS\ is still improving at the third decimal, whereas \MU's is improving at the fourth decimal. 
+We suspect that over a greater number of iterations the error of \HALS\ could become smaller than that of \MU, which would be more consistent with other datasets. 
+
+\begin{figure}
+\centering
+\captionsetup[subfigure]{justification=centering}
+\begin{subfigure}{0.40 \columnwidth}
+\renewcommand{\datafile}{data/webbase118m_pgf.dat}
+%\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar stacked,
+	reverse legend,
+	bar width=16pt,
+	width=1.6in, height=1.8in,
+	ylabel={Time (seconds)}, 
+	y label style={yshift=-.5cm, xshift=-.5cm},
+	x label style={yshift=-.5cm},
+	ymin=0,
+	symbolic x coords={1536-0,1536-1,1536-2},
+	xticklabels={MU,HALS,ABPP},
+	xtick=data,
+	%xticklabel style={xshift=.15cm,rotate=45,anchor=east},
+	%xlabel={NMF Algorithms}, 
+	%legend style={draw=none,row sep=-0.1cm},
+	%legend style={at={(1,.5)},anchor=west}
+	legend style={at={(0.5,1.3)},anchor=north},
+	legend columns=3,
+	legend style={draw=none, cells={align=left}, nodes={scale=0.5}}
+]
+	\setcolors
+	\addplot table[x=algo, y expr=(\thisrow{mm}/30)] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{nnls}/30)] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{gram}/30)] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{allgather}/30)] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{reducescatter}/30)] {\datafile};
+	\addplot table[x=algo, y expr=(\thisrow{allreduce}/30)] {\datafile};
+	\legend{MM, \NLS, Gram, All-Gather, Reduce-Scatter, All-Reduce};
+\end{axis}
+\end{tikzpicture}
+\subcaption{Time}
+\end{subfigure}
+~
+\begin{subfigure}{0.45 \columnwidth}
+\begin{tikzpicture}
+\renewcommand{\run}{1}
+\legendtrue
+\ylabeltrue
+\widertrue
+\renewcommand{\datafile}{data/webbase118m-err-time.dat}
+\relerrplot
+\widerfalse
+\end{tikzpicture}
+\subcaption{Error}
+\end{subfigure}
+\caption{NMF comparison on \emph{webbase-2001} for $k{=}50$ on 1536 processors.}
+\label{fig:webbase2001}
+\end{figure}
+
+\subsection{Interpretation of Results}
+
+We present results from two of the real world datasets in the Supplemental Material. 
+The first example shows background separation of the \emph{video} data, and the second example shows topic modeling output on the \emph{stack exchange} text dataset. The details of these datasets are presented in Section \ref{sec:datasets}. 
+
+While the literature covers more detail about fine tuning NMF and different NMF variants for higher quality results on these two tasks, our main focus is to show how quickly we can produce baseline NMF solutions. 
+In Figure 1 of the Supplemental Material, we can see the background is removed and the moving objects (e.g., cars) are visible. 
+Similarly, Table 1 of Supplemental Material shows that the NMF solution discriminates among topics and and finds coherent keywords for each topic. 
+
+%\subsubsection{Moving Object Detection of Surveillance Video Data}
+%
+%As explained in the Section 6.1.1, we processed 12 minutes video that is captured from a 
+%busy junction in Georgia Tech to separate the background and moving objects from this video. 
+%In Figure \ref{fig:videoresults}, we present some sample frames to compare the input image with the separated background and moving objects.
+%The background are the results of the low rank approximation 
+%$\hat{\AA}=\WW\HH$ output yielded from our \ParNMF\ algorithm and the moving objects are given by $\AA-\hat{\AA}$. 
+%We can clearly see the background remains static and the moving objects (e.g., cars) are visible. 
+%
+%\subsubsection{Topic Modeling of Stack Exchange Data}
+%We ran 
+%our \ParNMF\ algorithm on this dataset, which has nearly 12 million questions from the Stack Overflow site (under Stack Exchange) to produce 50 topics. 
+%The matrix $\WW$ can be interpreted as {\em vocabulary-topic} distribution and the 
+%$\HH$ as {\em topic-document} distribution.  We took the top 5 words for each of the 50 topics and 
+%present them in Table \ref{tab:stackexchangetopics}. Typically a good topic generation satisfies 
+%properties such as (a) finding discriminative rather than common words -- capturing words that can provide 
+%some information; (b) finding different topics -- the similarity between different topics should be low; 
+%(c) coherence - all the words that belong to one topic should be coherent.  There are some topic quality 
+%metrics \cite{NLGB2010} that capture the usefulness of topic generation algorithm.  We can  see
+% NMF generated generally high-quality and coherent topics. 
+% Also, each of the topics are from different domains such as 
+% databases, C/C++ programming, Java programming, and web technologies like PHP and HTML. 

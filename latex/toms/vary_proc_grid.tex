@@ -1,0 +1,53 @@
+\begin{tikzpicture}[scale=0.75]
+\renewcommand{\datafile}{data/vary_proc_grid.dat}
+% sort table by total time
+\pgfplotstablesort[sort key={Total},sort cmp={float <}]{\sorted}{\datafile}
+% compute minimum total time to normalize plot
+\pgfplotstablegetelem{0}{Total}\of{\sorted}
+\let\mintot=\pgfplotsretval
+% get (sorted) list of proc grids as strings for x labels
+\def\xlistmacro{}
+\def\xliststring{}
+\pgfplotstableforeachcolumnelement{ProcGrid}\of\sorted\as\entry{%
+\xifinlist{\entry}{\xlistmacro}{}{
+        \listxadd{\xlistmacro}{\entry}
+        \edef\xliststring{\xliststring\entry,}
+    }
+}
+\begin{axis}[
+  width=2.3in,height=2.75in,
+	ybar stacked,
+	legend pos = north west,
+	reverse legend,
+	%ylabel={Relative Time}, 
+	ymin=0,
+	xtick=data,
+	symbolic x coords/.expand once={\xliststring},
+	x tick label style={rotate=60,anchor=east},
+        bar width = 4pt,
+]
+
+	% set colors for Gram, Evecs, TTM (consistent across modes)
+	\pgfplotsset{cycle list={red, fill=red \\ green, fill=green \\ blue, fill=blue \\}}
+	
+	% set legend
+	\legend{Gram, Evecs, TTM}
+	
+	% plot each column of data
+	\addplot table[x=ProcGrid, y expr=\thisrow{Gram-0}/\mintot] {\datafile};       
+	\addplot table[x=ProcGrid, y expr=\thisrow{Evec-0}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{TTM-0}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{Gram-1}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{Evec-1}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{TTM-1}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{Gram-2}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{Evec-2}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{TTM-2}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{Gram-3}/\mintot] {\datafile};
+	\addplot table[x=ProcGrid, y expr=\thisrow{Evec-3}/\mintot] {\datafile};
+	\addplot %[ blue, fill=blue, nodes near coords={\pgfmathprintnumber{\thisrow{Total}}} ] 
+        table[x=ProcGrid, y expr=\thisrow{TTM-3}/\mintot] {\datafile};
+	%\addplot [ black, nodes near coords={7} ] table[x=ProcGrid, y expr={0}] {\datafile};
+	
+\end{axis}
+\end{tikzpicture}
