@@ -1,0 +1,72 @@
+\section{Preliminaries}
+
+\subsection{Notation}
+\label{sec:notations}
+
+Table \ref{tab:notation} summarizes the notation we use throughout this paper.
+We use \emph{upper case} letters for matrices and \emph{lower case} letters for vectors.
+%For example, $\AA$ is a matrix and $\aa$ is a column vector and $\aa^T$ is a row vector. 
+We use both subscripts and superscripts for sub-blocks of matrices. 
+For example, $\AA_i$ is the $i$th row block of matrix $\AA$, and $\AA^i$ is the $i$th column block.
+Likewise, $\aa_i$ is the $i$th row of $\AA$, and $\aa^i$ is the $i$th column.
+We use $m$ and $n$ to denote the numbers of rows and columns of $\AA$, respectively, and we assume without loss of generality $m\geq n$ throughout.
+
+\begin{table}%[htdp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+$\AA$ & Input matrix \\
+$\WW$ & Left low rank factor \\
+$\HH$ & Right low rank factor \\
+$m$ & Number of rows of input matrix \\
+$n$ & Number of columns of input matrix \\
+$k$ & Low rank \\
+$\M{M}_i$ & $i$th row block of matrix $\M{M}$ \\
+$\M{M}^i$ & $i$th column block of matrix $\M{M}$  \\
+$\M{M}_{ij}$ & $(i,j)$th subblock of $\M{M}$ \\
+$p$ & Number of parallel processes \\
+$p_r$ & Number of rows in processor grid \\
+$p_c$ & Number of columns in processor grid \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Notation}
+\label{tab:notation}
+\end{table}%
+
+\subsection{Communication model}
+\label{sec:comm-model}
+
+To analyze our algorithms, we use the $\alpha$-$\beta$-$\gamma$ model of distributed-memory parallel computation.
+In this model, interprocessor communication occurs in the form of messages sent between two processors across a bidirectional link (we assume a fully connected network).
+We model the cost of a message of size $n$ words as $\alpha+n\beta$, where $\alpha$ is the per-message latency cost and $\beta$ is the per-word bandwidth cost.
+Each processor can compute floating point operations (flops) on data that resides in its local memory; $\gamma$ is the per-flop computation cost.
+With this communication model, we can predict the performance of an algorithm in terms of the number of flops it performs as well as the number of words and messages it communicates.
+For simplicity, we will ignore the possibilities of overlapping computation with communication in our analysis.
+For more details on the $\alpha$-$\beta$-$\gamma$ model, see \cite{TRG05,CH+07}.
+
+\subsection{MPI collectives}
+\label{sec:collectives}
+
+Point-to-point messages can be organized into collective communication operations that involve more than two processors.
+MPI provides an interface to the most commonly used collectives like broadcast, reduce, and gather, as the algorithms for these collectives can be optimized for particular network topologies and processor characteristics.
+For a concise description of the most common collectives, see \cite[Figure 1]{CH+07}.
+The algorithms we consider use the all-gather, reduce-scatter, and all-reduce collectives, so we review them here, along with their costs.
+Our analysis assumes optimal collective algorithms are used (see \cite{TRG05,CH+07}), though our implementation relies on the underlying MPI implementation.
+
+At the start of an all-gather collective, each of $p$ processors owns data of size $n/p$. 
+After the all-gather, each processor owns a copy of the entire data of size $n$. 
+The cost of an all-gather is $\alpha\cdot \log p + \beta \cdot \frac{p-1}{p}n$.
+%
+At the start of a reduce-scatter collective, each processor owns data of size $n$.
+After the reduce-scatter, each processor owns a subset of the sum over all data, which is of size $n/p$.
+This single collective is a more efficient way of implementing a reduce followed by a scatter.
+(Note that the reduction can be computed with other associative operators besides addition.)
+The cost of an reduce-scatter is $\alpha\cdot \log p + (\beta+\gamma) \cdot \frac{p-1}{p}n$.
+%
+At the start of an all-reduce collective, each processor owns data of size $n$.
+After the all-reduce, each processor owns a copy of the sum over all data, which is also of size $n$.
+The cost of an all-reduce is $2\alpha\cdot \log p + (2\beta+\gamma) \cdot \frac{p-1}{p}n$.
+%
+Note that the costs of each of the collectives are zero when $p=1$.
+

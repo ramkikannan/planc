@@ -1,0 +1,75 @@
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\leq}{\leqslant}
+\newcommand{\Cal}[1]{\mathcal{#1}}
+\newcommand{\Rm}[1]{\mathrm{#1}}
+\newcommand{\Bb}[1]{\mathbb{#1}}
+\newcommand{\Br}[1]{\left(#1\right)}
+\newcommand{\DotBr}[1]{\left\langle#1\right\rangle}
+\newcommand{\ClBr}[1]{\left\{#1\right\}}
+\newcommand{\SqBr}[1]{\left[#1\right]}
+\newcommand{\NormBr}[1]{\left\|#1\right\|}
+\newcommand{\Trm}[1]{\textrm{#1}}
+\newcommand{\Prob}[1]{\mathrm{Pr}\ClBr{#1}}
+\newcommand{\Rn}[1]{\mathbb{R}^{#1}}
+\newcommand{\Rnplus}[1]{\mathbb{R}_+^{#1}}
+\newcommand{\What}[1]{\widehat{#1}}
+\newcommand{\Wtilde}[1]{\widetilde{#1}}
+\newcommand{\FrPa}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\Half}{\frac{1}{2}}
+\renewcommand{\Bar}[1]{\overline{#1}}
+\newcommand{\Tr}[1]{\mathrm{Tr}\Br{#1}}
+\newcommand{\Ave}[2]{\frac{1}{#2}\sum_{{#1}=1}^{#2}}
+\newcommand{\Geq}{\geqslant}
+\renewcommand{\it}[1]{^{(#1)}}
+\newcommand{\argmin}{\mathrm{argmin}}
+\newcommand{\Argmin}[1]{\underset{#1}{\mathrm{argmin}}}
+\newcommand{\dstyle}{\displaystyle}
+
+\newcommand{\Split}[1]{\begin{equation*}\begin{split}#1\end{split}\end{equation*}}
+\newcommand{\SplitN}[2]{\begin{equation}#1\begin{split}#2\end{split}\end{equation}}
+\newcommand{\SplitS}[2]{\begin{subequations}#1\begin{align}#2\end{align}\end{subequations}}
+
+\newcommand{\xx}{\mathbf{x}}
+\newcommand{\XX}{\mathbf{X}}
+\newcommand{\yy}{\mathbf{y}}
+\renewcommand{\aa}{\mathbf{a}}
+\renewcommand{\AA}{\mathbf{A}}
+%\newcommand{\bb}{\mathbf{b}}
+\newcommand{\BB}{\mathbf{B}}
+\newcommand{\CC}{\mathbf{C}}
+\newcommand{\FF}{\mathbf{F}}
+\newcommand{\WW}{\mathbf{W}}
+\newcommand{\HH}{\mathbf{H}}
+\newcommand{\ww}{\mathbf{w}}
+\newcommand{\hh}{\mathbf{h}}
+
+\newcommand{\grey}[1]{{\color{blue}{\bf [Grey: #1]}}}
+\newcommand{\ramki}[1]{{\color{red}{\bf [Ramki: #1]}}}
+\newcommand{\delete}[1]{\sout{#1}}
+\newcommand{\update}[1]{{\color{blue}{#1}}}
+
+%from Grey
+\newcommand{\M}[1]{\mathbf{#1}}
+\newcommand{\lt}{\left}
+\newcommand{\rt}{\right}
+
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+%\newenvironment{proof}[1][Proof]{\begin{trivlist}
+%\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{example}[1][Example]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{remark}[1][Remark]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\qed}{\nobreak \ifvmode \relax \else
+      \ifdim\lastskip<1.5em \hskip-\lastskip
+      \hskip1.5em plus0em minus0.5em \fi \nobreak
+      \vrule height0.75em width0.5em depth0.25em\fi}

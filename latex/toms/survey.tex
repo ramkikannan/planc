@@ -1,0 +1,52 @@
+\section{Related Work}\label{sec:related}
+
+
+In the data mining and machine learning literature there is an overlap between low rank approximations and matrix factorizations due to the nature of applications. 
+Despite its name, non-negative matrix ``factorization'' is really a low rank approximation. 
+Recently there is a growing interest in collaborative filtering based 
+recommender systems. One of the popular techniques
+for collaborative filtering is matrix factorization, often with nonnegativity constraints, 
+and its implementation is widely available in many
+off-the-shelf distributed machine learning libraries
+such as GraphLab \cite{low2012}, MLLib \cite{meng2015mllib},
+and many others \cite{satish2014,yun2014} as well.
+However, we would like to clarify that collaborative
+filtering using matrix factorization is a different problem than NMF: 
+in the case of collaborative filtering, non-nonzeros in the matrix 
+are considered to be missing entries, while in the case of NMF, non-nonzeros in the matrix correspond to true zero values.
+ 
+There are several recent distributed NMF algorithms in the literature \cite{liao2014cloudnmf,Faloutsos2014,Yin2014,liu2010distributed}. 
+Liu et al.\ propose running Multiplicative Update (MU) for KL divergence, squared loss, and ``exponential'' loss functions \cite{liu2010distributed}. 
+Matrix multiplication, element-wise multiplication, and element-wise division are the building blocks of the MU algorithm. 
+The authors discuss performing these matrix operations effectively in Hadoop for sparse matrices. 
+Using similar approaches, Liao et al.\ implement an open source Hadoop-based MU algorithm and study its scalability on large-scale biological data sets \cite{liao2014cloudnmf}. 
+Also, Yin, Gao, and Zhang present a scalable NMF that can perform frequent updates, which aim to use the most recently updated data \cite{Yin2014}. 
+Similarly Faloutsos et al.\ propose a distributed, scalable method for decomposing matrices, tensors, and coupled data sets through stochastic gradient descent on a variety of objective functions \cite{Faloutsos2014}. 
+The authors also provide an implementation that can enforce non-negative constraints on the factor matrices. 
+All of these works use Hadoop to implement their algorithms.
+
+We emphasize that our MPI-based approach has several advantages over Hadoop-based approaches:
+\begin{itemize}
+	\item efficiency -- our approach maintains data in memory, never communicating the data matrix, while Hadoop-based approaches must read/write data to/from disk and involves global shuffles of data matrix entries;
+	\item generality -- our approach is well-designed for both dense and sparse data matrices, whereas Hadoop-based approaches generally require sparse inputs;
+	\item privacy -- our approach allows processors to collaborate on computing an approximation without ever sharing their local input data (important for applications involving sensitive data, such as electronic health records), while Hadoop requires the user to relinquish control of data placement.
+\end{itemize}
+
+We note that Spark \cite{ZCFSS10} is a popular big-data processing infrastructure that is generally more efficient for iterative algorithms such as NMF than Hadoop, as it maintains data in memory and avoids file system I/O.
+Even with a Spark implementation of previously proposed Hadoop-based NMF algorithm, we expect performance to suffer from expensive communication of input matrix entries, and Spark will not overcome the shortcomings of generality and privacy of the previous algorithms.
+Although Spark has collaborative filtering libraries such as MLlib \cite{meng2015mllib}, which use matrix factorization and can impose non-negativity constraints, none of them implement pure NMF, and so we do not have a direct comparison against NMF running on Spark.
+As mentioned above, the problem of collaborative filtering is different from NMF, and therefore different computations are performed at each iteration.
+
+%Apart from the distributed implementation for NMF, we would also like to highlight few recent theoretical highlights with NMF under some mild assumptions. 
+%Arora, Ge, Kannan and Moitra \cite{AGKM2012}, proposed a initial polynomial time running algorithm for topic modeling with NMF when there exists  anchor words, words that appear (with positive probability) in only one topic. 
+%Later, Huang, Sidiropoulos and Swami \cite{HSS2016} improved up on these results under milder conditions using second-order moments. 
+%The uniqueness of NMF has been of interest to the community and some recent results for both symmetric and non-symmetric matrices have been obtained using a geometrical point of view in \cite{HSS2013, HSS2014}. 
+
+Fairbanks et al. \cite{Fairbanks2015} present a parallel NMF algorithm designed for multicore machines.  
+To demonstrate the importance of minimizing communication, we consider this approach to parallelizing an alternating-updating NMF algorithm in distributed memory (see Section \ref{sec:naive}).
+While this naive algorithm exploits the natural parallelism available within the alternating iterations (the fact that rows of $\WW$ and columns of $\HH$ can be computed independently), it performs more communication than necessary to set up the independent problems.
+We compare the performance of this algorithm with our proposed approach to demonstrate the importance of designing algorithms to minimize communication; that is, simply parallelizing the computation is not sufficient for satisfactory performance and parallel scalability.
+
+Apart from distributed NMF algorithms using Hadoop and multicores, there are also implementations of the
+MU algorithm in a distributed memory setting using X10 \cite{Grove2014} and on a GPU \cite{mejia2015nmf}. 
+

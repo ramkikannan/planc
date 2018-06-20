@@ -1,0 +1,38 @@
+\documentclass{article}
+
+\usepackage{url}
+
+\begin{document}
+\title{Differences from our PPoPP Conference Paper \cite{KBP16}}
+\author{Ramakrishnan Kannan, Grey Ballard, Haesun Park}
+\maketitle
+
+The main focus of our PPoPP'16 conference paper \cite{KBP16} is demonstrating and understanding scalability of an NMF algorithm using Alternating Non-negative Least Squares based on Block Principal Pivoting (ANLS/BPP) \cite{kim2011fast} on MPI-based supercomputing clusters. We compared our scalable implementation against a Naive ANLS/BPP parallelization scheme explained by Fairbanks, Kannan, Park and Bader \cite{Fairbanks2015}. We conducted our experiments on ``Edison'' -- a Cray XC30 supercomputer, at the National Energy Research Scientific Computing Center.
+
+This submission is a major revision specifically targeted for the Data Mining and Machine Learning (DM/ML) community. We highlight the principal differences below.
+
+\subsection*{MPI-FAUN Framework:}
+The new contributions of this paper include (1) implementing a software framework called MPI-FAUN to compare ANLS/BPP with alternative NMF algorithms for large scale data sets, (2) benchmarking on a data analysis cluster and scaling up to over 1500 processors, and (3) providing an interpretation of results for real-world data sets. 
+Our main contribution is a new, high-performance parallel computational framework for a broad class of NMF algorithms. The framework is efficient, scalable, flexible, and demonstrated to be effective for large-scale dense and sparse matrices. Based on our survey and knowledge, we are the fastest NMF implementation available in the literature. 
+
+\subsection*{Technical Details:}
+We have completely rewritten the entire paper targeting the DM/ML community. Given the increased space of a journal submission, we provide new technical details including figures, diagrams, and experiments to appreciate the entire content and reproduce and extend our research.  
+
+\subsection*{Supported Algorithms:}
+In our earlier work, we implemented only ANLS/BPP.  In this paper, we have implemented a framework to handle a wider range of NMF algorithms that include Multiplicative Update (MU) and Hierarchical Alternating Least Squares (HALS), with which we experiment here. The end users can run these distributed algorithms over command line. 
+
+\subsection*{Open Source Code:}
+We have open-sourced our entire code through \url{https://github.com/ramkikannan/nmflibrary}. The users can not only try these algorithms off-the-shelf through command line interfaces but also extend their algorithms over our framework. 
+
+\subsection*{Commodity Cluster:}
+Unlike our earlier paper that was run on Cray supercomputer, in this paper we specifically targeted running on experiments on a commodity MPI linux cluster, the ``Rhea'' system at Oak Ridge Leadership Computing Facility, which is designed for data analysis. It is common in DM/ML community from both academic and enterprise DM/ML to set up their own experimental cluster using their lab machines. Hence, we conducted experiment using commodity cluster with open source software such as armadillo, gcc, and OpenMPI. Unlike our earlier experiment with only 25 nodes, the results presented in this paper were conducted on nearly 100 nodes. 
+
+\subsection*{Experiment and Datasets:}
+We have added a broader range of very large dense and sparse real world datasets. We have run experiments on the largest sparse data in the University of Florida Sparse Matrix Collection. Apart from substantiating our research by running our experiments on a larger cluster, we also motivate the readers by presenting the interpretation of the results. 
+
+%The entire document is prepared for DM/ML researchers from academic and enterprise community. We are eagerly waiting for the feedback, inputs and reviews from the reviewers. 
+
+\bibliographystyle{plain}
+\bibliography{mybib}
+
+\end{document}
