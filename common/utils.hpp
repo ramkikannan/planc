@@ -72,7 +72,7 @@ int random_sieve(const int nthprime) {
   mark = reinterpret_cast<int *>(calloc(nlimit, sizeof(int)));
 
   /* Calculate limit for k */
-  klimit = static_cast<int>(sqrt(static_cast<double>(nlimit) + 1)));
+  klimit = static_cast<int>(sqrt(static_cast<double>(nlimit) + 1));
 
   /* Mark the composites */
   /* Special case */

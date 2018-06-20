@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <armadillo>
 #include <string>
-#include "distnmf/distutils.hpp"
+#include "common/distutils.hpp"
 #include "distnmf/mpicomm.hpp"
 
 /*

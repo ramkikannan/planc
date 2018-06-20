@@ -48,8 +48,8 @@ do
     pushd ../build_$SYSTEM\_dense_$cfg
     if [ "$SYSTEM" = "rhea" ]; then
         cmake $SRC_DIR/$cfg/
-    #we consider this as eos/titan
-    #we consider this as eos/titan
+    fi
+    #we consider this as eos/titan    
     if [ "$SYSTEM" = "eos" ]; then
         CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_SPARSE=1
     fi
@@ -74,9 +74,7 @@ do
 
     if [ "$SYSTEM" = "titan" ]; then
         CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_SPARSE=1
-    fi
-
-    
+    fi    
     make
     popd
 done

@@ -10,8 +10,8 @@
 #include "common/luc.hpp"
 #include "common/ntf_utils.hpp"
 #include "dimtree/kobydt.hpp"
-#include "distnmf/distntftime.hpp"
 #include "distntf/distntfmpicomm.hpp"
+#include "distntf/distntftime.hpp"
 
 /*
  * Tensor A of size is M1 x M2 x... x Mn is distributed among

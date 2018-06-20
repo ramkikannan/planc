@@ -1,14 +1,14 @@
 /* Copyright 2016 Ramakrishnan Kannan */
 
-#include "nmf/nmf.hpp"
+#include "common/nmf.hpp"
 #include <stdio.h>
 #include <string>
+#include "common/parsecommandline.hpp"
+#include "common/utils.hpp"
 #include "nmf/aoadmm.hpp"
 #include "nmf/bppnmf.hpp"
 #include "nmf/hals.hpp"
 #include "nmf/mu.hpp"
-#include "common/parsecommandline.hpp"
-#include "common/utils.hpp"
 
 template <class NMFTYPE>
 void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,

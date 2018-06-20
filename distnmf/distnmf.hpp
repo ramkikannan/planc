@@ -4,9 +4,9 @@
 #define DISTNMF_DISTNMF_HPP_
 
 #include <string>
-#include "distnmftime.hpp"
+#include "common/nmf.hpp"
 #include "distnmf/mpicomm.hpp"
-#include "nmf/nmf.hpp"
+#include "distnmftime.hpp"
 #ifdef USE_PACOSS
 #include "pacoss.h"
 #endif
