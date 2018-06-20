@@ -39,8 +39,9 @@ include(CheckLibraryExists)
 ##
 
 set(NMFLIB_OS unix)
-include(${ARMADILLO_INCLUDE_DIR}/../ArmadilloConfig.cmake)
-include(${ARMADILLO_INCLUDE_DIR}/../ArmadilloConfigVersion.cmake)
+set(ARMADILLO_INCLUDE_DIRS ${ARMADILLO_INCLUDE_DIR}/../)
+set(ARMADILLO_LIBRARY_DIRS ${ARMADILLO_INCLUDE_DIR}/../)
+
 if(NOT CMAKE_IGNORE_MKL)
   include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindMKL.cmake)
 endif()
