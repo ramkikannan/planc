@@ -1,16 +1,16 @@
 /* Copyright 2016 Ramakrishnan Kannan */
 
 #include <string>
-#include "distanlsbpp.hpp"
-#include "distaoadmm.hpp"
-#include "disthals.hpp"
-#include "distio.hpp"
-#include "distmu.hpp"
-#include "distutils.hpp"
-#include "mpicomm.hpp"
-#include "naiveanlsbpp.hpp"
-#include "parsecommandline.hpp"
-#include "utils.hpp"
+#include "distnmf/distanlsbpp.hpp"
+#include "distnmf/distaoadmm.hpp"
+#include "distnmf/disthals.hpp"
+#include "distnmf/distio.hpp"
+#include "distnmf/distmu.hpp"
+#include "common/distutils.hpp"
+#include "distnmf/mpicomm.hpp"
+#include "distnmf/naiveanlsbpp.hpp"
+#include "common/parsecommandline.hpp"
+#include "common/utils.hpp"
 #ifdef BUILD_CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>

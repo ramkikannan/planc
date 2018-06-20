@@ -3,7 +3,7 @@
 #ifndef DISTNTF_DISTNTFUTILS_H_
 #define DISTNTF_DISTNTFUTILS_H_
 
-#include "distutils.h"
+#include "common/distutils.h"
 
 namespace planc {
 enum distntfalgotype { NTF_MU, NTF_HALS, NTF_BPP };

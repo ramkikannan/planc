@@ -4,9 +4,9 @@
 
 #include <mpi.h>
 #include <string>
-#include "distutils.h"
-#include "utils.h"
-#include "utils.hpp"
+#include "common/distutils.h"
+#include "common/utils.h"
+#include "common/utils.hpp"
 
 inline void mpitic() {
   // tictoc_stack.push(clock());

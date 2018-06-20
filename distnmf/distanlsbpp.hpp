@@ -3,8 +3,8 @@
 #ifndef DISTNMF_DISTANLSBPP_HPP_
 #define DISTNMF_DISTANLSBPP_HPP_
 
-#include "aunmf.hpp"
-#include "bppnnls.hpp"
+#include "distnmf/aunmf.hpp"
+#include "nnls/bppnnls.hpp"
 
 #ifdef BUILD_CUDA
 #define ONE_THREAD_MATRIX_SIZE 1000

@@ -7,11 +7,11 @@
 #include <armadillo>
 #include <string>
 #include <vector>
-#include "distntfmpicomm.hpp"
-#include "distutils.hpp"
-#include "ncpfactors.hpp"
-#include "npyio.hpp"
-#include "tensor.hpp"
+#include "common/distutils.hpp"
+#include "common/ncpfactors.hpp"
+#include "common/npyio.hpp"
+#include "common/tensor.hpp"
+#include "distntf/distntfmpicomm.hpp"
 
 /*
  * File name formats

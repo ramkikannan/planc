@@ -3,7 +3,7 @@
 #ifndef DISTNMF_DISTHALS_HPP_
 #define DISTNMF_DISTHALS_HPP_
 
-#include "aunmf.hpp"
+#include "distnmf/aunmf.hpp"
 
 template<class INPUTMATTYPE>
 class DistHALS : public DistAUNMF<INPUTMATTYPE>{

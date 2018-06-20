@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <armadillo>
 #include <string>
-#include "distutils.hpp"
-#include "mpicomm.hpp"
+#include "distnmf/distutils.hpp"
+#include "distnmf/mpicomm.hpp"
 
 /*
  * File name formats

@@ -3,8 +3,8 @@
 #ifndef DISTNMF_NAIVE_ANLS_BPP_HPP_
 #define DISTNMF_NAIVE_ANLS_BPP_HPP_
 #pragma once
-#include "bppnnls.hpp"
-#include "distnmf1D.hpp"
+#include "distnmf/distnmf1D.hpp"
+#include "nnls/bppnnls.hpp"
 
 template <class INPUTMATTYPE>
 class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {

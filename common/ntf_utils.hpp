@@ -3,8 +3,8 @@
 #ifndef COMMON_NTF_UTILS_HPP_
 #define COMMON_NTF_UTILS_HPP_
 
-#include "ncpfactors.hpp"
-#include "tensor.hpp"
+#include "common/ncpfactors.hpp"
+#include "common/tensor.hpp"
 
 // A is of size m x k
 // B is of size n x k

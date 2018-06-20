@@ -3,7 +3,7 @@
 #ifndef NMF_MU_HPP_
 #define NMF_MU_HPP_
 
-#include "nmf.hpp"
+#include "common/nmf.hpp"
 
 template <class T>
 class MUNMF : public NMF<T> {

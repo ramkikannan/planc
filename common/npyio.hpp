@@ -4,8 +4,8 @@
 #include <armadillo>
 #include <cstdio>
 #include <vector>
-#include "tensor.hpp"
-#include "utils.h"
+#include "common/tensor.hpp"
+#include "common/utils.h"
 
 namespace planc {
 class NumPyArray {

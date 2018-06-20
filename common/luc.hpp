@@ -2,8 +2,8 @@
 #ifndef COMMON_LUC_HPP_
 #define COMMON_LUC_HPP_
 
-#include "bppnnls.hpp"
-#include "nnls.hpp"
+#include "nnls/bppnnls.hpp"
+#include "nnls/nnls.hpp"
 
 namespace planc {
 class LUC {

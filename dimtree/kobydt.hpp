@@ -5,8 +5,8 @@
 
 #include "dimtree/dimtrees.hpp"
 #include "dimtree/kdttensor.hpp"
-#include "ncpfactors.hpp"
-#include "tensor.hpp"
+#include "common/ncpfactors.hpp"
+#include "common/tensor.hpp"
 
 class KobyDimensionTree {
   ktensor *m_local_Y;

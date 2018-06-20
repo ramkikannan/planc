@@ -1,12 +1,12 @@
 /* Copyright 2016 Ramakrishnan Kannan */
 
 #include <string>
-#include "distauntf.hpp"
-#include "distntfio.hpp"
-#include "distntfmpicomm.hpp"
-#include "distutils.hpp"
-#include "parsecommandline.hpp"
-#include "utils.hpp"
+#include "common/distutils.hpp"
+#include "common/parsecommandline.hpp"
+#include "common/utils.hpp"
+#include "distntf/distauntf.hpp"
+#include "distntf/distntfio.hpp"
+#include "distntf/distntfmpicomm.hpp"
 
 class DistNTF {
  private:

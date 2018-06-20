@@ -4,8 +4,8 @@
 #define NMF_BPPNMF_HPP_
 
 #include <omp.h>
-#include "nmf.hpp"
-#include "bppnnls.hpp"
+#include "common/nmf.hpp"
+#include "nnls/bppnnls.hpp"
 
 // needed for precondition with hals
 #ifdef BUILD_SPARSE

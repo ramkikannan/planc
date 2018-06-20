@@ -8,7 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "parsecommandline.h"
+#include "common/parsecommandline.h"
 
 namespace planc {
 class ParseCommandLine {

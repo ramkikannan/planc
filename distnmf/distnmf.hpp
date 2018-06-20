@@ -5,8 +5,8 @@
 
 #include <string>
 #include "distnmftime.hpp"
-#include "mpicomm.hpp"
-#include "nmf.hpp"
+#include "distnmf/mpicomm.hpp"
+#include "nmf/nmf.hpp"
 #ifdef USE_PACOSS
 #include "pacoss.h"
 #endif

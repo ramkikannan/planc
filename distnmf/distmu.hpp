@@ -2,7 +2,7 @@
 
 #ifndef DISTNMF_DISTMU_HPP_
 #define DISTNMF_DISTMU_HPP_
-#include "aunmf.hpp"
+#include "distnmf/aunmf.hpp"
 
 template <class INPUTMATTYPE>
 class DistMU : public DistAUNMF<INPUTMATTYPE> {

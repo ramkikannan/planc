@@ -3,6 +3,8 @@
 #ifndef NMF_HALS_HPP_
 #define NMF_HALS_HPP_
 
+#include "common/nmf.hpp"
+
 template <class T>
 class HALSNMF : public NMF<T> {
  private:

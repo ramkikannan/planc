@@ -3,7 +3,7 @@
 #define COMMON_NMF_HPP_
 #include <assert.h>
 #include <string>
-#include "utils.hpp"
+#include "common/utils.hpp"
 
 // #ifndef _VERBOSE
 // #define _VERBOSE 1;
@@ -70,7 +70,7 @@ class NMF {
    * and the second is L1 regularization.
    * Mostly we expect
    */
-  void applyReg(const FVEC& reg, MAT* AtA) {
+  void applyReg(const FVEC &reg, MAT *AtA) {
     // Frobenius norm regularization
     if (reg(0) > 0) {
       MAT identity = arma::eye<MAT>(this->k, this->k);
@@ -108,7 +108,7 @@ class NMF {
   }
 
  public:
-  NMF(const T& input, const unsigned int rank) {
+  NMF(const T &input, const unsigned int rank) {
     this->A = input;
     this->m = A.n_rows;
     this->n = A.n_cols;
@@ -130,8 +130,8 @@ class NMF {
     this->otherInitializations();
   }
 
-  NMF(const T& input, const MAT& leftlowrankfactor,
-      const MAT& rightlowrankfactor) {
+  NMF(const T &input, const MAT &leftlowrankfactor,
+      const MAT &rightlowrankfactor) {
     assert(leftlowrankfactor.n_cols == rightlowrankfactor.n_cols);
     this->A = input;
     this->W = leftlowrankfactor;
@@ -313,7 +313,7 @@ class NMF {
   }
 
 #endif  // ifdef BUILD_SPARSE
-  void computeObjectiveError(const T& At, const MAT& WtW, const MAT& HtH) {
+  void computeObjectiveError(const T &At, const MAT &WtW, const MAT &HtH) {
     MAT AtW = At * this->W;
 
     double sqnormA = this->normA * this->normA;
@@ -325,9 +325,9 @@ class NMF {
 
   void num_iterations(const int it) { this->m_num_iterations = it; }
 
-  void regW(const FVEC& iregW) { this->m_regW = iregW; }
+  void regW(const FVEC &iregW) { this->m_regW = iregW; }
 
-  void regH(const FVEC& iregH) { this->m_regH = iregH; }
+  void regH(const FVEC &iregH) { this->m_regH = iregH; }
 
   FVEC regW() { return this->m_regW; }
 

@@ -9,7 +9,7 @@
 #include <vector>
 #include <stack>
 #include <typeinfo>
-#include "utils.h"
+#include "common/utils.h"
 #ifdef MKL_FOUND
 #include <mkl.h>
 #else

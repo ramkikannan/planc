@@ -4,9 +4,9 @@
 #define DISTNMF_DISTNMF1D_HPP_
 
 #include <string>
-#include "distutils.hpp"
-#include "utils.h"
-#include "utils.hpp"
+#include "common/distutils.hpp"
+#include "common/utils.h"
+#include "common/utils.hpp"
 
 template <class INPUTMATTYPE>
 class DistNMF1D {

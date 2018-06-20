@@ -6,12 +6,12 @@
 #include <armadillo>
 #include <string>
 #include <vector>
-#include "dimtree/kobydt.hpp"
-#include "distntf/distntfmpicomm.hpp"
-#include "distntftime.hpp"
-#include "luc.hpp"
-#include "common/ntf_utils.hpp"
 #include "common/distutils.hpp"
+#include "common/luc.hpp"
+#include "common/ntf_utils.hpp"
+#include "dimtree/kobydt.hpp"
+#include "distnmf/distntftime.hpp"
+#include "distntf/distntfmpicomm.hpp"
 
 /*
  * Tensor A of size is M1 x M2 x... x Mn is distributed among

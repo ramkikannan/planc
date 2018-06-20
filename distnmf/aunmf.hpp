@@ -7,8 +7,8 @@
 #include <armadillo>
 #include <string>
 #include <vector>
-#include "distnmf.hpp"
-#include "mpicomm.hpp"
+#include "distnmf/distnmf.hpp"
+#include "distnmf/mpicomm.hpp"
 
 /*
  * There are totally prxpc process.

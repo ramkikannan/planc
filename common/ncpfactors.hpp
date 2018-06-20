@@ -4,8 +4,8 @@
 #define COMMON_NCPFACTORS_HPP_
 
 #include <cassert>
-#include "tensor.hpp"
-#include "utils.h"
+#include "common/tensor.hpp"
+#include "common/utils.h"
 #ifdef MPI_DISTNTF
 #include <mpi.h>
 #endif
@@ -290,9 +290,9 @@ current_nrows *= rightkrp.n_rows;
     }
   }
   /*
-* this is for reinitializing random numbers across different
-* processors.
-*/
+   * this is for reinitializing random numbers across different
+   * processors.
+   */
   void randu(const int i_seed) {
     arma::arma_rng::set_seed(i_seed);
     for (int i = 0; i < this->m_modes; i++) {

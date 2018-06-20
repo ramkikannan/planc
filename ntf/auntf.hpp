@@ -8,11 +8,11 @@
 
 #include <cblas.h>
 #include <armadillo>
+#include "common/luc.hpp"
+#include "common/ncpfactors.hpp"
+#include "common/ntf_utils.h"
+#include "common/tensor.hpp"
 #include "dimtree/kobydt.hpp"
-#include "luc.hpp"
-#include "ncpfactors.hpp"
-#include "ntf_utils.h"
-#include "tensor.hpp"
 
 namespace planc {
 

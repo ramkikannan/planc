@@ -7,7 +7,7 @@
 
 #include <mpi.h>
 #include <vector>
-#include "distntfutils.h"
+#include "distntf/distntfutils.h"
 namespace planc {
 
 class NTFMPICommunicator {
@@ -17,10 +17,10 @@ class NTFMPICommunicator {
   UVEC m_proc_grids;
   MPI_Comm m_cart_comm;
   // for mode communicators (*,...,p_n,...,*)
-  MPI_Comm* m_fiber_comm;
+  MPI_Comm *m_fiber_comm;
   // all communicators other than the given mode.
   // (p1,p2,...,p_n-1,*,p_n,...,p_M)
-  MPI_Comm* m_slice_comm;
+  MPI_Comm *m_slice_comm;
   UVEC m_fiber_ranks;
   UVEC m_slice_ranks;
 
@@ -57,7 +57,7 @@ class NTFMPICommunicator {
     }
   }
 
-  NTFMPICommunicator(int argc, char* argv[], const UVEC& i_dims)
+  NTFMPICommunicator(int argc, char *argv[], const UVEC &i_dims)
       : m_proc_grids(i_dims) {
     // Get the number of MPI processes
     MPI_Init(&argc, &argv);
@@ -123,13 +123,13 @@ class NTFMPICommunicator {
     delete[] m_slice_comm;
   }
 
-  const MPI_Comm& cart_comm() const { return m_cart_comm; }
-  void coordinates(int* o_c) const {
+  const MPI_Comm &cart_comm() const { return m_cart_comm; }
+  void coordinates(int *o_c) const {
     MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, o_c);
   }
-  const MPI_Comm& fiber(const int i) const { return m_fiber_comm[i]; }
-  const MPI_Comm& slice(const int i) const { return m_slice_comm[i]; }
-  int rank(const int* i_coords) const {
+  const MPI_Comm &fiber(const int i) const { return m_fiber_comm[i]; }
+  const MPI_Comm &slice(const int i) const { return m_slice_comm[i]; }
+  int rank(const int *i_coords) const {
     int my_rank;
     MPI_Cart_rank(m_cart_comm, i_coords, &my_rank);
     return my_rank;

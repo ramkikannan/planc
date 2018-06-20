@@ -3,7 +3,7 @@
 #ifndef DISTNMF_DISTAOADMM_HPP_
 #define DISTNMF_DISTAOADMM_HPP_
 
-#include "aunmf.hpp"
+#include "distnmf/aunmf.hpp"
 
 template <class INPUTMATTYPE>
 class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {

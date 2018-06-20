@@ -2,12 +2,12 @@
 
 #include <armadillo>
 #include <iostream>
-#include "auntf.hpp"
-#include "ncpfactors.hpp"
-#include "ntf_utils.hpp"
-#include "parsecommandline.hpp"
-#include "tensor.hpp"
-#include "utils.h"
+#include "common/ncpfactors.hpp"
+#include "common/ntf_utils.hpp"
+#include "common/parsecommandline.hpp"
+#include "common/tensor.hpp"
+#include "common/utils.h"
+#include "ntf/auntf.hpp"
 
 // ntf -d "2 3 4 5" -k 5 -t 20
 

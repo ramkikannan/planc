@@ -3,8 +3,7 @@
 #ifndef NMF_AOADMM_HPP_
 #define NMF_AOADMM_HPP_
 
-#include "nmf.hpp"
-#include "bppnnls.hpp"
+#include "common/nmf.hpp"
 
 template <class T>
 class AOADMMNMF : public NMF<T> {
