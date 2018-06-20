@@ -3,7 +3,7 @@
 #ifndef DIMTREE_DIMTREES_H_
 #define DIMTREE_DIMTREES_H_
 
-#include "dimtree/kdttensor.h"
+#include "dimtree/ddttensor.h"
 
 /**
   This .h file contains all the functions need to construct dimension

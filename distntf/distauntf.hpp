@@ -9,7 +9,7 @@
 #include "common/distutils.hpp"
 #include "common/luc.hpp"
 #include "common/ntf_utils.hpp"
-#include "dimtree/kobydt.hpp"
+#include "dimtree/ddt.hpp"
 #include "distntf/distntfmpicomm.hpp"
 #include "distntf/distntftime.hpp"
 
@@ -73,7 +73,7 @@ class DistAUNTF {
   double m_global_sqnorm_A;
   MAT hadamard_all_grams;
 
-  KobyDimensionTree *kdt;
+  DenseDimensionTree *kdt;
   // do the local syrk only for the current updated factor
   // and all reduce only for the current updated factor.
   // computes G^(current_mode)
@@ -409,8 +409,8 @@ class DistAUNTF {
       gather_ncp_factor(i);
     }
     if (this->m_enable_dim_tree) {
-      kdt = new KobyDimensionTree(m_input_tensor, m_gathered_ncp_factors,
-                                  m_input_tensor.modes() / 2);
+      kdt = new DenseDimensionTree(m_input_tensor, m_gathered_ncp_factors,
+                                   m_input_tensor.modes() / 2);
     }
 #ifdef DISTNTF_VERBOSE
     DISTPRINTINFO("local factor matrices::");

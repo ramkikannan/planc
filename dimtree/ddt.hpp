@@ -1,14 +1,14 @@
 /* Copyright Koby Hayashi 2018 */
 
-#ifndef DIMTREE_KOBYDT_HPP_
-#define DIMTREE_KOBYDT_HPP_
+#ifndef DIMTREE_DDT_HPP_
+#define DIMTREE_DDT_HPP_
 
-#include "dimtree/dimtrees.hpp"
-#include "dimtree/kdttensor.hpp"
 #include "common/ncpfactors.hpp"
 #include "common/tensor.hpp"
+#include "dimtree/ddttensor.hpp"
+#include "dimtree/dimtrees.hpp"
 
-class KobyDimensionTree {
+class DenseDimensionTree {
   ktensor *m_local_Y;
   tensor *m_local_T;
   tensor *projection_Tensor;
@@ -20,10 +20,10 @@ class KobyDimensionTree {
   long int ldp;
   long int rdp;
 
-public:
-  KobyDimensionTree(const planc::Tensor &i_input_tensor,
-                    const planc::NCPFactors &i_ncp_factors,
-                    long int split_mode) {
+ public:
+  DenseDimensionTree(const planc::Tensor &i_input_tensor,
+                     const planc::NCPFactors &i_ncp_factors,
+                     long int split_mode) {
     m_local_T = reinterpret_cast<tensor *>(malloc(sizeof *m_local_T));
     m_local_Y = reinterpret_cast<ktensor *>(malloc(sizeof *m_local_Y));
     projection_Tensor =
@@ -98,7 +98,7 @@ public:
                 sizeof(double) * m_local_Y->dims[mode] * m_local_Y->rank);
   }
 
-  ~KobyDimensionTree() {
+  ~DenseDimensionTree() {
     for (long int i = 0; i < m_local_T->nmodes; i++) {
       free(m_local_Y->factors[i]);
     }
@@ -143,12 +143,12 @@ public:
       /**
           Updating the first factor matrix, do a partial MTTKRP
       */
-      D = ::direction::right; //   Contracting over the right modes
+      D = ::direction::right;  //   Contracting over the right modes
       LR_Ktensor_Reordering_existingY(
           m_local_Y, projection_Ktensor, s + 1,
-          opposite_direction(D)); // s+1 because s is included in the left
+          opposite_direction(D));  // s+1 because s is included in the left
 
-      if (projection_Ktensor->nmodes == 1) { // factor matrix output PM
+      if (projection_Ktensor->nmodes == 1) {  // factor matrix output PM
         /**
             PM is a factor matrix update
             D) right, tells the function that 0 is being updated
@@ -160,7 +160,7 @@ public:
         partial_MTTKRP_with_KRP_output_FM(D, m_local_Y, m_local_T, num_threads);
         mttkrp_time += toc();
 
-      } else { // tensor output PM
+      } else {  // tensor output PM
         /**
             PM outputs an intermediate tensor
             T) the original tensor, PM always takes the original tensor
@@ -183,11 +183,11 @@ public:
       /**
           Updating the first left side, do a partial MTTKRP
       */
-      D = ::direction::left; //    Contracting over the left modes
+      D = ::direction::left;  //    Contracting over the left modes
       LR_Ktensor_Reordering_existingY(
           m_local_Y, projection_Ktensor, s,
-          opposite_direction(D)); // s because s is not included on the right
-      if (projection_Ktensor->nmodes == 1) { // factor matrix output PM
+          opposite_direction(D));  // s because s is not included on the right
+      if (projection_Ktensor->nmodes == 1) {  // factor matrix output PM
         tic();
         partial_MTTKRP_with_KRP_output_FM(D, m_local_Y, m_local_T, num_threads);
         mttkrp_time += toc();
@@ -226,8 +226,8 @@ public:
         tensor_data_swap(projection_Tensor, buffer_Tensor);
 
         remove_mode_Ktensor(projection_Ktensor,
-                            0); // remove the 0th factor matrix and mode from
-                                // the projection_Ktensor
+                            0);  // remove the 0th factor matrix and mode from
+                                 // the projection_Ktensor
         tic();
         multi_TTV_with_KRP_output_FM(::direction::right, projection_Tensor,
                                      projection_Ktensor, num_threads);
@@ -244,4 +244,4 @@ public:
   }
 };
 
-#endif // DIMTREE_KOBYDT_HPP_
+#endif  // DIMTREE_DDT_HPP_

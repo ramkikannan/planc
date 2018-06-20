@@ -1,7 +1,7 @@
 /* Copyright Koby Hayashi 2018 */
 
-#ifndef DIMTREE_KDTTENSOR_H_
-#define DIMTREE_KDTTENSOR_H_
+#ifndef DIMTREE_DDTTENSOR_H_
+#define DIMTREE_DDTTENSOR_H_
 
 #include <cblas.h>
 #include <math.h>
@@ -233,4 +233,4 @@ void remove_mode_Ktensor(ktensor *Y, long int n);
 // mkl unavailable functions
 void vdMul(long int, double *, double *, double *);
 
-#endif  // DIMTREE_KDTTENSOR_H_
+#endif  // DIMTREE_DDTTENSOR_H_

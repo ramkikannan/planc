@@ -1,9 +1,9 @@
 /* Copyright Koby Hayashi 2018 */
 
-#ifndef DIMTREE_KDTTENSOR_HPP_
-#define DIMTREE_KDTTENSOR_HPP_
+#ifndef DIMTREE_DDTTENSOR_HPP_
+#define DIMTREE_DDTTENSOR_HPP_
 
-#include "dimtree/kdttensor.h"
+#include "dimtree/ddttensor.h"
 
 /*
   Element wise multiplication between two vectors
@@ -1422,4 +1422,4 @@ direction opposite_direction(direction D) {
   }
 }
 
-#endif  // DIMTREE_KDTTENSOR_HPP_
+#endif  // DIMTREE_DDTTENSOR_HPP_

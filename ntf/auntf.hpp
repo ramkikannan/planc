@@ -12,7 +12,7 @@
 #include "common/ncpfactors.hpp"
 #include "common/ntf_utils.h"
 #include "common/tensor.hpp"
-#include "dimtree/kobydt.hpp"
+#include "dimtree/ddt.hpp"
 
 namespace planc {
 
@@ -44,7 +44,7 @@ class AUNTF {
   const algotype m_updalgo;
   LUC *m_luc;
   planc::Tensor *lowranktensor;
-  KobyDimensionTree *kdt;
+  DenseDimensionTree *kdt;
   bool m_enable_dim_tree;
 
  public:
@@ -86,8 +86,8 @@ class AUNTF {
   void dim_tree(bool i_dim_tree) {
     this->m_enable_dim_tree = i_dim_tree;
     if (i_dim_tree) {
-      this->kdt = new KobyDimensionTree(m_input_tensor, m_ncp_factors,
-                                        m_input_tensor.modes() / 2);
+      this->kdt = new DenseDimensionTree(m_input_tensor, m_ncp_factors,
+                                         m_input_tensor.modes() / 2);
     }
   }
   void num_it(const int i_n) { this->m_num_it = i_n; }

@@ -4,7 +4,7 @@
 #define DIMTREE_DIMTREES_HPP_
 
 #include "dimtree/dimtrees.h"
-#include "dimtree/kdttensor.hpp"
+#include "dimtree/ddttensor.hpp"
 
 /**
         Performs a tensor times a matrix based on some split of dimensions.
