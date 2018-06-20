@@ -5,10 +5,11 @@
 #include <assert.h>
 #include <omp.h>
 #include <stdio.h>
+#include <chrono>
 #include <ctime>
-#include <vector>
 #include <stack>
 #include <typeinfo>
+#include <vector>
 #include "common/utils.h"
 #ifdef MKL_FOUND
 #include <mkl.h>
@@ -33,14 +34,16 @@ static ULONG powersof10[16] = {1,
                                100000000000000,
                                1000000000000000};
 
-static std::stack<clock_t> tictoc_stack;
+static std::stack<std::chrono::steady_clock::time_point> tictoc_stack;
 static std::stack<double> tictoc_stack_omp_clock;
 
-inline void tic() { tictoc_stack.push(clock()); }
+inline void tic() { tictoc_stack.push(std::chrono::steady_clock::now()); }
 
 inline double toc() {
-  double rc =
-      (static_cast<double>(clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
+  std::chrono::duration<double> time_span =
+      std::chrono::duration_cast<std::chrono::duration<double>>(
+          std::chrono::steady_clock::now() - tictoc_stack.top());
+  double rc = time_span.count();
   tictoc_stack.pop();
   return rc;
 }
@@ -246,7 +249,7 @@ void ARMAMKLSCSCMM(const SP_MAT &mklMat, char transa, const MAT &Bt,
   MKL_INT *pntrb = static_cast<MKL_INT *>(mklMat.col_ptrs);
   MKL_INT *pntre = pntrb + 1;
   mkl_dcscmm(&transa, &m, &n, &k, &alpha, matdescra, mklMat.values,
-             static_cast<MKL_INT *>mklMat.row_indices, pntrb, pntre,
+             static_cast<MKL_INT *> mklMat.row_indices, pntrb, pntre,
              static_cast<double *>(Bt.memptr()), &ldb, &beta, Ct, &ldc);
 }
 #endif
