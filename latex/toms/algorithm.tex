@@ -46,15 +46,17 @@ For example, we can solve several instances of Eq.~\eqref{eqn:single NLS} indepe
 
 \renewcommand{\arraystretch}{1.25}
 %\newcommand{\smaller}{\scriptsize}
+\newcommand{\smallerfont}{\scriptsize}
+
 \begin{table*}[t!]
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|}
 \hline
 \textbf{Algorithm} & \textbf{Flops} & \textbf{Words} & \textbf{Messages} & \textbf{Memory}  \\ \hline
-\smaller \NaiveAlg & \smaller $4\frac{mnk}{p}+(m{+}n)k^2+F\lt(\frac mp,\frac np,k\rt)$ & \smaller $O((m+n)k)$ & \smaller $O(\log p)^*$ & \smaller $O\lt(\frac{mn}{p}+(m{+}n)k\rt)$ \\ \hline
-\smaller \ParNMF\ ($m/p \geq n$) & \smaller $4\frac{mnk}{p}+\frac{(m+n)k^2}{p} + F\lt(\frac mp,\frac np,k\rt)$ & \smaller $O(nk)$ & \smaller $O(\log p)^*$ & \smaller $O\lt(\frac{mn}{p}+\frac{mk}{p}+nk\rt)$ \\ \hline
-\smaller \ParNMF\ ($m/p < n$) & \smaller $4\frac{mnk}{p}+\frac{(m+n)k^2}{p}+F\lt(\frac mp,\frac np,k\rt)$ & \smaller $O\lt( \sqrt{\frac{mnk^2}{p}}\rt)$ & \smaller $O(\log p)^*$ & \smaller $O\lt(\frac{mn}{p}+\sqrt{\frac{mnk^2}{p}}\rt)$ \\ \hline
-\smaller Lower Bound & $-$ & \smaller $\Omega\lt(\min\lt\{\sqrt{\frac{mnk^2}{p}},nk\rt\}\rt)$ & \smaller $\Omega(\log p)$ & \smaller $\frac{mn}{p}+\frac{(m+n)k}{p}$ \\ \hline
+\smallerfont \NaiveAlg & \smallerfont $4\frac{mnk}{p}+(m{+}n)k^2+F\lt(\frac mp,\frac np,k\rt)$ & \smallerfont $O((m+n)k)$ & \smallerfont $O(\log p)^*$ & \smallerfont $O\lt(\frac{mn}{p}+(m{+}n)k\rt)$ \\ \hline
+\smallerfont \ParNMF\ ($m/p \geq n$) & \smallerfont $4\frac{mnk}{p}+\frac{(m+n)k^2}{p} + F\lt(\frac mp,\frac np,k\rt)$ & \smallerfont $O(nk)$ & \smallerfont $O(\log p)^*$ & \smallerfont $O\lt(\frac{mn}{p}+\frac{mk}{p}+nk\rt)$ \\ \hline
+\smallerfont \ParNMF\ ($m/p < n$) & \smallerfont $4\frac{mnk}{p}+\frac{(m+n)k^2}{p}+F\lt(\frac mp,\frac np,k\rt)$ & \smallerfont $O\lt( \sqrt{\frac{mnk^2}{p}}\rt)$ & \smallerfont $O(\log p)^*$ & \smallerfont $O\lt(\frac{mn}{p}+\sqrt{\frac{mnk^2}{p}}\rt)$ \\ \hline
+\smallerfont Lower Bound & $-$ & \smallerfont $\Omega\lt(\min\lt\{\sqrt{\frac{mnk^2}{p}},nk\rt\}\rt)$ & \smallerfont $\Omega(\log p)$ & \smallerfont $\frac{mn}{p}+\frac{(m+n)k}{p}$ \\ \hline
 \end{tabular}
 \normalsize
 \end{center}
