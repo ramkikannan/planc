@@ -50,10 +50,10 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
   nmfAlgorithm.computeNMF();
   t2 = toc();
   INFO << "time taken:" << t2 << std::endl;
-  if (!WfileName.empty()) {
+  if (WfileName.compare("_w") != 0) {
     nmfAlgorithm.getLeftLowRankFactor().save(WfileName, arma::raw_ascii);
   }
-  if (!HfileName.empty()) {
+  if (HfileName.compare("_h") != 0) {
     nmfAlgorithm.getRightLowRankFactor().save(HfileName, arma::raw_ascii);
   }
 }
