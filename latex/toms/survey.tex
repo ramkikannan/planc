@@ -1,52 +1,30 @@
-\section{Related Work}\label{sec:related}
+% !TEX root = paper.tex
 
+\section{Related Work} 
+\label{sec:survey}
 
-In the data mining and machine learning literature there is an overlap between low rank approximations and matrix factorizations due to the nature of applications. 
-Despite its name, non-negative matrix ``factorization'' is really a low rank approximation. 
-Recently there is a growing interest in collaborative filtering based 
-recommender systems. One of the popular techniques
-for collaborative filtering is matrix factorization, often with nonnegativity constraints, 
-and its implementation is widely available in many
-off-the-shelf distributed machine learning libraries
-such as GraphLab \cite{low2012}, MLLib \cite{meng2015mllib},
-and many others \cite{satish2014,yun2014} as well.
-However, we would like to clarify that collaborative
-filtering using matrix factorization is a different problem than NMF: 
-in the case of collaborative filtering, non-nonzeros in the matrix 
-are considered to be missing entries, while in the case of NMF, non-nonzeros in the matrix correspond to true zero values.
- 
-There are several recent distributed NMF algorithms in the literature \cite{liao2014cloudnmf,Faloutsos2014,Yin2014,liu2010distributed}. 
-Liu et al.\ propose running Multiplicative Update (MU) for KL divergence, squared loss, and ``exponential'' loss functions \cite{liu2010distributed}. 
-Matrix multiplication, element-wise multiplication, and element-wise division are the building blocks of the MU algorithm. 
-The authors discuss performing these matrix operations effectively in Hadoop for sparse matrices. 
-Using similar approaches, Liao et al.\ implement an open source Hadoop-based MU algorithm and study its scalability on large-scale biological data sets \cite{liao2014cloudnmf}. 
-Also, Yin, Gao, and Zhang present a scalable NMF that can perform frequent updates, which aim to use the most recently updated data \cite{Yin2014}. 
-Similarly Faloutsos et al.\ propose a distributed, scalable method for decomposing matrices, tensors, and coupled data sets through stochastic gradient descent on a variety of objective functions \cite{Faloutsos2014}. 
-The authors also provide an implementation that can enforce non-negative constraints on the factor matrices. 
-All of these works use Hadoop to implement their algorithms.
+The formulation of NNCP with least squares error and algorithms for computing it go back to \cite{Paatero97,WW01}, developed in part as a generalization of nonnegative matrix factorization algorithms \cite{LS99} to tensors.
+Sidiropoulos et al. \cite{SLFHPF2017} provide a more detailed and complete survey that includes basic tensor factorization models with and without constraints, broad coverage of algorithms, and recent driving applications.
+The tensor operations discussed and the notation used in this paper follow Kolda and Bader's survey \cite{KB2009}. 
 
-We emphasize that our MPI-based approach has several advantages over Hadoop-based approaches:
-\begin{itemize}
-	\item efficiency -- our approach maintains data in memory, never communicating the data matrix, while Hadoop-based approaches must read/write data to/from disk and involves global shuffles of data matrix entries;
-	\item generality -- our approach is well-designed for both dense and sparse data matrices, whereas Hadoop-based approaches generally require sparse inputs;
-	\item privacy -- our approach allows processors to collaborate on computing an approximation without ever sharing their local input data (important for applications involving sensitive data, such as electronic health records), while Hadoop requires the user to relinquish control of data placement.
-\end{itemize}
+Recently, there has been growing interest in scaling tensor operations to bigger data and more processors in both the data mining/machine learning and the high performance computing communities. 
+For sparse tensors, there have been parallelization efforts to compute CP decompositions both on shared-memory platforms \cite{SRSK2015,LCPSV17} as well as distributed-memory platforms \cite{KU16,SK16,KU18}, and these approaches can be generalized to constrained problems \cite{SBK2017}.
+The focus of this work is on dense tensors, but many of the ideas for sparse tensors are applicable to the dense case, including parallel data distributions, communication pattern, and techniques to avoid recomputation across modes.
 
-We note that Spark \cite{ZCFSS10} is a popular big-data processing infrastructure that is generally more efficient for iterative algorithms such as NMF than Hadoop, as it maintains data in memory and avoids file system I/O.
-Even with a Spark implementation of previously proposed Hadoop-based NMF algorithm, we expect performance to suffer from expensive communication of input matrix entries, and Spark will not overcome the shortcomings of generality and privacy of the previous algorithms.
-Although Spark has collaborative filtering libraries such as MLlib \cite{meng2015mllib}, which use matrix factorization and can impose non-negativity constraints, none of them implement pure NMF, and so we do not have a direct comparison against NMF running on Spark.
-As mentioned above, the problem of collaborative filtering is different from NMF, and therefore different computations are performed at each iteration.
+In particular, Liavas et al. \cite{LK+17b} extend a parallel algorithm designed for sparse tensors \cite{SK16} to the 3D dense case.
+They use the ``medium-grained'' dense tensor distribution and row-wise factor matrix distribution, which is exactly the same as our distribution strategy (see \cref{sec:datadist}), and they use a Nesterov-based algorithm to enforce the nonnegativity constraints.
+Their code is publicly available, and we compare our performance with theirs in \cref{sec:experiments}.
+A similar data distribution and parallel algorithm for computing a single dense MTTKRP computation is proposed by Ballard, Knight, and Rouse \cite{BKR17-TR}. 
+They prove that the algorithm is communication optimal, but they do not provide an implementation.
+Another approach to parallelizing NNCP decomposition of dense tensors is presented by Phan and Cichocki \cite{PC11}, but they use a dynamic tensor factorization, which performs different, more independent computations across processors.
 
-%Apart from the distributed implementation for NMF, we would also like to highlight few recent theoretical highlights with NMF under some mild assumptions. 
-%Arora, Ge, Kannan and Moitra \cite{AGKM2012}, proposed a initial polynomial time running algorithm for topic modeling with NMF when there exists  anchor words, words that appear (with positive probability) in only one topic. 
-%Later, Huang, Sidiropoulos and Swami \cite{HSS2016} improved up on these results under milder conditions using second-order moments. 
-%The uniqueness of NMF has been of interest to the community and some recent results for both symmetric and non-symmetric matrices have been obtained using a geometrical point of view in \cite{HSS2013, HSS2014}. 
+The idea of using dimension trees (discussed in \cref{sec:dimtrees}) to avoid recomputation within MTTKRPs across modes is introduced in \cite{PTC13a} for computing the CP decomposition of dense tensors.
+It has also been used for sparse CP \cite{LCPSV17,KU18} and other tensor computations \cite{KU16}.
 
-Fairbanks et al. \cite{Fairbanks2015} present a parallel NMF algorithm designed for multicore machines.  
-To demonstrate the importance of minimizing communication, we consider this approach to parallelizing an alternating-updating NMF algorithm in distributed memory (see Section \ref{sec:naive}).
-While this naive algorithm exploits the natural parallelism available within the alternating iterations (the fact that rows of $\WW$ and columns of $\HH$ can be computed independently), it performs more communication than necessary to set up the independent problems.
-We compare the performance of this algorithm with our proposed approach to demonstrate the importance of designing algorithms to minimize communication; that is, simply parallelizing the computation is not sufficient for satisfactory performance and parallel scalability.
+%Given these recent work on the sparse tensors, we survey the literature around dense tensor -- the interest of this paper. Unlike sparse tensor, there are very few activities around dense tensors that are important for analyzing tensors from images and scientific world such as 2D Ronchigram from pytography data. With the advent of the deep learning and the interest of the community in processing higher order tensors from hyper spectral image and medical imaging, we have used these real world in conducting experiments of this paper. 
+%
+%Austin, Ballard, and Kolda \cite{ABK16} distributed-memory parallel implementation for the Tucker decomposition to compress 8TB of scientific data. Tucker decomposition is unconstrained and a completely different decomposition over constrained Non-negative Tensor Factorization explained in this paper.  Recently,  Ballard, Knight, Rouse \cite{BKR17-TR} have proposed Communication Lower Bounds for Matricized Tensor Times Khatri-Rao Product under particular distribution of dense tensors. The proposed algorithm \ref{alg:2D} is motivated out of this work. 
+%
+%With this detailed survey, we would like to highlight the contribution of this paper.
 
-Apart from distributed NMF algorithms using Hadoop and multicores, there are also implementations of the
-MU algorithm in a distributed memory setting using X10 \cite{Grove2014} and on a GPU \cite{mejia2015nmf}. 
-
+%\subsection{Contributions:}

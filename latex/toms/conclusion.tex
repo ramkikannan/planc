@@ -1,29 +1,25 @@
-\section{Conclusion}\label{sec:conclusion}
+% !TEX root = paper.tex
 
-In this paper, we propose a high-performance distributed-memory parallel framework for NMF algorithms that iteratively update the low rank factors in an alternating fashion.   
-Our parallelization scheme is designed to avoid communication overheads and scales well to over 1500 cores. 
-The framework is flexible, being (a) expressive enough to leverage many different NMF algorithms and (b) efficient for both sparse and dense matrices of sizes that span from a few hundreds to hundreds of millions.  
-Our open-source software implementation is available for download.
+\section{Conclusion} \label{sec:conclusion}
 
-%For the data sets on which we experimented, we showed that an efficient implementation of a naive parallel algorithm spends much of its time in interprocessor communication.
-%For sparse problems, comparing p = 16 to p = 1536 (a factor increase of 96), we observe a speedups from \BPP\ of 59× (synthetic) and 22× (real world). For dense problems, comparing p = 96 to p = 1536 (a factor increase of 16), \BPP's speedup is 12× for both problems. The other NMF algorithms -- \MU\ and \HALS\, demonstrate similar scaling results in our framework.
-For solving data mining problems at today's scale, parallel computation and distributed-memory systems are becoming prerequisites.
-We argue in this paper that by using techniques from high-performance computing, the computations for NMF can be performed very efficiently.
-Our framework allows for the HPC techniques (efficient matrix multiplication) to be separated from the data mining techniques (choice of NMF algorithm), and we compare data mining techniques at large scale, in terms of data sizes and number of processors.
-One conclusion we draw from the empirical and theoretical observations is that the extra per-iteration cost of \BPP\ over alternatives like \MU\ and \HALS\ decreases as the number of processors $p$ increases, making \BPP\ more advantageous in terms of both quality and performance at larger scales.
-By reporting time breakdowns that separate local computation from interprocessor communication, we also see that our parallelization scheme prevents communication from bottlenecking the overall computation; our comparison with a naive approach shows that communication can easily dominate the running time of each iteration. 
-%In the case of \ParNMF, the problems remain computation bound on up to 600 processors, typically spending most of the time in local matrix multiplication or NLS solves.
+In this work, we present a new implementation for distributed-memory NNCP that will be made publicly available.
+The algorithm is general enough to handle any number of modes in the data tensor and can be adapted to use any NLS algorithm within the context of BCD (ALS).
+We use a dimension tree optimization to avoid unnecessary recomputation within the bottleneck local MTTKRP computation, and we use an efficient parallelization that minimizes communication cost.
+Our performance results show the ability to scale well to high processor counts, and we show favorable performance in comparison to state-of-the-art software for 3D tensors.
 
-%We focus in this work on BPP, %which is more expensive per-iteration than alternative methods like MU and HALS, 
-%because it has been shown to reduce overall running time in the sequential case by requiring fewer iterations \cite{kim2011fast}.
-%Because much of the time per iteration of \ParNMF\ is spent on local NLS, we believe further empirical exploration is necessary 
-%to understand the proposed \ParNMF{}'s advantages for other AU-NMF algorithms such as MU and HALS. 
-%%to confirm the advantages of BPP in the parallel case.
-%We note that if we use the MU or HALS approach for determining low rank factors, the relative cost of interprocessor communication will grow, making the communication efficiency of our algorithm more important.
+In particular, the performance results demonstrate that computing NNCP for dense tensors involves heavy computation relative to the sizes of the computed factor matrices.
+By avoiding the communication of tensor entries and communicating only the factor matrices, the parallel algorithm is nearly always compute bound.
+This observation is supported by the theoretical analysis: although the communication does not scale as well with $P$, the total amount of data depends on a sum of tensor dimensions rather the product of the tensor dimensions, which determines the total amount of computation.
+For a relative comparison, consider memory-efficient parallel dense $n\times n$ matrix multiplication: the ratio of the $O(n^3/P)$ local computation to the $O(n^2/P^{1/2})$ communication is approximately the square root of the size of the local data, or $O((n^2/P)^{1/2})$.
+In the case of NNCP, the ratio of local computation to communication is $O((I/P)^{1-1/N}/N)$, which is approximately the size of the local data raised to the power $1-1/N$.
+This exponent is larger than $1/2$ and grows with $N$, and therefore it predicts the NNCP computation should be more computation bound than matrix multiplication.
+Note that this analysis does not consider the type of local computation; for small $R$, the local computation will likely be memory bandwidth bound, but the algorithm will spend more time on local computation than on interprocessor communication.
 
-In future work, we would like to extend \ParNMF\  algorithm to dense and sparse tensors, computing the CANDECOMP/PARAFAC decomposition in parallel with non-negativity constraints on the factor matrices.
-We plan on extending our software to include more NMF algorithms that fit the AU-NMF framework; these can be used for both matrices and tensors. 
-We would also like to explore more intelligent distributions of sparse matrices: while our 2D distribution is based on evenly dividing rows and columns, it does not necessarily load balance the nonzeros of the matrix, which can lead to load imbalance in matrix multiplications.
-We are interested in using graph and hypergraph partitioning techniques to load balance the memory and computation while at the same time reducing communication costs as much as possible.
-%Finally, based our survey, experiments and knowledge, we would like to conclude that, so far we are the fastest distributed NMF algorithm in the literature. 
-%Finally, we have not yet reached the limits of the scalability of \ParNMF; we would like to expand our benchmarks to larger numbers of nodes on the same size data sets to study performance behavior when communication costs completely dominate the running time.
+We can also conclude from the performance results that the dimension tree optimization is the key to performance improvement over the state-of-the-art approaches.
+For 3D tensors, we observe a benefit larger than the theoretical 50\% reduction in computation, and for larger numbers of modes, the improvement is only magnified.
+Besides the reduction in flops, the dimension tree approach enjoys better DGEMM performance and avoids memory-bound KRP computations.
+Furthermore, we see that tuning the processor grid had much less effect on overall performance.
+Not only do reductions in communication not matter as much as computation, but different local tensor sizes can also cause variations in local performance that outweigh the savings in communication.
+
+%Given an efficient parallel algorithm for NNCP, it is now possible to compare the convergence properties of various NLS algorithms on large-scale tensor data that is too large to fit on single servers or would require too much computational time to analyze interactively.
+%We hope to explore this in future work.

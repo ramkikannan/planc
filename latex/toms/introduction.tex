@@ -1,80 +1,54 @@
+% !TEX root = paper.tex
+
 \section{Introduction}
 
-Non-negative Matrix Factorization (NMF) is the problem of finding two low rank factors $\WW\in \Rnplus{m\times k}$ and $\HH\in \Rnplus{k \times n}$ for a given input matrix  $\AA\in \Rnplus{m\times n}$, such that $\AA \approx \WW \HH$.
-Here, $\Rnplus{m\times n}$ denotes the set of $m \times n$ matrices with non-negative real values.
-Formally, the NMF problem \cite{seung2001algorithms} can be defined as \SplitN{\label{eqn:original NMF}}{
-\min_{\WW \geq 0,\HH \geq 0} & \|\AA-\WW\HH\|_F,
+%The CP decomposition is a low-rank approximation of a multi-dimensional array, or tensor, which generalizes matrix approximations like the truncated singular value decomposition. 
+%As in Figure \ref{fig:cpdecomposition}, CP decomposition approximates the given input matrix as sum of $k$ rank-1 tensors.  
+The CP decomposition is a low-rank approximation of a multi-dimensional array, or tensor, which generalizes matrix approximations like the truncated singular value decomposition.
+It approximates the input tensor by a sum of rank-one tensors, which are outer products of vectors.
+CP is often used for finding hidden patterns, or latent factors, within tensor data, particularly when the goal is to interpret the factors, and it is popular within the signal processing, machine learning, and scientific computing communities.
+
+%\begin{figure}[htbp]
+%\begin{center}
+%\includegraphics[width=3in, height=1.5in]{fig/cpdecomposition.pdf}
+%\caption{CP Decomposition}
+%\label{fig:cpdecomposition}
+%\end{center}
+%\end{figure}
+
+
+To aid in interpretability, domain-specific constraints are often imposed on the computed factors.
+We focus in this paper on dense tensors (when nearly all of the tensor entries are nonzero) and on constraining solutions to have nonnegative entries, which is useful when the tensor data itself is nonnegative. Formally, NNCP can be defined as
+\SplitN{\label{eqn:nncp}}{
+ \min_{\HH^{(i)} \geq 0} & \| \TA - \sum_{r=1}^R \Mn{H}{1}(:,r) \circ \cdots \circ \Mn{H}{N}(:,r) \|^2
 }
-where $\|\M{X}\|_F=(\sum_{ij} x_{ij}^2)^{1/2}$ is the Frobenius norm.
+where $\Mn{H}{1}(:,i) \circ \cdots \circ \Mn{H}{N}(:,i)$ is the outer product of the $i^{th}$ vector from all the $N$ factors that yields a rank one tensor $\T{M}$ and $\sum_{r=1}^R \Mn{H}{1}(:,r) \circ \cdots \circ \Mn{H}{N}(:,r)$ results in a sum of $R$ rank one tensors that will be of the same dimension as the input tensor $\TA$. 
+For example, in imaging and microscopy applications, tensor values often correspond to intensities, and NNCP can be used to cluster and analyze the data in a lower-dimensional space \cite{JC+16}.
+In this work, we consider two such applications: a series of time-lapse hyperspectral images \cite{FAN16} and a dynamic functional correlation data set generated from functional magnetic resonance images of human brains \cite{VEU+12}.
 
-NMF is widely used in data mining and machine learning as a dimension reduction and factor analysis method. 
-It is a natural fit for many real world problems as the non-negativity is inherent in many representations of real-world data and
-the resulting low rank factors are expected to have a natural interpretation. The applications of NMF range from text mining \cite{pauca2004text},  computer vision \cite{hoyer2004non,Fujimoto2014,BSJJZ2015}, and bioinformatics \cite{kim2007sparse} to blind source separation  \cite{cichocki2009nonnegative}, unsupervised clustering \cite{kuang2012symmetric,kuang2013symnmf}  and many other areas.
-In the typical case, $k \ll \min(m,n)$; for problems today, $m$ and $n$ can be on the order of millions or more, and $k$ is on the order of few tens to thousands.
+One approach to handling multidimensional data is to ``matricize'' it, combining sets of modes to reshape the data into a matrix, so that standard matrix  methods like principal component analysis or nonnegative matrix factorization can be applied.
+While this approach can be effective in certain cases, reshaping the data destroys multidimensional relationships among entries that the matrix methods cannot recover.
+By maintaining the tensor structure of the data, the low-rank representations preserve these relationships, often producing better and more interpretable results.
 
-There is a vast literature
-on algorithms for NMF and their convergence properties \cite{kim2013nonnegative}.   
-The commonly adopted NMF algorithms are -- (i) Multiplicative Update (\MU) \cite{seung2001algorithms} (ii) Hierarchical Alternating Least Squares (\HALS) \cite{cichocki2009nonnegative,Ho2008} (iii) NMF based on Alternating Nonnegative Least Squares and Block Principal Pivoting (\BPP) \cite{kim2011fast}, and (iv) Stochastic Gradient Descent (SGD) Updates \cite{gemulla2011large}. 
-Most of the algorithms in NMF literature are based on alternately optimizing each of the low rank factors $\WW$ and $\HH$ while keeping the other fixed, in which case each subproblem is a constrained convex optimization problem. 
-Subproblems can then be solved using standard optimization techniques such as projected gradient or interior point method; a detailed survey for solving such problems can be found in \cite{xiong2013survey,kim2013nonnegative}. 
-In this paper, our implementation uses either \BPP, \MU, or \HALS. 
-But our parallel framework is extensible to other algorithms (e.g., \cite{XY2013,HSL2016}) as-is or with a few modifications, as long as they fit an alternating-updating framework (defined in Section \ref{sec:aunmf}).  
+However, tensor methods are more complicated both mathematically and computationally.
+The kernel computations within standard algorithms for computing NNCP can be formulated as matrix computations, but the complicated layout of tensors in memory prevents the straightforward use of BLAS and LAPACK libraries.
+In particular, the matrix formulation of subcomputations involve different views of the tensor data, so no single layout yields a column- or row-major matrix layout for all subcomputations.
+Likewise, the parallelization approach for tensor methods is not a straightforward application of parallel matrix computation algorithms.
 
-With the advent of large scale internet data and interest in Big Data, researchers have started studying scalability of many foundational machine learning algorithms. 
-To illustrate the dimension of matrices commonly used in the machine learning community, we present a few examples. 
-Nowadays the adjacency matrix of a billion-node social network is common. 
-In the matrix representation of a video data, every frame contains three matrices for each RGB color, which is reshaped into a column.  
-Thus in the case of a 4K video, every frame will take approximately 27 million rows (4096 row pixels x 2196 column pixels x 3 colors). 
-Similarly, the popular representation of documents in text mining is a bag-of-words matrix, where the rows are the dictionary and the columns are the documents (e.g., webpages). 
-Each entry $A_{ij}$ in the bag-of-words matrix is generally the frequency count of the word $i$  in the document $j$. 
-Typically with the explosion of the new terms in social media, the number of words spans to millions. 
-To handle such high-dimensional matrices, it is important to study low-rank approximation methods in a data-distributed and parallel computing environment. 
+In developing an efficient parallel algorithm for computing a NNCP of a dense tensor, the key is to parallelize the bottleneck computation known as Matricized-Tensor Times Khatri-Rao Product (MTTKRP), which is performed repeatedly for each mode of the tensor.
+The parallelization must load balance the computation, minimize communication across processors, and distribute the results so that the rest of the computation can be performed independently.
+In our algorithm, not only do we load balance the computation, but we also compute and store temporary values that can be used across MTTKRPs of different modes using a technique known as dimension trees, significantly reducing the computational cost compared to standard approaches.
+Our parallelization strategy also avoids communicating tensor entries and minimizes the communication of factor matrix entries, helping the algorithm to remain computation bound and scalable to high core counts.
 
-In this work, we present an efficient algorithm and implementation using tools from the field of High-Performance Computing (HPC).
-We maintain data in memory (distributed across processors), take advantage of optimized libraries like BLAS and LAPACK for local computational routines, and use the Message Passing Interface (MPI) standard to organize interprocessor communication.
-%In particular, we use an MPI/C++ implementation, which offers several technical advantages such as (1) the ability to leverage state-of-the-art hardware, (2) efficient networks for communication between nodes, and (3) the availability of numerically stable and efficient BLAS and LAPACK routines. 
-Furthermore, the current hardware trend is that available parallelism (and therefore aggregate computational rate) is increasing much more quickly than improvements in network bandwidth and latency, which implies that the relative cost of communication (compared to computation) is increasing.
-To address this challenge, we analyze algorithms in terms of both their computation and communication costs.
-In particular, we prove in Section \ref{sec:parNMF} that in the case of dense input and under a mild assumption, our proposed algorithm minimizes the amount of data communicated between processors to within a constant factor of the lower bound.
+As we detail in the related work, the general techniques for reducing computation and communication have been used in similar contexts.
+The recomputation avoidance was proposed in a sequential algorithm \cite{PTC13a}, the parallelization scheme was proposed and analyzed for general tensors \cite{BKR17-TR}, and the algorithm was implemented for 3D tensors \cite{LK+17b}.
+%The main contribution of this paper is the combination and implementation of these ideas for general $N$-D tensors, and we demonstrate superior performance to the existing implementation for 3D tensors \cite{LK+17b}.
 
-We call our implementation MPI-FAUN, an MPI-based Framework for Alternating-Updating Nonnegative matrix factorization algorithms.
-A key attribute of our framework is that the efficiency does not require a loss of generality of NMF algorithms.
-Our central observation is that most NMF algorithms, in particular those that alternate between updating each factor matrix, consist of two main tasks: (a) performing matrix multiplications and (b) solving Non-negative Least Squares (NLS) subproblems, either approximately or exactly.
-More importantly, NMF algorithms tend to perform the same matrix multiplications, differing only in how they solve NLS subproblems, and the matrix multiplications often dominate the running time of the algorithms.
-Our framework is designed to perform the matrix multiplications efficiently and organize the data so that the NLS subproblems can be solved independently in parallel, leveraging any of a number of possible methods.
-We explore the overall efficiency of the framework and compare three different NMF methods in Section \ref{sec:experiment}, performing convergence, scalability, and parameter-tuning experiments on over 1500 processors.
-
-\begin{table}[htp]
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|}
-\hline 
-Dataset & Type & Matrix size & NMF Time \\ \hline
-Video & Dense & 1 Million x 13,824 &  5.73 seconds \\
-Stack Exchange & Sparse & 627,047 x 12 Million &  67 seconds \\
-Webbase-2001 & Sparse & 118 Million x 118 Million & 25 minutes \\ \hline
-\end{tabular}
-\end{center}
-\caption{\ParNMF\ on large real-world datasets. Reported time is for 30 iterations on 1536 processors with a low rank of 50.}
-\label{tab:teaser}
-\end{table}%
-
-
-With our framework, we are able to explore several large-scale synthetic and real-world data sets, some dense and some sparse. In Table \ref{tab:teaser}, we present the NMF computation wall clock time on some very large real world datasets. We describe the results of the computation in Section \ref{sec:experiment}, showing the range of application of NMF and the ability of our framework to scale to large data sets.  
-
-%For example, we apply NMF to a surveillance video data set of size 44 GB in order to isolate the moving objects from the background view; once loaded into memory, the most efficient algorithm requires only 5.73 seconds on 1536 processors.
-%We also apply our techniques to sparse data, analyzing Stack Exchange posts (text data) to infer discussion topics; this data set is 44 GB of XML file which takes 6.1 GB of sparse matrix representation, and our NMF implementation requires 67 seconds on 1536 processors to obtain meaningful results 
-%Similarly, our algorithm can perform graph clustering using NMF on a very large sparse graph with 118 million nodes and 1 billion edges and the sparse representation of this matrix takes 18GB on disk 
-%in nearly 15 minutes using 1536 processors, 
-%\grey{do we want to report that the output dense matrices required 88GB?}.
-%\grey{break up into multiple sentences}
-
-
-A preliminary version of this work has already appeared as a conference paper \cite{KBP16}.
-While the focus of the previous work was parallel performance of \BPP\ (Alternating Nonnegative Least Squares and Block Principal Pivoting), the goal of this paper is to explore more data analytic questions.
-In particular, the new contributions of this paper include (1) implementing a software framework to compare \BPP\ with \MU\ (Multiplicative Update) and \HALS\ (Hierarchical Alternating Least Squares) for large scale data sets, (2) benchmarking on a data analysis cluster and scaling up to over 1500 processors, and (3) providing an interpretation of results for real-world data sets.
-We provide a detailed comparison with other related work, including MapReduce implementations of NMF, in Section \ref{sec:related}.
-
-Our main contribution is a new, high-performance parallel computational framework for a broad class of NMF algorithms. 
-The framework is efficient, scalable, flexible, and demonstrated to be effective for large-scale dense and sparse matrices.  
-Based on our survey and knowledge, we are the fastest NMF implementation available in the literature.  
-The code and the datasets used for conducting the experiments can be downloaded from \url{https://github.com/ramkikannan/nmflibrary}. 
+We summarize our main contributions as follows:
+\begin{itemize}
+		\item we present the first distributed-memory parallel implementation of NNCP algorithms for arbitrary-dimension dense tensors,
+		\item we optimize the use of dimension trees for dense tensors, avoiding recomputation across multiple MTTKRPs,
+		\item our parallel algorithm is communication optimal with a carefully chosen processor grid,
+		\item we demonstrate a performance improvement of up to $2.2\times$ over the existing state-of-the-art parallel software on 3D tensors,
+		\item our implementation obtains efficient parallel scaling of up to $1771\times$ on 4096 cores.
+\end{itemize}

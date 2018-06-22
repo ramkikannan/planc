@@ -1,6 +1,8 @@
+% !TEX root = experiments.tex
+
 % macros for plotting
 \newcommand{\datafile}{}
-\newcommand{\run}{}
+\newcommand{\alg}{}
 \newcommand{\numiterations}{30}
 \newcommand{\minvalue}{1}
 
@@ -14,70 +16,54 @@
 \newif\ifylabel
 % toggles wider plot area
 \newif\ifwider
+% toggles including liavas results
+\newif\ifliavas
+% toggles weak 3D 
+\newif\ifweakthreeD
 
 
 \newcommand{\setcolors}{
 \pgfplotsset{cycle list={
 	red, fill=red \\ 
 	blue, fill=blue \\ 
-	green, fill=green \\ 
+	teal, fill=teal \\ 
 	red, pattern=crosshatch, pattern color=red \\
+	teal, pattern=crosshatch, pattern color=teal \\
 	blue, pattern=crosshatch, pattern color=blue \\
-	green, pattern=crosshatch, pattern color=green \\
 }};
 }
 
 % set options for grouped bar plot
-\newcommand{\plotoptions}{
+\newcommand{\breakdownplotoptions}{
 	ybar stacked,
 	reverse legend,
-	bar width=6pt,
-	width=9cm, height=3.85cm,
-	ylabel={Time (seconds)}, 
+	bar width=8pt,
+	%width=9cm, height=3.85cm,
+	%width=\textwidth,
+	ylabel={Time (s)}, 
 	y label style={yshift=-.5cm},
 	ymin=0,
-	\ifnaive 
-		\ifksweep
-			symbolic x coords={10-0,10-1,10-2,10-3,,20-0,20-1,20-2,20-3,,30-0,30-1,30-2,30-3,,40-0,40-1,40-2,40-3,,50-0,50-1,50-2,50-3},
-		\else
-			symbolic x coords={16-0,16-1,16-2,16-3,,96-0,96-1,96-2,96-3,,384-0,384-1,384-2,384-3,,864-0,864-1,864-2,864-3,,1536-0,1536-1,1536-2,1536-3},
-		\fi
-		xticklabels={MU,HALS,ABPP,Naive,MU,HALS,ABPP,Naive,MU,HALS,ABPP,Naive,MU,HALS,ABPP,Naive,MU,HALS,ABPP,Naive},
-	\else  
-		\ifksweep
-			symbolic x coords={10-0,10-1,10-2,,,20-0,20-1,20-2,,,30-0,30-1,30-2,,,40-0,40-1,40-2,,,50-0,50-1,50-2,},
-		\else
-			symbolic x coords={16-0,16-1,16-2,,,96-0,96-1,96-2,,,384-0,384-1,384-2,,,864-0,864-1,864-2,,,1536-0,1536-1,1536-2,}, 
-		\fi
-		xticklabels={MU,HALS,ABPP,MU,HALS,ABPP,MU,HALS,ABPP,MU,HALS,ABPP,MU,HALS,ABPP},
-	\fi
-	xtick=data,
-	xticklabel style={xshift=.15cm,rotate=75,anchor=east},
-	\ifksweep
-		xlabel={Low Rank ($k$)}, 
+	\ifweakthreeD
+		symbolic x coords={D1,N1,D8,N8,D27,N27,D64,N64},
 	\else
-		xlabel={Number of Processes ($p$)},
-	\fi
-	xlabel style={yshift=-0.75cm},
-	%legend style={at={(0.4,-0.9)},anchor=north},
+		symbolic x coords={D1,N1,D16,N16,D81,N81,D256,N256},
+	\fi	
+	xtick=data,
 	legend style={at={(0.5,1.3)},anchor=north},
 	legend columns=-1,
-	legend style={draw=none, cells={align=left}, nodes={scale=0.8}}
+	reverse legend
 }
 
-% grouped bar plot command
-\newcommand{\makeplot}{
-\begin{axis}[\plotoptions]
+% stacked bar plot command
+\newcommand{\breakdownplot}{
+\begin{axis}[\breakdownplotoptions]
 	\setcolors
-	\addplot table[x=algo, y expr=(\thisrow{mm}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo, y expr=(\thisrow{nnls}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo, y expr=(\thisrow{gram}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo, y expr=(\thisrow{allgather}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo, y expr=(\thisrow{reducescatter}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
-	\iflegend
-		\legend{MM, \NLS, Gram, All-Gather, Reduce-Scatter, All-Reduce};
-	\fi
+	\addplot table[x=alg-p, y expr=(\thisrow{mttkrp}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-p, y expr=(\thisrow{krp}/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-p, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-p, y expr=((\thisrow{nnls}+\thisrow{gram}+\thisrow{allreduce})/(\minvalue*\numiterations))] {\datafile};
+	\addplot table[x=alg-p, y expr=((\thisrow{err_compute}+\thisrow{err_communication})/(\minvalue*\numiterations))] {\datafile};
+	\legend{MTTKRP,KRP,Factor Comm,NLS,Error};
 \end{axis}
 }
 
@@ -88,11 +74,10 @@
 %\node [align=center,text width=3cm] at (4.6cm, -0.95cm)   {\ifksweep 30 \else 384 \fi};
 %\node [align=center,text width=3cm] at (6.3cm, -0.95cm) {\ifksweep 40 \else 864 \fi};
 %\node [align=center,text width=3cm] at (8.15cm, -0.95cm) {\ifksweep 50 \else 1536 \fi};
-\node [align=center,text width=3cm] at (1cm, -1.15cm)   {\ifksweep 10 \else 16 \fi};
-\node [align=center,text width=3cm] at (2.4cm, -1.15cm)   {\ifksweep 20 \else 96 \fi};
-\node [align=center,text width=3cm] at (3.7cm, -1.15cm)   {\ifksweep 30 \else 384 \fi};
-\node [align=center,text width=3cm] at (5.1cm, -1.15cm) {\ifksweep 40 \else 864 \fi};
-\node [align=center,text width=3cm] at (6.4cm, -1.15cm) {\ifksweep 50 \else 1536 \fi};
+\node [align=center,text width=3cm] at (1cm, -1.15cm)   {\ifksweep 10 \else 1 \fi};
+\node [align=center,text width=3cm] at (2.4cm, -1.15cm)   {\ifksweep 20 \else 16 \fi};
+\node [align=center,text width=3cm] at (3.7cm, -1.15cm)   {\ifksweep 30 \else 81 \fi};
+\node [align=center,text width=3cm] at (5.1cm, -1.15cm) {\ifksweep 40 \else 256 \fi};
 }
 
 % allows for filtering rows from dat file
@@ -109,34 +94,40 @@
     }
 }
 
-% set options for relative error over time plot
-\newcommand{\relerrplotoptions}{
-	xlabel=Time (s),
-	\ifylabel
-		ylabel=Relative Error,
-		ylabel style={yshift=-.3cm},
-	\fi
-	\ifwider
-		width=1.8in, height=2in,
-	\else
-		width=1.35in, height=2in,
-	\fi
-	y tick label style={
-        /pgf/number format/.cd,
-            precision=4,
-	},
+% set options for strongscaling plot
+\newcommand{\strongscalingplotoptions}{
+		log basis y={2},
+		log basis x={2},
+		\ifliavas
+			xlabel=Cores,
+		\else
+			xlabel=Nodes,
+		\fi
+		ylabel=Time (s),
+		y tick label style={
+	        /pgf/number format/.cd,
+            	precision=4,
+		},
 	legend style={draw=none, cells={align=left}, nodes={scale=0.7}}
 }
 
-% plot relative error over time, filtering rows out appropriately
-\newcommand{\relerrplot}{
-\begin{axis}[\relerrplotoptions]
-	\addplot+ [discard if not={algo}{MU},discard if not={runs}{\run},green,thick,mark options={solid}] table [x={totaltime}, y={relerr}] {\datafile};
-	\addplot+ [discard if not={algo}{HALS},discard if not={runs}{\run},red,thick,mark options={solid},mark=square*] table [x={totaltime}, y={relerr}] {\datafile};
-	\addplot+ [discard if not={algo}{BPP},discard if not={runs}{\run},blue,thick,mark options={solid},mark=triangle*] table [x={totaltime}, y={relerr}] {\datafile};
-	\iflegend
-		\legend{MU,HALS,ABPP}
+% plot time over p, filtering rows out appropriately
+\newcommand{\strongscalingplot}{
+\begin{loglogaxis}[\strongscalingplotoptions]
+	%\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={p}, y={totaltime}] {\datafile};
+	\ifliavas
+		\addplot+ [discard if not={alg}{DF},thick,mark options={solid},mark=square*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+		\addplot+ [discard if not={alg}{NF},thick,mark options={solid},mark=square*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+	\else
+		\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=triangle*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+		\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
 	\fi
-\end{axis}
+	\ifliavas
+		\addplot+ [discard if not={alg}{L},thick,mark options={solid}] table [x={p}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {\datafile};
+		\legend{DimTree,NoDimTree,NbAO-NTF \cite{LK+17b}}
+	\else
+		\legend{DimTree,NoDimTree,FlatDimTree,FlatNoDimTree};
+	\fi
+\end{loglogaxis}
 }
 

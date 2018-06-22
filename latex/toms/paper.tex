@@ -21,49 +21,29 @@
 
 
 %\documentclass[acmtkdd]{acmsmall}
-\documentclass[format=acmsmall, review=true, screen=true]{acmart}
+\documentclass[review=true, screen=true]{acmart}
+%\documentclass{IEEEtran}
+% to alleviate the error too many math alphabets used in version bold.
+% solution found at https://tex.stackexchange.com/questions/3676/too-many-math-alphabets-error
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
 
-\pdfoutput=1 
-\usepackage[varg]{txfonts}
-\let\iint=\relax
-\let\iiint=\relax
-\let\iiiint=\relax
-\let\idotsint=\relax
-
-\let\subcaption\relax
-
-% The following \documentclass options may be useful:
-% preprint      Remove this option only once the paper is in final form.
-% 10pt          To set in 10-point type instead of 9-point.
-% 11pt          To set in 11-point type instead of 9-point.
-% authoryear    To obtain author/year citation style instead of numeric.
-
-\usepackage{amsmath}
-%\usepackage[]{algorithm2e, setspace}
+\usepackage{amsfonts,amsmath,latexsym,amssymb}
 \usepackage{algorithm,algpseudocode}
-\usepackage{amsfonts}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{color}
-%\usepackage[bookmarks=false]{hyperref}
-\usepackage{url}
-\usepackage{paralist}
-\usepackage{balance}
-%\usepackage[position=top]{subfig}
-\usepackage{ramkidefns}
-\usepackage{subcaption}
+\usepackage{graphicx,xcolor}
+\usepackage{hyperref,cleveref}
 \usepackage{tikz}
+\usetikzlibrary{3d}
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
 \usepackage{etoolbox}
 \usetikzlibrary{patterns}
-\usepackage{colortbl}
-%for short bio at the end 
-\usepackage{wrapfig}
-
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage{url}
+% to include our macros
+\usepackage{ourmacros}
 %\usepackage[subtle,tracking=normal,leading=tight,leadingfraction=0.98, indent=tight, wordspacing=normal]{savetrees}
-
-\usepackage[subtle,tracking=normal, indent=tight, wordspacing=normal, lists=tight,leading=tight,leadingfraction=0.99]{savetrees}
+%\usepackage[subtle,tracking=normal, indent=tight, wordspacing=normal, lists=tight,leading=tight,leadingfraction=0.99]{savetrees}
 
 \graphicspath{{./figs/}}
 
@@ -78,31 +58,6 @@
 \newcommand{\BPP}{\textbf{ABPP}}
 \newcommand{\LUC}{LUC}
 
-% Reducing space between bibitems
-\let\OLDthebibliography\thebibliography
-\renewcommand\thebibliography[1]{
-  \OLDthebibliography{#1}
-  \setlength{\parskip}{0pt}
-  \setlength{\itemsep}{0.8 \itemsep}
-}
-
-%%squeeze latex
-%\setlength{\parskip}{0cm}
-%\setlength{\parindent}{1em}
-%\titlespacing{\section}{0pt}{2ex}{1ex}
-%\titlespacing{\subsection}{0pt}{1ex}{0ex}
-%\titlespacing{\subsubsection}{0pt}{0.5ex}{0ex}
-
-% To fix something weird with algorithm environment.  See:
-% http://tex.stackexchange.com/questions/121958/sigplanconf-algorithm2e-missing-algorithm-when-figure
-%\renewcommand{\topfraction}{0.45}
-
-  \clubpenalty = 10000
-  \widowpenalty = 10000
-  \displaywidowpenalty = 10000
-  
-\usepackage{fancyhdr}
-\fancyfoot{}
 
 % for type-3 font error while submitting the tkde document.
 %\pdfminorversion=4 
@@ -123,18 +78,9 @@
                                   % short abstracts)
 
 \title{PLANC:Parallel Low Rank Approximation with Non-negativity Constraints}
-%\subtitle{Subtitle Text, if any}
-
-%\author{Ramakrishnan Kannan
-%\affil{Oak Ridge National Laboratories, TN}
-%Grey Ballard
-%\affil{Wake Forest University, NC}
-%Haesun Park
-%\affil{Georgia Institute of Technology, GA}
-%}
 
 
-% Title portion. Note the short title for running heads
+ Title portion. Note the short title for running heads
 \author{Ramakrishnan Kannan} 
 \author{Michael A. Matheson}
 \authornote{This manuscript has been authored by UT-Battelle, LLC under
@@ -208,7 +154,7 @@ Plan (\url{http://energy.gov/downloads/doe-public-access-plan}).
 \input{introduction}
 \input{prelim}
 \input{survey}
-\input{aunmf}
+%\input{aunmf}
 \input{algorithm}
 \input{software}
 \input{experiments}
@@ -235,6 +181,7 @@ Plan (\url{http://energy.gov/downloads/doe-public-access-plan}).
 %\end{thebibliography}
 
 %\input{bio}
+\input{appendix}
 
 \end{document}
 
