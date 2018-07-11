@@ -10,7 +10,7 @@
 #include <armadillo>
 #include "common/luc.hpp"
 #include "common/ncpfactors.hpp"
-#include "common/ntf_utils.h"
+#include "common/ntf_utils.hpp"
 #include "common/tensor.hpp"
 #include "dimtree/ddt.hpp"
 
