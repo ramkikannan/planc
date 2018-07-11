@@ -3,10 +3,10 @@ Install Instructions
 
 This program depends on:
 
-- Armadillo library which can be found at https://arma.sourceforge.net
-- OpenBLAS https://github.com/xianyi/OpenBLAS
+- Download Armadillo library which can be found at https://arma.sourceforge.net
+- Download and build OpenBLAS https://github.com/xianyi/OpenBLAS
 
-Once you have installed these libraries set the following environment variables.
+Once the above steps are completed, set the following environment variables.
 
 ````
 export ARMADILLO_INCLUDE_DIR=/home/rnu/libraries/armadillo-6.600.5/include/

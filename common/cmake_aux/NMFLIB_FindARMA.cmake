@@ -49,7 +49,6 @@ include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindOpenBLAS.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindBLAS.cmake)
 include(${ARMADILLO_INCLUDE_DIR}/../cmake_aux/Modules/ARMA_FindLAPACK.cmake)
 
-
 message(STATUS "     MKL_FOUND = ${MKL_ROOT}"     )
 message(STATUS "OpenBLAS_FOUND = ${OpenBLAS_FOUND}")
 message(STATUS "    BLAS_FOUND = ${BLAS_FOUND}"    )

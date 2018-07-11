@@ -30,13 +30,11 @@ then
     module load PrgEnv-gnu
     module swap gcc gcc/6.3.0
     module load cmake3
+    module load cudatoolkit
 fi
 
 for cfg in dense_nmf dense_ntf dense_distnmf dense_distntf sparse_nmf sparse_distnmf;
-do
-    echo $SYSTEM
-    echo $cfg
-    echo build_$SYSTEM\_$cfg
+do    
     mkdir ../build_$SYSTEM\_$cfg
 done
 #dense builds
