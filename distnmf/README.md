@@ -31,7 +31,17 @@ Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
 Building on Cray-EOS/Titan
 -----------------------
-CC=CC CXX=CC cmake ~/nmflibrary/mpi/ -DCMAKE_IGNORE_MKL=1
+CC=CC CXX=CC cmake ~/nmflibrary/distnmf/ -DCMAKE_IGNORE_MKL=1
+
+Building on Titan with NVBLAS
+-----------------------------
+We are using NVBLAS to offload computations to GPU.
+By default we enable building with cuda in Titan.
+The sample configurations files for nvblas can be found at conf/nvblas_cuda75.conf
+and conf/nvblas_cuda91.conf for CUDA Toolkit 7.5 and 9.1 respectively.
+
+CC=CC CXX=CC cmake ~/nmflibrary/distnmf/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
+
 
 Other Macros
 -------------
