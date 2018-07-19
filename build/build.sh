@@ -49,11 +49,11 @@ do
     fi
     #we consider this as eos/titan    
     if [ "$SYSTEM" = "eos" ]; then
-        CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_SPARSE=1
+        CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1
     fi
 
     if [ "$SYSTEM" = "titan" ]; then
-        CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_SPARSE=1 -DCMAKE_BUILD_CUDA=1
+        CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
     fi
     make
     popd
