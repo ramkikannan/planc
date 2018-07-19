@@ -104,7 +104,7 @@ class DistNTF {
     ntfsolver.computeNTF();
     double temp = mpitoc();
 
-    if (mpicomm.rank() == 0) printf("NMF took %.3lf secs.\n", temp);
+    if (mpicomm.rank() == 0) printf("NTF took %.3lf secs.\n", temp);
     // } catch (std::exception& e) {
     //     printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
     //     MPI_Abort(MPI_COMM_WORLD, 1);

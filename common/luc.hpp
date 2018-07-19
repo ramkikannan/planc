@@ -28,9 +28,35 @@ class LUC {
   int admm_iter;
   double tolerance;
 
+  MAT updateMU(const MAT &gram, const MAT &rhs, const int mode) {
+    MAT H(factors->factor(mode));
+    MAT temp = H * gram + EPSILON;
+    H = (H % rhs.t()) / temp;
+    return H.t();
+  }
+
+  MAT updateHALS(const MAT &gram, const MAT &rhs, const int mode) {
+    MAT H(factors->factor(mode));
+
+    // iterate over all columns of H
+    for (int i = 0; i < this->i_k; i++) {
+      VEC updHi = H.col(i) + ((rhs.row(i)).t() - H * gram.col(i));
+      fixNumericalError<VEC>(&updHi);
+      double normHi = arma::norm(updHi, 2);
+      normHi *= normHi;
+      double globalnormHi = normHi;
+#ifdef MPI_DISTNTF
+      MPI_Allreduce(&normHi, &globalnormHi, 1, MPI_DOUBLE, MPI_SUM,
+                    MPI_COMM_WORLD);
+#endif  // shared memory can just check normHi
+      if (globalnormHi > 0) {
+        H.col(i) = updHi;
+      }
+    }
+    return H.t();
+  }
+
   MAT updateBPP(const MAT &gram, const MAT &rhs) {
-    MAT nnlsgram;
-    MAT nnlsrhs;
     BPPNNLS<MAT, VEC> subProblem(gram, rhs, true);
     subProblem.solveNNLS();
     return subProblem.getSolutionMatrix();
@@ -175,6 +201,12 @@ class LUC {
         break;
       case AOADMM:
         rc = updateAOADMM(gram, rhs, mode);
+        break;
+      case HALS:
+        rc = updateHALS(gram, rhs, mode);
+        break;
+      case MU:
+        rc = updateMU(gram, rhs, mode);
         break;
       default:
         std::cout << "wrong algo type" << std::endl;
