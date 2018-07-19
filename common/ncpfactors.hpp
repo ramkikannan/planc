@@ -299,6 +299,15 @@ current_nrows *= rightkrp.n_rows;
       ncp_factors[i].randu();
     }
   }
+  /*
+   * this is for reinitializing zeros across different
+   * processors.
+   */
+  void zeros() {
+    for (int i = 0; i < this->m_modes; i++) {
+      ncp_factors[i].zeros();
+    }
+  }
 #ifdef MPI_DISTNTF
   // Distribution normalization of factor matrices
   // To be used for MPI code only

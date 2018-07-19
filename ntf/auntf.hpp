@@ -10,7 +10,7 @@
 #include <armadillo>
 #include "common/luc.hpp"
 #include "common/ncpfactors.hpp"
-#include "common/ntf_utils.h"
+#include "common/ntf_utils.hpp"
 #include "common/tensor.hpp"
 #include "dimtree/ddt.hpp"
 
@@ -63,7 +63,8 @@ class AUNTF {
       ncp_mttkrp_t[i].zeros(i_k, TENSOR_DIM[i]);
     }
     lowranktensor = new planc::Tensor(i_tensor.dimensions());
-    m_luc = new LUC();
+    m_luc = new LUC(m_updalgo, &m_ncp_factors, m_input_tensor.dimensions(),
+                    m_low_rank_k);
     m_num_it = 20;
     INFO << "Init factors for NCP" << std::endl << "======================";
     m_ncp_factors.print();
@@ -118,7 +119,7 @@ class AUNTF {
              << ncp_mttkrp_t[j] << std::endl;
 #endif
         MAT factor =
-            m_luc->update(m_updalgo, gram_without_one, ncp_mttkrp_t[j]);
+            m_luc->update(m_updalgo, gram_without_one, ncp_mttkrp_t[j], j);
 #ifdef NTF_VERBOSE
         INFO << "iter::" << i << "::factor:: " << j << std::endl
              << factor << std::endl;

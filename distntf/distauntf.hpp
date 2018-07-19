@@ -371,7 +371,8 @@ class DistAUNTF {
       m_local_ncp_factors_t.set(i, current_factor);
     }
     m_gathered_ncp_factors.trans(m_gathered_ncp_factors_t);
-    m_luc_ntf_update = new LUC();
+    m_luc_ntf_update =
+        new LUC(m_updalgo, &m_local_ncp_factors, i_local_dims, i_k);
     allocateMatrices();
     double normA = i_tensor.norm();
     MPI_Allreduce(&normA, &this->m_global_sqnorm_A, 1, MPI_DOUBLE, MPI_SUM,
@@ -439,7 +440,8 @@ class DistAUNTF {
 #endif
         MPITIC;  // nnls_tic
         MAT factor = m_luc_ntf_update->update(m_updalgo, global_gram,
-                                              ncp_local_mttkrp_t[current_mode]);
+                                              ncp_local_mttkrp_t[current_mode],
+                                              current_mode);
         double temp = MPITOC;  // nnls_toc
         this->time_stats.compute_duration(temp);
         this->time_stats.nnls_duration(temp);
