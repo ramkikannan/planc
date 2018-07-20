@@ -5,9 +5,14 @@
 #include "common/parsecommandline.hpp"
 #include "common/utils.hpp"
 #include "distntf/distauntf.hpp"
+#include "distntf/distntfaoadmm.hpp"
+#include "distntf/distntfanlsbpp.hpp"
+#include "distntf/distntfhals.hpp"
 #include "distntf/distntfio.hpp"
 #include "distntf/distntfmpicomm.hpp"
+#include "distntf/distntfmu.hpp"
 
+namespace planc {
 class DistNTF {
  private:
   int m_argc;
@@ -38,6 +43,7 @@ class DistNTF {
               << "::dim_tree::" << m_enable_dim_tree << std::endl;
   }
 
+  template <class NTFTYPE>
   void callDistNTF() {
     std::string rand_prefix("rand_");
     planc::NTFMPICommunicator mpicomm(this->m_argc, this->m_argv,
@@ -88,9 +94,8 @@ class DistNTF {
     //   const UVEC &i_local_dims,
     //   const NTFMPICommunicator &i_mpicomm)
     this->m_factor_local_dims = this->m_global_dims / mpicomm.size();
-    planc::DistAUNTF ntfsolver(A, this->m_k, this->m_ntfalgo,
-                               this->m_global_dims, this->m_factor_local_dims,
-                               mpicomm);
+    NTFTYPE ntfsolver(A, this->m_k, this->m_ntfalgo, this->m_global_dims,
+                      this->m_factor_local_dims, mpicomm);
     memusage(mpicomm.rank(), "after constructor ");
     ntfsolver.num_iterations(this->m_num_it);
     ntfsolver.compute_error(this->m_compute_error);
@@ -126,7 +131,22 @@ class DistNTF {
     this->m_compute_error = pc.compute_error();
     this->m_enable_dim_tree = pc.dim_tree();
     printConfig();
-    callDistNTF();
+    switch (this->m_ntfalgo) {
+      case MU:
+        callDistNTF<DistNTFMU>();
+        break;
+      case HALS:
+        callDistNTF<DistNTFHALS>();
+        break;
+      case ANLSBPP:
+        callDistNTF<DistNTFANLSBPP>();
+        break;
+      case AOADMM:
+        callDistNTF<DistNTFAOADMM>();
+        break;
+      default:
+        ERR << "Wrong algorithm choice. Quitting.." << std::endl;
+    }
   }
 
  public:
@@ -137,7 +157,9 @@ class DistNTF {
   }
 };
 
+}  // namespace planc
+
 int main(int argc, char *argv[]) {
-  DistNTF dnd(argc, argv);
+  planc::DistNTF dnd(argc, argv);
   fflush(stdout);
 }

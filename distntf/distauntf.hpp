@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 #include "common/distutils.hpp"
-#include "common/luc.hpp"
 #include "common/ntf_utils.hpp"
 #include "dimtree/ddt.hpp"
 #include "distntf/distntfmpicomm.hpp"
@@ -32,21 +31,27 @@ namespace planc {
 #define TENSOR_LOCAL_NUMEL (m_input_tensor.numel())
 
 class DistAUNTF {
- private:
-  const Tensor m_input_tensor;
+ protected:
   // local ncp factors
   NCPFactors m_local_ncp_factors;
   NCPFactors m_local_ncp_factors_t;
+  // mttkrp related variables
+  MAT *ncp_mttkrp_t;
+  MAT *ncp_local_mttkrp_t;
+  // hadamard of the global_grams
+  MAT global_gram;           
+
+  virtual MAT update(int current_mode) = 0;
+
+ private:
+  const Tensor m_input_tensor;
   NCPFactors m_gathered_ncp_factors;
   NCPFactors m_gathered_ncp_factors_t;
   // mttkrp related variables
   MAT *ncp_krp;
-  MAT *ncp_mttkrp_t;
-  MAT *ncp_local_mttkrp_t;
   // gram related variables.
   MAT factor_local_grams;    // U in the algorithm.
-  MAT *factor_global_grams;  // G in the algorithm
-  MAT global_gram;           // hadamard of the global_grams
+  MAT *factor_global_grams;  // G in the algorithm  
 
   // NTF related variable.
   const int m_low_rank_k;
@@ -60,9 +65,6 @@ class DistAUNTF {
   FVEC m_regularizers;
   bool m_compute_error;
   bool m_enable_dim_tree;
-
-  // update function
-  LUC *m_luc_ntf_update;
 
   // communication related variables
   const NTFMPICommunicator &m_mpicomm;
@@ -371,8 +373,6 @@ class DistAUNTF {
       m_local_ncp_factors_t.set(i, current_factor);
     }
     m_gathered_ncp_factors.trans(m_gathered_ncp_factors_t);
-    m_luc_ntf_update =
-        new LUC(m_updalgo, &m_local_ncp_factors, i_local_dims, i_k);
     allocateMatrices();
     double normA = i_tensor.norm();
     MPI_Allreduce(&normA, &this->m_global_sqnorm_A, 1, MPI_DOUBLE, MPI_SUM,
@@ -439,9 +439,7 @@ class DistAUNTF {
         this->ncp_local_mttkrp_t[current_mode].print();
 #endif
         MPITIC;  // nnls_tic
-        MAT factor = m_luc_ntf_update->update(m_updalgo, global_gram,
-                                              ncp_local_mttkrp_t[current_mode],
-                                              current_mode);
+        MAT factor = update(current_mode);
         double temp = MPITOC;  // nnls_toc
         this->time_stats.compute_duration(temp);
         this->time_stats.nnls_duration(temp);
