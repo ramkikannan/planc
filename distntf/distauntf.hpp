@@ -39,7 +39,7 @@ class DistAUNTF {
   MAT *ncp_mttkrp_t;
   MAT *ncp_local_mttkrp_t;
   // hadamard of the global_grams
-  MAT global_gram;           
+  MAT global_gram;
 
   virtual MAT update(int current_mode) = 0;
 
@@ -51,7 +51,7 @@ class DistAUNTF {
   MAT *ncp_krp;
   // gram related variables.
   MAT factor_local_grams;    // U in the algorithm.
-  MAT *factor_global_grams;  // G in the algorithm  
+  MAT *factor_global_grams;  // G in the algorithm
 
   // NTF related variable.
   const int m_low_rank_k;
@@ -467,7 +467,12 @@ class DistAUNTF {
       }
       if (m_compute_error) {
         double temp_err = computeError(unnorm_factor);
-        PRINTROOT("Iter::" << current_it << "::relative_error::" << temp_err);
+        double iter_time = this->time_stats.compute_duration() +
+                           this->time_stats.communication_duration();
+        PRINTROOT("Iter::" << current_it << "::k::" << this->m_low_rank_k
+                           << "::SIZE::" << MPI_SIZE << "::algo::"
+                           << this->m_updalgo << "::time::" << iter_time
+                           << "::relative_error::" << temp_err);
       }
       PRINTROOT("completed it::" << current_it);
     }

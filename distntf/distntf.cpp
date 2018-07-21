@@ -5,8 +5,8 @@
 #include "common/parsecommandline.hpp"
 #include "common/utils.hpp"
 #include "distntf/distauntf.hpp"
-#include "distntf/distntfaoadmm.hpp"
 #include "distntf/distntfanlsbpp.hpp"
+#include "distntf/distntfaoadmm.hpp"
 #include "distntf/distntfhals.hpp"
 #include "distntf/distntfio.hpp"
 #include "distntf/distntfmpicomm.hpp"
@@ -145,7 +145,8 @@ class DistNTF {
         callDistNTF<DistNTFAOADMM>();
         break;
       default:
-        ERR << "Wrong algorithm choice. Quitting.." << std::endl;
+        ERR << "Wrong algorithm choice. Quitting.." << this->m_ntfalgo
+            << std::endl;
     }
   }
 
