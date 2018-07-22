@@ -7,42 +7,55 @@
 #include "common/parsecommandline.hpp"
 #include "common/tensor.hpp"
 #include "common/utils.h"
-#include "ntf/auntf.hpp"
+#include "ntf/ntfhals.hpp"
+#include "ntf/ntfmu.hpp"
+#include "ntf/ntfanlsbpp.hpp"
+#include "ntf/ntfaoadmm.hpp"
 
 // ntf -d "2 3 4 5" -k 5 -t 20
+
+namespace planc {
+
+class NTFDriver {
+ public:
+  template <class NTFTYPE>
+  void callNTF(planc::ParseCommandLine pc) {
+    int test_modes = pc.num_modes();
+    UVEC dimensions(test_modes);
+    Tensor my_tensor(pc.dimensions());
+    NTFTYPE ntfsolver(my_tensor, pc.lowrankk(), pc.lucalgo());
+    ntfsolver.num_it(pc.iterations());
+    if (pc.dim_tree()) {
+      ntfsolver.dim_tree(true);
+    }
+    ntfsolver.computeNTF();
+    // ntfsolver.ncp_factors().print();
+  }
+  NTFDriver() {}
+
+};  // class NTF Driver
+
+}  // namespace planc
 
 int main(int argc, char* argv[]) {
   planc::ParseCommandLine pc(argc, argv);
   pc.parseplancopts();
-  int test_modes = pc.num_modes();
-  // int low_rank = 1;
-  UVEC dimensions(test_modes);
-  MAT* mttkrps = new MAT[test_modes];
-  planc::Tensor my_tensor(pc.dimensions());
-  INFO << "A::" << std::endl;
-  my_tensor.print();
-  // planc::NCPFactors cpfactors(pc.dimensions(), pc.lowrankk(), false);
-  // cpfactors.normalize();
-  // cpfactors.print();
-  algotype ntfupdalgo = pc.lucalgo();
-  planc::AUNTF auntf(my_tensor, pc.lowrankk(), ntfupdalgo);
-  std::cout << "init factors" << std::endl << "--------------" << std::endl;
-  auntf.ncp_factors().print();
-  // std::cout << "input tensor" << std::endl << "--------------" << std::endl;
-  // my_tensor.print();
-  auntf.num_it(pc.iterations());
-  if (pc.dim_tree()) {
-    auntf.dim_tree(true);
+  planc::NTFDriver ntfd;
+  switch (pc.lucalgo()) {
+    case MU:
+      ntfd.callNTF<planc::NTFMU>(pc);
+      break;
+    case HALS:
+      ntfd.callNTF<planc::NTFHALS>(pc);
+      break;
+    case ANLSBPP:
+      ntfd.callNTF<planc::NTFANLSBPP>(pc);
+      break;
+    case AOADMM:
+      ntfd.callNTF<planc::NTFAOADMM>(pc);
+      break;
+    default:
+      ERR << "Wrong algorithm choice. Quitting.." << pc.lucalgo()
+          << std::endl;
   }
-  auntf.computeNTF();
-  auntf.ncp_factors().print();
-  // std::cout << "input factors::" << std::endl;
-  // for (int i = 0; i < test_modes; i++) {
-  //     std::cout << cpfactors.factor(i);
-  // }
-  // std::cout << "output factors::" << std::endl;
-  // for (int i = 0; i < test_modes; i++) {
-  //     std::cout << solution.factor(i);
-  // }
-  // solution.normalize();
 }

@@ -8,7 +8,6 @@
 
 #include <cblas.h>
 #include <armadillo>
-#include "common/luc.hpp"
 #include "common/ncpfactors.hpp"
 #include "common/ntf_utils.hpp"
 #include "common/tensor.hpp"
@@ -19,9 +18,9 @@ namespace planc {
 #define TENSOR_DIM (m_input_tensor.dimensions())
 #define TENSOR_NUMEL (m_input_tensor.numel())
 
-#ifndef NTF_VERBOSE
-#define NTF_VERBOSE 1
-#endif
+// #ifndef NTF_VERBOSE
+// #define NTF_VERBOSE 1
+// #endif
 
 // extern "C" void cblas_dgemm_(const CBLAS_LAYOUT Layout,
 //                              const CBLAS_TRANSPOSE transa,
@@ -33,16 +32,19 @@ namespace planc {
 //                              const double beta, double *c,
 //                              const int ldc);
 class AUNTF {
+ protected:
+  planc::NCPFactors m_ncp_factors;
+  MAT *ncp_mttkrp_t;
+  MAT gram_without_one;
+  virtual MAT update(const int mode) = 0;
+
  private:
   const planc::Tensor &m_input_tensor;
-  planc::NCPFactors m_ncp_factors;
   int m_num_it;
-  MAT gram_without_one;
+
   const int m_low_rank_k;
   MAT *ncp_krp;
-  MAT *ncp_mttkrp_t;
   const algotype m_updalgo;
-  LUC *m_luc;
   planc::Tensor *lowranktensor;
   DenseDimensionTree *kdt;
   bool m_enable_dim_tree;
@@ -63,11 +65,9 @@ class AUNTF {
       ncp_mttkrp_t[i].zeros(i_k, TENSOR_DIM[i]);
     }
     lowranktensor = new planc::Tensor(i_tensor.dimensions());
-    m_luc = new LUC(m_updalgo, &m_ncp_factors, m_input_tensor.dimensions(),
-                    m_low_rank_k);
     m_num_it = 20;
-    INFO << "Init factors for NCP" << std::endl << "======================";
-    m_ncp_factors.print();
+    // INFO << "Init factors for NCP" << std::endl << "======================";
+    // m_ncp_factors.print();
     this->m_enable_dim_tree = false;
   }
   ~AUNTF() {
@@ -76,8 +76,7 @@ class AUNTF {
       ncp_mttkrp_t[i].clear();
     }
     delete[] ncp_krp;
-    delete[] ncp_mttkrp_t;
-    delete m_luc;
+    delete[] ncp_mttkrp_t;    
     if (this->m_enable_dim_tree) {
       delete kdt;
     }
@@ -118,8 +117,8 @@ class AUNTF {
         INFO << "mttkrp for factor" << j << std::endl
              << ncp_mttkrp_t[j] << std::endl;
 #endif
-        MAT factor =
-            m_luc->update(m_updalgo, gram_without_one, ncp_mttkrp_t[j], j);
+        // MAT factor = update(m_updalgo, gram_without_one, ncp_mttkrp_t[j], j);
+        MAT factor = update(j);
 #ifdef NTF_VERBOSE
         INFO << "iter::" << i << "::factor:: " << j << std::endl
              << factor << std::endl;
