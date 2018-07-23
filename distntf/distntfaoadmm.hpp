@@ -68,53 +68,33 @@ class DistNTFAOADMM : public DistAUNTF {
       local_facnorm *= local_facnorm;
 
       double global_facnorm = 0.0;
-#ifdef MPI_DISTNTF
       MPI_Allreduce(&local_facnorm, &global_facnorm, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
       global_facnorm = sqrt(global_facnorm);
-#else
-      global_facnorm = sqrt(local_facnorm);
-#endif
       // dual norm
       double local_dualnorm = arma::norm(updated_fac, "fro");
       local_dualnorm *= local_dualnorm;
 
       double global_dualnorm = 0.0;
-#ifdef MPI_DISTNTF
       MPI_Allreduce(&local_dualnorm, &global_dualnorm, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
       global_dualnorm = sqrt(global_dualnorm);
-#else
-      global_dualnorm = sqrt(local_dualnorm);
-#endif
       // Check stopping criteria (needs communication)
       double r = norm(updated_fac - m_local_ncp_aux->factor(mode), "fro");
       r *= r;
       double global_r = 0.0;
-#ifdef MPI_DISTNTF
       MPI_Allreduce(&r, &global_r, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       global_r = sqrt(global_r);
-#else
-      global_r = sqrt(r);
-#endif
       double s = norm(updated_fac - prev_fac, "fro");
       s *= s;
       double global_s = 0.0;
-#ifdef MPI_DISTNTF
       MPI_Allreduce(&s, &global_s, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       global_s = sqrt(global_s);
-#else
-      global_s = sqrt(s);
-#endif
       if (global_r < (tolerance * global_facnorm) &&
           global_s < (tolerance * global_dualnorm))
         stop_iter = true;
     }
-#ifdef MPI_DISTNTF
     m_local_ncp_aux->distributed_normalize(mode);
-#else
-    m_local_ncp_aux->normalize(mode);
-#endif
     return updated_fac.t();
   }
 

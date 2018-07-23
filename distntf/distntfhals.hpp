@@ -20,10 +20,8 @@ class DistNTFHALS : public DistAUNTF {
       double normHi = arma::norm(updHi, 2);
       normHi *= normHi;
       double globalnormHi = normHi;
-#ifdef MPI_DISTNTF
       MPI_Allreduce(&normHi, &globalnormHi, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
-#endif  // shared memory can just check normHi
       if (globalnormHi > 0) {
         H.col(i) = updHi;
       }
