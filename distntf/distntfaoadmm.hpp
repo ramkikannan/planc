@@ -35,12 +35,9 @@ class DistNTFAOADMM : public DistAUNTF {
     Lt = L.t();
     bool stop_iter = false;
 
-    m_local_ncp_aux->set(mode, updated_fac);
-
     // Start ADMM loop from here
     for (int i = 0; i < admm_iter && !stop_iter; i++) {
       prev_fac = updated_fac;
-      m_local_ncp_aux->set(mode, updated_fac);
       m_local_ncp_aux_t->set(mode, m_local_ncp_aux->factor(mode).t());
 
       m_temp_local_ncp_aux_t->set(
@@ -72,7 +69,7 @@ class DistNTFAOADMM : public DistAUNTF {
                     MPI_COMM_WORLD);
       global_facnorm = sqrt(global_facnorm);
       // dual norm
-      double local_dualnorm = arma::norm(updated_fac, "fro");
+      double local_dualnorm = arma::norm(m_local_ncp_aux->factor(mode), "fro");
       local_dualnorm *= local_dualnorm;
 
       double global_dualnorm = 0.0;
@@ -80,7 +77,7 @@ class DistNTFAOADMM : public DistAUNTF {
                     MPI_COMM_WORLD);
       global_dualnorm = sqrt(global_dualnorm);
       // Check stopping criteria (needs communication)
-      double r = norm(updated_fac - m_local_ncp_aux->factor(mode), "fro");
+      double r = norm(updated_fac.t() - m_local_ncp_aux_t->factor(mode), "fro");
       r *= r;
       double global_r = 0.0;
       MPI_Allreduce(&r, &global_r, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);

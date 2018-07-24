@@ -163,4 +163,6 @@ class DistNTF {
 int main(int argc, char *argv[]) {
   planc::DistNTF dnd(argc, argv);
   fflush(stdout);
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
 }

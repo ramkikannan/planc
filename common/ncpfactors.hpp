@@ -277,7 +277,8 @@ current_nrows *= rightkrp.n_rows;
     for (int i = 0; i < this->m_modes; i++) {
       for (int j = 0; j < this->m_k; j++) {
         colNorm = arma::norm(this->ncp_factors[i].col(j));
-        this->ncp_factors[i].col(j) /= colNorm;
+        if (colNorm > 0)
+          this->ncp_factors[i].col(j) /= colNorm;
         m_lambda(j) *= colNorm;
       }
     }
@@ -286,7 +287,8 @@ current_nrows *= rightkrp.n_rows;
   void normalize(int mode) {
     for (int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].col(i));
-      this->ncp_factors[mode].col(i) /= m_lambda(i);
+      if (m_lambda(i) > 0)
+        this->ncp_factors[mode].col(i) /= m_lambda(i);
     }
   }
   /*
@@ -321,7 +323,8 @@ current_nrows *= rightkrp.n_rows;
         MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
                       MPI_COMM_WORLD);
         global_colnorm = std::sqrt(global_colnorm);
-        this->ncp_factors[i].col(j) /= global_colnorm;
+        if (global_colnorm > 0)
+          this->ncp_factors[i].col(j) /= global_colnorm;
         m_lambda(j) *= global_colnorm;
       }
     }
@@ -335,7 +338,8 @@ current_nrows *= rightkrp.n_rows;
       MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
       global_colnorm = std::sqrt(global_colnorm);
-      this->ncp_factors[mode].col(j) /= global_colnorm;
+      if (global_colnorm > 0)
+        this->ncp_factors[mode].col(j) /= global_colnorm;
       m_lambda(j) = global_colnorm;
     }
   }

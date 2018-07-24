@@ -35,12 +35,9 @@ class NTFAOADMM : public AUNTF {
     Lt = L.t();
     bool stop_iter = false;
 
-    m_ncp_aux->set(mode, updated_fac);
-
     // Start ADMM loop from here
     for (int i = 0; i < admm_iter && !stop_iter; i++) {
       prev_fac = updated_fac;
-      m_ncp_aux->set(mode, updated_fac);
       m_ncp_aux_t->set(mode, m_ncp_aux->factor(mode).t());
 
       m_temp_ncp_aux_t->set(
@@ -63,34 +60,15 @@ class NTFAOADMM : public AUNTF {
                                m_ncp_aux_t->factor(mode).t());
 
       // factor norm
-      double local_facnorm = arma::norm(updated_fac, "fro");
-      local_facnorm *= local_facnorm;
+      double facnorm = arma::norm(updated_fac, "fro");
 
-      double global_facnorm = 0.0;
-#ifdef MPI_DISTNTF
-      MPI_Allreduce(&local_facnorm, &global_facnorm, 1, MPI_DOUBLE, MPI_SUM,
-                    MPI_COMM_WORLD);
-      global_facnorm = sqrt(global_facnorm);
-#else
-      global_facnorm = sqrt(local_facnorm);
-#endif
       // dual norm
-      double local_dualnorm = arma::norm(updated_fac, "fro");
-      local_dualnorm *= local_dualnorm;
+      double dualnorm = arma::norm(m_ncp_aux->factor(mode), "fro");
 
-      double global_dualnorm = 0.0;
-      global_dualnorm = sqrt(local_dualnorm);
-      // Check stopping criteria (needs communication)
-      double r = norm(updated_fac - m_ncp_aux->factor(mode), "fro");
-      r *= r;
-      double global_r = 0.0;
-      global_r = sqrt(r);
+      // Check stopping criteria
+      double r = norm(updated_fac.t() - m_ncp_aux_t->factor(mode), "fro");
       double s = norm(updated_fac - prev_fac, "fro");
-      s *= s;
-      double global_s = 0.0;
-      global_s = sqrt(s);
-      if (global_r < (tolerance * global_facnorm) &&
-          global_s < (tolerance * global_dualnorm))
+      if (r < (tolerance * facnorm) && s < (tolerance * dualnorm))
         stop_iter = true;
     }
     m_ncp_aux->normalize(mode);
