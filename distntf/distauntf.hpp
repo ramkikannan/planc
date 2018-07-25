@@ -205,7 +205,7 @@ class DistAUNTF {
       this->time_stats.compute_duration(temp);
       this->time_stats.krp_duration(temp);
     }
-    MPITIC;  // mttkrp tic
+
     if (this->m_enable_dim_tree) {
       double multittv_time = 0;
       double mttkrp_time = 0;
@@ -218,12 +218,13 @@ class DistAUNTF {
       this->time_stats.mttkrp_duration(mttkrp_time);
 
     } else {
+      MPITIC;  // mttkrp tic
       m_input_tensor.mttkrp(current_mode, ncp_krp[current_mode],
                             &ncp_mttkrp_t[current_mode]);
+      temp = MPITOC;  // mttkrp toc
+      this->time_stats.compute_duration(temp);
+      this->time_stats.mttkrp_duration(temp);
     }
-    temp = MPITOC;  // mttkrp toc
-    this->time_stats.compute_duration(temp);
-    this->time_stats.mttkrp_duration(temp);
     // verify if the dimension tree output matches with the classic one
     // MAT kdt_ncp_mttkrp_t = ncp_mttkrp_t[current_mode];
     // bool same_mttkrp = arma::approx_equal(kdt_ncp_mttkrp_t,

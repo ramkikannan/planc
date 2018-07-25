@@ -437,11 +437,19 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
     exit(-6);
   }
 
-  long int i, nDim;
+  // long int i, nDim;
+  int i, nDim;
   double alpha, beta;
 
+  // for calling dgemm_
+  char nt = 'N';
+  char t = 'T';
+  int i_n = n;
+  int i_rank = rank;
+
   if (n == 0) {
-    long int ncols = 1;
+    // long int ncols = 1;
+    int ncols = 1;
 
     ncols = T->dims_product / T->dims[n];
     alpha = 1.0;
@@ -476,11 +484,14 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
     // cblas_dgemm( CblasRowMajor, CblasTrans, CblasNoTrans, nDim, rank, ncols,
     // alpha, T->data, nDim, K, rank, beta, C, rank );
     // This does KR'*M'
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, rank, nDim, ncols,
-                alpha, K, rank, T->data, nDim, beta, C, rank);
+    // cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, rank, nDim, ncols,
+    //             alpha, K, rank, T->data, nDim, beta, C, rank);
+    dgemm_(&nt, &t, &i_rank, &nDim, &ncols, &alpha, K, &i_rank, T->data, &nDim,
+           &beta, C, &i_rank);
+
   } else {  // if n != 0 it is not the first dimension, so n is at least 1
-    long int nmats = 1;  // nmats is the number of submatrices to be multiplied
-    long int ncols = 1;  // ncols is the number of columns in a submatrix
+    int nmats = 1;  // nmats is the number of submatrices to be multiplied
+    int ncols = 1;  // ncols is the number of columns in a submatrix
 
     // calculate the number of columns in the sub-matrix of a matricized tensor
     for (i = 0; i < n; i++) {
@@ -531,9 +542,13 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
         C) the out put matrix, size nDim by rank
         nDim) the distance between columns of the C matrix
       */
-      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, nDim, rank, ncols,
-                  alpha, T->data + i * nDim * ncols, ncols,
-                  K + i * ncols * rank, rank, beta, C, rank);
+      // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, nDim, rank,
+      // ncols,
+      //             alpha, T->data + i * nDim * ncols, ncols,
+      //             K + i * ncols * rank, rank, beta, C, rank);
+      dgemm_(&nt, &nt, &nDim, &i_rank, &ncols, &alpha,
+             T->data + i * nDim * ncols, &ncols, K + i * ncols * rank, &i_rank,
+             &beta, C, &i_rank);
     }
   }  // End of else
 }
@@ -681,9 +696,16 @@ void Full_nMode_Matricization_RowMajor(tensor *T, ktensor *Y, long int n) {
 
   alpha = 1.0;
   beta = 0.0;
-  cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, Y->dims[n],
-              (Y->dims_product / Y->dims[n]), Y->rank, alpha, Y->factors[n],
-              Y->rank, KR, Y->rank, beta, T->data, Y->dims[n]);
+  // cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, Y->dims[n],
+  //             (Y->dims_product / Y->dims[n]), Y->rank, alpha, Y->factors[n],
+  //             Y->rank, KR, Y->rank, beta, T->data, Y->dims[n]);
+  int i_m = Y->dims[n];
+  int i_n = (Y->dims_product / Y->dims[n]);
+  int i_k = Y->rank;
+  char t = 'T';
+  char nt = 'N';
+  dgemm_(&t, &nt, &i_m, &i_n, &i_k, &alpha, Y->factors[n], &i_k, KR, &i_k,
+         &beta, T->data, &i_m);
 
   free(KR);
 }
@@ -906,8 +928,8 @@ void Gen_Tensor(ktensor *Y, tensor *T, long int R, long int N, long int *D,
         malloc(sizeof(double) * Y->rank * Y->dims[i]));
     Y->dims_product *= Y->dims[i];
     for (j = 0; j < Y->rank * Y->dims[i]; j++) {
-      Y->factors[i][j] = (static_cast<double>(rand()) /
-                           static_cast<double>(RAND_MAX)) * 2 - 1;
+      Y->factors[i][j] =
+          (static_cast<double>(rand()) / static_cast<double>(RAND_MAX)) * 2 - 1;
     }
   }
   Y->lambdas = reinterpret_cast<double *>(malloc(sizeof(double) * Y->rank));

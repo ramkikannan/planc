@@ -8,30 +8,28 @@
 #include "common/utils.h"
 #include "common/utils.hpp"
 
+
 inline void mpitic() {
   // tictoc_stack.push(clock());
-  tictoc_stack_omp_clock.push(omp_get_wtime());
+  tictoc_stack.push(std::chrono::steady_clock::now());
 }
 
 inline void mpitic(int rank) {
-  // double temp = clock();
-  double temp = omp_get_wtime();
-  std::cout << "tic::" << rank << "::" << temp << std::endl;
-  // tictoc_stack.push(temp);
-  tictoc_stack_omp_clock.push(omp_get_wtime());
+  // std::cout << "tic::" << rank << "::" << std::chrono::steady_clock::now() << std::endl;
+  tictoc_stack.push(std::chrono::steady_clock::now());
 }
 
 inline double mpitoc(int rank) {
 #ifdef __WITH__BARRIER__TIMING__
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
-  std::cout << "toc::" << rank << "::" << tictoc_stack_omp_clock.top()
+  std::chrono::duration<double> time_span =
+      std::chrono::duration_cast<std::chrono::duration<double>>(
+          std::chrono::steady_clock::now() - tictoc_stack.top());
+  double rc = time_span.count();
+  tictoc_stack.pop();
+  std::cout << "toc::" << rank << "::" << rc
             << std::endl;
-  // double rc = (static_cast<double>
-  //              (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
-  // tictoc_stack.pop();
-  double rc = omp_get_wtime() - tictoc_stack_omp_clock.top();
-  tictoc_stack_omp_clock.pop();
   return rc;
 }
 
@@ -39,11 +37,11 @@ inline double mpitoc() {
 #ifdef __WITH__BARRIER__TIMING__
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
-  // double rc = (static_cast<double>
-  //              (clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
-  // tictoc_stack.pop();
-  double rc = omp_get_wtime() - tictoc_stack_omp_clock.top();
-  tictoc_stack_omp_clock.pop();
+  std::chrono::duration<double> time_span =
+      std::chrono::duration_cast<std::chrono::duration<double>>(
+          std::chrono::steady_clock::now() - tictoc_stack.top());
+  double rc = time_span.count();
+  tictoc_stack.pop();
   return rc;
 }
 

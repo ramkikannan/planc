@@ -233,4 +233,10 @@ void remove_mode_Ktensor(ktensor *Y, long int n);
 // mkl unavailable functions
 void vdMul(long int, double *, double *, double *);
 
+// define dgemm
+extern "C" void dgemm_(char *transa, char *transb, int *m, int *n, int *k, double *alpha,
+           double *a, int *lda, double *b, int *ldb, double *beta, double *c,
+           int *ldc);
+
+
 #endif  // DIMTREE_DDTTENSOR_H_

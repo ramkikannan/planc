@@ -117,7 +117,7 @@ if(CMAKE_BUILD_CUDA)
                  PATHS ${CUDA_TOOLKIT_ROOT_DIR}
                  PATH_SUFFIXES lib64
                  NO_DEFAULT_PATH)
-    set(NMFLIB_LIBS ${NMFLIB_LIBS} ${CUDA_NVBLAS_LIBRARY})
+    set(NMFLIB_LIBS ${CUDA_NVBLAS_LIBRARY} ${NMFLIB_LIBS})
     include_directories(${CUDA_INCLUDE_DIRS})
   endif()
 endif()

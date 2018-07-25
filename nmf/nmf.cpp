@@ -114,6 +114,7 @@ void parseCommandLineandCallNMF(int argc, char* argv[]) {
                               pc.output_file_name() + "_w",
                               pc.output_file_name() + "_h", pc.iterations());
 #endif
+      break;
     case AOADMM:
 #ifdef BUILD_SPARSE
       // NMFDriver<AOADMMNMF<SP_MAT > >(lowRank, m, n, AfileName, WInitfileName,
