@@ -35,14 +35,17 @@ class MUNMF : public NMF<T> {
   }
 
  public:
-  MUNMF(const T &A, int lowrank) : NMF<T>(A, lowrank) { allocateMatrices(); }
+  MUNMF(const T &A, int lowrank) : NMF<T>(A, lowrank) {
+    allocateMatrices();
+    this->At = this->A.t();
+  }
   MUNMF(const T &A, const MAT &llf, const MAT &rlf) : NMF<T>(A, llf, rlf) {
     allocateMatrices();
+    this->At = this->A.t();
   }
   void computeNMF() {
     int currentIteration = 0;
     double t1, t2;
-    this->At = this->A.t();
     INFO << "computed transpose At=" << PRINTMATINFO(this->At) << std::endl;
     while (currentIteration < this->num_iterations()) {
       tic();

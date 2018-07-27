@@ -38,15 +38,16 @@ class HALSNMF : public NMF<T> {
   HALSNMF(const T &A, int lowrank) : NMF<T>(A, lowrank) {
     this->normalize_by_W();
     allocateMatrices();
+    this->At = this->A.t();
   }
   HALSNMF(const T &A, const MAT &llf, const MAT &rlf) : NMF<T>(A, llf, rlf) {
     this->normalize_by_W();
     allocateMatrices();
+    this->At = this->A.t();
   }
   void computeNMF() {
     int currentIteration = 0;
     double t1, t2;
-    this->At = this->A.t();
     INFO << "computed transpose At=" << PRINTMATINFO(this->At) << std::endl;
     while (currentIteration < this->num_iterations()) {
       tic();

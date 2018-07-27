@@ -26,13 +26,13 @@ class BPPNMF : public NMF<T> {
     double t1, t2;
     UINT numThreads = (input.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
     tic();
-    MAT givent = given.t();
     MAT giventInput(this->k, input.n_cols);
     // This is WtW
-    giventGiven = givent * given;
+    giventGiven = given.t() * given;
     // This is WtA
-    giventInput = givent * input;
-    givent.clear();
+    // tic();
+    giventInput = given.t() * input;
+    // INFO << "matmul ::" << toc() << std::endl;
     t2 = toc();
     INFO << "starting " << worh << ". Prereq for " << worh << " took=" << t2
          << " NumThreads=" << numThreads << PRINTMATINFO(giventGiven)
@@ -60,9 +60,9 @@ class BPPNMF : public NMF<T> {
              << ", end=" << spanEnd << ", tid=" << omp_get_thread_num()
              << std::endl;
 #endif
-        tic();
+        // tic();
         subProblem->solveNNLS();
-        t2 = toc();
+        // t2 = toc();
 #ifdef _VERBOSE
         INFO << "completed " << worh << " start=" << spanStart
              << ", end=" << spanEnd << ", tid=" << omp_get_thread_num()
@@ -87,10 +87,13 @@ class BPPNMF : public NMF<T> {
   }
 
  public:
-  BPPNMF(T A, int lowrank) : NMF<T>(A, lowrank) {
+  BPPNMF(T &A, int lowrank) : NMF<T>(A, lowrank) {
     giventGiven = arma::zeros<MAT>(lowrank, lowrank);
+    this->At = A.t();
   }
-  BPPNMF(const T A, const MAT &llf, const MAT &rlf) : NMF<T>(A, llf, rlf) {}
+  BPPNMF(const T &A, const MAT &llf, const MAT &rlf) : NMF<T>(A, llf, rlf) {
+    this->At = A.t();
+  }
   void computeNMFSingleRHS() {
     int currentIteration = 0;
     T At = this->A.t();
@@ -178,7 +181,9 @@ class BPPNMF : public NMF<T> {
 #ifdef COLLECTSTATS
     // this->objective_err;
 #endif
-    this->At = this->A.t();  // do it once
+    // tic();
+    // this->At = this->A.t();  // do it once
+    // INFO << "At time::" << toc() << std::endl;
 #ifdef BUILD_SPARSE
     // run hals once to get proper initializations
     HALSNMF<T> tempHals(this->A, this->W, this->H);
@@ -198,7 +203,6 @@ class BPPNMF : public NMF<T> {
       this->stats(currentIteration + 1, 0) = currentIteration + 1;
 #endif
       tic();
-      tic();
       updateOtherGivenOneMultipleRHS(this->At, this->H, 'W', &(this->W));
       double totalW2 = toc();
       tic();
@@ -210,10 +214,10 @@ class BPPNMF : public NMF<T> {
       this->stats(currentIteration + 1, 1) = totalH2;
       this->stats(currentIteration + 1, 2) = totalW2;
 
-      this->stats(currentIteration + 1, 3) = toc();
+      this->stats(currentIteration + 1, 3) = totalW2 + totalH2
 #endif
       INFO << "completed it=" << currentIteration
-           << " time taken = " << this->stats(currentIteration + 1, 3)
+           << " time taken = " << totalW2 + totalH2
            << std::endl;
       this->computeObjectiveError();
       INFO << "error:it = " << currentIteration
