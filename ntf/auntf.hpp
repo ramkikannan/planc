@@ -76,7 +76,7 @@ class AUNTF {
       ncp_mttkrp_t[i].clear();
     }
     delete[] ncp_krp;
-    delete[] ncp_mttkrp_t;    
+    delete[] ncp_mttkrp_t;
     if (this->m_enable_dim_tree) {
       delete kdt;
     }

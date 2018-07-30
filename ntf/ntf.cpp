@@ -11,6 +11,7 @@
 #include "ntf/ntfmu.hpp"
 #include "ntf/ntfanlsbpp.hpp"
 #include "ntf/ntfaoadmm.hpp"
+#include "ntf/ntfnes.hpp"
 
 // ntf -d "2 3 4 5" -k 5 -t 20
 
@@ -53,6 +54,9 @@ int main(int argc, char* argv[]) {
       break;
     case AOADMM:
       ntfd.callNTF<planc::NTFAOADMM>(pc);
+      break;
+    case NESTEROV:
+      ntfd.callNTF<planc::NTFNES>(pc);
       break;
     default:
       ERR << "Wrong algorithm choice. Quitting.." << pc.lucalgo()
