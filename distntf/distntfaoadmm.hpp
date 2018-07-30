@@ -10,9 +10,9 @@ namespace planc {
 class DistNTFAOADMM : public DistAUNTF {
  private:
   // ADMM auxiliary variables
-  NCPFactors *m_local_ncp_aux;
-  NCPFactors *m_local_ncp_aux_t;
-  NCPFactors *m_temp_local_ncp_aux_t;
+  NCPFactors m_local_ncp_aux;
+  NCPFactors m_local_ncp_aux_t;
+  NCPFactors m_temp_local_ncp_aux_t;
   MAT L;
   MAT Lt;
   MAT tempgram;
@@ -38,27 +38,27 @@ class DistNTFAOADMM : public DistAUNTF {
     // Start ADMM loop from here
     for (int i = 0; i < admm_iter && !stop_iter; i++) {
       prev_fac = updated_fac;
-      m_local_ncp_aux_t->set(mode, m_local_ncp_aux->factor(mode).t());
+      m_local_ncp_aux_t.set(mode, m_local_ncp_aux.factor(mode).t());
 
-      m_temp_local_ncp_aux_t->set(
+      m_temp_local_ncp_aux_t.set(
           mode, arma::solve(arma::trimatl(L),
                             this->ncp_local_mttkrp_t[mode] +
                                 (alpha * (updated_fac.t() +
-                                          m_local_ncp_aux_t->factor(mode)))));
-      m_local_ncp_aux_t->set(
+                                          m_local_ncp_aux_t.factor(mode)))));
+      m_local_ncp_aux_t.set(
           mode,
-          arma::solve(arma::trimatu(Lt), m_temp_local_ncp_aux_t->factor(mode)));
+          arma::solve(arma::trimatu(Lt), m_temp_local_ncp_aux_t.factor(mode)));
 
       // Update factor matrix
-      updated_fac = m_local_ncp_aux_t->factor(mode).t();
+      updated_fac = m_local_ncp_aux_t.factor(mode).t();
       fixNumericalError<MAT>(&(updated_fac), EPSILON_1EMINUS16);
-      updated_fac = updated_fac - m_local_ncp_aux->factor(mode);
+      updated_fac = updated_fac - m_local_ncp_aux.factor(mode);
       updated_fac.for_each(
           [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });
 
       // Update dual variable
-      m_local_ncp_aux->set(mode, m_local_ncp_aux->factor(mode) + updated_fac -
-                                     m_local_ncp_aux_t->factor(mode).t());
+      m_local_ncp_aux.set(mode, m_local_ncp_aux.factor(mode) + updated_fac -
+                                    m_local_ncp_aux_t.factor(mode).t());
 
       // factor norm
       double local_facnorm = arma::norm(updated_fac, "fro");
@@ -69,7 +69,7 @@ class DistNTFAOADMM : public DistAUNTF {
                     MPI_COMM_WORLD);
       global_facnorm = sqrt(global_facnorm);
       // dual norm
-      double local_dualnorm = arma::norm(m_local_ncp_aux->factor(mode), "fro");
+      double local_dualnorm = arma::norm(m_local_ncp_aux.factor(mode), "fro");
       local_dualnorm *= local_dualnorm;
 
       double global_dualnorm = 0.0;
@@ -77,7 +77,7 @@ class DistNTFAOADMM : public DistAUNTF {
                     MPI_COMM_WORLD);
       global_dualnorm = sqrt(global_dualnorm);
       // Check stopping criteria (needs communication)
-      double r = norm(updated_fac.t() - m_local_ncp_aux_t->factor(mode), "fro");
+      double r = norm(updated_fac.t() - m_local_ncp_aux_t.factor(mode), "fro");
       r *= r;
       double global_r = 0.0;
       MPI_Allreduce(&r, &global_r, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -91,7 +91,7 @@ class DistNTFAOADMM : public DistAUNTF {
           global_s < (tolerance * global_dualnorm))
         stop_iter = true;
     }
-    m_local_ncp_aux->distributed_normalize(mode);
+    m_local_ncp_aux.distributed_normalize(mode);
     return updated_fac.t();
   }
 
@@ -100,13 +100,13 @@ class DistNTFAOADMM : public DistAUNTF {
                 const UVEC &i_global_dims, const UVEC &i_local_dims,
                 const NTFMPICommunicator &i_mpicomm)
       : DistAUNTF(i_tensor, i_k, i_algo, i_global_dims, i_local_dims,
-                  i_mpicomm) {
-    m_local_ncp_aux = new NCPFactors(i_local_dims, i_k, false);
-    m_local_ncp_aux->zeros();
-    m_local_ncp_aux_t = new NCPFactors(i_local_dims, i_k, true);
-    m_local_ncp_aux_t->zeros();
-    m_temp_local_ncp_aux_t = new NCPFactors(i_local_dims, i_k, true);
-    m_temp_local_ncp_aux_t->zeros();
+                  i_mpicomm),
+        m_local_ncp_aux(i_local_dims, i_k, false),
+        m_local_ncp_aux_t(i_local_dims, i_k, true),
+        m_temp_local_ncp_aux_t(i_local_dims, i_k, true) {
+    m_local_ncp_aux.zeros();
+    m_local_ncp_aux_t.zeros();
+    m_temp_local_ncp_aux_t.zeros();
     L.zeros(i_k, i_k);
     Lt.zeros(i_k, i_k);
     tempgram.zeros(i_k, i_k);
