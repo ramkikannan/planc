@@ -11,6 +11,7 @@
 #include "distntf/distntfio.hpp"
 #include "distntf/distntfmpicomm.hpp"
 #include "distntf/distntfmu.hpp"
+#include "distntf/distntfnes.hpp"
 
 namespace planc {
 class DistNTF {
@@ -143,6 +144,9 @@ class DistNTF {
         break;
       case AOADMM:
         callDistNTF<DistNTFAOADMM>();
+        break;
+      case NESTEROV:
+        callDistNTF<DistNTFNES>();
         break;
       default:
         ERR << "Wrong algorithm choice. Quitting.." << this->m_ntfalgo
