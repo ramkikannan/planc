@@ -6,12 +6,14 @@
 #include "nnls/bppnnls.hpp"
 #include "ntf/auntf.hpp"
 
+#define ONE_THREAD_MATRIX_SIZE 2000
+
 namespace planc {
 
 class NTFANLSBPP : public AUNTF {
  protected:
   MAT update(const int mode) {
-    MAT othermat(this->m_ncp_factors.factor(mode));
+    MAT othermat(this->m_ncp_factors.factor(mode).t());
     int numThreads =
         (this->ncp_mttkrp_t[mode].n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
 #pragma omp parallel for schedule(dynamic)
@@ -48,11 +50,11 @@ class NTFANLSBPP : public AUNTF {
              << " num_iterations()=" << numIter << std::endl;
 #endif
         if (spanStart == spanEnd) {
-          ROWVEC solVec = subProblem->getSolutionVector().t();
-          othermat.row(i) = solVec;
+          VEC solVec = subProblem->getSolutionVector();
+          othermat.col(i) = solVec;
         } else {  // if (spanStart < spanEnd)
-          othermat.rows(spanStart, spanEnd) =
-              subProblem->getSolutionMatrix().t();
+          othermat.cols(spanStart, spanEnd) =
+              subProblem->getSolutionMatrix();
         }
         subProblem->clear();
         delete subProblem;
