@@ -6,9 +6,9 @@
 #include "nnls/bppnnls.hpp"
 #include "ntf/auntf.hpp"
 
-#define ONE_THREAD_MATRIX_SIZE 2000
-
 namespace planc {
+
+#define ONE_THREAD_MATRIX_SIZE 2000
 
 class NTFANLSBPP : public AUNTF {
  protected:
