@@ -61,11 +61,14 @@ class DistAUNTF {
   const UVEC m_factor_local_dims;
   int m_num_it;
   int current_mode;
-  int current_it;
   FVEC m_regularizers;
   bool m_compute_error;
   bool m_enable_dim_tree;
+  int m_current_it;
 
+  // needed for acceleration algorithms.
+  bool m_accelerated;
+  std::vector<bool> m_stale_mttkrp;
   // communication related variables
   const NTFMPICommunicator &m_mpicomm;
   // stats
@@ -269,6 +272,7 @@ class DistAUNTF {
     DISTPRINTINFO(ncp_mttkrp_t[current_mode]);
     DISTPRINTINFO(ncp_local_mttkrp_t[current_mode]);
 #endif
+    this->m_stale_mttkrp[current_mode] = false;
   }
 
   void allocateMatrices() {
@@ -324,6 +328,24 @@ class DistAUNTF {
               << "::max::" << maxtemp);
   }
 
+  void update_factor_mode(const int current_mode, const MAT &factor) {
+    m_local_ncp_factors.set(current_mode, factor);
+    m_local_ncp_factors.distributed_normalize(current_mode);
+    MAT factor_t = m_local_ncp_factors.factor(current_mode).t();
+    m_local_ncp_factors_t.set(current_mode, factor_t);
+    // line 13 and 14
+    update_global_gram(current_mode);
+    // line 15
+    gather_ncp_factor(current_mode);
+    if (this->m_enable_dim_tree) {
+      kdt->set_factor(m_gathered_ncp_factors_t.factor(current_mode).memptr(),
+                      current_mode);
+    }
+    this->m_stale_mttkrp[current_mode] = true;
+  }
+
+  virtual void accelerate() {}
+
   void generateReport() {
     MPI_Barrier(MPI_COMM_WORLD);
     this->reportTime(this->time_stats.duration(), "total_d");
@@ -364,6 +386,7 @@ class DistAUNTF {
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     this->m_compute_error = false;
     this->m_enable_dim_tree = false;
+    this->m_accelerated = false;
     this->m_num_it = 30;
     // randomize again. otherwise all the process and factors
     // will be same.
@@ -372,6 +395,7 @@ class DistAUNTF {
     for (int i = 0; i < this->m_modes; i++) {
       MAT current_factor = arma::trans(m_local_ncp_factors.factor(i));
       m_local_ncp_factors_t.set(i, current_factor);
+      this->m_stale_mttkrp.push_back(true);
     }
     m_gathered_ncp_factors.trans(m_gathered_ncp_factors_t);
     allocateMatrices();
@@ -392,6 +416,7 @@ class DistAUNTF {
     hadamard_all_grams =
         arma::ones<MAT>(this->m_low_rank_k, this->m_low_rank_k);
   }
+  int current_it() const { return this->m_current_it; }
   void dim_tree(bool i_dim_tree) {
     this->m_enable_dim_tree = i_dim_tree;
     if (this->m_enable_dim_tree) {
@@ -403,6 +428,27 @@ class DistAUNTF {
       }
     }
   }
+  void accelerated(const bool &set_acceleration) {
+    this->m_accelerated = set_acceleration;
+  }
+
+  bool is_stale_mttkrp(const int &current_mode) const {
+    return this->m_stale_mttkrp[current_mode];
+  }
+
+  /*
+   * This function will completely reset all the factors
+   * and the state of AUNTF. Use it with caution!!!
+   * It is the responsibility of the caller to preserve
+   * the current factor states and other relevant computations
+   */
+
+  void reset(const NCPFactors &new_factors) {
+    for (int i = 0; i < m_modes; i++) {
+      update_factor_mode(i, new_factors.factor(i));
+    }
+  }
+
   void computeNTF() {
     // initialize everything.
     // line 3,4,5 of the algorithm
@@ -422,11 +468,12 @@ class DistAUNTF {
     DISTPRINTINFO("gathered factor matrices::");
     this->m_gathered_ncp_factors.print();
 #endif
-    for (int current_it = 0; current_it < m_num_it; current_it++) {
+    for (this->m_current_it = 0; this->m_current_it < m_num_it;
+         this->m_current_it++) {
       MAT unnorm_factor;
       for (int current_mode = 0; current_mode < m_modes; current_mode++) {
         // line 9 and 10 of the algorithm
-        distmttkrp(current_mode);
+        if (is_stale_mttkrp(current_mode)) distmttkrp(current_mode);
         // line 11 of the algorithm
         gram_hadamard(current_mode);
         // line 12 of the algorithm
@@ -445,37 +492,31 @@ class DistAUNTF {
         this->time_stats.compute_duration(temp);
         this->time_stats.nnls_duration(temp);
 #ifdef DISTNTF_VERBOSE
-        DISTPRINTINFO("it::" << current_it << "::mode::" << current_mode
+        DISTPRINTINFO("it::" << this->m_current_it << "::mode::" << current_mode
                              << std::endl
                              << factor);
 #endif
         if (m_compute_error && current_mode == this->m_modes - 1) {
           unnorm_factor = factor;
         }
-        m_local_ncp_factors.set(current_mode, factor.t());
-        m_local_ncp_factors.distributed_normalize(current_mode);
-        factor = m_local_ncp_factors.factor(current_mode).t();
-        m_local_ncp_factors_t.set(current_mode, factor);
-        // line 13 and 14
-        update_global_gram(current_mode);
-        // line 15
-        gather_ncp_factor(current_mode);
-        if (this->m_enable_dim_tree) {
-          kdt->set_factor(
-              m_gathered_ncp_factors_t.factor(current_mode).memptr(),
-              current_mode);
-        }
+        update_factor_mode(current_mode, factor.t());
       }
+      if (this->m_accelerated) {
+        // there is a acceleration possible. call accelerate method
+        // in the derived class.
+        accelerate();
+      }
+
       if (m_compute_error) {
         double temp_err = computeError(unnorm_factor);
         double iter_time = this->time_stats.compute_duration() +
                            this->time_stats.communication_duration();
-        PRINTROOT("Iter::" << current_it << "::k::" << this->m_low_rank_k
-                           << "::SIZE::" << MPI_SIZE << "::algo::"
-                           << this->m_updalgo << "::time::" << iter_time
-                           << "::relative_error::" << temp_err);
+        PRINTROOT("Iter::" << this->m_current_it << "::k::"
+                           << this->m_low_rank_k << "::SIZE::" << MPI_SIZE
+                           << "::algo::" << this->m_updalgo << "::time::"
+                           << iter_time << "::relative_error::" << temp_err);
       }
-      PRINTROOT("completed it::" << current_it);
+      PRINTROOT("completed it::" << this->m_current_it);
     }
     generateReport();
   }

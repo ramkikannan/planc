@@ -91,7 +91,7 @@ class DenseDimensionTree {
     // max_mode);
   }
 
-  void set_factor(double *arma_factor_ptr, const long int mode) {
+  void set_factor(const double *arma_factor_ptr, const long int mode) {
     // TransposeM(arma_factor_ptr, m_local_Y->factors[mode],
     // m_local_Y->dims[mode], m_local_Y->rank);
     std::memcpy(m_local_Y->factors[mode], arma_factor_ptr,
