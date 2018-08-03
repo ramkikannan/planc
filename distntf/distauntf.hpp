@@ -40,6 +40,8 @@ class DistAUNTF {
   MAT *ncp_local_mttkrp_t;
   // hadamard of the global_grams
   MAT global_gram;
+  // communication related variables
+  const NTFMPICommunicator &m_mpicomm;
 
   virtual MAT update(int current_mode) = 0;
 
@@ -65,12 +67,11 @@ class DistAUNTF {
   bool m_compute_error;
   bool m_enable_dim_tree;
   int m_current_it;
+  double m_rel_error;
 
   // needed for acceleration algorithms.
   bool m_accelerated;
   std::vector<bool> m_stale_mttkrp;
-  // communication related variables
-  const NTFMPICommunicator &m_mpicomm;
   // stats
   DistNTFTime time_stats;
 
@@ -341,7 +342,10 @@ class DistAUNTF {
       kdt->set_factor(m_gathered_ncp_factors_t.factor(current_mode).memptr(),
                       current_mode);
     }
-    this->m_stale_mttkrp[current_mode] = true;
+    for (int mode = 0; mode < this->m_modes; mode++) {
+      if (mode != current_mode)
+        this->m_stale_mttkrp[mode] = true;
+    }
   }
 
   virtual void accelerate() {}
@@ -388,6 +392,7 @@ class DistAUNTF {
     this->m_enable_dim_tree = false;
     this->m_accelerated = false;
     this->m_num_it = 30;
+    this->m_rel_error = 1.0;
     // randomize again. otherwise all the process and factors
     // will be same.
     m_local_ncp_factors.randu(149 * i_mpicomm.rank() + 103);
@@ -417,6 +422,7 @@ class DistAUNTF {
         arma::ones<MAT>(this->m_low_rank_k, this->m_low_rank_k);
   }
   int current_it() const { return this->m_current_it; }
+  double current_error() const { return this->m_rel_error; }
   void dim_tree(bool i_dim_tree) {
     this->m_enable_dim_tree = i_dim_tree;
     if (this->m_enable_dim_tree) {
@@ -430,6 +436,7 @@ class DistAUNTF {
   }
   void accelerated(const bool &set_acceleration) {
     this->m_accelerated = set_acceleration;
+    this->m_compute_error = true;
   }
 
   bool is_stale_mttkrp(const int &current_mode) const {
@@ -443,9 +450,15 @@ class DistAUNTF {
    * the current factor states and other relevant computations
    */
 
-  void reset(const NCPFactors &new_factors) {
-    for (int i = 0; i < m_modes; i++) {
-      update_factor_mode(i, new_factors.factor(i));
+  void reset(const NCPFactors &new_factors, bool trans = false) {
+    if (!trans) {
+      for (int i = 0; i < m_modes; i++) {
+        update_factor_mode(i, new_factors.factor(i));
+      }
+    } else {
+      for (int i = 0; i < m_modes; i++) {
+        update_factor_mode(i, new_factors.factor(i).t());
+      }
     }
   }
 
@@ -501,14 +514,9 @@ class DistAUNTF {
         }
         update_factor_mode(current_mode, factor.t());
       }
-      if (this->m_accelerated) {
-        // there is a acceleration possible. call accelerate method
-        // in the derived class.
-        accelerate();
-      }
-
       if (m_compute_error) {
-        double temp_err = computeError(unnorm_factor);
+        double temp_err = computeError(unnorm_factor, this->m_modes - 1);
+        this->m_rel_error = temp_err;
         double iter_time = this->time_stats.compute_duration() +
                            this->time_stats.communication_duration();
         PRINTROOT("Iter::" << this->m_current_it << "::k::"
@@ -516,23 +524,34 @@ class DistAUNTF {
                            << "::algo::" << this->m_updalgo << "::time::"
                            << iter_time << "::relative_error::" << temp_err);
       }
+      if (this->m_accelerated) {
+        // there is a acceleration possible. call accelerate method
+        // in the derived class.
+        accelerate();
+      }
       PRINTROOT("completed it::" << this->m_current_it);
     }
     generateReport();
   }
-  double computeError(const MAT &unnorm_factor) {
+  /*
+   * This is naive way of computing error with local rank-k tensor
+   */
+
+  double computeError(const MAT &unnorm_factor, int mode) {
     // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram *
     // lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;
     MPITIC;  // err compute
-    hadamard_all_grams = global_gram % factor_global_grams[this->m_modes - 1];
+    hadamard_all_grams = global_gram % factor_global_grams[mode];
     VEC local_lambda = m_local_ncp_factors.lambda();
     ROWVEC temp_vec = local_lambda.t() * hadamard_all_grams;
     double sq_norm_model = arma::dot(temp_vec, local_lambda);
+    PRINTROOT("sq_norm_model::" << sq_norm_model);
     // double sq_norm_model = arma::norm(hadamard_all_grams, "fro");
     // sum of the element-wise dot product between the local mttkrp and
     // the factor matrix
     double inner_product =
-        arma::dot(ncp_local_mttkrp_t[this->m_modes - 1], unnorm_factor);
+        arma::dot(ncp_local_mttkrp_t[mode], unnorm_factor);
+    PRINTROOT("inner_product::" << inner_product);
     double temp = MPITOC;  // err compute
     this->time_stats.compute_duration(temp);
     this->time_stats.err_compute_duration(temp);
@@ -550,6 +569,38 @@ class DistAUNTF {
               << this->m_global_sqnorm_A << "::model_norm_sq::" << sq_norm_model
               << "::global_inner_product::" << all_inner_product << std::endl);
 #endif
+    double squared_err =
+        this->m_global_sqnorm_A + sq_norm_model - 2 * all_inner_product;
+    if (squared_err < 0) {
+      PRINTROOT("computed error is negative due to round off");
+      PRINTROOT("norm_A_sq :: "
+                << this->m_global_sqnorm_A
+                << "::model_norm_sq::" << sq_norm_model
+                << "::global_inner_product::" << all_inner_product
+                << "::squared_err::" << squared_err << std::endl);
+    }
+    return std::sqrt(std::abs(squared_err) / this->m_global_sqnorm_A);
+  }
+  double computeError(const NCPFactors &new_factors_t, const int mode) {
+    // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram *
+    // lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;
+    // Reset with new factors and compute error on mode 0
+    reset(new_factors_t, true);
+    distmttkrp(mode);
+    gram_hadamard(mode);
+    hadamard_all_grams = global_gram % factor_global_grams[mode];
+    VEC local_lambda = m_local_ncp_factors.lambda();
+    MAT unnorm_factor =
+        arma::diagmat(local_lambda) * new_factors_t.factor(mode);
+    ROWVEC temp_vec = local_lambda.t() * hadamard_all_grams;
+    double sq_norm_model = arma::dot(temp_vec, local_lambda);
+    // double sq_norm_model = arma::norm(hadamard_all_grams, "fro");
+    // sum of the element-wise dot product between the local mttkrp and
+    // the factor matrix
+    double inner_product = arma::dot(ncp_local_mttkrp_t[mode], unnorm_factor);
+    double all_inner_product;
+    MPI_Allreduce(&inner_product, &all_inner_product, 1, MPI_DOUBLE, MPI_SUM,
+                  MPI_COMM_WORLD);
     double squared_err =
         this->m_global_sqnorm_A + sq_norm_model - 2 * all_inner_product;
     if (squared_err < 0) {

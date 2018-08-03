@@ -9,12 +9,20 @@ namespace planc {
 
 class DistNTFNES : public DistAUNTF {
  private:
+  // Update Variables
   NCPFactors m_prox_t;  // Proximal Term (H_*)
   NCPFactors m_acc_t;   // Acceleration term (Y)
   NCPFactors m_grad_t;  // Gradient Term (\nabla_f(Y))
+  NCPFactors m_prev_t;  // Previous Iterate
   MAT modified_gram;
-  double delta1;
-  double delta2;
+  // Termination Variables
+  double delta1;  // Termination value for absmax
+  double delta2;  // Termination value for min
+  // Acceleration Variables
+  int acc_start;   // Starting iteration for acceleration
+  int acc_exp;     // Step size exponent
+  int acc_fails;   // Acceleration Fails
+  int fail_limit;  // Acceleration Fail limit
 
  protected:
   inline double get_lambda(double L, double mu) {
@@ -61,8 +69,54 @@ class DistNTFNES : public DistAUNTF {
     return stop;
   }
 
+  void accelerate() {
+    int iter = this->current_it();
+    if (iter > acc_start) {
+      int num_modes = m_prox_t.modes();
+      double cur_err = this->current_error();
+
+      double acc_step = std::pow(iter + 1, (1.0 / acc_exp));
+      // Adjust all the factors
+      // Reusing gradient/acceleration term to save memory
+      m_grad_t.zeros();
+      for (int mode = 0; mode < num_modes; mode++) {
+        // Step Matrix
+        MAT acc_mat = m_grad_t.factor(mode);
+        acc_mat =
+            this->m_local_ncp_factors_t.factor(mode) - m_prev_t.factor(mode);
+        acc_mat *= acc_step;
+        acc_mat += this->m_local_ncp_factors_t.factor(mode);
+        m_acc_t.set(mode, acc_mat);
+        m_acc_t.distributed_normalize_rows(mode);
+      }
+      // Compute Error
+      // Always call with mode 0 to reuse MTTKRP if accepted
+      double acc_err = this->computeError(m_acc_t, 0);
+
+      // Acceleration Accepted
+      if (acc_err < cur_err) {
+        // Set proximal term to current term
+        for (int mode = 0; mode < num_modes; mode++) {
+          m_prox_t.set(mode, m_acc_t.factor(mode));
+          m_prox_t.distributed_normalize_rows(mode);
+        }
+        PRINTROOT("Acceleration Successful::relative_error::" << acc_err);
+      } else {
+        // Acceleration Failed reset to prev iterate
+        this->reset(m_prox_t, true);
+        acc_fails++;
+        if (acc_fails > fail_limit) {
+          acc_fails = 0;
+          acc_exp++;
+        }
+        PRINTROOT("Acceleration Failed::relative_error::" << acc_err);
+      }
+    }
+  }
+
   MAT update(const int mode) {
     double L, mu, lambda, q, alpha, alpha_prev, beta;
+    m_prev_t.set(mode, m_prox_t.factor(mode));
     MAT Ht(m_prox_t.factor(mode));
     MAT Htprev = Ht;
     m_acc_t.set(mode, Ht);
@@ -100,6 +154,8 @@ class DistNTFNES : public DistAUNTF {
     }
 
     m_prox_t.set(mode, Ht);
+    m_prox_t.distributed_normalize_rows(mode);
+
     return Ht;
   }
 
@@ -110,14 +166,22 @@ class DistNTFNES : public DistAUNTF {
       : DistAUNTF(i_tensor, i_k, i_algo, i_global_dims, i_local_dims,
                   i_mpicomm),
         m_prox_t(i_local_dims, i_k, true),
+        m_prev_t(i_local_dims, i_k, true),
         m_acc_t(i_local_dims, i_k, true),
         m_grad_t(i_local_dims, i_k, true) {
     m_prox_t.zeros();
+    m_prev_t.zeros();
     m_acc_t.zeros();
     m_grad_t.zeros();
     modified_gram.zeros(i_k, i_k);
     delta1 = 1e-2;
     delta2 = 1e-2;
+    acc_start = 5;
+    acc_exp = 3;
+    acc_fails = 0;
+    fail_limit = 5;
+    // Set Accerated to be true
+    this->accelerated(true);
   }
 };  // class DistNTFNES
 
