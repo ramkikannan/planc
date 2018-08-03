@@ -484,10 +484,11 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
     // cblas_dgemm( CblasRowMajor, CblasTrans, CblasNoTrans, nDim, rank, ncols,
     // alpha, T->data, nDim, K, rank, beta, C, rank );
     // This does KR'*M'
-    // cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, rank, nDim, ncols,
-    //             alpha, K, rank, T->data, nDim, beta, C, rank);
-    dgemm_(&nt, &t, &i_rank, &nDim, &ncols, &alpha, K, &i_rank, T->data, &nDim,
-           &beta, C, &i_rank);
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, rank, nDim, ncols,
+                alpha, K, rank, T->data, nDim, beta, C, rank);
+    // dgemm_(&nt, &t, &i_rank, &nDim, &ncols, &alpha, K, &i_rank, T->data,
+    // &nDim,
+    //        &beta, C, &i_rank);
 
   } else {  // if n != 0 it is not the first dimension, so n is at least 1
     int nmats = 1;  // nmats is the number of submatrices to be multiplied
@@ -542,13 +543,12 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
         C) the out put matrix, size nDim by rank
         nDim) the distance between columns of the C matrix
       */
-      // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, nDim, rank,
-      // ncols,
-      //             alpha, T->data + i * nDim * ncols, ncols,
-      //             K + i * ncols * rank, rank, beta, C, rank);
-      dgemm_(&nt, &nt, &nDim, &i_rank, &ncols, &alpha,
-             T->data + i * nDim * ncols, &ncols, K + i * ncols * rank, &i_rank,
-             &beta, C, &i_rank);
+      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, nDim, rank, ncols,
+                  alpha, T->data + i * nDim * ncols, ncols,
+                  K + i * ncols * rank, rank, beta, C, rank);
+      // dgemm_(&nt, &nt, &nDim, &i_rank, &ncols, &alpha,
+      //        T->data + i * nDim * ncols, &ncols, K + i * ncols * rank,
+      //        &i_rank, &beta, C, &i_rank);
     }
   }  // End of else
 }
@@ -696,16 +696,16 @@ void Full_nMode_Matricization_RowMajor(tensor *T, ktensor *Y, long int n) {
 
   alpha = 1.0;
   beta = 0.0;
-  // cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, Y->dims[n],
-  //             (Y->dims_product / Y->dims[n]), Y->rank, alpha, Y->factors[n],
-  //             Y->rank, KR, Y->rank, beta, T->data, Y->dims[n]);
+  cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, Y->dims[n],
+              (Y->dims_product / Y->dims[n]), Y->rank, alpha, Y->factors[n],
+              Y->rank, KR, Y->rank, beta, T->data, Y->dims[n]);
   int i_m = Y->dims[n];
   int i_n = (Y->dims_product / Y->dims[n]);
   int i_k = Y->rank;
   char t = 'T';
   char nt = 'N';
-  dgemm_(&t, &nt, &i_m, &i_n, &i_k, &alpha, Y->factors[n], &i_k, KR, &i_k,
-         &beta, T->data, &i_m);
+  // dgemm_(&t, &nt, &i_m, &i_n, &i_k, &alpha, Y->factors[n], &i_k, KR, &i_k,
+  //        &beta, T->data, &i_m);
 
   free(KR);
 }

@@ -38,7 +38,8 @@ void partial_MTTKRP(Output_Layout OL, long int s, direction D, tensor *T,
   // dgemm related variables.
   char trans_tensor, trans_A;
 
-  int i, m, k, output_stride, tensor_stride, right_dims_product, left_dims_product;
+  int i, m, n, k, output_stride, tensor_stride, right_dims_product,
+      left_dims_product, i_r;
   double alpha, beta;
 
   alpha = 1.0;
@@ -69,30 +70,43 @@ void partial_MTTKRP(Output_Layout OL, long int s, direction D, tensor *T,
   for (i = s + 1; i < T->nmodes; i++) right_dims_product *= T->dims[i];
 
   if (D == ::direction::left) {
-    m = right_dims_product;  // Tensor->data is m x k, A is k x n
-                             // n = r;
-    k = left_dims_product;
-    tensor_stride = left_dims_product;
+    // m = right_dims_product;  // Tensor->data is m x k, A is k x n
+    //                          // n = r;
+    // k = left_dims_product;
+    // tensor_stride = left_dims_product;
     if (OL == RowMajor) {
       dgemm_layout = CblasRowMajor;
       // trans_tensor = CblasNoTrans;
-      trans_tensor = 'N';
       // trans_A = CblasNoTrans;
+      trans_tensor = 'N';
       trans_A = 'N';
+      m = r;
+      n = right_dims_product;
+      k = left_dims_product;
+      tensor_stride = left_dims_product;
       output_stride = r;
-
+      dgemm_(&trans_A, &trans_tensor, &m, &n, &k, &alpha, A, &m, T->data, &tensor_stride,
+             &beta, C, &output_stride);
+      // assuming dgemm. comment if not neccessary
     } else {
-      dgemm_layout = CblasColMajor;
       // trans_tensor = CblasTrans;
-      trans_tensor = 'T';
       // trans_A = CblasTrans;
+      dgemm_layout = CblasColMajor;
+      trans_tensor = 'T';
       trans_A = 'T';
       output_stride = right_dims_product;
+      m = right_dims_product;  // Tensor->data is m x k, A is k x n
+                               // n = r;
+      k = left_dims_product;
+      i_r = r;
+      tensor_stride = left_dims_product;
+      dgemm_(&trans_tensor, &trans_A, &m, &i_r, &k, &alpha, T->data,
+             &tensor_stride, A, &i_r, &beta, C, &output_stride);
     }
   } else {  // D == right
-    m = left_dims_product;
-    // n = r;
-    k = right_dims_product;
+    // m = left_dims_product;
+    // // n = r;
+    // k = right_dims_product;
     tensor_stride = left_dims_product;
     if (OL == RowMajor) {
       dgemm_layout = CblasRowMajor;
@@ -100,7 +114,13 @@ void partial_MTTKRP(Output_Layout OL, long int s, direction D, tensor *T,
       trans_tensor = 'T';
       // trans_A = CblasNoTrans;
       trans_A = 'N';
+      m = r;
+      n = left_dims_product;
+      k = right_dims_product;
       output_stride = r;
+      tensor_stride = left_dims_product;
+      dgemm_(&trans_A, &trans_tensor, &m, &n, &k, &alpha, A,
+             &m, T->data, &tensor_stride, &beta, C, &output_stride);
     } else {
       dgemm_layout = CblasColMajor;
       // trans_tensor = CblasNoTrans;
@@ -108,6 +128,13 @@ void partial_MTTKRP(Output_Layout OL, long int s, direction D, tensor *T,
       // trans_A = CblasTrans;
       trans_A = 'T';
       output_stride = left_dims_product;
+      m = left_dims_product;
+      // n = r;
+      k = right_dims_product;
+      i_r = r;
+      tensor_stride = left_dims_product;
+      dgemm_(&trans_tensor, &trans_A, &m, &i_r, &k, &alpha, T->data,
+             &tensor_stride, A, &i_r, &beta, C, &output_stride);
     }
   }
   /**
@@ -129,9 +156,9 @@ void partial_MTTKRP(Output_Layout OL, long int s, direction D, tensor *T,
   // n, integer *k, doublereal *alpha, doublereal *a, integer *lda,
   // doublereal *b, integer *ldb, doublereal *beta, doublereal *c, integer
   // *ldc)
-  int i_r = r;
-  dgemm_(&trans_tensor, &trans_A, &m, &i_r, &k, &alpha, T->data, &tensor_stride, A,
-         &i_r, &beta, C, &output_stride);
+  //  dgemm_(&trans_tensor, &trans_A, &m, &i_r, &k, &alpha, T->data,
+  //  &tensor_stride,
+  //         A, &i_r, &beta, C, &output_stride);
 }
 
 /**
