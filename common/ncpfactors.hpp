@@ -95,6 +95,11 @@ ncp_factors[i].clear();
     this->ncp_factors[i_n] = i_factor;
   }
 
+  void set_lambda(VEC new_lambda) {
+    for (int i = 0; i < this->m_modes; i++)
+      m_lambda(i) = new_lambda(i);
+  }
+
   // compute gram of all local factors
   void gram(MAT *o_UtU) {
     MAT currentGram(this->m_k, this->m_k);

@@ -79,13 +79,20 @@ class DistNTFNES : public DistAUNTF {
       // Adjust all the factors
       // Reusing gradient/acceleration term to save memory
       m_grad_t.zeros();
+      int lowrank = m_prox_t.rank();
+      MAT scalecur = arma::eye<MAT>(lowrank, lowrank);
+      MAT scaleprev = arma::eye<MAT>(lowrank, lowrank);
       for (int mode = 0; mode < num_modes; mode++) {
+        if (mode == num_modes - 1) {
+          scalecur = arma::diagmat(this->m_local_ncp_factors.lambda());
+          scaleprev = arma::diagmat(m_prev_t.lambda());
+        }
         // Step Matrix
         MAT acc_mat = m_grad_t.factor(mode);
-        acc_mat =
-            this->m_local_ncp_factors_t.factor(mode) - m_prev_t.factor(mode);
+        acc_mat = (scalecur * this->m_local_ncp_factors_t.factor(mode)) -
+                  (scaleprev * m_prev_t.factor(mode));
         acc_mat *= acc_step;
-        acc_mat += this->m_local_ncp_factors_t.factor(mode);
+        acc_mat += (scalecur * this->m_local_ncp_factors_t.factor(mode));
         m_acc_t.set(mode, acc_mat);
         m_acc_t.distributed_normalize_rows(mode);
       }
@@ -116,6 +123,9 @@ class DistNTFNES : public DistAUNTF {
 
   MAT update(const int mode) {
     double L, mu, lambda, q, alpha, alpha_prev, beta;
+    if (mode == 0) {
+      m_prev_t.set_lambda(m_prox_t.lambda());
+    }
     m_prev_t.set(mode, m_prox_t.factor(mode));
     MAT Ht(m_prox_t.factor(mode));
     MAT Htprev = Ht;

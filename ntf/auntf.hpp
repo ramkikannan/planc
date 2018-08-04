@@ -43,6 +43,7 @@ class AUNTF {
   const planc::Tensor &m_input_tensor;
   int m_num_it;
   int m_current_it;
+  bool m_compute_error;
 
   const int m_low_rank_k;
   MAT *ncp_krp;
@@ -52,20 +53,24 @@ class AUNTF {
   bool m_enable_dim_tree;
   // needed for acceleration algorithms.
   bool m_accelerated;
+  double m_rel_error;
+  double m_normA;
   std::vector<bool> m_stale_mttkrp;
 
+  // Ensure factor is unnormalised when calling this function
   void update_factor_mode(const int &current_mode, const MAT &factor) {
     m_ncp_factors.set(current_mode, factor);
-    if (current_mode == 0) {
-      INFO << "error at it::" << this->m_current_it
-           << "::" << computeObjectiveError() << std::endl;
-    }
     m_ncp_factors.normalize(current_mode);
-    MAT temp = m_ncp_factors.factor(current_mode).t();
+
     if (m_enable_dim_tree) {
+      MAT temp = m_ncp_factors.factor(current_mode).t();
       kdt->set_factor(temp.memptr(), current_mode);
     }
-    this->m_stale_mttkrp[current_mode] = true;
+
+    int num_modes = this->m_input_tensor.modes();
+    for (int mode = 0; mode < num_modes; mode++) {
+      if (mode != current_mode) this->m_stale_mttkrp[current_mode] = true;
+    }
   }
   virtual void accelerate() {}
 
@@ -86,7 +91,9 @@ class AUNTF {
       this->m_stale_mttkrp.push_back(true);
     }
     lowranktensor = new planc::Tensor(i_tensor.dimensions());
+    m_compute_error = false;
     m_num_it = 20;
+    m_normA = i_tensor.norm();
     // INFO << "Init factors for NCP" << std::endl << "======================";
     // m_ncp_factors.print();
     this->m_enable_dim_tree = false;
@@ -111,6 +118,7 @@ class AUNTF {
                                          m_input_tensor.modes() / 2);
     }
   }
+  double current_error() const { return this->m_rel_error; }
   void num_it(const int i_n) { this->m_num_it = i_n; }
   void computeNTF() {
     for (m_current_it = 0; m_current_it < m_num_it; m_current_it++) {
@@ -149,6 +157,12 @@ class AUNTF {
 #endif
         update_factor_mode(j, factor.t());
       }
+      if (m_compute_error) {
+        double temp_err = computeObjectiveError();
+        this->m_rel_error = temp_err;
+        INFO << "relative_error at it::" << this->m_current_it
+             << "::" << temp_err << std::endl;
+      }
       if (this->m_accelerated) accelerate();
 #ifdef NTF_VERBOSE
       INFO << "ncp factors" << std::endl;
@@ -158,9 +172,24 @@ class AUNTF {
   }
   void accelerated(const bool &set_acceleration) {
     this->m_accelerated = set_acceleration;
+    this->m_compute_error = true;
   }
   bool is_stale_mttkrp(const int &current_mode) const {
     return this->m_stale_mttkrp[current_mode];
+  }
+  void compute_error(bool i_error) { this->m_compute_error = i_error; }
+  void reset(const NCPFactors &new_factors, bool trans = false) {
+    int m_modes = this->m_input_tensor.modes();
+    if (!trans) {
+      for (int i = 0; i < m_modes; i++) {
+        update_factor_mode(i, new_factors.factor(i));
+      }
+    } else {
+      for (int i = 0; i < m_modes; i++) {
+        update_factor_mode(i, new_factors.factor(i).t());
+      }
+    }
+    m_ncp_factors.set_lambda(new_factors.lambda());
   }
   int current_it() const { return m_current_it; }
   double computeObjectiveError() {
@@ -195,8 +224,11 @@ class AUNTF {
     double beta = 0;
     char nt = 'N';
     char t = 'T';
+
+    MAT unnorm_fac =
+        m_ncp_factors.factor(0) * arma::diagmat(m_ncp_factors.lambda());
     // double *output_tensor = new double[ldc * n];
-    dgemm_(&nt, &t, &m, &n, &k, &alpha, m_ncp_factors.factor(0).memptr(), &lda,
+    dgemm_(&nt, &t, &m, &n, &k, &alpha, unnorm_fac.memptr(), &lda,
            ncp_krp[0].memptr(), &ldb, &beta, lowranktensor->m_data, &ldc);
     // INFO << "lowrank tensor::" << std::endl;
     // lowranktensor->print();
@@ -204,7 +236,12 @@ class AUNTF {
     //     INFO << i << ":" << output_tensor[i] << std::endl;
     // }
     double err = m_input_tensor.err(*lowranktensor);
+    err = std::sqrt(err / this->m_normA);
     return err;
+  }
+  double computeObjectiveError(const NCPFactors &new_factors_t) {
+    reset(new_factors_t, true);
+    return computeObjectiveError();
   }
 };  // class AUNTF
 }  // namespace planc

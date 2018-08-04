@@ -8,12 +8,20 @@
 namespace planc {
 class NTFNES : public AUNTF {
  private:
+  // Update Variables
   NCPFactors m_prox_t;  // Proximal Term (H_*)
   NCPFactors m_acc_t;   // Acceleration term (Y)
   NCPFactors m_grad_t;  // Gradient Term (\nabla_f(Y))
+  NCPFactors m_prev_t;  // Previous Iterate
   MAT modified_gram;
-  double delta1;
-  double delta2;
+  // Termination Variables
+  double delta1;  // Termination value for absmax
+  double delta2;  // Termination value for min
+  // Acceleration Variables
+  int acc_start;   // Starting iteration for acceleration
+  int acc_exp;     // Step size exponent
+  int acc_fails;   // Acceleration Fails
+  int fail_limit;  // Acceleration Fail limit
 
  protected:
   inline double get_lambda(double L, double mu) {
@@ -55,8 +63,65 @@ class NTFNES : public AUNTF {
     return stop;
   }
 
+  void accelerate() {
+    int iter = this->current_it();
+    if (iter > acc_start) {
+      int num_modes = m_prox_t.modes();
+      double cur_err = this->current_error();
+
+      double acc_step = std::pow(iter + 1, (1.0 / acc_exp));
+      // Adjust all the factors
+      // Reusing gradient/acceleration term to save memory
+      m_grad_t.zeros();
+      int lowrank = m_prox_t.rank();
+      MAT scalecur = arma::eye<MAT>(lowrank, lowrank);
+      MAT scaleprev = arma::eye<MAT>(lowrank, lowrank);
+      for (int mode = 0; mode < num_modes; mode++) {
+        // Make only the last mode unnormalised
+        if (mode == num_modes - 1) {
+          scalecur = arma::diagmat(this->m_ncp_factors.lambda());
+          scaleprev = arma::diagmat(m_prev_t.lambda());
+        }
+        // Step Matrix
+        MAT acc_mat = m_grad_t.factor(mode);
+        acc_mat = (scalecur * this->m_ncp_factors.factor(mode).t()) -
+                  (scaleprev * m_prev_t.factor(mode));
+        acc_mat *= acc_step;
+        acc_mat += (scalecur * this->m_ncp_factors.factor(mode).t());
+        m_acc_t.set(mode, acc_mat);
+        m_acc_t.normalize_rows(mode);
+      }
+      // Compute Error
+      double acc_err = this->computeObjectiveError(m_acc_t);
+
+      // Acceleration Accepted
+      if (acc_err < cur_err) {
+        // Set proximal term to current term
+        for (int mode = 0; mode < num_modes; mode++) {
+          m_prox_t.set(mode, m_acc_t.factor(mode));
+          m_prox_t.normalize_rows(mode);
+        }
+        INFO << "Acceleration Successful::relative_error::" << acc_err
+             << std::endl;
+      } else {
+        // Acceleration Failed reset to prev iterate
+        this->reset(m_prox_t, true);
+        acc_fails++;
+        if (acc_fails > fail_limit) {
+          acc_fails = 0;
+          acc_exp++;
+        }
+        INFO << "Acceleration Failed::relative_error::" << acc_err << std::endl;
+      }
+    }
+  }
+
   MAT update(const int mode) {
     double L, mu, lambda, q, alpha, alpha_prev, beta;
+    if (mode == 0) {
+      m_prev_t.set_lambda(m_prox_t.lambda());
+    }
+    m_prev_t.set(mode, m_prox_t.factor(mode));
     MAT Ht(m_prox_t.factor(mode));
     MAT Htprev = Ht;
     m_acc_t.set(mode, Ht);
@@ -94,6 +159,8 @@ class NTFNES : public AUNTF {
     }
 
     m_prox_t.set(mode, Ht);
+    m_prox_t.normalize_rows(mode);
+
     return Ht;
   }
 
@@ -101,14 +168,22 @@ class NTFNES : public AUNTF {
   NTFNES(const Tensor &i_tensor, const int i_k, algotype i_algo)
       : AUNTF(i_tensor, i_k, i_algo),
         m_prox_t(i_tensor.dimensions(), i_k, true),
+        m_prev_t(i_tensor.dimensions(), i_k, true),
         m_acc_t(i_tensor.dimensions(), i_k, true),
         m_grad_t(i_tensor.dimensions(), i_k, true) {
     m_prox_t.zeros();
+    m_prev_t.zeros();
     m_acc_t.zeros();
     m_grad_t.zeros();
     modified_gram.zeros(i_k, i_k);
     delta1 = 1e-2;
     delta2 = 1e-2;
+    acc_start = 5;
+    acc_exp = 3;
+    acc_fails = 0;
+    fail_limit = 5;
+    // Set Accerated to be true
+    this->accelerated(true);
   }
 };  // class NTFNES
 }  // namespace planc

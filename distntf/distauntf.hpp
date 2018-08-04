@@ -460,6 +460,8 @@ class DistAUNTF {
         update_factor_mode(i, new_factors.factor(i).t());
       }
     }
+    m_local_ncp_factors.set_lambda(new_factors.lambda());
+    m_local_ncp_factors_t.set_lambda(new_factors.lambda());
   }
 
   void computeNTF() {
@@ -545,13 +547,11 @@ class DistAUNTF {
     VEC local_lambda = m_local_ncp_factors.lambda();
     ROWVEC temp_vec = local_lambda.t() * hadamard_all_grams;
     double sq_norm_model = arma::dot(temp_vec, local_lambda);
-    PRINTROOT("sq_norm_model::" << sq_norm_model);
     // double sq_norm_model = arma::norm(hadamard_all_grams, "fro");
     // sum of the element-wise dot product between the local mttkrp and
     // the factor matrix
     double inner_product =
         arma::dot(ncp_local_mttkrp_t[mode], unnorm_factor);
-    PRINTROOT("inner_product::" << inner_product);
     double temp = MPITOC;  // err compute
     this->time_stats.compute_duration(temp);
     this->time_stats.err_compute_duration(temp);
