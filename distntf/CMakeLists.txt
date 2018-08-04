@@ -15,6 +15,7 @@ message(STATUS "NMFLIB_COMMON =  ${NMFLIB_COMMON}")
 include(${NMFLIB_COMMON}/cmake_aux/NMFLIB_FindARMA.cmake)
 
 add_definitions(-DMPI_DISTNTF=1)
+add_definitions(-fopenmp)
 
 find_package(MPI REQUIRED)
 
