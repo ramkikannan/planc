@@ -26,6 +26,7 @@ class NTFDriver {
     Tensor my_tensor(pc.dimensions());
     NTFTYPE ntfsolver(my_tensor, pc.lowrankk(), pc.lucalgo());
     ntfsolver.num_it(pc.iterations());
+    ntfsolver.compute_error(pc.compute_error());
     if (pc.dim_tree()) {
       ntfsolver.dim_tree(true);
     }

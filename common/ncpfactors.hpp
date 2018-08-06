@@ -95,6 +95,11 @@ ncp_factors[i].clear();
     this->ncp_factors[i_n] = i_factor;
   }
 
+  void set_lambda(VEC new_lambda) {
+    for (int i = 0; i < this->m_modes; i++)
+      m_lambda(i) = new_lambda(i);
+  }
+
   // compute gram of all local factors
   void gram(MAT *o_UtU) {
     MAT currentGram(this->m_k, this->m_k);
@@ -291,6 +296,15 @@ current_nrows *= rightkrp.n_rows;
         this->ncp_factors[mode].col(i) /= m_lambda(i);
     }
   }
+  // replaces the existing lambdas
+  void normalize_rows(int mode) {
+    for (int i = 0; i < this->m_k; i++) {
+      m_lambda(i) = arma::norm(this->ncp_factors[mode].row(i));
+      if (m_lambda(i) > 0)
+        this->ncp_factors[mode].row(i) /= m_lambda(i);
+    }
+  }
+
   /*
    * this is for reinitializing random numbers across different
    * processors.
@@ -341,6 +355,20 @@ current_nrows *= rightkrp.n_rows;
       if (global_colnorm > 0)
         this->ncp_factors[mode].col(j) /= global_colnorm;
       m_lambda(j) = global_colnorm;
+    }
+  }
+  void distributed_normalize_rows(int mode) {
+    double local_rownorm;
+    double global_rownorm;
+    for (int j = 0; j < this->m_k; j++) {
+      local_rownorm = arma::norm(this->ncp_factors[mode].row(j));
+      local_rownorm *= local_rownorm;
+      MPI_Allreduce(&local_rownorm, &global_rownorm, 1, MPI_DOUBLE, MPI_SUM,
+                    MPI_COMM_WORLD);
+      global_rownorm = std::sqrt(global_rownorm);
+      if (global_rownorm > 0)
+        this->ncp_factors[mode].row(j) /= global_rownorm;
+      m_lambda(j) = global_rownorm;
     }
   }
 #endif
