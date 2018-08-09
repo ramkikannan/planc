@@ -2,6 +2,10 @@
 // g++ testmm.cpp -I$ARMADILLO_INCLUDE_DIR
 // -L/lustre/atlas/proj-shared/csc209/ramki/rhea/libraries/openblas/lib/
 // -lopenblas --std=c++11
+// for titan
+// g++ ~/nmflibrary/test/testmm.cpp -I$ARMADILLO_INCLUDE_DIR 
+// -std=c++11 -o a.titan.cpu.out  -lsci_gnu 
+// -L/opt/cray/libsci/16.11.1/GNU/6.1/x86_64/lib/ -fopenmp
 
 #include <omp.h>
 #include <armadillo>
@@ -48,9 +52,10 @@ int main(int argc, char *argv[]) {
   int k = atoi(argv[2]);
   int n = atoi(argv[3]);
   int t = atoi(argv[4]);
+  std::cout << "m::" << m << "::k::" << k << "::n::" << n << std::endl;
   mat A;
   A = randu<mat>(m, k);
-  mat denseA(m, k);
+  // mat denseA(m, k);
   // denseA = A;
   mat B;
   B = randu<mat>(k, n);
