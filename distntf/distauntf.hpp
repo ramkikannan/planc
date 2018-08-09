@@ -1,5 +1,4 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-
 #ifndef DISTNTF_DISTAUNTF_HPP_
 #define DISTNTF_DISTAUNTF_HPP_
 
@@ -150,8 +149,8 @@ class DistAUNTF {
     //               << "::m_gathered_ncp_factors_t::"
     //               << m_gathered_ncp_factors_t.factor(current_mode).memptr()
     //               << "::diff from recvcnt::"
-    //               << m_gathered_ncp_factors_t.factor(current_mode).memptr() -
-    //               recvcnt * 8);
+    //               << m_gathered_ncp_factors_t.factor(current_mode).memptr()
+    //               - recvcnt * 8);
 
     MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
     int slice_size;
@@ -343,8 +342,7 @@ class DistAUNTF {
                       current_mode);
     }
     for (int mode = 0; mode < this->m_modes; mode++) {
-      if (mode != current_mode)
-        this->m_stale_mttkrp[mode] = true;
+      if (mode != current_mode) this->m_stale_mttkrp[mode] = true;
     }
   }
 
@@ -472,8 +470,29 @@ class DistAUNTF {
       gather_ncp_factor(i);
     }
     if (this->m_enable_dim_tree) {
+      // Determine optimial split when given mode ordering.
+      // product of left dimensions \approx product of right dimensions.
+      size_t split_criteria = arma::prod(m_input_tensor.dimensions());
+      split_criteria = std::round(std::sqrt(split_criteria));
+      UVEC temp_cum_prod = arma::cumprod(m_input_tensor.dimensions());
+      int split_mode = 0;
+      while (temp_cum_prod(split_mode) < split_criteria) {
+        split_mode++;
+      }
+      // check to see if split mode is left or right.
+      size_t current_left = temp_cum_prod(split_mode);
+      size_t good_criteria = temp_cum_prod(temp_cum_prod.n_rows - 1) /
+                             temp_cum_prod(split_mode - 1);
+      if (current_left > good_criteria) split_mode--;
+      PRINTROOT("KDT Split Mode::"
+                << split_mode << "::split criteria::" << split_criteria
+                << "::numerator::" << temp_cum_prod(temp_cum_prod.n_rows - 1)
+                << "::good_criteria::" << good_criteria
+                << "::current_left::" << current_left << std::endl
+                << "::cum prod::" << std::endl
+                << temp_cum_prod << std::endl);
       kdt = new DenseDimensionTree(m_input_tensor, m_gathered_ncp_factors,
-                                   m_input_tensor.modes() / 2);
+                                   split_mode);
     }
 #ifdef DISTNTF_VERBOSE
     DISTPRINTINFO("local factor matrices::");
@@ -550,8 +569,7 @@ class DistAUNTF {
     // double sq_norm_model = arma::norm(hadamard_all_grams, "fro");
     // sum of the element-wise dot product between the local mttkrp and
     // the factor matrix
-    double inner_product =
-        arma::dot(ncp_local_mttkrp_t[mode], unnorm_factor);
+    double inner_product = arma::dot(ncp_local_mttkrp_t[mode], unnorm_factor);
     double temp = MPITOC;  // err compute
     this->time_stats.compute_duration(temp);
     this->time_stats.err_compute_duration(temp);
