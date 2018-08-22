@@ -22,11 +22,11 @@
 
 %\documentclass[acmtkdd]{acmsmall}
 \documentclass[review=true, screen=true]{acmart}
-%\documentclass{IEEEtran}
 % to alleviate the error too many math alphabets used in version bold.
 % solution found at https://tex.stackexchange.com/questions/3676/too-many-math-alphabets-error
 \newcommand\hmmax{0}
 \newcommand\bmmax{0}
+
 
 \usepackage{amsfonts,amsmath,latexsym,amssymb}
 \usepackage{algorithm,algpseudocode}
@@ -38,6 +38,7 @@
 \usepackage{pgfplotstable}
 \usepackage{etoolbox}
 \usetikzlibrary{patterns}
+\usepackage{subcaption}
 \usepackage[caption=false,font=footnotesize]{subfig}
 \usepackage{url}
 % to include our macros
@@ -46,6 +47,12 @@
 %\usepackage[subtle,tracking=normal, indent=tight, wordspacing=normal, lists=tight,leading=tight,leadingfraction=0.99]{savetrees}
 
 \graphicspath{{./figs/}}
+
+\pgfplotsset{compat=1.9}
+%not good 
+\pgfplotsset{filter discard warning=false}
+%\usepgfplotslibrary{external} 
+%\tikzexternalize
 
 \newcommand{\ignore}[1]{}
 \newcommand{\nnz}{\text{nnz}}
@@ -56,6 +63,8 @@
 \newcommand{\MU}{\textbf{MU}}
 \newcommand{\HALS}{\textbf{HALS}}
 \newcommand{\BPP}{\textbf{ABPP}}
+\newcommand{\ADMM}{\textbf{ADMM}}
+\newcommand{\Nestrov}{\textbf{Nestrov}}
 \newcommand{\LUC}{LUC}
 
 

@@ -273,84 +273,204 @@ Again, the performance of our implementation without the dimension tree optimiza
 \end{figure}
 
 
-%\begin{figure}
+\begin{figure}
 
-% set which run to plot
-%\renewcommand{\run}{3}
-%
-%\begin{subfigure}{0.3 \columnwidth}
-%\ylabeltrue
-%\begin{tikzpicture}
-%\renewcommand{\datafile}{data/denserwerr-time.dat}
-%\renewcommand{\run}{1}
-%\relerrplot
-%\renewcommand{\run}{3}
-%\end{tikzpicture}
-%\ylabelfalse
-%\subcaption{Video}
-%\label{fig:denserwerr}
-%\end{subfigure}
-%~
-%\begin{subfigure}{0.3 \columnwidth}
-%\begin{tikzpicture}
-%\renewcommand{\datafile}{data/stkx-5runs-err.dat}
-%\legendtrue
-%\relerrplot
-%\legendfalse
-%\end{tikzpicture}
-%\subcaption{Stack Exchange}
-%\label{fig:stackexchangeerr}
-%\end{subfigure}
-%~
-%\begin{subfigure}{0.3 \columnwidth}
-%\begin{tikzpicture}
-%\renewcommand{\datafile}{data/webbase1M-5runs-err.dat}
-%\relerrplot
-%\end{tikzpicture}
-%\subcaption{Webbase}
-%\label{fig:sparserwerr}
-%\end{subfigure}
-%
-%\caption{Relative error comparison of \MU, \HALS, \BPP\ on real world datasets.}
-%\label{fig:convergence}
-%\end{figure}
+%set which run to plot
+\renewcommand{\run}{32}
+\renewcommand{\xmax}{4.9}
+\begin{subfigure}{0.3 \columnwidth}
+\ylabeltrue
+\widertrue
+\legendfalse
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
+\renewcommand{\run}{32}
+\relerrplot
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{Low rank $k=32$}
+\label{fig:accuracylr81k32}
+\end{subfigure}
+~
+\begin{subfigure}{0.3 \columnwidth}
+\widertrue
+\legendfalse
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
+\renewcommand{\run}{64}
+\relerrplot
+\end{tikzpicture}
+\subcaption{Low rank $k=64$}
+\label{fig:accuracylr81k64}
+\end{subfigure}
+~
+\begin{subfigure}{0.3 \columnwidth}
+\ylabeltrue
+\widertrue
+\legendtrue
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
+\renewcommand{\run}{96}
+\relerrplot
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{Low rank $k=96$}
+\label{fig:accuracylr81k96}
+\end{subfigure}
 
-% set which run to plot
-%\renewcommand{\run}{3}
-%
-%\begin{subfigure}{0.3 \columnwidth}
-%\ylabeltrue
-%\begin{tikzpicture}
-%\renewcommand{\datafile}{data/denserwerr-time.dat}
-%\renewcommand{\run}{1}
-%\strongscalingplot
-%\renewcommand{\run}{3}
-%\end{tikzpicture}
-%\ylabelfalse
-%\subcaption{Video}
-%\label{fig:denserwerr}
-%\end{subfigure}
-%~
-%\begin{subfigure}{0.3 \columnwidth}
-%\begin{tikzpicture}
-%\renewcommand{\datafile}{data/stkx-5runs-err.dat}
-%\legendtrue
-%\strongscalingplot
-%\legendfalse
-%\end{tikzpicture}
-%\subcaption{Stack Exchange}
-%\label{fig:stackexchangeerr}
-%\end{subfigure}
-%~
-%\begin{subfigure}{0.3 \columnwidth}
-%\begin{tikzpicture}
-%\renewcommand{\datafile}{data/webbase1M-5runs-err.dat}
-%\strongscalingplot
-%\end{tikzpicture}
-%\subcaption{Webbase}
-%\label{fig:sparserwerr}
-%\end{subfigure}
-%
-%\caption{Relative error comparison of \MU, \HALS, \BPP\ on real world datasets.}
-%\label{fig:convergence}
-%\end{figure}
+\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Low Rank Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid.}
+\label{fig:convergencelowrank}
+\end{figure}
+
+\begin{figure}
+
+%set which run to plot
+\renewcommand{\run}{32}
+\renewcommand{\xmax}{9.9}
+\begin{subfigure}{0.3 \columnwidth}
+\ylabeltrue
+\widertrue
+\legendfalse
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
+\renewcommand{\run}{32}
+\relerrplot
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{Low rank $k=32$}
+\label{fig:accuracylr81k32}
+\end{subfigure}
+~
+\begin{subfigure}{0.3 \columnwidth}
+\widertrue
+\legendfalse
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
+\renewcommand{\run}{64}
+\relerrplot
+\end{tikzpicture}
+\subcaption{Low rank $k=64$}
+\label{fig:accuracylr81k64}
+\end{subfigure}
+~
+\begin{subfigure}{0.3 \columnwidth}
+\ylabeltrue
+\widertrue
+\legendtrue
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
+\renewcommand{\run}{96}
+\relerrplot
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{Low rank $k=96$}
+\label{fig:accuracylr81k96}
+\end{subfigure}
+
+\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Uniform Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid.}
+\label{fig:convergenceuniform}
+\end{figure}
+
+\begin{figure}
+
+%set which run to plot
+\renewcommand{\numiterations}{29}
+\renewcommand{\nogpu}{1}
+\renewcommand{\xmax}{128}
+
+\begin{subfigure}{0.45 \columnwidth}
+\ylabeltrue
+\widertrue
+\legendfalse
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
+\renewcommand{\nogpu}{0}
+\cpuvsgpuplot
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{CPU}
+\label{fig:cpulr81}
+\end{subfigure}
+~
+\begin{subfigure}{0.45 \columnwidth}
+\widertrue
+\legendtrue
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
+\renewcommand{\nogpu}{1}
+\cpuvsgpuplot
+\end{tikzpicture}
+\subcaption{GPU}
+\label{fig:gpulr81}
+\end{subfigure}
+~
+\caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Low Rank Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid on CPU.}
+\label{fig:cpuvsgpulowrank}
+\end{figure}
+
+\begin{figure}
+
+%set which run to plot
+\renewcommand{\numiterations}{29}
+\renewcommand{\nogpu}{0}
+\renewcommand{\xmax}{150}
+
+\begin{subfigure}{0.45 \columnwidth}
+\ylabeltrue
+\widertrue
+\legendfalse
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
+\cpuvsgpuplot
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{CPU}
+\label{fig:cpuuni81}
+\end{subfigure}
+~
+\begin{subfigure}{0.45 \columnwidth}
+\widertrue
+\legendtrue
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
+\renewcommand{\nogpu}{1}
+\cpuvsgpuplot
+\end{tikzpicture}
+\subcaption{GPU}
+\label{fig:gpuuni81}
+\end{subfigure}
+~
+\caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Uniform Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid on CPU.}
+\label{fig:cpuvsgpuuniform}
+\end{figure}
+
+\renewcommand{\numiterations}{29}
+\begin{figure}
+\begin{subfigure}{0.45 \columnwidth}
+\ylabeltrue
+\widertrue
+\legendfalse
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/lucuni81pksweep.csv}
+\lucplot
+\end{tikzpicture}
+\ylabelfalse
+\subcaption{Uniform}
+\label{fig:lucuni81}
+\end{subfigure}
+~
+\begin{subfigure}{0.45 \columnwidth}
+\widertrue
+\legendtrue
+\begin{tikzpicture}
+\renewcommand{\datafile}{data/luclr81pksweep.csv}
+\renewcommand{\nogpu}{1}
+\lucplot
+\end{tikzpicture}
+\subcaption{Low Rank}
+\label{fig:luclr81}
+\end{subfigure}
+~
+\caption{LUC comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Uniform and Low Rank Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid on CPU.}
+\label{fig:luccomp}
+\end{figure}
