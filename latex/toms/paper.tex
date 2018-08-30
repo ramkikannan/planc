@@ -38,7 +38,7 @@
 \usepackage{pgfplotstable}
 \usepackage{etoolbox}
 \usetikzlibrary{patterns}
-\usepackage{subcaption}
+%\usepackage{subcaption}
 \usepackage[caption=false,font=footnotesize]{subfig}
 \usepackage{url}
 % to include our macros
@@ -48,11 +48,11 @@
 
 \graphicspath{{./figs/}}
 
-\pgfplotsset{compat=1.9}
+%\pgfplotsset{compat=1.13}
 %not good 
 \pgfplotsset{filter discard warning=false}
-%\usepgfplotslibrary{external} 
-%\tikzexternalize
+\usepgfplotslibrary{external} 
+\tikzexternalize[prefix=tikz/]
 
 \newcommand{\ignore}[1]{}
 \newcommand{\nnz}{\text{nnz}}
@@ -114,17 +114,18 @@ Plan (\url{http://energy.gov/downloads/doe-public-access-plan}).
 }  
 \email{kannanr, mathesonma@ornl.gov}
 
-\author{Koby Hayashi}
+
 \author{Grey Ballard}
 \affiliation{%
-  \institution{Wakeforest University}
-  \city{AtlantaWinston-Salem}
+  \institution{Wake Forest University}
+  \city{Winston-Salem}
   \state{NC}
   %\country{France}
 }
-\email{khayashi, ballard@wfu.edu}
+\email{ballard@wfu.edu}
 
 \author{Srinivas Eswar}
+\author{Koby Hayashi}
 \author{Haesun Park}
 \affiliation{%
   \institution{Georgia Institute of Technology}
@@ -132,7 +133,7 @@ Plan (\url{http://energy.gov/downloads/doe-public-access-plan}).
   \state{GA}
   %\country{France}
 }
-\email{seswar3, hpark@gatech.edu}
+\email{seswar3, ???, hpark@gatech.edu}
 
 \input{abstract}
 %\IEEEtitleabstractindextext{%
@@ -163,7 +164,7 @@ Plan (\url{http://energy.gov/downloads/doe-public-access-plan}).
 \input{introduction}
 \input{prelim}
 \input{survey}
-%\input{aunmf}
+%%\input{aunmf}
 \input{algorithm}
 \input{software}
 \input{experiments}
@@ -190,7 +191,7 @@ Plan (\url{http://energy.gov/downloads/doe-public-access-plan}).
 %\end{thebibliography}
 
 %\input{bio}
-\input{appendix}
+%\input{appendix}
 
 \end{document}
 

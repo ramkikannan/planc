@@ -278,7 +278,7 @@ Again, the performance of our implementation without the dimension tree optimiza
 %set which run to plot
 \renewcommand{\run}{32}
 \renewcommand{\xmax}{4.9}
-\begin{subfigure}{0.3 \columnwidth}
+\subfloat[Low rank $k=32$ \label{fig:accuracylr81k32}]{
 \ylabeltrue
 \widertrue
 \legendfalse
@@ -288,11 +288,8 @@ Again, the performance of our implementation without the dimension tree optimiza
 \relerrplot
 \end{tikzpicture}
 \ylabelfalse
-\subcaption{Low rank $k=32$}
-\label{fig:accuracylr81k32}
-\end{subfigure}
-~
-\begin{subfigure}{0.3 \columnwidth}
+}
+\subfloat[Low rank $k=64$ \label{fig:accuracylr81k64}]{
 \widertrue
 \legendfalse
 \begin{tikzpicture}
@@ -300,11 +297,8 @@ Again, the performance of our implementation without the dimension tree optimiza
 \renewcommand{\run}{64}
 \relerrplot
 \end{tikzpicture}
-\subcaption{Low rank $k=64$}
-\label{fig:accuracylr81k64}
-\end{subfigure}
-~
-\begin{subfigure}{0.3 \columnwidth}
+}
+\subfloat[Low rank $k=96$ \label{fig:accuracylr81k96}]{
 \ylabeltrue
 \widertrue
 \legendtrue
@@ -314,20 +308,16 @@ Again, the performance of our implementation without the dimension tree optimiza
 \relerrplot
 \end{tikzpicture}
 \ylabelfalse
-\subcaption{Low rank $k=96$}
-\label{fig:accuracylr81k96}
-\end{subfigure}
-
+}
 \caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Low Rank Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid.}
 \label{fig:convergencelowrank}
 \end{figure}
 
 \begin{figure}
-
 %set which run to plot
 \renewcommand{\run}{32}
 \renewcommand{\xmax}{9.9}
-\begin{subfigure}{0.3 \columnwidth}
+\subfloat[Low rank $k=32$ \label{fig:accuracylr81k32}]{
 \ylabeltrue
 \widertrue
 \legendfalse
@@ -337,11 +327,8 @@ Again, the performance of our implementation without the dimension tree optimiza
 \relerrplot
 \end{tikzpicture}
 \ylabelfalse
-\subcaption{Low rank $k=32$}
-\label{fig:accuracylr81k32}
-\end{subfigure}
-~
-\begin{subfigure}{0.3 \columnwidth}
+}
+\subfloat[Low rank $k=64$ \label{fig:accuracylr81k64}]{
 \widertrue
 \legendfalse
 \begin{tikzpicture}
@@ -349,11 +336,8 @@ Again, the performance of our implementation without the dimension tree optimiza
 \renewcommand{\run}{64}
 \relerrplot
 \end{tikzpicture}
-\subcaption{Low rank $k=64$}
-\label{fig:accuracylr81k64}
-\end{subfigure}
-~
-\begin{subfigure}{0.3 \columnwidth}
+}
+\subfloat[Low rank $k=96$ \label{fig:accuracylr81k96}]{
 \ylabeltrue
 \widertrue
 \legendtrue
@@ -363,10 +347,7 @@ Again, the performance of our implementation without the dimension tree optimiza
 \relerrplot
 \end{tikzpicture}
 \ylabelfalse
-\subcaption{Low rank $k=96$}
-\label{fig:accuracylr81k96}
-\end{subfigure}
-
+}
 \caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Uniform Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid.}
 \label{fig:convergenceuniform}
 \end{figure}
@@ -378,7 +359,7 @@ Again, the performance of our implementation without the dimension tree optimiza
 \renewcommand{\nogpu}{1}
 \renewcommand{\xmax}{128}
 
-\begin{subfigure}{0.45 \columnwidth}
+\subfloat[CPU \label{fig:cpulr81}]{
 \ylabeltrue
 \widertrue
 \legendfalse
@@ -388,11 +369,8 @@ Again, the performance of our implementation without the dimension tree optimiza
 \cpuvsgpuplot
 \end{tikzpicture}
 \ylabelfalse
-\subcaption{CPU}
-\label{fig:cpulr81}
-\end{subfigure}
-~
-\begin{subfigure}{0.45 \columnwidth}
+}
+\subfloat[GPU \label{fig:gpulr81}]{
 \widertrue
 \legendtrue
 \begin{tikzpicture}
@@ -400,10 +378,7 @@ Again, the performance of our implementation without the dimension tree optimiza
 \renewcommand{\nogpu}{1}
 \cpuvsgpuplot
 \end{tikzpicture}
-\subcaption{GPU}
-\label{fig:gpulr81}
-\end{subfigure}
-~
+}
 \caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Low Rank Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid on CPU.}
 \label{fig:cpuvsgpulowrank}
 \end{figure}
@@ -415,7 +390,7 @@ Again, the performance of our implementation without the dimension tree optimiza
 \renewcommand{\nogpu}{0}
 \renewcommand{\xmax}{150}
 
-\begin{subfigure}{0.45 \columnwidth}
+\subfloat[CPU \label{fig:cpuuni81}]{
 \ylabeltrue
 \widertrue
 \legendfalse
@@ -424,11 +399,8 @@ Again, the performance of our implementation without the dimension tree optimiza
 \cpuvsgpuplot
 \end{tikzpicture}
 \ylabelfalse
-\subcaption{CPU}
-\label{fig:cpuuni81}
-\end{subfigure}
-~
-\begin{subfigure}{0.45 \columnwidth}
+}
+\subfloat[GPU \label{fig:gpuuni81}]{
 \widertrue
 \legendtrue
 \begin{tikzpicture}
@@ -436,17 +408,14 @@ Again, the performance of our implementation without the dimension tree optimiza
 \renewcommand{\nogpu}{1}
 \cpuvsgpuplot
 \end{tikzpicture}
-\subcaption{GPU}
-\label{fig:gpuuni81}
-\end{subfigure}
-~
+}
 \caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Uniform Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid on CPU.}
 \label{fig:cpuvsgpuuniform}
 \end{figure}
 
 \renewcommand{\numiterations}{29}
 \begin{figure}
-\begin{subfigure}{0.45 \columnwidth}
+\subfloat[Uniform \label{fig:lucuni81}]{
 \ylabeltrue
 \widertrue
 \legendfalse
@@ -455,11 +424,8 @@ Again, the performance of our implementation without the dimension tree optimiza
 \lucplot
 \end{tikzpicture}
 \ylabelfalse
-\subcaption{Uniform}
-\label{fig:lucuni81}
-\end{subfigure}
-~
-\begin{subfigure}{0.45 \columnwidth}
+}
+\subfloat[Low Rank \label{fig:luclr81}]{
 \widertrue
 \legendtrue
 \begin{tikzpicture}
@@ -467,10 +433,7 @@ Again, the performance of our implementation without the dimension tree optimiza
 \renewcommand{\nogpu}{1}
 \lucplot
 \end{tikzpicture}
-\subcaption{Low Rank}
-\label{fig:luclr81}
-\end{subfigure}
-~
+}
 \caption{LUC comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov on 4D Synthetic Uniform and Low Rank Tensor of size 129x129x129x129 on 3x3x3x3 Processor Grid on CPU.}
 \label{fig:luccomp}
 \end{figure}
