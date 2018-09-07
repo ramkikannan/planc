@@ -8,6 +8,8 @@
 \newcommand{\run}{16}
 \newcommand{\nogpu}{0}
 \newcommand{\xmax}{10}
+\newcommand{\ymin}{0}
+\newcommand{\ymax}{10}
 
 % toggles whether or not to plot naive results (if not, the rows of the data file also need to be commented out)
 \newif\ifnaive
@@ -141,7 +143,9 @@
 	xlabel=Time (s),
 	xmin=0,
 	xmax=\xmax,
-	domain=0:\xmax,
+	%domain=0:\xmax,
+	ymin=\ymin,
+	ymax=\ymax,
 	\ifylabel
 		ylabel=Relative Error,
 		ylabel style={yshift=-.3cm},
@@ -151,12 +155,12 @@
 	\else
 		width=1.35in, height=2in,
 	\fi
-	y tick label style={
-        /pgf/number format/.cd,
-            precision=4,
-            % change "directory" back to tikz
-                /tikz/.cd,
-	},
+%	y tick label style={
+%        /pgf/number format/.cd,
+%            precision=4,
+%            % change "directory" back to tikz
+%                /tikz/.cd,
+%	},
 	legend style={draw=none, cells={align=left}, nodes={scale=0.7}}
 }
 
@@ -169,7 +173,7 @@
 		\addplot+ [unbounded coords=jump,discard if not={algo}{4},discard if not={k}{\run},discard if not={gpu}{1},magenta,thick,mark options={solid},mark=diamond*] table [x={totaltime}, y={relerr}] {\datafile};
 			\addplot+ [unbounded coords=jump,discard if not={algo}{5},discard if not={k}{\run},discard if not={gpu}{1},black,thick,mark options={solid},mark=pentagon*] table [x={totaltime}, y={relerr}] {\datafile};
 	\iflegend
-		\legend{MU,HALS,ABPP,ADMM,Nestrov}
+		\legend{MU,HALS,ABPP,ADMM,Nesterov}
 	\fi
 \end{axis}
 }
@@ -178,8 +182,9 @@
 \newcommand{\cpuvsgpuoptions}{
 	xlabel=Low Rank,
 	xmin=0,
-	xmax=150, 
-	domain=0:150,
+	xmax=\xmax, 
+	ymin=0,
+	ymax=\ymax,
 	\ifylabel
 		ylabel=Time(s),
 		ylabel style={yshift=-.3cm},
@@ -189,13 +194,8 @@
 	\else
 		width=1.35in, height=2in,
 	\fi
-	y tick label style={
-        /pgf/number format/.cd,
-            precision=4,
-            % change "directory" back to tikz
-                /tikz/.cd,
-	},
-	legend style={draw=none, cells={align=left}, nodes={scale=0.7}}
+	legend style={draw=none, cells={align=left}, nodes={scale=0.7}},
+	legend pos={north west}
 }
 
 % plot relative error over time, filtering rows out appropriately
@@ -207,7 +207,7 @@
 		\addplot+ [discard if not={algo}{4},discard if not={gpu}{\nogpu},discard if not={iter}{\numiterations},magenta,thick,mark options={solid},mark=diamond*] table [x={k}, y={totaltime}] {\datafile};
 			\addplot+ [discard if not={algo}{5},discard if not={gpu}{\nogpu},discard if not={iter}{\numiterations},black,thick,mark options={solid},mark=pentagon*] table [x={k}, y={totaltime}] {\datafile};
 	\iflegend
-		\legend{MU,HALS,ABPP,ADMM,Nestrov}
+		\legend{MU,HALS,ABPP,ADMM,Nesterov}
 	\fi
 \end{axis}
 }
@@ -220,7 +220,7 @@
 		\addplot+ [unbounded coords=jump,discard if not={algo}{4},magenta,thick,mark options={solid},mark=diamond*] table [x={k}, y expr=((\thisrow{nnls}/(\minvalue*\numiterations))] {\datafile};
 			\addplot+ [unbounded coords=jump,discard if not={algo}{5},black,thick,mark options={solid},mark=pentagon*] table [x={k}, y expr=((\thisrow{nnls}/(\minvalue*\numiterations))] {\datafile};
 	\iflegend
-		\legend{MU,HALS,ABPP,ADMM,Nestrov}
+		\legend{MU,HALS,ABPP,ADMM,Nesterov}
 	\fi
 \end{axis}
 }

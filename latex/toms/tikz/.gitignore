@@ -1,1 +1,4 @@
-paper-figure*
+*.pdf
+*.md5
+*.dpth
+*.dep
