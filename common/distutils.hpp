@@ -8,14 +8,14 @@
 #include "common/utils.h"
 #include "common/utils.hpp"
 
-
 inline void mpitic() {
   // tictoc_stack.push(clock());
   tictoc_stack.push(std::chrono::steady_clock::now());
 }
 
 inline void mpitic(int rank) {
-  // std::cout << "tic::" << rank << "::" << std::chrono::steady_clock::now() << std::endl;
+  // std::cout << "tic::" << rank << "::" << std::chrono::steady_clock::now() <<
+  // std::endl;
   tictoc_stack.push(std::chrono::steady_clock::now());
 }
 
@@ -28,8 +28,7 @@ inline double mpitoc(int rank) {
           std::chrono::steady_clock::now() - tictoc_stack.top());
   double rc = time_span.count();
   tictoc_stack.pop();
-  std::cout << "toc::" << rank << "::" << rc
-            << std::endl;
+  std::cout << "toc::" << rank << "::" << rc << std::endl;
   return rc;
 }
 
@@ -65,4 +64,18 @@ inline void memusage(const int myrank, std::string event) {
     INFO << event << " total rss::" << allprocmem << std::endl;
   }
 }
+
+inline int itersplit(int n, int p, int r) {
+  int split = (r < n % p) ? n / p + 1 : n / p;
+  return split;
+}
+
+inline int startidx(int n, int p, int r);
+{
+  int rem = n % p;
+  int idx = (r < rem) ? (r - 1 + 1) + (n / p + 1)
+      : (rem * (n / p + 1) + ((r - rem) * (n / p)));
+  return idx;
+}
+
 #endif  // COMMON_DISTUTILS_HPP_
