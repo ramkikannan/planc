@@ -70,10 +70,9 @@ inline int itersplit(int n, int p, int r) {
   return split;
 }
 
-inline int startidx(int n, int p, int r);
-{
+inline int startidx(int n, int p, int r) {
   int rem = n % p;
-  int idx = (r < rem) ? (r - 1 + 1) + (n / p + 1)
+  int idx = (r < rem) ? r * (n / p + 1)
       : (rem * (n / p + 1) + ((r - rem) * (n / p)));
   return idx;
 }
