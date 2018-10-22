@@ -41,6 +41,9 @@ class DistAUNTF {
   MAT global_gram;
   // communication related variables
   const NTFMPICommunicator &m_mpicomm;
+  // NLS solve sizes
+  UVEC m_nls_sizes;
+  UVEC m_nls_idxs;
 
   virtual MAT update(int current_mode) = 0;
 
@@ -405,6 +408,20 @@ class DistAUNTF {
     double normA = i_tensor.norm();
     MPI_Allreduce(&normA, &this->m_global_sqnorm_A, 1, MPI_DOUBLE, MPI_SUM,
                   MPI_COMM_WORLD);
+    m_nls_sizes = arma::zeros<UVEC>(this->m_modes);
+    m_nls_idxs = arma::zeros<UVEC>(this->m_modes);
+    // Calculate NLS sizes
+    for (int i = 0; i < this->m_modes; i++) {
+      int slice_size = m_mpicomm.slice_size(i);
+      int slice_rank = m_mpicomm.slice_rank(i);
+      int num_rows = m_factor_local_dims[i];
+      m_nls_sizes[i] = itersplit(num_rows, slice_size, slice_rank);
+      m_nls_idxs[i] = startidx(num_rows, slice_size, slice_rank);
+    }
+    int mpi_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    INFO << "MPI Rank::" << mpi_rank << "::NLS sizes::" << std::endl
+         << m_nls_sizes << "::NLS start idx::" << m_nls_idxs;
   }
   ~DistAUNTF() {
     freeMatrices();
