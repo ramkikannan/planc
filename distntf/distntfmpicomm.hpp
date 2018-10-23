@@ -23,6 +23,8 @@ class NTFMPICommunicator {
   MPI_Comm *m_slice_comm;
   UVEC m_fiber_ranks;
   UVEC m_slice_ranks;
+  UVEC m_slice_sizes;
+  std::vector<int> m_coords;
 
  public:
   void printConfig() {
@@ -45,6 +47,10 @@ class NTFMPICommunicator {
         INFO << "Numprocs in fiber " << i << "::" << slice_size << std::endl;
       }
     }
+    UVEC cooprint(MPI_CART_DIMS);
+    for (int ii = 0; ii < MPI_CART_DIMS; ii++)
+      cooprint[ii] = m_coords[ii];
+
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < size(); i++) {
       if (i == rank()) {
@@ -52,6 +58,8 @@ class NTFMPICommunicator {
              << "::" << m_slice_ranks << std::endl;
         INFO << "fiber ranks of rank::" << m_global_rank
              << "::" << m_fiber_ranks << std::endl;
+        INFO << "coordinates::" << m_global_rank
+             << "::" << cooprint << std::endl;
       }
       MPI_Barrier(MPI_COMM_WORLD);
     }
@@ -106,6 +114,15 @@ class NTFMPICommunicator {
       MPI_Comm_rank(m_fiber_comm[i], &current_fiber_rank);
       m_fiber_ranks[i] = current_fiber_rank;
     }
+    // Get the coordinates
+    m_coords.resize(MPI_CART_DIMS, 0);
+    MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS,
+                    &m_coords[0]);
+    // Get the slice size
+    m_slice_sizes = arma::zeros<UVEC>(MPI_CART_DIMS);
+    for (int i = 0; i < MPI_CART_DIMS; i++) {
+      m_slice_sizes[i] = m_num_procs / m_proc_grids[i];
+    }
   }
 
   ~NTFMPICommunicator() {
@@ -144,6 +161,9 @@ class NTFMPICommunicator {
   int slice_rank(int i) const { return m_slice_ranks[i]; }
   UVEC proc_grids() const { return this->m_proc_grids; }
   int rank() const { return m_global_rank; }
+  int num_slices(int mode) const { return m_proc_grids[mode]; }
+  int slice_num(int mode) const { return m_coords[mode]; }
+  int slice_size(int mode) const { return m_slice_sizes[mode]; }
 };
 
 }  // namespace planc

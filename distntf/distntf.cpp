@@ -3,8 +3,8 @@
 #include <string>
 #include "common/distutils.hpp"
 #include "common/parsecommandline.hpp"
-#include "common/utils.hpp"
 #include "common/tensor.hpp"
+#include "common/utils.hpp"
 #include "distntf/distauntf.hpp"
 #include "distntf/distntfanlsbpp.hpp"
 #include "distntf/distntfaoadmm.hpp"
@@ -31,6 +31,8 @@ class DistNTF {
   int m_num_k_blocks;
   UVEC m_global_dims;
   UVEC m_factor_local_dims;
+  UVEC m_nls_sizes;
+  UVEC m_nls_idxs;
   bool m_enable_dim_tree;
   static const int kprimeoffset = 17;
 
@@ -61,10 +63,15 @@ class DistNTF {
       this->m_global_dims = dio.read_dist_tensor(m_Afile_name);
       // int modes = this->m_proc_grids.n_elem;
       // UVEC m_global_sub = arma::zeros<UVEC>(modes);
-      // this->m_global_dims = dio.read_dist_tensor(m_Afile_name, &m_global_sub);
-      // planc::Tensor A;
-      // A = dio.A();
-      // A.print(this->m_global_dims, m_global_sub);
+      // this->m_global_dims = dio.read_dist_tensor(m_Afile_name,
+      // &m_global_sub); planc::Tensor A; A = dio.A();
+      // for (int i = 0; i < mpicomm.size(); i++) {
+      //   if (i == mpicomm.rank()) {
+      //     DISTPRINTINFO("local tensor:")
+      //     A.print(this->m_global_dims, m_global_sub);
+      //   }
+      //   MPI_Barrier(MPI_COMM_WORLD);
+      // }      
       // return;
     }
     // planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);
@@ -80,6 +87,7 @@ class DistNTF {
     }
     INFO << mpicomm.rank()
          << "::Completed generating tensor A=" << A.dimensions()
+         << "::start indices::" << A.global_idx()
          << "::global dims::" << this->m_global_dims << std::endl;
 #ifdef DISTNTF_VERBOSE
     A.print();
@@ -104,9 +112,26 @@ class DistNTF {
     //   const UVEC &i_global_dims,
     //   const UVEC &i_local_dims,
     //   const NTFMPICommunicator &i_mpicomm)
-    this->m_factor_local_dims = this->m_global_dims / mpicomm.size();
+    // this->m_factor_local_dims = this->m_global_dims / mpicomm.size();
+    this->m_factor_local_dims = A.dimensions();
+    int num_modes = A.dimensions().n_rows;
+
+    m_nls_sizes = arma::zeros<UVEC>(num_modes);
+    m_nls_idxs = arma::zeros<UVEC>(num_modes);
+    // Calculate NLS sizes
+    for (int i = 0; i < num_modes; i++) {
+      int slice_size = mpicomm.slice_size(i);
+      int slice_rank = mpicomm.slice_rank(i);
+      int num_rows = this->m_factor_local_dims[i];
+      m_nls_sizes[i] = itersplit(num_rows, slice_size, slice_rank);
+      m_nls_idxs[i] = startidx(num_rows, slice_size, slice_rank);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
     NTFTYPE ntfsolver(A, this->m_k, this->m_ntfalgo, this->m_global_dims,
-                      this->m_factor_local_dims, mpicomm);
+                      this->m_factor_local_dims, this->m_nls_sizes,
+                      this->m_nls_idxs, mpicomm);
     memusage(mpicomm.rank(), "after constructor ");
     ntfsolver.num_iterations(this->m_num_it);
     ntfsolver.compute_error(this->m_compute_error);
@@ -120,18 +145,19 @@ class DistNTF {
     ntfsolver.computeNTF();
     double temp = mpitoc();
     A.clear();
-    if (!this->m_outputfile_name.empty()) {
-      for (int i = 0; i < this->m_global_dims.n_elem; i++) {
-        std::stringstream sw;
-        sw << this->m_outputfile_name << "_mode" << i << "_" << mpicomm.size()
-           << "_" << mpicomm.rank();
-        MAT factor(this->m_global_dims[i], this->m_k);
-        ntfsolver.factor(i, factor.memptr());
-        factor.save(sw.str(), arma::raw_ascii);
+    if (mpicomm.rank() == 0) {
+      if (!this->m_outputfile_name.empty()) {
+        for (int i = 0; i < this->m_global_dims.n_elem; i++) {
+          std::stringstream sw;
+          sw << this->m_outputfile_name << "_mode" << i << "_" << mpicomm.size()
+             << "_" << mpicomm.rank();
+          MAT factor(this->m_global_dims[i], this->m_k);
+          ntfsolver.factor(i, factor.memptr());
+          factor.save(sw.str(), arma::raw_ascii);
+        }
       }
+      printf("NTF took %.3lf secs.\n", temp);
     }
-
-    if (mpicomm.rank() == 0) printf("NTF took %.3lf secs.\n", temp);
     // } catch (std::exception& e) {
     //     printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
     //     MPI_Abort(MPI_COMM_WORLD, 1);

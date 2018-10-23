@@ -31,6 +31,7 @@ class Tensor {
  private:
   int m_modes;
   UVEC m_dimensions;
+  UVEC m_global_idx;
   UWORD m_numel;
   unsigned int rand_seed;
   bool freed_on_destruction;
@@ -84,6 +85,16 @@ class Tensor {
     freed_on_destruction = false;
     randu();
   }
+  Tensor(const UVEC &i_dimensions, const UVEC &i_start_idx)
+      : m_dimensions(i_dimensions),
+        m_global_idx(i_start_idx),
+        m_modes(i_dimensions.n_rows),
+        m_numel(arma::prod(i_dimensions)),
+        rand_seed(103) {
+    m_data = new double[this->m_numel];
+    freed_on_destruction = false;
+    randu();
+  }
   // Need when copying from matrix to Tensor.
   // otherwise copy constructor will be called.
   Tensor(const UVEC &i_dimensions, double *i_data)
@@ -107,6 +118,7 @@ class Tensor {
     this->m_numel = src.numel();
     this->m_modes = src.modes();
     this->m_dimensions = src.dimensions();
+    this->m_global_idx = src.global_idx();
     this->rand_seed = 103;
     m_data = new double[this->m_numel];
     memcpy(this->m_data, src.m_data, sizeof(double) * this->m_numel);
@@ -119,6 +131,7 @@ class Tensor {
       this->m_numel = other.numel();
       this->m_modes = other.modes();
       this->m_dimensions = other.dimensions();
+      this->m_global_idx = other.global_idx();
       this->freed_on_destruction = false;
       memcpy(this->m_data, other.m_data, sizeof(double) * this->m_numel);
     }
@@ -135,8 +148,13 @@ class Tensor {
 
   int modes() const { return m_modes; }
   UVEC dimensions() const { return m_dimensions; }
+  UVEC global_idx() const { return m_global_idx; }
   int dimension(int i) const { return m_dimensions[i]; }
   int numel() const { return m_numel; }
+
+  void set_idx(const UVEC &i_start_idx) {
+    m_global_idx = i_start_idx;
+  }
 
   UWORD dimensions_leave_out_one(int i_n) const {
     UWORD rc = arma::prod(this->m_dimensions);

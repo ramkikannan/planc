@@ -64,6 +64,7 @@ inline void memusage(const int myrank, std::string event) {
     INFO << event << " total rss::" << allprocmem << std::endl;
   }
 }
+
 // n is the size of the tensor on that dimension
 // p is the number of splits of n
 // r is the rank of the mpi process in that mode. fiber rank

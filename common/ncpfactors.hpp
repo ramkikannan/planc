@@ -38,12 +38,13 @@ class NCPFactors {
     arma::arma_rng::set_seed(103);
     for (int i = 0; i < this->m_modes; i++) {
       // ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
+      int rsize = (i_dimensions[i] > 0) ? i_dimensions[i] : 1;
       if (trans) {
-        ncp_factors[i] = arma::randu<MAT>(this->m_k, i_dimensions[i]);
+        ncp_factors[i] = arma::randu<MAT>(this->m_k, rsize);
       } else {
         // ncp_factors[i] = arma::randi<MAT>(i_dimensions[i], this->m_k,
         //                                   arma::distr_param(0, numel));
-        ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
+        ncp_factors[i] = arma::randu<MAT>(rsize, this->m_k);
       }
     }
     m_lambda = arma::ones<VEC>(this->m_k);
@@ -96,8 +97,7 @@ ncp_factors[i].clear();
   }
 
   void set_lambda(VEC new_lambda) {
-    for (int i = 0; i < this->m_modes; i++)
-      m_lambda(i) = new_lambda(i);
+    for (int i = 0; i < this->m_modes; i++) m_lambda(i) = new_lambda(i);
   }
 
   // compute gram of all local factors
@@ -282,8 +282,7 @@ current_nrows *= rightkrp.n_rows;
     for (int i = 0; i < this->m_modes; i++) {
       for (int j = 0; j < this->m_k; j++) {
         colNorm = arma::norm(this->ncp_factors[i].col(j));
-        if (colNorm > 0)
-          this->ncp_factors[i].col(j) /= colNorm;
+        if (colNorm > 0) this->ncp_factors[i].col(j) /= colNorm;
         m_lambda(j) *= colNorm;
       }
     }
@@ -292,16 +291,14 @@ current_nrows *= rightkrp.n_rows;
   void normalize(int mode) {
     for (int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].col(i));
-      if (m_lambda(i) > 0)
-        this->ncp_factors[mode].col(i) /= m_lambda(i);
+      if (m_lambda(i) > 0) this->ncp_factors[mode].col(i) /= m_lambda(i);
     }
   }
   // replaces the existing lambdas
   void normalize_rows(int mode) {
     for (int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].row(i));
-      if (m_lambda(i) > 0)
-        this->ncp_factors[mode].row(i) /= m_lambda(i);
+      if (m_lambda(i) > 0) this->ncp_factors[mode].row(i) /= m_lambda(i);
     }
   }
 
@@ -312,7 +309,11 @@ current_nrows *= rightkrp.n_rows;
   void randu(const int i_seed) {
     arma::arma_rng::set_seed(i_seed);
     for (int i = 0; i < this->m_modes; i++) {
-      ncp_factors[i].randu();
+      if (m_dimensions[i] > 0) {
+        ncp_factors[i].randu();
+      } else {
+        ncp_factors[i].zeros();
+      }
     }
   }
   /*
@@ -337,8 +338,7 @@ current_nrows *= rightkrp.n_rows;
         MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
                       MPI_COMM_WORLD);
         global_colnorm = std::sqrt(global_colnorm);
-        if (global_colnorm > 0)
-          this->ncp_factors[i].col(j) /= global_colnorm;
+        if (global_colnorm > 0) this->ncp_factors[i].col(j) /= global_colnorm;
         m_lambda(j) *= global_colnorm;
       }
     }
@@ -352,8 +352,7 @@ current_nrows *= rightkrp.n_rows;
       MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
       global_colnorm = std::sqrt(global_colnorm);
-      if (global_colnorm > 0)
-        this->ncp_factors[mode].col(j) /= global_colnorm;
+      if (global_colnorm > 0) this->ncp_factors[mode].col(j) /= global_colnorm;
       m_lambda(j) = global_colnorm;
     }
   }
@@ -366,8 +365,7 @@ current_nrows *= rightkrp.n_rows;
       MPI_Allreduce(&local_rownorm, &global_rownorm, 1, MPI_DOUBLE, MPI_SUM,
                     MPI_COMM_WORLD);
       global_rownorm = std::sqrt(global_rownorm);
-      if (global_rownorm > 0)
-        this->ncp_factors[mode].row(j) /= global_rownorm;
+      if (global_rownorm > 0) this->ncp_factors[mode].row(j) /= global_rownorm;
       m_lambda(j) = global_rownorm;
     }
   }
