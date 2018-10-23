@@ -35,6 +35,38 @@ class Tensor {
   unsigned int rand_seed;
   bool freed_on_destruction;
 
+  // for the time being it is used for debugging purposes
+  size_t sub2ind(UVEC sub, UVEC dimensions) {
+    assert(sub.n_rows == dimensions.n_rows);
+    UVEC cumprod_dims = arma::cumprod(dimensions);
+    UVEC cumprod_dims_shifted = arma::shift(cumprod_dims, 1);
+    cumprod_dims_shifted(0) = 1;
+    size_t idx = arma::dot(cumprod_dims_shifted, sub);
+    return idx;
+  }
+  UVEC ind2sub(UVEC dimensions, size_t idx) {
+    //   k = [1 cumprod(siz(1 : end - 1))];
+    //   n = length(siz);
+    //   idx = idx - 1;
+    // for i = n : -1 : 1
+    //   div = floor(idx / k(i));
+    //   subs( :, i) = div + 1;
+    //   idx = idx - k(i) * div;
+    // end
+    UVEC cumprod_dims = arma::cumprod(dimensions);
+    UVEC cumprod_dims_shifted = arma::shift(cumprod_dims, 1);
+    cumprod_dims_shifted(0) = 1;
+    int modes = dimensions.n_elem;
+    UVEC sub = arma::zeros<UVEC>(modes);
+    float temp;
+    for (int i = modes - 1; i >= 0; i--) {
+      temp = std::floor((idx * 1.0) / (cumprod_dims_shifted(i) * 1.0));
+      sub(i) = temp;
+      idx = idx - cumprod_dims_shifted(i) * temp;
+    }
+    return sub;
+  }
+
  public:
   double *m_data;
   Tensor() {
@@ -79,6 +111,7 @@ class Tensor {
     m_data = new double[this->m_numel];
     memcpy(this->m_data, src.m_data, sizeof(double) * this->m_numel);
   }
+
   Tensor &operator=(const Tensor &other) {  // copy assignment
     if (this != &other) {                   // self-assignment check expected
       clear();
@@ -91,7 +124,6 @@ class Tensor {
     }
     return *this;
   }
-
   void clear() {
     if (this->m_numel > 0 && this->m_data != NULL) {
       delete[] this->m_data;  // destroy storage in this
@@ -238,10 +270,26 @@ class Tensor {
   }
 
   void print() const {
+    INFO << "Dimensions: " << this->m_dimensions;
     for (int i = 0; i < this->m_numel; i++) {
       std::cout << i << " : " << this->m_data[i] << std::endl;
     }
   }
+
+  void print(const UVEC &global_dims, const UVEC &global_start_sub) {
+    UVEC local_sub = arma::zeros<UVEC>(global_dims.n_elem);
+    // UVEC global_start_sub = ind2sub(global_dims, global_start_idx);
+    UVEC global_sub = arma::zeros<UVEC>(global_dims.n_elem);
+    int global_idx;
+    for (int i = 0; i < this->m_numel; i++) {
+      local_sub = ind2sub(this->m_dimensions, i);
+      global_sub = global_start_sub + local_sub;
+      global_idx = sub2ind(global_sub, global_dims);
+      std::cout << i << " : " << global_idx << " : " << this->m_data[i]
+                << std::endl;
+    }
+  }
+
   double norm() const {
     double norm_fro = 0;
     for (int i = 0; i < this->m_numel; i++) {
@@ -292,8 +340,8 @@ class Tensor {
     }
   }
 
-  void save(std::string filename,
-            std::ios_base::openmode mode = std::ios_base::out) {
+  void write(std::string filename,
+             std::ios_base::openmode mode = std::ios_base::out) {
     std::string filename_no_extension =
         filename.substr(0, filename.find_last_of("."));
     // info file always in text mode
@@ -304,7 +352,7 @@ class Tensor {
     ofs << this->m_modes << std::endl;
     // dimension of modes
     for (int i = 0; i < this->m_modes; i++) {
-      ofs << this->m_dimensions[i] << " ";
+      ofs << this->m_dimensions[i] << std::endl;
     }
     ofs << std::endl;
     ofs.close();

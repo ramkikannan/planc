@@ -24,17 +24,23 @@ class NTFDriver {
     int test_modes = pc.num_modes();
     UVEC dimensions(test_modes);
     Tensor my_tensor(pc.dimensions());
+    std::string rand_prefix("rand_");
+    std::string filename = pc.input_file_name();
+    std::cout << "Input filename = " << filename << std::endl;
+    if (!filename.empty() && filename.compare(0, rand_prefix.size(), rand_prefix)!=0){
+      my_tensor.read(pc.input_file_name());
+      my_tensor.print();
+    }        
     NTFTYPE ntfsolver(my_tensor, pc.lowrankk(), pc.lucalgo());
     ntfsolver.num_it(pc.iterations());
     ntfsolver.compute_error(pc.compute_error());
     if (pc.dim_tree()) {
       ntfsolver.dim_tree(true);
     }
-    ntfsolver.computeNTF();
+    ntfsolver.computeNTF();    
     // ntfsolver.ncp_factors().print();
   }
   NTFDriver() {}
-
 };  // class NTF Driver
 
 }  // namespace planc

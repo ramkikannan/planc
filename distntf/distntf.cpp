@@ -4,6 +4,7 @@
 #include "common/distutils.hpp"
 #include "common/parsecommandline.hpp"
 #include "common/utils.hpp"
+#include "common/tensor.hpp"
 #include "distntf/distauntf.hpp"
 #include "distntf/distntfanlsbpp.hpp"
 #include "distntf/distntfaoadmm.hpp"
@@ -54,8 +55,17 @@ class DistNTF {
     if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
       dio.readInput(m_Afile_name, this->m_global_dims, this->m_proc_grids,
                     this->m_k, this->m_sparsity);
+      // dio.write_dist_tensor("distntfiotestbin", dio.A());
+      // return;
     } else {
-      dio.readInput(m_Afile_name);
+      this->m_global_dims = dio.read_dist_tensor(m_Afile_name);
+      // int modes = this->m_proc_grids.n_elem;
+      // UVEC m_global_sub = arma::zeros<UVEC>(modes);
+      // this->m_global_dims = dio.read_dist_tensor(m_Afile_name, &m_global_sub);
+      // planc::Tensor A;
+      // A = dio.A();
+      // A.print(this->m_global_dims, m_global_sub);
+      // return;
     }
     // planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);
     planc::Tensor A;
@@ -109,6 +119,17 @@ class DistNTF {
     mpitic();
     ntfsolver.computeNTF();
     double temp = mpitoc();
+    A.clear();
+    if (!this->m_outputfile_name.empty()) {
+      for (int i = 0; i < this->m_global_dims.n_elem; i++) {
+        std::stringstream sw;
+        sw << this->m_outputfile_name << "_mode" << i << "_" << mpicomm.size()
+           << "_" << mpicomm.rank();
+        MAT factor(this->m_global_dims[i], this->m_k);
+        ntfsolver.factor(i, factor.memptr());
+        factor.save(sw.str(), arma::raw_ascii);
+      }
+    }
 
     if (mpicomm.rank() == 0) printf("NTF took %.3lf secs.\n", temp);
     // } catch (std::exception& e) {
@@ -131,6 +152,7 @@ class DistNTF {
     this->m_global_dims = pc.dimensions();
     this->m_compute_error = pc.compute_error();
     this->m_enable_dim_tree = pc.dim_tree();
+    this->m_outputfile_name = pc.output_file_name();
     printConfig();
     switch (this->m_ntfalgo) {
       case MU:

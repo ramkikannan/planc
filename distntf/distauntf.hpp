@@ -462,6 +462,19 @@ class DistAUNTF {
     m_local_ncp_factors_t.set_lambda(new_factors.lambda());
   }
 
+  // Preferrably call this after the computeNTF().
+  // This is right now called to save the factor matrices.
+  void factor(int mode, double *factor_matrix) {
+    gather_ncp_factor(mode);
+    int sendcnt = m_gathered_ncp_factors_t.factor(mode).n_elem;
+    int recvcnt = m_gathered_ncp_factors_t.factor(mode).n_elem;
+    MPI_Allgather(m_gathered_ncp_factors_t.factor(mode).memptr(), sendcnt,
+                  MPI_DOUBLE, factor_matrix, recvcnt, MPI_DOUBLE,
+                  // todo:: check whether it is slice or fiber while running
+                  // and debugging the code.
+                  this->m_mpicomm.fiber(mode));
+  }
+
   void computeNTF() {
     // initialize everything.
     // line 3,4,5 of the algorithm
