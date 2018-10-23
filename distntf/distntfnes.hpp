@@ -55,12 +55,18 @@ class DistNTFNES : public DistAUNTF {
   bool stop_iter(const int mode) {
     bool stop = false;
     double local_absmax, local_min, global_absmax, global_min;
-    local_absmax =
-        (arma::abs(m_grad_t.factor(mode) % m_acc_t.factor(mode))).max();
+    local_absmax = 0.0;
+    if (m_nls_sizes[mode] > 0) {
+      local_absmax =
+          (arma::abs(m_grad_t.factor(mode) % m_acc_t.factor(mode))).max();
+    }
     MPI_Allreduce(&local_absmax, &global_absmax, 1, MPI_DOUBLE, MPI_MAX,
                   MPI_COMM_WORLD);
 
-    local_min = (m_grad_t.factor(mode)).min();
+    local_min = 0.0;
+    if (m_nls_sizes[mode] > 0) {
+      local_min = (m_grad_t.factor(mode)).min();
+    }
     MPI_Allreduce(&local_min, &global_min, 1, MPI_DOUBLE, MPI_MIN,
                   MPI_COMM_WORLD);
 
@@ -93,6 +99,10 @@ class DistNTFNES : public DistAUNTF {
                   (scaleprev * m_prev_t.factor(mode));
         acc_mat *= acc_step;
         acc_mat += (scalecur * this->m_local_ncp_factors_t.factor(mode));
+
+        if (m_nls_sizes[mode] == 0) {
+          acc_mat.zeros();
+        }
         m_acc_t.set(mode, acc_mat);
         m_acc_t.distributed_normalize_rows(mode);
       }
@@ -162,7 +172,10 @@ class DistNTFNES : public DistAUNTF {
           (alpha_prev * (1 - alpha_prev)) / (alpha + alpha_prev * alpha_prev);
       m_acc_t.set(mode, Ht + beta * (Ht - Htprev));
     }
-
+    if (m_nls_sizes[mode] == 0) {
+      Ht.zeros();
+      m_grad_t.set(mode, Ht);
+    }
     m_prox_t.set(mode, Ht);
     m_prox_t.distributed_normalize_rows(mode);
 
@@ -176,10 +189,10 @@ class DistNTFNES : public DistAUNTF {
              const NTFMPICommunicator &i_mpicomm)
       : DistAUNTF(i_tensor, i_k, i_algo, i_global_dims, i_local_dims,
                   i_nls_sizes, i_nls_idxs, i_mpicomm),
-        m_prox_t(i_local_dims, i_k, true),
-        m_prev_t(i_local_dims, i_k, true),
-        m_acc_t(i_local_dims, i_k, true),
-        m_grad_t(i_local_dims, i_k, true) {
+        m_prox_t(i_nls_sizes, i_k, true),
+        m_prev_t(i_nls_sizes, i_k, true),
+        m_acc_t(i_nls_sizes, i_k, true),
+        m_grad_t(i_nls_sizes, i_k, true) {
     m_prox_t.zeros();
     m_prev_t.zeros();
     m_acc_t.zeros();
