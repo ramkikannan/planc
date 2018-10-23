@@ -30,6 +30,8 @@ class DistNTF {
   int m_num_k_blocks;
   UVEC m_global_dims;
   UVEC m_factor_local_dims;
+  UVEC m_nls_sizes;
+  UVEC m_nls_idxs;
   bool m_enable_dim_tree;
   static const int kprimeoffset = 17;
 
@@ -70,6 +72,7 @@ class DistNTF {
     }
     INFO << mpicomm.rank()
          << "::Completed generating tensor A=" << A.dimensions()
+         << "::start indices::" << A.global_idx()
          << "::global dims::" << this->m_global_dims << std::endl;
 #ifdef DISTNTF_VERBOSE
     A.print();
@@ -94,9 +97,26 @@ class DistNTF {
     //   const UVEC &i_global_dims,
     //   const UVEC &i_local_dims,
     //   const NTFMPICommunicator &i_mpicomm)
-    this->m_factor_local_dims = this->m_global_dims / mpicomm.size();
+    // this->m_factor_local_dims = this->m_global_dims / mpicomm.size();
+    this->m_factor_local_dims = A.dimensions();
+    int num_modes = A.dimensions().n_rows;
+
+    m_nls_sizes = arma::zeros<UVEC>(num_modes);
+    m_nls_idxs = arma::zeros<UVEC>(num_modes);
+    // Calculate NLS sizes
+    for (int i = 0; i < num_modes; i++) {
+      int slice_size = mpicomm.slice_size(i);
+      int slice_rank = mpicomm.slice_rank(i);
+      int num_rows = this->m_factor_local_dims[i];
+      m_nls_sizes[i] = itersplit(num_rows, slice_size, slice_rank);
+      m_nls_idxs[i] = startidx(num_rows, slice_size, slice_rank);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
     NTFTYPE ntfsolver(A, this->m_k, this->m_ntfalgo, this->m_global_dims,
-                      this->m_factor_local_dims, mpicomm);
+                      this->m_factor_local_dims, this->m_nls_sizes,
+                      this->m_nls_idxs, mpicomm);
     memusage(mpicomm.rank(), "after constructor ");
     ntfsolver.num_iterations(this->m_num_it);
     ntfsolver.compute_error(this->m_compute_error);

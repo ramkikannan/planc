@@ -89,8 +89,9 @@ class DistAUNTF {
     // computing U
     MPITIC;  // gram
     // force a ssyrk instead of gemm.
-    factor_local_grams = m_local_ncp_factors.factor(current_mode).t() *
-                         m_local_ncp_factors.factor(current_mode);
+    MAT H = m_local_ncp_factors.factor(current_mode);
+    factor_local_grams = H.t() * H;
+
     double temp = MPITOC;  // gram
     this->time_stats.compute_duration(temp);
     this->time_stats.gram_duration(temp);
@@ -142,8 +143,6 @@ class DistAUNTF {
 
   // factor matrices all gather only on the current update factor
   void gather_ncp_factor(const int current_mode) {
-    int sendcnt = m_local_ncp_factors.factor(current_mode).n_elem;
-    int recvcnt = m_local_ncp_factors.factor(current_mode).n_elem;
     m_gathered_ncp_factors_t.factor(current_mode).zeros();
     // Had this comment for debugging memory corruption in all_gather
     // DISTPRINTINFO("::ncp_krp::" << ncp_krp[current_mode].memptr()
@@ -157,6 +156,21 @@ class DistAUNTF {
 
     MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
     int slice_size;
+    MPI_Comm_size(current_slice_comm, &slice_size);
+
+    // int sendcnt = m_local_ncp_factors.factor(current_mode).n_elem;
+    int sendcnt = m_nls_sizes[current_mode] * m_low_rank_k;
+
+    // int recvcnt = m_local_ncp_factors.factor(current_mode).n_elem;
+    std::vector<int> recvgathercnt(slice_size, 0);
+    std::vector<int> recvgatherdispl(slice_size, 0);
+
+    int dimsize = m_factor_local_dims[current_mode];
+    for (int i = 0; i < slice_size; i++) {
+      recvgathercnt[i] = itersplit(dimsize, slice_size, i) * m_low_rank_k;
+      recvgatherdispl[i] = startidx(dimsize, slice_size, i) * m_low_rank_k;
+    }
+
 #ifdef DISTNTF_VERBOSE
     MPI_Comm current_fiber_comm = this->m_mpicomm.fiber(current_mode);
     int fiber_size;
@@ -169,18 +183,19 @@ class DistAUNTF {
                   << this->m_mpicomm.slice_rank(current_mode)
                   << "::my_fiber_rank::"
                   << this->m_mpicomm.fiber_rank(current_mode)
-                  << "::sendcnt::" << sendcnt << "::recvcnt::" << recvcnt
+                  << "::sendcnt::" << sendcnt
                   << "::gathered factor size::"
                   << m_gathered_ncp_factors_t.factor(current_mode).n_elem);
 #endif
     MPITIC;  // allgather tic
-    MPI_Allgather(m_local_ncp_factors_t.factor(current_mode).memptr(), sendcnt,
-                  MPI_DOUBLE,
-                  m_gathered_ncp_factors_t.factor(current_mode).memptr(),
-                  recvcnt, MPI_DOUBLE,
-                  // todo:: check whether it is slice or fiber while running
-                  // and debugging the code.
-                  current_slice_comm);
+    MPI_Allgatherv(
+        m_local_ncp_factors_t.factor(current_mode).memptr(),
+        sendcnt, MPI_DOUBLE,
+        m_gathered_ncp_factors_t.factor(current_mode).memptr(),
+        &recvgathercnt[0], &recvgatherdispl[0], MPI_DOUBLE,
+        // todo:: check whether it is slice or fiber while running
+        // and debugging the code.
+        current_slice_comm);
     // current_slice_comm);
     double temp = MPITOC;  // allgather toc
     this->time_stats.communication_duration(temp);
@@ -244,10 +259,15 @@ class DistAUNTF {
 
     MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
     int slice_size;
+    int slice_rank;
 
     MPI_Comm_size(current_slice_comm, &slice_size);
-    std::vector<int> recvmttkrpsize(slice_size,
-                                    ncp_local_mttkrp_t[current_mode].n_elem);
+    slice_rank = this->m_mpicomm.slice_rank(current_mode);
+    std::vector<int> recvmttkrpsize(slice_size);
+    int dimsize = m_factor_local_dims[current_mode];
+    for (int i = 0; i < slice_size; i++) {
+      recvmttkrpsize[i] = itersplit(dimsize, slice_size, i) * m_low_rank_k;
+    }
 #ifdef DISTNTF_VERBOSE
     MPI_Comm current_fiber_comm = this->m_mpicomm.fiber(current_mode);
     int fiber_size;
@@ -263,11 +283,12 @@ class DistAUNTF {
                   << "::local_mttkrp_size::"
                   << ncp_local_mttkrp_t[current_mode].n_elem);
 #endif
+    ncp_local_mttkrp_t[current_mode].zeros();
     MPITIC;  // reduce_scatter mttkrp
-    MPI_Reduce_scatter(ncp_mttkrp_t[current_mode].memptr(),
-                       ncp_local_mttkrp_t[current_mode].memptr(),
-                       &recvmttkrpsize[0], MPI_DOUBLE, MPI_SUM,
-                       current_slice_comm);
+    MPI_Reduce_scatter(
+        ncp_mttkrp_t[current_mode].memptr(),
+        ncp_local_mttkrp_t[current_mode].memptr(),
+        &recvmttkrpsize[0], MPI_DOUBLE, MPI_SUM, current_slice_comm);
     temp = MPITOC;  // reduce_scatter mttkrp
     this->time_stats.communication_duration(temp);
     this->time_stats.reducescatter_duration(temp);
@@ -336,6 +357,7 @@ class DistAUNTF {
     m_local_ncp_factors.distributed_normalize(current_mode);
     MAT factor_t = m_local_ncp_factors.factor(current_mode).t();
     m_local_ncp_factors_t.set(current_mode, factor_t);
+    m_local_ncp_factors_t.set_lambda(m_local_ncp_factors.lambda());
     // line 13 and 14
     update_global_gram(current_mode);
     // line 15
@@ -376,6 +398,7 @@ class DistAUNTF {
  public:
   DistAUNTF(const Tensor &i_tensor, const int i_k, algotype i_algo,
             const UVEC &i_global_dims, const UVEC &i_local_dims,
+            const UVEC &i_nls_sizes, const UVEC &i_nls_idxs,
             const NTFMPICommunicator &i_mpicomm)
       : m_input_tensor(i_tensor.dimensions(), i_tensor.m_data),
         m_low_rank_k(i_k),
@@ -384,8 +407,10 @@ class DistAUNTF {
         m_modes(m_input_tensor.modes()),
         m_global_dims(i_global_dims),
         m_factor_local_dims(i_local_dims),
-        m_local_ncp_factors(i_local_dims, i_k, false),
-        m_local_ncp_factors_t(i_local_dims, i_k, true),
+        m_nls_sizes(i_nls_sizes),
+        m_nls_idxs(i_nls_idxs),
+        m_local_ncp_factors(i_nls_sizes, i_k, false),
+        m_local_ncp_factors_t(i_nls_sizes, i_k, true),
         m_gathered_ncp_factors(i_tensor.dimensions(), i_k, false),
         m_gathered_ncp_factors_t(i_tensor.dimensions(), i_k, true),
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
@@ -403,25 +428,15 @@ class DistAUNTF {
       m_local_ncp_factors_t.set(i, current_factor);
       this->m_stale_mttkrp.push_back(true);
     }
+    m_local_ncp_factors_t.set_lambda(m_local_ncp_factors.lambda());
     m_gathered_ncp_factors.trans(m_gathered_ncp_factors_t);
     allocateMatrices();
     double normA = i_tensor.norm();
     MPI_Allreduce(&normA, &this->m_global_sqnorm_A, 1, MPI_DOUBLE, MPI_SUM,
                   MPI_COMM_WORLD);
-    m_nls_sizes = arma::zeros<UVEC>(this->m_modes);
-    m_nls_idxs = arma::zeros<UVEC>(this->m_modes);
-    // Calculate NLS sizes
-    for (int i = 0; i < this->m_modes; i++) {
-      int slice_size = m_mpicomm.slice_size(i);
-      int slice_rank = m_mpicomm.slice_rank(i);
-      int num_rows = m_factor_local_dims[i];
-      m_nls_sizes[i] = itersplit(num_rows, slice_size, slice_rank);
-      m_nls_idxs[i] = startidx(num_rows, slice_size, slice_rank);
-    }
-    int mpi_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-    INFO << "MPI Rank::" << mpi_rank << "::NLS sizes::" << std::endl
-         << m_nls_sizes << "::NLS start idx::" << m_nls_idxs;
+
+    DISTPRINTINFO("::NLS Solve Sizes::" << m_nls_sizes
+                  << "::NLS start indices::" << m_nls_idxs);
   }
   ~DistAUNTF() {
     freeMatrices();
