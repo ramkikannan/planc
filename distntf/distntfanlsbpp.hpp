@@ -66,9 +66,10 @@ class DistNTFANLSBPP : public DistAUNTF {
  public:
   DistNTFANLSBPP(const Tensor &i_tensor, const int i_k, algotype i_algo,
                  const UVEC &i_global_dims, const UVEC &i_local_dims,
+                 const UVEC &i_nls_sizes, const UVEC &i_nls_idxs,
                  const NTFMPICommunicator &i_mpicomm)
       : DistAUNTF(i_tensor, i_k, i_algo, i_global_dims, i_local_dims,
-                  i_mpicomm) {}
+                  i_nls_sizes, i_nls_idxs, i_mpicomm) {}
 };  // class DistNTFANLSBPP
 
 }  // namespace planc
