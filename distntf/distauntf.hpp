@@ -183,19 +183,17 @@ class DistAUNTF {
                   << this->m_mpicomm.slice_rank(current_mode)
                   << "::my_fiber_rank::"
                   << this->m_mpicomm.fiber_rank(current_mode)
-                  << "::sendcnt::" << sendcnt
-                  << "::gathered factor size::"
+                  << "::sendcnt::" << sendcnt << "::gathered factor size::"
                   << m_gathered_ncp_factors_t.factor(current_mode).n_elem);
 #endif
     MPITIC;  // allgather tic
-    MPI_Allgatherv(
-        m_local_ncp_factors_t.factor(current_mode).memptr(),
-        sendcnt, MPI_DOUBLE,
-        m_gathered_ncp_factors_t.factor(current_mode).memptr(),
-        &recvgathercnt[0], &recvgatherdispl[0], MPI_DOUBLE,
-        // todo:: check whether it is slice or fiber while running
-        // and debugging the code.
-        current_slice_comm);
+    MPI_Allgatherv(m_local_ncp_factors_t.factor(current_mode).memptr(), sendcnt,
+                   MPI_DOUBLE,
+                   m_gathered_ncp_factors_t.factor(current_mode).memptr(),
+                   &recvgathercnt[0], &recvgatherdispl[0], MPI_DOUBLE,
+                   // todo:: check whether it is slice or fiber while running
+                   // and debugging the code.
+                   current_slice_comm);
     // current_slice_comm);
     double temp = MPITOC;  // allgather toc
     this->time_stats.communication_duration(temp);
@@ -285,10 +283,10 @@ class DistAUNTF {
 #endif
     ncp_local_mttkrp_t[current_mode].zeros();
     MPITIC;  // reduce_scatter mttkrp
-    MPI_Reduce_scatter(
-        ncp_mttkrp_t[current_mode].memptr(),
-        ncp_local_mttkrp_t[current_mode].memptr(),
-        &recvmttkrpsize[0], MPI_DOUBLE, MPI_SUM, current_slice_comm);
+    MPI_Reduce_scatter(ncp_mttkrp_t[current_mode].memptr(),
+                       ncp_local_mttkrp_t[current_mode].memptr(),
+                       &recvmttkrpsize[0], MPI_DOUBLE, MPI_SUM,
+                       current_slice_comm);
     temp = MPITOC;  // reduce_scatter mttkrp
     this->time_stats.communication_duration(temp);
     this->time_stats.reducescatter_duration(temp);
@@ -435,8 +433,8 @@ class DistAUNTF {
     MPI_Allreduce(&normA, &this->m_global_sqnorm_A, 1, MPI_DOUBLE, MPI_SUM,
                   MPI_COMM_WORLD);
 
-    DISTPRINTINFO("::NLS Solve Sizes::" << m_nls_sizes
-                  << "::NLS start indices::" << m_nls_idxs);
+    DISTPRINTINFO("::NLS Solve Sizes::"
+                  << m_nls_sizes << "::NLS start indices::" << m_nls_idxs);
   }
   ~DistAUNTF() {
     freeMatrices();
@@ -445,6 +443,8 @@ class DistAUNTF {
     }
   }
   void num_iterations(const int i_n) { this->m_num_it = i_n; }
+  size_t modes() const {return this->m_modes;}
+  size_t rank() const {return this->m_low_rank_k;}
   void regularizers(const FVEC i_regs) { this->m_regularizers = i_regs; }
   void compute_error(bool i_error) {
     this->m_compute_error = i_error;
@@ -492,20 +492,30 @@ class DistAUNTF {
     }
     m_local_ncp_factors.set_lambda(new_factors.lambda());
     m_local_ncp_factors_t.set_lambda(new_factors.lambda());
-  }
+  }  
 
   // Preferrably call this after the computeNTF().
   // This is right now called to save the factor matrices.
   void factor(int mode, double *factor_matrix) {
     gather_ncp_factor(mode);
     int sendcnt = m_gathered_ncp_factors_t.factor(mode).n_elem;
-    int recvcnt = m_gathered_ncp_factors_t.factor(mode).n_elem;
-    MPI_Allgather(m_gathered_ncp_factors_t.factor(mode).memptr(), sendcnt,
-                  MPI_DOUBLE, factor_matrix, recvcnt, MPI_DOUBLE,
-                  // todo:: check whether it is slice or fiber while running
-                  // and debugging the code.
-                  this->m_mpicomm.fiber(mode));
-  }
+    int fiber_size = this->m_mpicomm.proc_grids()[mode];
+    int global_size = this->m_global_dims[mode];
+    std::vector<int> recvcnts(fiber_size, 0);
+    std::vector<int> displs(fiber_size, 0);
+
+    // int dimsize = m_factor_local_dims[current_mode];
+    for (int i = 0; i < fiber_size; i++) {
+      recvcnts[i] = itersplit(global_size, fiber_size, i) * m_low_rank_k;
+      displs[i] = startidx(global_size, fiber_size, i) * m_low_rank_k;
+    }
+
+    MPI_Gatherv(m_gathered_ncp_factors_t.factor(mode).memptr(), sendcnt,
+                MPI_DOUBLE, factor_matrix, &recvcnts[0], &displs, MPI_DOUBLE,
+                // todo:: check whether it is slice or fiber while running
+                // and debugging the code.
+                0, this->m_mpicomm.fiber(mode));
+    }
 
   void computeNTF() {
     // initialize everything.

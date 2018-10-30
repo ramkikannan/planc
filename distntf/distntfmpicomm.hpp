@@ -43,13 +43,12 @@ class NTFMPICommunicator {
       MPI_Comm current_fiber_comm;
       for (int i = 0; i < MPI_CART_DIMS; i++) {
         current_fiber_comm = this->m_fiber_comm[i];
-        MPI_Comm_size(current_fiber_comm, &slice_size);
-        INFO << "Numprocs in fiber " << i << "::" << slice_size << std::endl;
+        MPI_Comm_size(current_fiber_comm, &fiber_size);
+        INFO << "Numprocs in fiber " << i << "::" << fiber_size << std::endl;
       }
     }
     UVEC cooprint(MPI_CART_DIMS);
-    for (int ii = 0; ii < MPI_CART_DIMS; ii++)
-      cooprint[ii] = m_coords[ii];
+    for (int ii = 0; ii < MPI_CART_DIMS; ii++) cooprint[ii] = m_coords[ii];
 
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < size(); i++) {
@@ -58,8 +57,8 @@ class NTFMPICommunicator {
              << "::" << m_slice_ranks << std::endl;
         INFO << "fiber ranks of rank::" << m_global_rank
              << "::" << m_fiber_ranks << std::endl;
-        INFO << "coordinates::" << m_global_rank
-             << "::" << cooprint << std::endl;
+        INFO << "coordinates::" << m_global_rank << "::" << cooprint
+             << std::endl;
       }
       MPI_Barrier(MPI_COMM_WORLD);
     }
@@ -116,8 +115,7 @@ class NTFMPICommunicator {
     }
     // Get the coordinates
     m_coords.resize(MPI_CART_DIMS, 0);
-    MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS,
-                    &m_coords[0]);
+    MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, &m_coords[0]);
     // Get the slice size
     m_slice_sizes = arma::zeros<UVEC>(MPI_CART_DIMS);
     for (int i = 0; i < MPI_CART_DIMS; i++) {
@@ -144,6 +142,9 @@ class NTFMPICommunicator {
   void coordinates(int *o_c) const {
     MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, o_c);
   }
+
+  std::vector<int> coordinates() const { return this->m_coords; }
+
   const MPI_Comm &fiber(const int i) const { return m_fiber_comm[i]; }
   const MPI_Comm &slice(const int i) const { return m_slice_comm[i]; }
   int rank(const int *i_coords) const {
@@ -164,6 +165,23 @@ class NTFMPICommunicator {
   int num_slices(int mode) const { return m_proc_grids[mode]; }
   int slice_num(int mode) const { return m_coords[mode]; }
   int slice_size(int mode) const { return m_slice_sizes[mode]; }
+
+  /*
+   * Return true only for those processors whose
+   * coordinates are non-zero for the mode and zero
+   * non-modes
+   */
+  bool isparticipating(int mode) {
+    bool rc = true;
+    size_t num_modes = this->m_proc_grids.n_rows;
+    for (int i = 0; i < num_modes; i++) {
+      if (i != mode && this->m_coords[i] != 0) {
+        rc = false;
+        break;
+      }
+    }
+    return rc;
+  }
 };
 
 }  // namespace planc

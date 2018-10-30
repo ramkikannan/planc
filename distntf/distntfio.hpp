@@ -35,6 +35,8 @@ class DistNTFIO {
   static const int kW_seed_idx = 1210873;
   static const int kalpha = 1;
   static const int kbeta = 0;
+  UVEC m_global_dims;
+  UVEC m_local_dims;
 
   /*
    * Uses the pattern from the input matrix X but
@@ -54,7 +56,7 @@ class DistNTFIO {
       start_row = i_start_rows(i);
       end_row = start_row + i_local_dims(i) - 1;
       local_factors.factor(i) =
-          global_factors.factor(i).rows(start_row[i], end_row);
+          global_factors.factor(i).rows(start_row, end_row);
     }
     local_factors.rankk_tensor(m_A);
   }
@@ -169,21 +171,21 @@ class DistNTFIO {
     int *global_dims = new int[modes];
     int *local_dims = new int[modes];
     int *start_idxs = new int[modes];
-    UVEC local_dims_uvec = arma::zeros<UVEC>(modes);
-    UVEC global_dims_uvec = arma::zeros<UVEC>(modes);
+    this->m_local_dims = arma::zeros<UVEC>(modes);
+    this->m_global_dims = arma::zeros<UVEC>(modes);
     UVEC tmp_proc_grids = this->m_mpicomm.proc_grids();
     for (int i = 0; i < modes; i++) {
       ifs >> global_dims[i];
-      global_dims_uvec[i] = global_dims[i];
+      this->m_global_dims[i] = global_dims[i];
       local_dims[i] = itersplit(global_dims[i], tmp_proc_grids[i],
                                 this->m_mpicomm.fiber_rank(i));
-      local_dims_uvec[i] = local_dims[i];
+      this->m_local_dims[i] = local_dims[i];
       start_idxs[i] = startidx(global_dims[i], tmp_proc_grids[i],
                                this->m_mpicomm.fiber_rank(i));
       if (start_idxs_uvec != NULL) start_idxs_uvec[i] = start_idxs[i];
     }
     ifs.close();
-    Tensor rc(local_dims_uvec);
+    Tensor rc(this->m_local_dims);
     // Create the datatype associated with this layout
     MPI_Datatype view;
     MPI_Type_create_subarray(modes, global_dims, local_dims, start_idxs,
@@ -225,7 +227,7 @@ class DistNTFIO {
     delete[] start_idxs;
     this->m_A = rc;
     rc.clear();
-    return global_dims_uvec;
+    return this->m_global_dims;
   }
   /*
     Reading from real input file.
@@ -317,39 +319,50 @@ class DistNTFIO {
     //     << m << "::" << n << "::" << pr << "::" << pc
     //     << "::" << this->MPI_RANK << "::" << this->m_mpicomm.size() <<
     //     std::endl;
+    this->m_global_dims = i_global_dims;
     std::string rand_prefix("rand_");
     if (!file_name.compare(0, rand_prefix.size(), rand_prefix)) {
+      this->m_local_dims = arma::zeros<UVEC>(i_proc_grids.n_rows);
+      UVEC start_rows = arma::zeros<UVEC>(i_proc_grids.n_rows);
+      // Calculate tensor local dimensions
+      for (int mode = 0; mode < this->m_local_dims.n_rows; mode++) {
+        int slice_num = this->m_mpicomm.slice_num(mode);
+        this->m_local_dims[mode] =
+            itersplit(i_global_dims[mode], i_proc_grids[mode], slice_num);
+        start_rows[mode] =
+            startidx(i_global_dims[mode], i_proc_grids[mode], slice_num);
+      }
       if (!file_name.compare("rand_uniform")) {
         // Tensor temp(i_global_dims / i_proc_grids);
-        Tensor temp(local_dims, start_rows);
+        Tensor temp(this->m_local_dims, start_rows);
         this->m_A = temp;
         // generate again. otherwise all processes will have
         // same input tensor because of the same seed.
         this->m_A.randu(449 * MPI_RANK + 677);
       } else if (!file_name.compare("rand_lowrank")) {
-        UVEC local_dims = arma::zeros<UVEC>(i_proc_grids.n_rows);
-        UVEC start_rows = arma::zeros<UVEC>(i_proc_grids.n_rows);
-        // Calculate tensor local dimensions
-        for (int mode = 0; mode < local_dims.n_rows; mode++) {
-          int slice_num = this->m_mpicomm.slice_num(mode);
-          local_dims[mode] =
-              itersplit(i_global_dims[mode], i_proc_grids[mode], slice_num);
-          start_rows[mode] =
-              startidx(i_global_dims[mode], i_proc_grids[mode], slice_num);
-        }
-        randomLowRank(i_global_dims, local_dims, start_rows, k);
+        randomLowRank(i_global_dims, this->m_local_dims, start_rows, k);
         this->m_A.set_idx(start_rows);
       }
     } else {
       read_dist_tensor(file_name);
     }
   }
-  void write(const NCPFactors &factors, const std::string &output_file_name) {
-    for (int i = 0; i < factors.modes(); i++) {
+  void write(const std::string &output_file_name, DistAUNTF *ntfsolver) {
+    for (int i = 0; i < ntfsolver->modes(); i++) {
       std::stringstream sw;
-      sw << output_file_name << "_mode" << i << "_" << MPI_SIZE << "_"
-         << MPI_RANK;
-      factors.factor(i).save(sw.str(), arma::raw_ascii);
+      sw << output_file_name << "_mode" << i << "_" << MPI_SIZE;
+      MAT factort;
+      if (this->m_mpicomm.fiber_rank(i) == 0) {
+        factort = arma::zeros<MAT>(ntfsolver->rank(), this->m_global_dims[i]);
+      }
+      // This is a convenience barrier
+      MPI_Barrier(MPI_COMM_WORLD);
+      ntfsolver->factor(i, factort.memptr());
+      // if (isparticipating(i) && this->m_mpicomm.fiber_rank(i) == 0) {
+      if (ISROOT) {
+        MAT current_factor = factort.t();
+        current_factor.save(sw.str(), arma::raw_ascii);
+      }
     }
   }
   void writeRandInput() {}

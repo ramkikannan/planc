@@ -145,17 +145,8 @@ class DistNTF {
     ntfsolver.computeNTF();
     double temp = mpitoc();
     A.clear();
+    dio.write(this->m_outputfile_name, &ntfsolver);
     if (mpicomm.rank() == 0) {
-      if (!this->m_outputfile_name.empty()) {
-        for (int i = 0; i < this->m_global_dims.n_elem; i++) {
-          std::stringstream sw;
-          sw << this->m_outputfile_name << "_mode" << i << "_" << mpicomm.size()
-             << "_" << mpicomm.rank();
-          MAT factor(this->m_global_dims[i], this->m_k);
-          ntfsolver.factor(i, factor.memptr());
-          factor.save(sw.str(), arma::raw_ascii);
-        }
-      }
       printf("NTF took %.3lf secs.\n", temp);
     }
     // } catch (std::exception& e) {
