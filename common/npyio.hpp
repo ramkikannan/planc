@@ -4,6 +4,8 @@
 #include <armadillo>
 #include <cstdio>
 #include <vector>
+#include <string>
+#include <cassert>
 #include "common/tensor.hpp"
 #include "common/utils.h"
 
