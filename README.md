@@ -1,5 +1,4 @@
-Parallel Low-rank Approximations with Non-negativity Constraints (PLANC) 
-=====================================================================
+# Parallel Low-rank Approximations with Non-negativity Constraints (PLANC)
 
 In this repository, we offer both MPI and OPENMP implementation for MU, HALS, Nesterov, ADMM and ANLS/BPP based Non-negative Matrix Factorization(NMF) and Non-negative Tensor Factorization(NTF) algorithms. This can run off the shelf as well easy to integrate in other source code. 
 These are very highly tuned NMF algorithms to work on super computers. We have tested
@@ -23,8 +22,7 @@ In this library we support the following
 
 For other NMF implementations from Prof. Park's lab, please visit [smallk](https://github.com/smallk/smallk)
 
-Contributors
-=============
+## Contributors
 
 * [Ramakrishnan Kannan](https://ramkikannan.github.io) - Oak Ridge National Laboratory
 * [Grey Ballard](http://users.wfu.edu/ballard/) - Wake Forest University
@@ -34,13 +32,12 @@ Contributors
 * Michael A. Matheson - Oak Ridge National Laboratory
 * [Oguz Kaya](http://kayaogz.github.io/) - Assistant professorship position (maître de conférences) at Université Paris-Sud/Paris-Saclay
 
-Build Procedure
-===============
+## Build Procedure
+
 * For building individual Non-negative Matrix and Tensor Factorization look at the individual directories
 * For building all the components, refer [README](build/README.md) under build directory. 
 
-Acknowledgements
-================
+## Acknowledgements
 
 This research was supported by UT-Battelle, LLC under Contract No. DE-AC05-00OR22725 with the U.S. Department of Energy. This project was partially funded by the Laboratory Director`s Research and Development fund. This research used resources of the Oak Ridge Leadership Computing Facility at the Oak Ridge National Laboratory, which is supported by the Office of Science of the U.S. Department of Energy.
 
@@ -50,18 +47,20 @@ The United States Government retains and the publisher, by accepting the article
 
 Any opinions, findings and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the USDOE, NERSC, AFOSR, NSF or DARPA.
 
-Version 0.51
-===========
+## Release Details
+
+### Version 0.51
+
 * Moved from Single precision to double precision
 
-Version 0.5
-===========
+### Version 0.5
+
 * Support for L1 and L2 regularization
 * Removed boost and mkl requirements. Works on Cray systems such as EOS and Titan as well
 * Bug fixes on error computation
 
-Version 0.8
-===========
+### Version 0.8
+
 * Newly added algorithms - CP-ALS, Nesterov, ADMM for both NMF and NTF
 * New build procedure
 * Offloding dense operations to GPU through NVBLAS
