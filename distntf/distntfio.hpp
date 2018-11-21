@@ -162,6 +162,7 @@ class DistNTFIO {
     filename_no_extension.append(".info");
     std::ifstream ifs;
     int modes;
+    PRINTROOT("Reading tensor" << filename);
     // info file always in text mode
     ifs.open(filename_no_extension, std::ios_base::in);
     // write modes
@@ -173,6 +174,7 @@ class DistNTFIO {
     int *start_idxs = new int[modes];
     this->m_local_dims = arma::zeros<UVEC>(modes);
     this->m_global_dims = arma::zeros<UVEC>(modes);
+    UVEC tmp_start_idxs_uvec = arma::zeros<UVEC>(modes);
     UVEC tmp_proc_grids = this->m_mpicomm.proc_grids();
     for (int i = 0; i < modes; i++) {
       ifs >> global_dims[i];
@@ -183,8 +185,12 @@ class DistNTFIO {
       start_idxs[i] = startidx(global_dims[i], tmp_proc_grids[i],
                                this->m_mpicomm.fiber_rank(i));
       if (start_idxs_uvec != NULL) start_idxs_uvec[i] = start_idxs[i];
+      tmp_start_idxs_uvec[i] = start_idxs[i];
     }
     ifs.close();
+    DISTPRINTINFO("global dims::" << this->m_global_dims
+                                  << "Local Tensor Dims::" << this->m_local_dims
+                                  << "::start_idxs::" << tmp_start_idxs_uvec);
     Tensor rc(this->m_local_dims);
     // Create the datatype associated with this layout
     MPI_Datatype view;
@@ -205,9 +211,11 @@ class DistNTFIO {
     MPI_File_set_view(fh, disp, MPI_DOUBLE, view, "native", MPI_INFO_NULL);
     // Read the file
     int count = rc.numel();
-    assert(count <= std::numeric_limits<int>::max());
+    DISTPRINTINFO("reading::" << count << "::in gbs::"
+                                    << (count * 8.0) / (1024 * 1024 * 1024));
+    assert(count * 8 <= std::numeric_limits<int>::max());
     if (ISROOT && 8 * count > std::numeric_limits<int>::max()) {
-      PRINTROOT("file read size ::" << 8 * count << " > 2GB" << std::endl);
+      PRINTROOT("file read size ::" << 8.0 * count << " > 2GB" << std::endl);
     }
     MPI_Status status;
     ret = MPI_File_read_all(fh, rc.m_data, count, MPI_DOUBLE, &status);

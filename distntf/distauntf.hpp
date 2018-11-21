@@ -511,7 +511,7 @@ class DistAUNTF {
     }
 
     MPI_Gatherv(m_gathered_ncp_factors_t.factor(mode).memptr(), sendcnt,
-                MPI_DOUBLE, factor_matrix, &recvcnts[0], &displs, MPI_DOUBLE,
+                MPI_DOUBLE, factor_matrix, &recvcnts[0], &displs[0], MPI_DOUBLE,
                 // todo:: check whether it is slice or fiber while running
                 // and debugging the code.
                 0, this->m_mpicomm.fiber(mode));

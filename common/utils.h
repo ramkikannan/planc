@@ -7,7 +7,7 @@
 // #define _VERBOSE 1
 // #endif
 
-enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV };
+enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS };
 
 enum normtype { NONE, L2NORM, MAXNORM };
 

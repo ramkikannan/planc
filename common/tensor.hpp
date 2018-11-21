@@ -152,9 +152,7 @@ class Tensor {
   int dimension(int i) const { return m_dimensions[i]; }
   int numel() const { return m_numel; }
 
-  void set_idx(const UVEC &i_start_idx) {
-    m_global_idx = i_start_idx;
-  }
+  void set_idx(const UVEC &i_start_idx) { m_global_idx = i_start_idx; }
 
   UWORD dimensions_leave_out_one(int i_n) const {
     UWORD rc = arma::prod(this->m_dimensions);
@@ -189,11 +187,13 @@ class Tensor {
     std::uniform_real_distribution<> dis(0, 1);
     if (i_seed == -1) {
       std::mt19937 gen(rand_seed);
+#pragma omp parallel for
       for (int i = 0; i < this->m_numel; i++) {
         m_data[i] = dis(gen);
       }
     } else {
       std::mt19937 gen(i_seed);
+#pragma omp parallel for
       for (int i = 0; i < this->m_numel; i++) {
         m_data[i] = dis(gen);
       }
@@ -374,13 +374,16 @@ class Tensor {
     }
     ofs << std::endl;
     ofs.close();
-    ofs.open(filename, mode);
-    // write elements
-    for (size_t i = 0; i < this->m_numel; i++) {
-      ofs << this->m_data[i] << std::endl;
+    FILE *fp = fopen(filename.c_str(), "wb");
+    INFO << "size of the outputfile in GB "
+         << (this->m_numel * 8.0) / (1024 * 1024 * 1024) << std::endl;
+    size_t nwrite =
+        fwrite(this->m_data, sizeof(this->m_data), this->numel(), fp);
+    if (nwrite != this->numel()) {
+      WARN << "something wrong ::write::" << nwrite
+           << "::numel::" << this->numel() << std::endl;
     }
-    // Close the file
-    ofs.close();
+    fclose(fp);
   }
   void read(std::string filename,
             std::ios_base::openmode mode = std::ios_base::in) {
@@ -405,14 +408,22 @@ class Tensor {
       ifs >> this->m_dimensions[i];
     }
     ifs.close();
-    ifs.open(filename, mode);
+    // ifs.open(filename, mode);
+    FILE *fp = fopen(filename.c_str(), "rb");
     this->m_numel = arma::prod(this->m_dimensions);
     this->m_data = new double[this->m_numel];
-    for (int i = 0; i < this->m_numel; i++) {
-      ifs >> this->m_data[i];
+    // for (int i = 0; i < this->m_numel; i++) {
+    //   ifs >> this->m_data[i];
+    // }
+    // ifs.read(reinterpret_cast<char *>(this->m_data), sizeof(this->m_data));
+    size_t nread =
+        fread(this->m_data, sizeof(this->m_data), this->numel(), fp);
+    if (nread != this->numel()) {
+      WARN << "something wrong ::write::" << nread
+           << "::numel::" << this->numel() << std::endl;
     }
     // Close the file
-    ifs.close();
+    fclose(fp);
   }
 
   size_t sub2ind(UVEC sub) {

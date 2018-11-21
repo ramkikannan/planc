@@ -6,6 +6,7 @@
 #include "distnmf/disthals.hpp"
 #include "distnmf/distio.hpp"
 #include "distnmf/distmu.hpp"
+#include "distnmf/distals.hpp"
 #include "common/distutils.hpp"
 #include "distnmf/mpicomm.hpp"
 #include "distnmf/naiveanlsbpp.hpp"
@@ -364,6 +365,12 @@ class DistNMFDriver {
         callDistNMF2D<DistAOADMM<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
         callDistNMF2D<DistAOADMM<MAT> >();
+#endif  // ifdef BUILD_SPARSE
+      case CPALS:
+#ifdef BUILD_SPARSE
+        callDistNMF2D<DistALS<SP_MAT> >();
+#else   // ifdef BUILD_SPARSE
+        callDistNMF2D<DistALS<MAT> >();
 #endif  // ifdef BUILD_SPARSE
     }
   }

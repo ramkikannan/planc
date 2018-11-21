@@ -8,6 +8,7 @@
 #include "distntf/distauntf.hpp"
 #include "distntf/distntfanlsbpp.hpp"
 #include "distntf/distntfaoadmm.hpp"
+#include "distntf/distntfcpals.hpp"
 #include "distntf/distntfhals.hpp"
 #include "distntf/distntfio.hpp"
 #include "distntf/distntfmpicomm.hpp"
@@ -60,6 +61,9 @@ class DistNTF {
       // dio.write_dist_tensor("distntfiotestbin", dio.A());
       // return;
     } else {
+      if (mpicomm.rank() == 0) {
+        INFO << "calling read_dist_tensor for" << m_Afile_name << std::endl;
+      }
       this->m_global_dims = dio.read_dist_tensor(m_Afile_name);
       // int modes = this->m_proc_grids.n_elem;
       // UVEC m_global_sub = arma::zeros<UVEC>(modes);
@@ -71,7 +75,7 @@ class DistNTF {
       //     A.print(this->m_global_dims, m_global_sub);
       //   }
       //   MPI_Barrier(MPI_COMM_WORLD);
-      // }      
+      // }
       // return;
     }
     // planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);
@@ -145,7 +149,7 @@ class DistNTF {
     ntfsolver.computeNTF();
     double temp = mpitoc();
     A.clear();
-    dio.write(this->m_outputfile_name, &ntfsolver);
+    // dio.write(this->m_outputfile_name, &ntfsolver);
     if (mpicomm.rank() == 0) {
       printf("NTF took %.3lf secs.\n", temp);
     }
@@ -186,6 +190,9 @@ class DistNTF {
         break;
       case NESTEROV:
         callDistNTF<DistNTFNES>();
+        break;
+      case CPALS:
+        callDistNTF<DistNTFCPALS>();
         break;
       default:
         ERR << "Wrong algorithm choice. Quitting.." << this->m_ntfalgo
