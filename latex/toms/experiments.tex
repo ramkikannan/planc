@@ -318,6 +318,52 @@ Again, the performance of our implementation without the dimension tree optimiza
 \label{fig:convergencelowrank}
 \end{figure}
 
+
+\begin{figure}
+	
+	%set which run to plot
+	\renewcommand{\run}{32}
+	\renewcommand{\xmax}{4.9}
+	\renewcommand{\ymin}{0}
+	\renewcommand{\ymax}{.25}
+	\subfloat[Low rank $k=32$ \label{fig:accuracyrwk32}]{
+		\tikzsetnextfilename{accuracyrwk32}
+		\ylabeltrue
+		\widertrue
+		\legendfalse
+		\begin{tikzpicture}
+		\renewcommand{\datafile}{data/accuracyrwksweep.dat}
+		\renewcommand{\run}{32}
+		\relerrplot
+		\end{tikzpicture}
+		\ylabelfalse
+	}
+	\subfloat[Low rank $k=64$ \label{fig:accuracyrwk64}]{
+		\tikzsetnextfilename{accuracyrwk64}
+		\widertrue
+		\legendfalse
+		\begin{tikzpicture}
+		\renewcommand{\datafile}{data/accuracyrwksweep.dat}
+		\renewcommand{\run}{64}
+		\relerrplot
+		\end{tikzpicture}
+	}
+	\subfloat[Low rank $k=96$ \label{fig:accuracyrwk96}]{
+		\tikzsetnextfilename{accuracyrwk96}
+		\ylabeltrue
+		\widertrue
+		\legendtrue
+		\begin{tikzpicture}
+		\renewcommand{\datafile}{data/accuracyrwksweep.dat}
+		\renewcommand{\run}{96}
+		\relerrplot
+		\end{tikzpicture}
+		\ylabelfalse
+	}
+	\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Realworld Low Rank Tensor of size $200 \times 500 \times 64 \times 192$ on $2\times4\times2\times4$ Processor Grid.}
+	\label{fig:convergencerealworld}
+\end{figure}
+
 \begin{figure}
 %set which run to plot
 \renewcommand{\run}{32}
