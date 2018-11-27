@@ -149,7 +149,9 @@ class DistNTF {
     ntfsolver.computeNTF();
     double temp = mpitoc();
     A.clear();
-    // dio.write(this->m_outputfile_name, &ntfsolver);
+    if (!this->m_outputfile_name.empty()) {
+      dio.write(this->m_outputfile_name, &ntfsolver);
+    }
     if (mpicomm.rank() == 0) {
       printf("NTF took %.3lf secs.\n", temp);
     }
