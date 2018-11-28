@@ -4,6 +4,8 @@
 #define DISTNMF_DISTALS_HPP_
 #include "distnmf/aunmf.hpp"
 
+namespace planc {
+
 template <class INPUTMATTYPE>
 class DistALS : public DistAUNMF<INPUTMATTYPE> {
  protected:
@@ -51,5 +53,7 @@ class DistALS : public DistAUNMF<INPUTMATTYPE> {
     PRINTROOT("DistALS() constructor successful");
   }
 };
+
+}  // namespace planc
 
 #endif  // DISTNMF_DISTALS_HPP_

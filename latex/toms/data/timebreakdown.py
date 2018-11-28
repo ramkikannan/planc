@@ -13,7 +13,7 @@ output_file=sys.argv[2]
 title=sys.argv[3]
 print 'making plot for ' + input_file 
 
-df1=pd.read_csv(input_file, delimiter=r"\s+")
+df1=pd.read_csv(input_file, delimiter=r"\s+", comment='#')
 df2 =df1[['alg-p','gram','nnls','mttkrp','multittv','reducescatter','allgather','allreduce']]
 df2=df2.set_index('alg-p')
 

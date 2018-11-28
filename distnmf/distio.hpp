@@ -20,6 +20,8 @@
  * zero.
  */
 
+namespace planc {
+
 template <class MATTYPE>
 class DistIO {
  private:
@@ -466,13 +468,15 @@ class DistIO {
   const MPICommunicator& mpicomm() const { return m_mpicomm; }
 };
 
+}  // namespace planc
+
 // run with mpi run 3.
 void testDistIO(char argc, char* argv[]) {
-  MPICommunicator mpicomm(argc, argv);
+  planc::MPICommunicator mpicomm(argc, argv);
 #ifdef BUILD_SPARSE
-  DistIO<SP_MAT> dio(mpicomm, ONED_DOUBLE);
+  planc::DistIO<SP_MAT> dio(mpicomm, ONED_DOUBLE);
 #else
-  DistIO<MAT> dio(mpicomm, ONED_DOUBLE);
+  planc::DistIO<MAT> dio(mpicomm, ONED_DOUBLE);
 #endif
   dio.readInput("rand", 12, 9, 0.5);
   INFO << "Arows:" << mpicomm.rank() << std::endl

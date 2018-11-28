@@ -369,6 +369,8 @@ class DistAUNTF {
     }
   }
 
+  VEC lambda() { return m_local_ncp_factors.lambda(); }
+
   virtual void accelerate() {}
 
   void generateReport() {
@@ -443,8 +445,8 @@ class DistAUNTF {
     }
   }
   void num_iterations(const int i_n) { this->m_num_it = i_n; }
-  size_t modes() const {return this->m_modes;}
-  size_t rank() const {return this->m_low_rank_k;}
+  size_t modes() const { return this->m_modes; }
+  size_t rank() const { return this->m_low_rank_k; }
   void regularizers(const FVEC i_regs) { this->m_regularizers = i_regs; }
   void compute_error(bool i_error) {
     this->m_compute_error = i_error;
@@ -492,7 +494,7 @@ class DistAUNTF {
     }
     m_local_ncp_factors.set_lambda(new_factors.lambda());
     m_local_ncp_factors_t.set_lambda(new_factors.lambda());
-  }  
+  }
 
   // Preferrably call this after the computeNTF().
   // This is right now called to save the factor matrices.
@@ -515,7 +517,7 @@ class DistAUNTF {
                 // todo:: check whether it is slice or fiber while running
                 // and debugging the code.
                 0, this->m_mpicomm.fiber(mode));
-    }
+  }
 
   void computeNTF() {
     // initialize everything.

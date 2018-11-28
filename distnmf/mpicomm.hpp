@@ -11,6 +11,8 @@
 #include "pacoss/pacoss.h"
 #endif
 
+namespace planc {
+
 class MPICommunicator {
  private:
   int m_rank;
@@ -113,5 +115,7 @@ class MPICommunicator {
   const int pc() const { return m_pc; }
   const MPI_Comm *commSubs() const { return m_commSubs; }
 };
+
+}  // namespace planc
 
 #endif  // DISTNMF_MPICOMM_HPP_

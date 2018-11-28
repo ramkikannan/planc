@@ -4,6 +4,8 @@
 #define DISTNMF_DISTMU_HPP_
 #include "distnmf/aunmf.hpp"
 
+namespace planc {
+
 template <class INPUTMATTYPE>
 class DistMU : public DistAUNMF<INPUTMATTYPE> {
   MAT HWtW;
@@ -86,5 +88,7 @@ class DistMU : public DistAUNMF<INPUTMATTYPE> {
     PRINTROOT("DistMU() constructor successful");
   }
 };
+
+}  // namespace planc
 
 #endif  // DISTNMF_DISTMU_HPP_

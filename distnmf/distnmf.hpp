@@ -21,6 +21,8 @@
  * H is nxk matrix
  */
 
+namespace planc {
+
 template <typename INPUTMATTYPE>
 class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
@@ -116,5 +118,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     }
   }
 };
+
+}  // namespace planc
 
 #endif  // DISTNMF_DISTNMF_HPP_

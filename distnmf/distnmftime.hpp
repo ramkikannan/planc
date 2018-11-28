@@ -3,6 +3,8 @@
 #ifndef DISTNMF_DISTNMFTIME_HPP_
 #define DISTNMF_DISTNMFTIME_HPP_
 
+namespace planc {
+
 class DistNMFTime {
  private:
   double m_duration;
@@ -82,5 +84,7 @@ class DistNMFTime {
     m_err_communication_duration += d;
   }
 };
+
+}  // namespace planc
 
 #endif  // DISTNMF_DISTNMFTIME_HPP_

@@ -6,6 +6,8 @@
 #include "distnmf/distnmf1D.hpp"
 #include "nnls/bppnnls.hpp"
 
+namespace planc {
+
 template <class INPUTMATTYPE>
 class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
   MAT HtH, WtW;
@@ -197,5 +199,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
     }
   }
 };
+
+}  // namespace planc
 
 #endif  // DISTNMF_NAIVE_ANLS_BPP_HPP_

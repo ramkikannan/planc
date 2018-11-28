@@ -8,6 +8,8 @@
 #include "common/utils.h"
 #include "common/utils.hpp"
 
+namespace planc {
+
 template <class INPUTMATTYPE>
 class DistNMF1D {
  protected:
@@ -184,5 +186,7 @@ class DistNMF1D {
                            << "::max::" << maxtemp);
   }
 };
+
+}  // namespace planc
 
 #endif  // DISTNMF_DISTNMF1D_HPP_

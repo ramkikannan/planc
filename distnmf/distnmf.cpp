@@ -97,11 +97,11 @@ class DistNMFDriver {
   template <class NMFTYPE>
   void callDistNMF1D() {
     std::string rand_prefix("rand_");
-    MPICommunicator mpicomm(this->m_argc, this->m_argv);
+    planc::MPICommunicator mpicomm(this->m_argc, this->m_argv);
 #ifdef BUILD_SPARSE
-    DistIO<SP_MAT> dio(mpicomm, m_distio);
+    planc::DistIO<SP_MAT> dio(mpicomm, m_distio);
 #else   // ifdef BUILD_SPARSE
-    DistIO<MAT> dio(mpicomm, m_distio);
+    planc::DistIO<MAT> dio(mpicomm, m_distio);
 #endif  // ifdef BUILD_SPARSE
 
     if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
@@ -158,7 +158,7 @@ class DistNMFDriver {
   template <class NMFTYPE>
   void callDistNMF2D() {
     std::string rand_prefix("rand_");
-    MPICommunicator mpicomm(this->m_argc, this->m_argv, this->m_pr, this->m_pc);
+    planc::MPICommunicator mpicomm(this->m_argc, this->m_argv, this->m_pr, this->m_pc);
 // #ifdef BUILD_CUDA
 //         if (mpicomm.rank()==0){
 //             gpuQuery();
@@ -202,13 +202,13 @@ class DistNMFDriver {
     }
 #ifdef BUILD_SPARSE
     UWORD nnz;
-    DistIO<SP_MAT> dio(mpicomm, m_distio);
+    planc::DistIO<SP_MAT> dio(mpicomm, m_distio);
 
     if (mpicomm.rank() == 0) {
       INFO << "sparse case" << std::endl;
     }
 #else   // ifdef BUILD_SPARSE
-    DistIO<MAT> dio(mpicomm, m_distio);
+    planc::DistIO<MAT> dio(mpicomm, m_distio);
 #endif  // ifdef BUILD_SPARSE. One outstanding PACOSS
 
     if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
@@ -334,43 +334,43 @@ class DistNMFDriver {
     switch (this->m_nmfalgo) {
       case MU:
 #ifdef BUILD_SPARSE
-        callDistNMF2D<DistMU<SP_MAT> >();
+        callDistNMF2D<planc::DistMU<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
-        callDistNMF2D<DistMU<MAT> >();
+        callDistNMF2D<planc::DistMU<MAT> >();
 #endif  // ifdef BUILD_SPARSE
         break;
       case HALS:
 #ifdef BUILD_SPARSE
-        callDistNMF2D<DistHALS<SP_MAT> >();
+        callDistNMF2D<planc::DistHALS<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
-        callDistNMF2D<DistHALS<MAT> >();
+        callDistNMF2D<planc::DistHALS<MAT> >();
 #endif  // ifdef BUILD_SPARSE
         break;
       case ANLSBPP:
 #ifdef BUILD_SPARSE
-        callDistNMF2D<DistANLSBPP<SP_MAT> >();
+        callDistNMF2D<planc::DistANLSBPP<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
-        callDistNMF2D<DistANLSBPP<MAT> >();
+        callDistNMF2D<planc::DistANLSBPP<MAT> >();
 #endif  // ifdef BUILD_SPARSE
         break;
       case NAIVEANLSBPP:
 #ifdef BUILD_SPARSE
-        callDistNMF1D<DistNaiveANLSBPP<SP_MAT> >();
+        callDistNMF1D<planc::DistNaiveANLSBPP<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
-        callDistNMF1D<DistNaiveANLSBPP<MAT> >();
+        callDistNMF1D<planc::DistNaiveANLSBPP<MAT> >();
 #endif  // ifdef BUILD_SPARSE
         break;
       case AOADMM:
 #ifdef BUILD_SPARSE
-        callDistNMF2D<DistAOADMM<SP_MAT> >();
+        callDistNMF2D<planc::DistAOADMM<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
-        callDistNMF2D<DistAOADMM<MAT> >();
+        callDistNMF2D<planc::DistAOADMM<MAT> >();
 #endif  // ifdef BUILD_SPARSE
       case CPALS:
 #ifdef BUILD_SPARSE
-        callDistNMF2D<DistALS<SP_MAT> >();
+        callDistNMF2D<planc::DistALS<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
-        callDistNMF2D<DistALS<MAT> >();
+        callDistNMF2D<planc::DistALS<MAT> >();
 #endif  // ifdef BUILD_SPARSE
     }
   }

@@ -88,7 +88,7 @@ ncp_factors[i].clear();
   UVEC dimensions() const { return m_dimensions; }
   MAT &factor(const int i_n) const { return ncp_factors[i_n]; }
   int modes() const { return m_modes; }
-  MAT lambda() const { return m_lambda; }
+  VEC lambda() const { return m_lambda; }
 
   // setters
   void set(const int i_n, const MAT &i_factor) {

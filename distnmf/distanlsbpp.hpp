@@ -13,6 +13,8 @@
 #define ONE_THREAD_MATRIX_SIZE giventInput.n_cols + 5
 #endif
 
+namespace planc {
+
 template <class INPUTMATTYPE>
 class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
  private:
@@ -124,5 +126,7 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
      */
   }
 };  // class DistANLSBPP2D
+
+}  // namespace planc
 
 #endif  // DISTNMF_DISTANLSBPP_HPP_

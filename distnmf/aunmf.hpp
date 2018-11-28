@@ -20,6 +20,7 @@
  * A is mxn matrix
  * H is nxk matrix
  */
+namespace planc {
 
 template <class INPUTMATTYPE>
 class DistAUNMF : public DistNMF<INPUTMATTYPE> {
@@ -573,4 +574,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->time_stats.err_communication_duration(temp);
   }
 };
+
+}  // namespace planc
+
 #endif  // DISTNMF_AUNMF_HPP_

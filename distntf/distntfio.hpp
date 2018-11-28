@@ -212,7 +212,7 @@ class DistNTFIO {
     // Read the file
     int count = rc.numel();
     DISTPRINTINFO("reading::" << count << "::in gbs::"
-                                    << (count * 8.0) / (1024 * 1024 * 1024));
+                              << (count * 8.0) / (1024 * 1024 * 1024));
     assert(count * 8 <= std::numeric_limits<int>::max());
     if (ISROOT && 8 * count > std::numeric_limits<int>::max()) {
       PRINTROOT("file read size ::" << 8.0 * count << " > 2GB" << std::endl);
@@ -356,8 +356,8 @@ class DistNTFIO {
     }
   }
   void write(const std::string &output_file_name, DistAUNTF *ntfsolver) {
+    std::stringstream sw;
     for (int i = 0; i < ntfsolver->modes(); i++) {
-      std::stringstream sw;
       sw << output_file_name << "_mode" << i << "_" << MPI_SIZE;
       MAT factort;
       if (this->m_mpicomm.fiber_rank(i) == 0) {
@@ -371,6 +371,11 @@ class DistNTFIO {
         MAT current_factor = factort.t();
         current_factor.save(sw.str(), arma::raw_ascii);
       }
+    }
+    sw << output_file_name << "_lambda"
+       << "_" << MPI_SIZE;
+    if (ISROOT) {
+      ntfsolver->lambda().save(sw.str(), arma::raw_ascii);
     }
   }
   void writeRandInput() {}

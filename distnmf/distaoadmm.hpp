@@ -5,6 +5,8 @@
 
 #include "distnmf/aunmf.hpp"
 
+namespace planc {
+
 template <class INPUTMATTYPE>
 class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
  private:
@@ -259,5 +261,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
     */
   }
 };  // class DistAOADMM2D
+
+}  // namespace planc
 
 #endif  // DISTNMF_DISTAOADMM_HPP_
