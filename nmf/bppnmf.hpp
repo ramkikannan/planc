@@ -216,12 +216,10 @@ class BPPNMF : public NMF<T> {
       this->stats(currentIteration + 1, 1) = totalH2;
       this->stats(currentIteration + 1, 2) = totalW2;
 
-      this->stats(currentIteration + 1, 3) =
-          totalW2 + totalH2
+      this->stats(currentIteration + 1, 3) = totalW2 + totalH2;
 #endif
-                        INFO
-          << "completed it=" << currentIteration
-          << " time taken = " << totalW2 + totalH2 << std::endl;
+      INFO << "completed it=" << currentIteration
+           << " time taken = " << totalW2 + totalH2 << std::endl;
       this->computeObjectiveError();
       INFO << "error:it = " << currentIteration
            << " bpperr =" << sqrt(this->objective_err) / this->normA
