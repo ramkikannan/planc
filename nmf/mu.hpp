@@ -5,6 +5,8 @@
 
 #include "common/nmf.hpp"
 
+namespace planc {
+
 template <class T>
 class MUNMF : public NMF<T> {
  private:
@@ -89,5 +91,7 @@ class MUNMF : public NMF<T> {
   }
   ~MUNMF() { freeMatrices(); }
 };
+
+}  // namespace planc
 
 #endif  // NMF_MU_HPP_

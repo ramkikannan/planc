@@ -79,40 +79,41 @@ void parseCommandLineandCallNMF(int argc, char* argv[]) {
   switch (pc.lucalgo()) {
     case MU:
 #ifdef BUILD_SPARSE
-      NMFDriver<MUNMF<SP_MAT> >(pc.lowrankk(), pc.globalm(), pc.globaln(),
-                                pc.input_file_name(),
-                                pc.output_file_name() + "_w",
-                                pc.output_file_name() + "_h", pc.iterations());
-#else
-      NMFDriver<MUNMF<MAT> >(pc.lowrankk(), pc.globalm(), pc.globaln(),
-                             pc.input_file_name(), pc.output_file_name() + "_w",
-                             pc.output_file_name() + "_h", pc.iterations());
-#endif
-      break;
-    case HALS:
-#ifdef BUILD_SPARSE
-      NMFDriver<HALSNMF<SP_MAT> >(
+      NMFDriver<planc::MUNMF<SP_MAT> >(
           pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
           pc.output_file_name() + "_w", pc.output_file_name() + "_h",
           pc.iterations());
 #else
-      NMFDriver<HALSNMF<MAT> >(pc.lowrankk(), pc.globalm(), pc.globaln(),
-                               pc.input_file_name(),
-                               pc.output_file_name() + "_w",
-                               pc.output_file_name() + "_h", pc.iterations());
+      NMFDriver<planc::MUNMF<MAT> >(
+          pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
+          pc.output_file_name() + "_w", pc.output_file_name() + "_h",
+          pc.iterations());
+#endif
+      break;
+    case HALS:
+#ifdef BUILD_SPARSE
+      NMFDriver<planc::HALSNMF<SP_MAT> >(
+          pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
+          pc.output_file_name() + "_w", pc.output_file_name() + "_h",
+          pc.iterations());
+#else
+      NMFDriver<planc::HALSNMF<MAT> >(
+          pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
+          pc.output_file_name() + "_w", pc.output_file_name() + "_h",
+          pc.iterations());
 #endif
       break;
     case ANLSBPP:
 #ifdef BUILD_SPARSE
-      NMFDriver<BPPNMF<SP_MAT> >(pc.lowrankk(), pc.globalm(), pc.globaln(),
-                                 pc.input_file_name(),
-                                 pc.output_file_name() + "_w",
-                                 pc.output_file_name() + "_h", pc.iterations());
+      NMFDriver<planc::BPPNMF<SP_MAT> >(
+          pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
+          pc.output_file_name() + "_w", pc.output_file_name() + "_h",
+          pc.iterations());
 #else
-      NMFDriver<BPPNMF<MAT> >(pc.lowrankk(), pc.globalm(), pc.globaln(),
-                              pc.input_file_name(),
-                              pc.output_file_name() + "_w",
-                              pc.output_file_name() + "_h", pc.iterations());
+      NMFDriver<planc::BPPNMF<MAT> >(
+          pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
+          pc.output_file_name() + "_w", pc.output_file_name() + "_h",
+          pc.iterations());
 #endif
       break;
     case AOADMM:
@@ -120,16 +121,16 @@ void parseCommandLineandCallNMF(int argc, char* argv[]) {
       // NMFDriver<AOADMMNMF<SP_MAT > >(lowRank, m, n, AfileName, WInitfileName,
       //                                HInitfileName, WfileName, HfileName,
       //                                numIt);
-      NMFDriver<AOADMMNMF<SP_MAT> >(
+      NMFDriver<planc::AOADMMNMF<SP_MAT> >(
           pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
           pc.output_file_name() + "_w", pc.output_file_name() + "_h",
           pc.iterations());
 
 #else
-      NMFDriver<AOADMMNMF<MAT> >(pc.lowrankk(), pc.globalm(), pc.globaln(),
-                                 pc.input_file_name(),
-                                 pc.output_file_name() + "_w",
-                                 pc.output_file_name() + "_h", pc.iterations());
+      NMFDriver<planc::AOADMMNMF<MAT> >(
+          pc.lowrankk(), pc.globalm(), pc.globaln(), pc.input_file_name(),
+          pc.output_file_name() + "_w", pc.output_file_name() + "_h",
+          pc.iterations());
 #endif
       break;
   }

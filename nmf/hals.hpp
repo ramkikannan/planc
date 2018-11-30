@@ -5,6 +5,8 @@
 
 #include "common/nmf.hpp"
 
+namespace planc {
+
 template <class T>
 class HALSNMF : public NMF<T> {
  private:
@@ -114,5 +116,7 @@ class HALSNMF : public NMF<T> {
   }
   ~HALSNMF() {}
 };
+
+}  // namespace planc 
 
 #endif  // NMF_HALS_HPP_

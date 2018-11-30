@@ -5,6 +5,8 @@
 
 #include "common/nmf.hpp"
 
+namespace planc {
+
 template <class T>
 class AOADMMNMF : public NMF<T> {
  private:
@@ -188,5 +190,7 @@ class AOADMMNMF : public NMF<T> {
   }
   ~AOADMMNMF() {}
 };
+
+}  // namespace planc
 
 #endif  // NMF_AOADMM_HPP_
