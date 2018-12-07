@@ -180,18 +180,18 @@
 
 \end{frame}
 
-\input{../sc18/fig/Alg_header.tex}
+\input{../../sc18/fig/Alg_header.tex}
 
 \begin{frame}
 \frametitle{Inner Iteration of Parallel Algorithm}
 
 \begin{center}
 \scalebox{1.5}{
-\only<1>{\input{../sc18/fig/AlgStart.tex}}
-\only<2>{\input{../sc18/fig/AlgMTTKRP.tex}}
-\only<3>{\input{../sc18/fig/AlgRS.tex}}
-\only<4>{\input{../sc18/fig/AlgNLS.tex}}
-\only<5>{\input{../sc18/fig/AlgAG.tex}}
+\only<1>{\input{../../sc18/fig/AlgStart.tex}}
+\only<2>{\input{../../sc18/fig/AlgMTTKRP.tex}}
+\only<3>{\input{../../sc18/fig/AlgRS.tex}}
+\only<4>{\input{../../sc18/fig/AlgNLS.tex}}
+\only<5>{\input{../../sc18/fig/AlgAG.tex}}
 }
 
 \vfill
@@ -212,11 +212,11 @@
 
 \begin{figure}
 \centering
-  \subfloat[Start]{\input{../sc18/fig/AlgStart.tex}} \quad
-  \subfloat[Local MTTKRP]{\input{../sc18/fig/AlgMTTKRP.tex}} \quad
-  \subfloat[Reduce-Scatter]{\input{../sc18/fig/AlgRS.tex}} \quad
-  \subfloat[Local NLS]{\input{../sc18/fig/AlgNLS.tex}} \quad
-  \subfloat[All-Gather]{\input{../sc18/fig/AlgAG.tex}}
+  \subfloat[Start]{\input{../../sc18/fig/AlgStart.tex}} \quad
+  \subfloat[Local MTTKRP]{\input{../../sc18/fig/AlgMTTKRP.tex}} \quad
+  \subfloat[Reduce-Scatter]{\input{../../sc18/fig/AlgRS.tex}} \quad
+  \subfloat[Local NLS]{\input{../../sc18/fig/AlgNLS.tex}} \quad
+  \subfloat[All-Gather]{\input{../../sc18/fig/AlgAG.tex}}
 \end{figure}
 \end{frame}
 
@@ -230,7 +230,7 @@ Dimension trees systematically avoid recomputation across MTTKRPs
 
 \vfill
 
-\input{../sc18/fig/dim_tree.tex}
+\input{../../sc18/fig/dim_tree.tex}
 \end{center}
 
 \vfill
@@ -280,14 +280,14 @@ Not a whole lot of detail in paper about implementation, but data distribution a
 
 \end{frame}
 
-\input{../sc18/plots}
+\input{../../sc18/plots}
 
 \begin{frame}
 \frametitle{Strong Scaling on 3D Tensor}
 
 \begin{figure}
 \begin{tikzpicture}[scale=.9]
-\renewcommand{\datafile}{../sc18/data/str_3D_syn.dat}
+\renewcommand{\datafile}{../../sc18/data/str_3D_syn.dat}
 \renewcommand{\numiterations}{42}
 \liavastrue
 \strongscalingplot
@@ -302,7 +302,7 @@ Not a whole lot of detail in paper about implementation, but data distribution a
 
 \begin{figure}
 \begin{tikzpicture}[scale=.9]
-\renewcommand{\datafile}{../sc18/data/str_5D_syn.dat}
+\renewcommand{\datafile}{../../sc18/data/str_5D_syn.dat}
 \renewcommand{\numiterations}{10}
 \liavasfalse
 \strongscalingplot
@@ -317,7 +317,7 @@ Not a whole lot of detail in paper about implementation, but data distribution a
 
 \begin{figure}
 \begin{tikzpicture}
-\renewcommand{\datafile}{../sc18/data/wk_4D_syn.dat}
+\renewcommand{\datafile}{../../sc18/data/wk_4D_syn.dat}
 \renewcommand{\numiterations}{10}
 \breakdownplot
 %\labels
@@ -331,7 +331,7 @@ Not a whole lot of detail in paper about implementation, but data distribution a
 \frametitle{Varying Rank Time Breakdown}
 
 \begin{figure}
-\renewcommand{\datafile}{../sc18/data/ksw_4D_HSI.dat}
+\renewcommand{\datafile}{../../sc18/data/ksw_4D_HSI.dat}
 \renewcommand{\numiterations}{10}
 \begin{tikzpicture}[scale=.8]
 \begin{axis}[	
