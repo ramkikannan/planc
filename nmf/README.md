@@ -1,5 +1,7 @@
+# OpenMP Non-negative Matrix Factorization 
+
 Install Instructions
-====================
+---------------------
 
 This program depends on:
 

@@ -17,6 +17,8 @@
 // #define COLLECTSTATS 1
 // #endif
 
+namespace planc{
+
 // T must be a either an instance of MAT or sp_MAT
 template <class T>
 class NMF {
@@ -351,4 +353,5 @@ class NMF {
     }
   }
 };
+}  // namespace planc
 #endif  // COMMON_NMF_HPP_

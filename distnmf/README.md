@@ -1,5 +1,8 @@
+MPI Based DistNMF and DistNTF 
+=============================
+
 Install Instructions
-====================
+--------------------
 
 This program depends on:
 
