@@ -67,137 +67,6 @@ Because the BPP algorithm does not require this extra computation, and studying 
 Our proposed algorithm uses dimension trees, but we also benchmark our implementation without that optimization to highlight its importance.
 We use an existing implementation to perform the individual MTTKRPs \cite{HBJT18} with this approach.
 
-\subsection{Strong Scaling}
-
-We perform two strong scaling experiments to compare performance with NbAO-NTF.
-The experiments use a cubical synthetic tensor and the HSI image used in \cite{LK+17b}, both of which are 3D.
-
-The performance on the cubical synthetic tensor is shown in \Cref{fig:strongsynthetic3D}. 
-We can observe from the figure that all the three algorithms scale nearly linearly as the problem remains compute bound. 
-Our algorithm (with the dimension tree optimization) achieves a speedup of $1771\times$ on 4096 cores over the same implementation running on 1 core.
-Recall from \label{sec:analysis} that the computation scales linearly with $1/P$ while the communication scales with $1/P^{1/N}=1/P^{1/3}$. 
-As is evident from the figure, the communication cost does not degrade performance even for thousands of cores. 
-Our proposed algorithm with dimension trees is 35\% faster than NbAO-NTF at 512 cores (with similar relative difference for other core counts).
-This performance improvement is due in large part to the 50\% reduction in arithmetic operations provided by the dimension tree optimization.
-There is little difference in performance between our implementation without dimension trees and NbAO-NTF.
-
-\begin{figure}
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/str_3D_syn.dat}
-\renewcommand{\numiterations}{1}
-\liavastrue
-\strongscalingplot
-\end{tikzpicture}
-\caption{Strong scaling of 3D synthetic tensor with dimension $1024\times 1024\times 1024$ on processor grids $2^k\times 2^k\times 2^k$ for $k\in\{0,1,2,3,4\}$.  The rank is fixed at 32.}
-\label{fig:strongsynthetic3D}
-\end{figure}
-
-\Cref{fig:stronghsi3D} shows the strong scaling on the HSI data. 
-In this case, our proposed algorithm with dimension trees is over $2\times$ faster than NbAO-NTF, but part of this speedup is due to differences in the NLS update algorithms.
-For the low core count, the dimension tree provides a 60\% speedup compared to the MTTKRP time in NbAO-NTF.
-At the high core counts for this experiment, the local MTTKRP is no longer the dominating cost.
-%The proposed algorithm with classical MTTKRP was performing better on higher number of processors over the baseline. 
-%Similarly, at this stage, the SVD used for Nestrov Non-negative Least Squares on Liavas dominates the cost over MTTKRP that makes it even slower than the our proposed algorithm without dimension trees. 
-
-%\textcolor{red}{Finally, we ran on 512 nodes, utilizing the 16 threads per node via parallel BLAS and OMP, for a $1024\times1024\times1024$ synthetic tensor and processor grid $8\times8\times8$. Here we observe a $253\times$ speedup which is the result of each node having less than 20 megabytes of data.}
-
-\begin{figure}
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/str_3D_HSI.dat}
-\renewcommand{\numiterations}{10}
-\liavastrue
-\strongscalingplot
-\end{tikzpicture}
-\caption{Strong scaling of 3D HSI real world data with dimension 1024 x1344 x 33 on processor grids of $k \times k\times 1$ for $k \in {1, 2, 4, 8, 16, 32}$. The rank is fixed at 32.}
-\label{fig:stronghsi3D}
-\end{figure}
- 
-In \Cref{fig:strongsynthetic5D}, we benchmark performance for a 5D cubical tensor with each dimension set to 64.
-Because the tensor is 5D, we can no longer compare against NbAO-NTF.
-We see a $13-16\times$ speed up using a dimension tree over not using one for this problem.
-As predicted, the dimension tree optimization saves relatively more arithmetic for higher-order tensors.
-However, the reduction in leading order flop cost is only $2.5\times$ for $N=5$; the rest of the speedup comes from more efficient DGEMM performance and avoiding memory-bound KRP computation.  
-That is, although the flop count of KRP computation is lower order, it still contributes to the run time because it is inefficient.
-Also, for tensors with balanced dimensions, the dimension tree approach yields more favorable shapes for DGEMM.
-
-
-\begin{figure}
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/str_5D_syn.dat}
-\renewcommand{\numiterations}{10}
-\liavasfalse
-\strongscalingplot
-\end{tikzpicture}
-\caption{Strong scaling of 5D synthetic tensor with dimension $64\times 64\times 64\times 64\times 64$ on processor grids $1\times1\times1\times1\times1$, $2\times1\times1\times1\times1$, $\dots$, $2\times2\times2\times2\times2$.  The rank is fixed at 32.}
-\label{fig:strongsynthetic5D}
-\end{figure}
-
-\subsection{Weak Scaling Time Breakdown}
-
-We also perform a weak scaling experiment to understand the time it takes to solve bigger problems with more processors.
-In this experiment, we use a synthetic 4D tensor and keep the amount of tensor data assigned to each processor constant, with tensor and processor grid of dimensions $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$ and the rank fixed at 32. 
-%For eg., in the case of 3 x 3 x 3 x 3 processor grid with 81 nodes, we ran the proposed algorithm with and without dimension trees on a four mode tensor of size 384 x 384 x 384 x 384. 
-The results of the breakdown plot is shown in \Cref{fig:weaksynthetic4D}. 
-In this case, the algorithm is compute bound with and without the use of the dimension tree, so the total time of the weak scaling remains fixed for both cases. 
-Using a dimension tree, the time is completely dominated by the MTTKRP computation.  
-Without using a dimension tree, we observe that the KRP is expensive and yields a $2.5\times$ slower total run time even in the 4D case. 
-
-\begin{figure}
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/wk_4D_syn.dat}
-\renewcommand{\numiterations}{10}
-\weakthreeDfalse
-\breakdownplot
-%\labels
-\end{tikzpicture}
-\caption{Weak scaling of 4D synthetic tensors with (D) and without (N) the use of dimension trees.  The tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$, and the rank is fixed at 32.  The reported times are per iteration.}
-\label{fig:weaksynthetic4D}
-\end{figure}
-
-\subsection{Varying Processor Grid}
-
-In order to illustrate the effect of processor grid choice on running time, we show in \Cref{fig:commsweep10} a time breakdown over various processor grid choices for a 4D problem on 81 processors.
-Because the tensor is cubical and 81 has a restricted factorization into 4 numbers, there are 5 distinct processor grids.
-The overall takeaway is that the processor grid has very little effect on running time; in this experiment there is less than 10\% variation in overall time.
-While the optimal processor grid reduced the communication time by approximately $3\times$ compared to the other processor grids, the running time is dominated by local computation, so it had little effect on overall time.
-Furthermore, adjusting the processor grid affects the local tensor dimensions and the performance of the local computations, and the optimal processor grid led to slower local performance.
-For $R=10$, all of the local computation is memory bandwidth bound, and we believe the variations in running times to be effects of some temporary quantities fitting into smaller levels of cache.
-
-\begin{figure}
-\renewcommand{\datafile}{data/comm_sweep_scale_pgf_10.dat}
-\renewcommand{\numiterations}{10}
-\begin{tikzpicture}
-\begin{axis}[	
-	ybar stacked,
-	bar width=8pt,
-	width=\columnwidth,
-	height =.75\columnwidth,
-	%width=9cm, height=3.85cm,
-	ylabel={Time (s)}, 
-	xlabel={Processor Grid},
-	y label style={yshift=-.5cm},
-	ymin=0,
-	%symbolic x coords={D10,N10,,D20,N20,,D30,N30,,D40,N40,,D50,N50},
-	symbolic x coords={81x1x1x1-10, 27x3x1x1-10,9x9x1x1-10,9x3x3x1-10,3x3x3x3-10,},
-	%xtick=data,
-	xticklabels={,81x1x1x1,27x3x1x1,9x9x1x1,9x3x3x1,3x3x3x3},
-	legend style={at={(0.5,1.3)},anchor=north},
-	legend columns=-1,
-]
-	\setcolors
-	\addplot table[x=algo-k, y expr=(\thisrow{mttkrp}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo-k, y expr=(\thisrow{mttv}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo-k, y expr=((\thisrow{nnls}+\thisrow{gram})/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo-k, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=algo-k, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
-	\legend{PM,mTTV,NLS,Factor Comm,Gram Comm};
-\end{axis}
-%\labels
-\end{tikzpicture}
-\caption{Time breakdown for $243\times243\times243\times243$ tensor and rank $R=10$ on 81 processors for varying processor grids.}
-\label{fig:commsweep10}
-\end{figure}
-
 \subsection{Varying Approximation Rank}
 
 One of the challenges of the CP (and NNCP) decomposition in practice is the choice of decomposition rank.
@@ -210,296 +79,121 @@ However, the benefit of increasing $R$ eventually diminishes if the data can be 
 %manageable computation. 
 Towards this end, we experiment with various values of $R$ to observe the relative increase in running time for two real-world data sets. 
 
-\Cref{fig:ksweep4DHSI} shows the time breakdown of our implementation using a dimension tree on the 4D HSI dataset for $R=\{10,\dots,50\}$. 
-We observe an overall time increase with increased $R$, but each part of the computation scales slightly differently.
-The multi-TTV computation ({\em mTTV}) scales linearly with the increasing $R$,  whereas the partial MTTKRP ({\em PM}) is scaling super-linearly. 
-This is because mTTV is cast as matrix-vector products (DGEMV) and PM is cast as matrix-matrix products (DGEMM).
-As $R$ increases from 10 to 50, DGEMM performance improves but DGEMV performance is constant.  
-The local NLS time is increasing with $O(R^3)$ as expected and the All-Reduce required for the Gram matrices scales with $O(R^2)$, becoming a significant cost for larger $R$. 
-
-In \Cref{fig:ksweepneuro} we compare performance for various ranks $R$ across all 3 algorithms, again used flat MPI. 
-Starting at $R=10$ we see the largest speed up of $2\times$ for our implementation with a dimension tree over NbAO-NTF. 
-This is due to a combination of the dimension tree performing fewer flops in the MTTKRPs and KRPs. 
-However, as the rank increases this speed up diminishes to $1.6\times$. 
-The loss of speed up is a result of the fact that, as we observed in \Cref{fig:ksweep4DHSI}, the multi-TTV operations do not scale as well as the partial-MTTKRPs for increasing $R$.
-Again, the performance of our implementation without the dimension tree optimization is comparable to NbAO-NTF. 
+%%%%%%%%%%%%%%%%%
+%Convergence Plot for Synthetic low rank
+%%%%%%%%%%%%%%%%%
 
 \begin{figure}
-\renewcommand{\datafile}{data/ksw_4D_HSI.dat}
-\renewcommand{\numiterations}{10}
-\begin{tikzpicture}
-\begin{axis}[	
-	ybar stacked,
-	bar width=8pt,
-	width=\columnwidth,
-	height =.75\columnwidth,
-	%width=9cm, height=3.85cm,
-	ylabel={Time (s)}, 
-	xlabel={Rank $R$},
-	y label style={yshift=-.5cm},
-	ymin=0,
-	%symbolic x coords={D10,N10,,D20,N20,,D30,N30,,D40,N40,,D50,N50},
-	symbolic x coords={D10,D20,D30,D40,D50},
-	%xtick=data,
-	xticklabels={,10,20,30,40,50},
-	legend style={at={(0.5,1.3)},anchor=north},
-	legend columns=-1,
-]
-	\setcolors
-	\addplot table[x=alg-K, y expr=(\thisrow{mttkrp}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=alg-K, y expr=(\thisrow{mttv}/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=alg-K, y expr=((\thisrow{nnls}+\thisrow{gram})/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=alg-K, y expr=((\thisrow{allgather}+\thisrow{reducescatter})/(\minvalue*\numiterations))] {\datafile};
-	\addplot table[x=alg-K, y expr=(\thisrow{allreduce}/(\minvalue*\numiterations))] {\datafile};
-	\legend{PM,mTTV,NLS,Factor Comm,Gram Comm};
-\end{axis}
-%\labels
-\end{tikzpicture}
-\caption{Per-iteration time breakdown of our implementation (using dimension trees) over various ranks for a time-lapse HSI dataset with dimensions $1344\times 1024\times 33 \times 9$ on 64 processors arranged in a $8\times8\times1\times1$ grid.}
-\label{fig:ksweep4DHSI}
-\end{figure}
-
-\begin{figure}
-\begin{tikzpicture}
-\begin{axis}[legend style={draw=none, anchor=north,  cells={align=left}, nodes={scale=0.7}}, legend pos=north west, xlabel=Low Rank $R$, ylabel=Time(s), ylabel near ticks]
-	\addplot+ [discard if not={alg}{D},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
-	\addplot+ [discard if not={alg}{N},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
-	\addplot+ [discard if not={alg}{L},thick,mark options={solid},mark=square*] table [x={k}, y expr=(\thisrow{total}/(\minvalue*\numiterations))] {data/kswp_neuro.dat};
-	\legend{DimTree,NoDimTree,NbAO-NTF}
-\end{axis}
-\end{tikzpicture}
-\caption{Overall running time for dFC dataset with dimensions $30{,}012\times 1200 \times 500$ on 1440 cores arranged in a $2\times 6\times 120$ processor grid and varying choices of rank $R$.}
-\label{fig:ksweepneuro}
-\end{figure}
-
-
-\begin{figure}
-
-%set which run to plot
-\renewcommand{\run}{32}
-\renewcommand{\xmax}{4.9}
-\renewcommand{\ymin}{0}
-\renewcommand{\ymax}{.25}
-\subfloat[Low rank $k=32$ \label{fig:accuracylr81k32}]{
-\tikzsetnextfilename{accuracylr81k32}
-\ylabeltrue
-\widertrue
-\legendfalse
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
-\renewcommand{\run}{32}
-\relerrplot
-\end{tikzpicture}
-\ylabelfalse
-}
 \subfloat[Low rank $k=64$ \label{fig:accuracylr81k64}]{
-\tikzsetnextfilename{accuracylr81k64}
-\widertrue
-\legendfalse
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
-\renewcommand{\run}{64}
-\relerrplot
-\end{tikzpicture}
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracylr64.pdf}
 }
 \subfloat[Low rank $k=96$ \label{fig:accuracylr81k96}]{
-\tikzsetnextfilename{accuracylr81k96}
-\ylabeltrue
-\widertrue
-\legendtrue
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
-\renewcommand{\run}{96}
-\relerrplot
-\end{tikzpicture}
-\ylabelfalse
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracylr96.pdf}
 }
-\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 162x162x162x162 on 3x3x3x3 Processor Grid.}
+\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 162x162x162x162 on 81 Titan Nodes as 3x3x3x3 Processor Grid.}
 \label{fig:convergencelowrank}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%
+%Convergence Plot for Realworld
+%%%%%%%%%%%%%%%%%
 
 \begin{figure}
-	
-	%set which run to plot
-	\renewcommand{\run}{32}
-	\renewcommand{\xmax}{4.9}
-	\renewcommand{\ymin}{0}
-	\renewcommand{\ymax}{.25}
-	\subfloat[Low rank $k=32$ \label{fig:accuracyrwk32}]{
-		\tikzsetnextfilename{accuracyrwk32}
-		\ylabeltrue
-		\widertrue
-		\legendfalse
-		\begin{tikzpicture}
-		\renewcommand{\datafile}{data/accuracyrwksweep.dat}
-		\renewcommand{\run}{32}
-		\relerrplot
-		\end{tikzpicture}
-		\ylabelfalse
-	}
 	\subfloat[Low rank $k=64$ \label{fig:accuracyrwk64}]{
-		\tikzsetnextfilename{accuracyrwk64}
-		\widertrue
-		\legendfalse
-		\begin{tikzpicture}
-		\renewcommand{\datafile}{data/accuracyrwksweep.dat}
-		\renewcommand{\run}{64}
-		\relerrplot
-		\end{tikzpicture}
+		\includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracyrw64.pdf}
 	}
 	\subfloat[Low rank $k=96$ \label{fig:accuracyrwk96}]{
-		\tikzsetnextfilename{accuracyrwk96}
-		\ylabeltrue
-		\widertrue
-		\legendtrue
-		\begin{tikzpicture}
-		\renewcommand{\datafile}{data/accuracyrwksweep.dat}
-		\renewcommand{\run}{96}
-		\relerrplot
-		\end{tikzpicture}
-		\ylabelfalse
+		\includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracyrw96.pdf}
 	}
-	\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Realworld Low Rank Tensor of size $200 \times 500 \times 64 \times 192$ on $2\times4\times2\times4$ Processor Grid.}
+	\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Realworld Low Rank Tensor of size $200 \times 500 \times 64 \times 192$ on 64 Titan Nodes as $2\times4\times2\times4$ Processor Grid.}
 	\label{fig:convergencerealworld}
 \end{figure}
 
-\begin{figure}
-%set which run to plot
-\renewcommand{\run}{32}
-\renewcommand{\xmax}{9.9}
-\renewcommand{\ymin}{.4}
-\renewcommand{\ymax}{.52}
-\subfloat[Low rank $k=32$ \label{fig:accuracyuni81k32}]{
-\tikzsetnextfilename{accuracyuni81k32}
-\ylabeltrue
-\widertrue
-\legendfalse
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
-\renewcommand{\run}{32}
-\relerrplot
-\end{tikzpicture}
-\ylabelfalse
-}
-\subfloat[Low rank $k=64$ \label{fig:accuracyuni81k64}]{
-\tikzsetnextfilename{accuracyuni81k64}
-\widertrue
-\legendfalse
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
-\renewcommand{\run}{64}
-\relerrplot
-\end{tikzpicture}
-}
-\subfloat[Low rank $k=96$ \label{fig:accuracyuni81k96}]{
-\tikzsetnextfilename{accuracyuni81k96}
-\ylabeltrue
-\widertrue
-\legendtrue
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
-\renewcommand{\run}{96}
-\relerrplot
-\end{tikzpicture}
-\ylabelfalse
-}
-\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Uniform Tensor of size 162x162x162x162 on 3x3x3x3 Processor Grid.}
-\label{fig:convergenceuniform}
-\end{figure}
+
+%%%%%%%%%%%%%%%%%
+%CPU VS GPU on Synthetic Low Rank and Realworld
+%%%%%%%%%%%%%%%%%
 
 \begin{figure}
-
-%set which run to plot
-\renewcommand{\numiterations}{29}
-\renewcommand{\nogpu}{1}
-\renewcommand{\xmax}{128}
-\renewcommand{\ymax}{12}
 
 \subfloat[CPU \label{fig:cpulr81}]{
-\tikzsetnextfilename{cpulr81}
-\ylabeltrue
-\widertrue
-\legendfalse
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
-\renewcommand{\nogpu}{0}
-\cpuvsgpuplot
-\end{tikzpicture}
-\ylabelfalse
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/cpuvsgpulr810.pdf}
 }
 \subfloat[GPU \label{fig:gpulr81}]{
-\tikzsetnextfilename{gpulr81}
-\widertrue
-\legendtrue
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracylr81pksweep.csv}
-\renewcommand{\nogpu}{1}
-\cpuvsgpuplot
-\end{tikzpicture}
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/cpuvsgpulr811.pdf}
 }
-\caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 162x162x162x162 on 3x3x3x3 Processor Grid on CPU.}
+\caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 162x162x162x162 on 81 Titan Nodes as 3x3x3x3 Processor Grid on CPU and GPU.}
 \label{fig:cpuvsgpulowrank}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%
+%LUC Running Time Comparison
+%%%%%%%%%%%%%%%%%
+
 \begin{figure}
-
-%set which run to plot
-\renewcommand{\numiterations}{29}
-\renewcommand{\nogpu}{0}
-\renewcommand{\xmax}{125}
-\renewcommand{\ymax}{12}
-
-\subfloat[CPU \label{fig:cpuuni81}]{
-\tikzsetnextfilename{cpuuni81}
-\ylabeltrue
-\widertrue
-\legendfalse
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
- \cpuvsgpuplot
-\end{tikzpicture}
-\ylabelfalse
+\subfloat[Synthetic Low Rank \label{fig:luclr81}]{
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/luclr81.pdf}
 }
-\subfloat[GPU \label{fig:gpuuni81}]{
-\tikzsetnextfilename{gpuuni81}
-\widertrue
-\legendtrue
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/accuracyuni81pksweep.csv}
-\renewcommand{\nogpu}{1}
-\cpuvsgpuplot
-\end{tikzpicture}
+\subfloat[Tiny Imagenet \label{fig:lucrw}]{
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/lucrw64.pdf}
 }
-\caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Uniform Tensor of size 162x162x162x162 on 3x3x3x3 Processor Grid on CPU.}
-\label{fig:cpuvsgpuuniform}
-\end{figure}
-
-\renewcommand{\numiterations}{29}
-\renewcommand{\xmax}{125}
-\renewcommand{\ymax}{.05}
-\begin{figure}
-\subfloat[Uniform \label{fig:lucuni81}]{
-\tikzsetnextfilename{lucuni81}
-\ylabeltrue
-\widertrue
-\legendfalse
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/lucuni81pksweep.csv}
-\lucplot
-\end{tikzpicture}
-\ylabelfalse
-}
-\subfloat[Low Rank \label{fig:luclr81}]{
-\tikzsetnextfilename{luclr81}
-\widertrue
-\legendtrue
-\begin{tikzpicture}
-\renewcommand{\datafile}{data/luclr81pksweep.csv}
-\renewcommand{\nogpu}{1}
-\lucplot
-\end{tikzpicture}
-}
-\caption{LUC comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Uniform and Low Rank Tensor of size 162x162x162x162 on 3x3x3x3 Processor Grid on CPU.}
+\caption{LUC comparison of \MU, \HALS, \BPP, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 162x162x162x162 on 81 Titan nodes as 3x3x3x3 Processor Grid on CPU and Realworld TinyImagenet Dataset on 64 Titan nodes as 2x4x2x4 processor grid}
 \label{fig:luccomp}
 \end{figure}
+
+\subsection{Strong Scaling Time Breakdown}
+
+%%%%%%%%%%%%%%%%%
+%Strong Scaling Synthetic Low Rank
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+\subfloat[Synthetic 3D Low Rank \label{fig:strsca3d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/strsca3d.pdf}
+}\\
+\subfloat[Synthetic 4D Low Rank \label{fig:strsca4d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/strsca4d.pdf}
+}
+\caption {Strong Scaling on Synthetic 3D and 4D low rank tensors. For 3D, the input tensor is of size 1024x1024x1024 and 256x256x256x256 for 4D on 8,16, 32, 64 and 128 nodes in Titan. The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
+\label{fig:synstrongscaling}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%
+%Strong Scaling Realworld Low Rank
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+\includegraphics[width=\textwidth, height=3in]{data/plots/ssrw_tinyimagenet_no16.pdf}
+\caption {Strong Scaling on Realworld Tiny Imagenet Dataset on 32, 64, 128, 256, 512 and 1024 nodes in Titan. The algorithms alg=0,1,2,4,5,6 are \MU, \HALS, \BPP, \ADMM, \Nestrov, \CPALS\ respectively.}
+\label{fig:synstrongscaling}
+\end{figure}
+
+\subsection{Weak Scaling Time Breakdown}
+
+%%%%%%%%%%%%%%%%%
+%Weak Scaling Synthetic Low Rank
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+\subfloat[Synthetic 3D Low Rank \label{fig:wksca3d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/wksca3d.pdf}
+}\\
+\subfloat[Synthetic 4D Low Rank \label{fig:wksca4d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/wksca4d.pdf}
+}
+\caption {Weak Scaling on Synthetic 3D and 4D low rank tensors. For 3D, the input tensor is of size 128x128x128, 256x256x256, 378x378x378 and 512x512x512 on 1, 8, 27 and 64 Titan Nodes. The 4D tensors were of size 128, 256, 405, 512 for each mode on 1, 16, 81 and 256 Titan nodes.  The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
+\label{fig:synweakscaling}
+\end{figure}
+
+
+
+\subsection{Varying Processor Grid}
+
+%%%%%%%%%%%%%%%%%
+%Configuration Sweep
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+\includegraphics[width=\textwidth, height=2.5in]{data/plots/confsweep4d.pdf}
+\caption{Processor Grid sweep of a 162x162x162x162 synthetic low rank tensor on 81 nodes in Titan as 81x1x1x1, 27x3x1x1, 9x3x3x3, 3x3x3x3 grids represented as p=1,2,3,4 respectively. The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
+\label{fig:confsweep4D}
+\end{figure}
+
+
+

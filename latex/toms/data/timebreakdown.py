@@ -34,10 +34,10 @@ for bar, hatch in zip(bars, hatches): # hatch_colors, fill_colors):
     bar.set_hatch(hatch)
     #bar.set_color(fill_color)
     #bar.set_hatch_color(mcolors.rgb_to_hsv(hatch_color))
-plt.legend(loc=9, ncol=3)
+plt.legend(bbox_to_anchor=(1.04,0.5), loc='center left', ncol=1)
 plt.ylabel('Running Time (in Secs)')
-plt.gcf().set_size_inches(9, 8)
-plt.savefig(output_file,format='pdf')
+#plt.gcf().set_size_inches(9, 8)
+plt.savefig(output_file,format='pdf',bbox_inches='tight')
 
 print 'check output file ' + output_file
 
