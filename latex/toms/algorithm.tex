@@ -239,4 +239,11 @@ The processor grid that minimizes communication also minimizes local memory, and
 The dimension tree algorithm also requires extra temporary memory space, but the space required tends to be much smaller than what is required to store the local tensor.
 If the tensor dimensions can be partitioned into two parts with approximately equal geometric means, the extra memory requirement for running a dimension tree is as small as $O(R\sqrt{I/P})$, which is also typically dominated by $O(I/P)$.
 
+\subsection{NLS Algorithms}
+This subsection deals with the nonnegative least squares solves needed to update the factor at each inner iteration of the algorithm (\cref{line:locNLS} in \Cref{alg:Par-NNCP-short}). Our framework is capable of supporting any alternating-updating solver~\cite{KBP16}. The NLS solvers which fit this framework and are implemented in our software package are Multiplicative Update~\cite{LS99}, Hierarchical Alternating Least Squares~\cite{CP2009}, Block Principal Pivoting~\cite{KP2011}, Alternating Direction Method of Multipliers~\cite{HSL2016} and Nesterov-type algorithm~\cite{LKLHS2017}. We briefly describe the different solvers below.
 
+\subsubsection{Multiplicative Update (MU)}
+\subsubsection{Hierarchical Alternating Least Squares (HALS)}
+\subsubsection{Block Principal Pivoting (BPP)}
+\subsubsection{Alternating Direction Method of Multipliers (ADMM)}
+\subsubsection{Nesterov-type algorithm}
