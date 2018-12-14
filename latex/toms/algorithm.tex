@@ -240,10 +240,30 @@ The dimension tree algorithm also requires extra temporary memory space, but the
 If the tensor dimensions can be partitioned into two parts with approximately equal geometric means, the extra memory requirement for running a dimension tree is as small as $O(R\sqrt{I/P})$, which is also typically dominated by $O(I/P)$.
 
 \subsection{NLS Algorithms}
-This subsection deals with the nonnegative least squares solves needed to update the factor at each inner iteration of the algorithm (\cref{line:locNLS} in \Cref{alg:Par-NNCP-short}). Our framework is capable of supporting any alternating-updating solver~\cite{KBP16}. The NLS solvers which fit this framework and are implemented in our software package are Multiplicative Update~\cite{LS99}, Hierarchical Alternating Least Squares~\cite{CP2009}, Block Principal Pivoting~\cite{KP2011}, Alternating Direction Method of Multipliers~\cite{HSL2016} and Nesterov-type algorithm~\cite{LKLHS2017}. We briefly describe the different solvers below.
+This subsection deals with the nonnegative least squares (NLS) solves needed to update the factor at each inner iteration of the algorithm (\cref{line:locNLS} in \Cref{alg:Par-NNCP-short}). The general problem to be solved in each inner iteration is a constrained least squares problem of the form,
+
+\begin{align}
+\M{X} \leftarrow \underset{\M{X} \ge 0}{\argmin} \left\lVert \M{A}\M{X} -\M{B}\right\rVert^2_F
+\label{eqn:nls}
+\end{align}
+
+In the case of updating the local factor matrix $\Mn{H}{n}_{\V{p}}$ we need to solve~\ref{eqn:nls} with $\M{X} = \Mn{H}{n}_{\V{p}}$, $\M{A} = \Mn{S}{n}$ and $\M{B} = \Mn{M}{n}_{\V{p}}$. Our framework is capable of supporting any alternating-updating NLS solver~\cite{KBP16}. The NLS solvers which fit this framework and are implemented in our software package are Multiplicative Update~\cite{LS99}, Hierarchical Alternating Least Squares~\cite{CP2009}, Block Principal Pivoting~\cite{KP2011}, Alternating Direction Method of Multipliers~\cite{HSL2016} and Nesterov-type algorithm~\cite{LKLHS2017}. We briefly describe the different solvers below. Note that the descriptions are for the general form of the NLS solver as shown in~\ref{eqn:nls}.
+
 
 \subsubsection{Multiplicative Update (MU)}
+The MU solve is an elementwise operation. The update rule for each element of $\M{X}$ is as follows,
+\begin{align}
+\M{X}(i,j) \leftarrow \M{X}(i,j)\frac{\M{B}(i,j)}{\left(\M{A}\M{X}\right)(i,j)}
+\end{align}
+While this rule does not solve~\ref{eqn:nls} to optimality it ensures a reduction in the objective value from the initial value of $\M{X}$.
+
 \subsubsection{Hierarchical Alternating Least Squares (HALS)}
+HALS updates are performed on individual rows of $\M{X}$. The update rule for row $i$ can be written in closed form as,
+\begin{align}
+\M{X}(i,:) \leftarrow \left[ \M{X}(i,:) + \frac{\M{B}(i,:) - \left(\M{A}(i,:)\M{X}\right)}{\M{A}(i,i)} \right]_+
+\end{align}
+The rows of $\M{X}$ are updated in order so that the latest values are used in every update step.
+
 \subsubsection{Block Principal Pivoting (BPP)}
 \subsubsection{Alternating Direction Method of Multipliers (ADMM)}
 \subsubsection{Nesterov-type algorithm}
