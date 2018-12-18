@@ -83,6 +83,12 @@ class ParseCommandLine {
   }
 
  public:
+  /**
+   * Constructor that takes the number of arguments and the 
+   * command line parameters.
+   * @param[in] argc - number of arguments
+   * @param[in] **argv - command line parameters.
+   */ 
   ParseCommandLine(int argc, char **argv) : m_argc(argc), m_argv(argv) {
     this->m_num_modes = 0;
     this->m_pr = 1;
@@ -95,9 +101,9 @@ class ParseCommandLine {
     this->m_lucalgo = ANLSBPP;
     this->m_compute_error = 0;
     this->m_input_normalization = NONE;
-    this->m_dim_tree = 0;
+    this->m_dim_tree = 1;
   }
-
+  /// parses the command line parameters
   void parseplancopts() {
     int opt, long_index;
     while ((opt = getopt_long(this->m_argc, this->m_argv,
@@ -169,6 +175,8 @@ class ParseCommandLine {
     }
   }
 
+  /// print the configuration received through the command line paramters
+
   void printConfig() {
     std::cout << "a::" << this->m_lucalgo << "::i::" << this->m_Afile_name
               << "::k::" << this->m_k << "::m::" << this->m_globalm
@@ -216,26 +224,76 @@ class ParseCommandLine {
          << "-i Ainput -o nmfoutput -t 10 -p \"3 2\" --sparsity=0.3"
          << "-r \"0.0001 0 0 0.0001\" " << std::endl;
   }
-
+  /// returns the low rank. Passed as parameter --lowrank or -k
   UWORD lowrankk() { return m_k; }
+  /// return global rows. Passed as parameter -d
   UWORD globalm() { return m_globalm; }
+  //// returns the global columns. Passed as parameter -d
   UWORD globaln() { return m_globaln; }
+  /**
+   * L2 regularization as the first parameter and L1 as second 
+   * for left lowrank factor W. Passed as parameter --regularizer 
+   * with pair of values in double quotes for W and H "l2W l1W l2H l1H"
+   */  
   FVEC regW() { return m_regW; }
+  /**
+   * L2 regularization as the first parameter and L1 as second 
+   * for right lowrank factor H. Passed as parameter --regularizer 
+   * with pair of values in double quotes for W and H "l2W l1W l2H l1H"
+   */  
   FVEC regH() { return m_regH; }
+  /// Returns the NMF algorithm to run. Passed as parameter --algo or -a
   algotype lucalgo() { return m_lucalgo; }
+  /**
+   *  Returns the process grid configuration. 
+   * Passed as parameter --processors or -p
+   */
+
   UVEC processor_grids() { return m_proc_grids; }
+  /**
+   * Returns the vector regularizers for all the modes.
+   * It will 2 times the mode values. The first entry is
+   * L2 regularization and second value is L1 for every mode. 
+   * Passed as parameter --regularizers "L2 L1" for every mode.
+   */
   FVEC regularizers() { return m_regularizers; }
+  /**
+   *  Returns vector of dimensions for every mode.
+   * Passed as parameter -d or --dimensions
+   */
   UVEC dimensions() { return m_dimensions; }
   int num_k_blocks() { return m_num_k_blocks; }
+  /// Returns number of iterations. passed as -t or --iter
   int iterations() { return m_num_it; }
+  /// Input parameter for generating sparse matrix. Passed as -s or --sparsity
   float sparsity() { return m_sparsity; }
+  /// Returns input file name. Passed as -i or --input
   std::string input_file_name() { return m_Afile_name; }
+  /**
+   * Returns output file name. Passed as -o or --output. 
+   * Every mode will appended as _mode. 
+   */
   std::string output_file_name() { return m_outputfile_name; }
+  /**
+   * Returns the number of processor rows. 
+   * Used for distributed NMF. The first parameter of -p. 
+   */
   int pr() { return m_pr; }
+    /**
+   * Returns the number of processor columns. 
+   * Used for distributed NMF. The second parameter of -p. 
+   */
   int pc() { return m_pc; }
+  /// Returns number of modes in tensors. For matrix it is two. 
   int num_modes() { return m_num_modes; }
+  /**
+   * Enable dimension tree or not. By default we use dimension trees
+   * for more than three modes. Passed as parameter --dimtree 1
+   */
   bool dim_tree() { return m_dim_tree; }
+  /// Returns whether to compute error not. Passed as parameter -e or --error
   bool compute_error() { return m_compute_error; }
+  /// To column normalize the input matrix.
   normtype input_normalization() { return this->m_input_normalization; }
 };  // ParseCommandLine
 }  // namespace planc

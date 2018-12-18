@@ -9,6 +9,13 @@ namespace planc {
 
 class DistNTFMU : public DistAUNTF {
  protected:
+ /**
+   * This is MU update function.
+   * Given the MTTKRP and the hadamard of all the grams, we 
+   * determine the factor matrix to be updated. 
+   * @param[in] Mode of the factor to be updated
+   * @returns The new updated factor
+   */
   MAT update(const int mode) {
     MAT H(this->m_local_ncp_factors.factor(mode));
     if (m_nls_sizes[mode] > 0) {

@@ -3,6 +3,10 @@
 #ifndef DISTNMF_DISTNMFTIME_HPP_
 #define DISTNMF_DISTNMFTIME_HPP_
 
+/**
+ * Class and function for collecting time statistics 
+ */
+
 namespace planc {
 
 class DistNMFTime {

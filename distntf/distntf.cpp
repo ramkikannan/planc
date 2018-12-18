@@ -203,6 +203,7 @@ class DistNTF {
   }
 
  public:
+  /// Driver function for the distntf
   DistNTF(int argc, char *argv[]) {
     this->m_argc = argc;
     this->m_argv = argv;

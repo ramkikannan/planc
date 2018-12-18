@@ -9,7 +9,7 @@
 #include "common/distutils.hpp"
 #include "distnmf/mpicomm.hpp"
 
-/*
+/**
  * File name formats
  * A is the filename
  * 1D distribution Arows_totalpartitions_rank or Acols_totalpartitions_rank
@@ -26,9 +26,9 @@ template <class MATTYPE>
 class DistIO {
  private:
   const MPICommunicator& m_mpicomm;
-  MATTYPE m_Arows;  // ONED_ROW and ONED_DOUBLE
-  MATTYPE m_Acols;  // ONED_COL and ONED_DOUBLE
-  MATTYPE m_A;      // TWOD
+  MATTYPE m_Arows;  /// ONED_ROW and ONED_DOUBLE
+  MATTYPE m_Acols;  /// ONED_COL and ONED_DOUBLE
+  MATTYPE m_A;      /// TWOD
   // don't start getting prime number from 2;
   static const int kPrimeOffset = 10;
   // Hope no one hits on this number.
@@ -42,7 +42,7 @@ class DistIO {
 #endif
 
   const iodistributions m_distio;
-  /*
+  /**
    * A random matrix is always needed for sparse case
    * to get the pattern. That is., the indices where
    * numbers are being filled. We will use this pattern
@@ -138,7 +138,7 @@ class DistIO {
   }
 #endif
 
-  /*
+  /**
    * Uses the pattern from the input matrix X but
    * the value is computed as low rank.
    */
@@ -311,11 +311,21 @@ class DistIO {
  public:
   DistIO<MATTYPE>(const MPICommunicator& mpic, const iodistributions& iod)
       : m_mpicomm(mpic), m_distio(iod) {}
-  /*
+  /**
    * We need m,n,pr,pc only for rand matrices. If otherwise we are
    * expecting the file will hold all the details.
    * If we are loading by file name we dont need distio flag.
-   *
+   * If the filename is rand_lowrank/rand_uniform, appropriate
+   * random functions will be called. Otherwise, it will be loaded from file.
+   * @param[in] file_name. For random matrices rand_lowrank/rand_uniform
+   * @param[in] m - globalm. Needed only for random matrices. 
+   *                otherwise, we will know from file.
+   * @param[in] n - globaln. Needed only for random matrices
+   * @param[in] k - low rank. Used for generating synthetic lowrank matrices.
+   * @param[in] sparsity - sparsity factor between 0-1 for sparse matrices.
+   * @param[in] pr - Number of row processors in the 2D processor grid
+   * @param[in] pc - Number of columnn processors in the 2D processor grid
+   * @param[in] normalization - L2 column normalization of input matrix.
    */
   void readInput(const std::string file_name, UWORD m = 0, UWORD n = 0,
                  UWORD k = 0, double sparsity = 0, UWORD pr = 0, UWORD pc = 0,
@@ -419,6 +429,12 @@ class DistIO {
     }
 #endif
   }
+  /**
+   * Writes the factor matrix as output_file_name_W_MPISIZE_MPIRANK
+   * @param[in] Local W factor matrix
+   * @param[in] Local H factor matrix
+   * @param[in] output file name
+   */
   void writeOutput(const MAT& W, const MAT& H,
                    const std::string& output_file_name) {
     std::stringstream sw, sh;

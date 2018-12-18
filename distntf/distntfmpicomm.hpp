@@ -16,10 +16,9 @@ class NTFMPICommunicator {
   int m_num_procs;
   UVEC m_proc_grids;
   MPI_Comm m_cart_comm;
-  // for mode communicators (*,...,p_n,...,*)
+  /// for mode communicators (*,...,p_n,...,*)
   MPI_Comm *m_fiber_comm;
-  // all communicators other than the given mode.
-  // (p1,p2,...,p_n-1,*,p_n,...,p_M)
+  /// all communicators other than the given mode (p1,p2,..,p_n-1,*,p_n,..,p_M)
   MPI_Comm *m_slice_comm;
   UVEC m_fiber_ranks;
   UVEC m_slice_ranks;
@@ -64,6 +63,9 @@ class NTFMPICommunicator {
     }
   }
 
+  /**
+   * Constructor for setting up the nD grid communicators
+   */
   NTFMPICommunicator(int argc, char *argv[], const UVEC &i_dims)
       : m_proc_grids(i_dims) {
     // Get the number of MPI processes
@@ -141,32 +143,38 @@ class NTFMPICommunicator {
   const MPI_Comm &cart_comm() const { return m_cart_comm; }
   void coordinates(int *o_c) const {
     MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, o_c);
-  }
-
+  }  
   std::vector<int> coordinates() const { return this->m_coords; }
-
+  /// Returns the fiber communicator. 
   const MPI_Comm &fiber(const int i) const { return m_fiber_comm[i]; }
+  /// Returns the slice communicator
   const MPI_Comm &slice(const int i) const { return m_slice_comm[i]; }
+  /// Returns the rank of current MPI process given the cartesian coordinates
   int rank(const int *i_coords) const {
     int my_rank;
     MPI_Cart_rank(m_cart_comm, i_coords, &my_rank);
     return my_rank;
   }
+  /// Returns the number of MPI processors
   int size() const { return m_num_procs; }
   int size(const int i_d) const {
     int n_procs;
     MPI_Comm_size(m_slice_comm[i_d], &n_procs);
     return n_procs;
   }
+  /// Returns the fiber rank on a particular fiber grid
   int fiber_rank(int i) const { return m_fiber_ranks[i]; }
+  /// Returns the slice rank on a particular slice grid.
   int slice_rank(int i) const { return m_slice_ranks[i]; }
+  /// Returns the process grid for which the communicators are setup
   UVEC proc_grids() const { return this->m_proc_grids; }
+  /// Returns the global rank
   int rank() const { return m_global_rank; }
   int num_slices(int mode) const { return m_proc_grids[mode]; }
   int slice_num(int mode) const { return m_coords[mode]; }
   int slice_size(int mode) const { return m_slice_sizes[mode]; }
 
-  /*
+  /**
    * Return true only for those processors whose
    * coordinates are non-zero for the mode and zero
    * non-modes

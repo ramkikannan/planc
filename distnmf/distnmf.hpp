@@ -11,18 +11,7 @@
 #include "pacoss.h"
 #endif
 
-/*
- * There are totally prxpc process.
- * Each process will hold the following
- *   An A of size (m/pr) x (n/pc)
- * H of size (n/p)xk
- * W of size (m/p)xk
- * A is mxn matrix
- * H is nxk matrix
- */
-
 namespace planc {
-
 template <typename INPUTMATTYPE>
 class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
@@ -43,6 +32,14 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   ROWVEC Wnorm;
 
  public:
+  /**
+   * There are totally prxpc process.
+   * Each process will hold the following
+   * @param[in] A of size \f$\frac{globalm}{p_r} \times \frac{globaln}{p_c}\f$
+   * @param[in] right low rank factor H of size \f$\frac{globaln}{p} \times k\f$
+   * @param[in] left low rank factor W of size \f$\frac{globalm}{p} \times k\f$
+   * @param[in] MPI Communicator for row and column communicators
+   */  
   DistNMF(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
           const MAT &rightlowrankfactor, const MPICommunicator &communicator)
       : NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
@@ -83,12 +80,19 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     this->m_colcomm = colcomm;
   }
 #endif
+  /// returns globalm
   const int globalm() const { return m_globalm; }
+  /// returns globaln
   const int globaln() const { return m_globaln; }
+  /// returns global squared norm of A
   const double globalsqnorma() const { return m_globalsqnormA; }
+  /// return the current error
   void compute_error(const uint &ce) { this->m_compute_error = ce; }
+  /// returns the flag to compute error or not.
   const bool is_compute_error() const { return (this->m_compute_error); }
+  /// returns the NMF algorithm
   void algorithm(algotype dat) { this->m_algorithm = dat; }
+  /// Reports the time
   void reportTime(const double temp, const std::string &reportstring) {
     double mintemp, maxtemp, sumtemp;
     MPI_Allreduce(&temp, &maxtemp, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -102,6 +106,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
                            << "::avg::" << (sumtemp) / (MPI_SIZE)
                            << "::max::" << maxtemp);
   }
+  /// Column Normalizes the distributed W matrix
   void normalize_by_W() {
     localWnorm = sum(this->W % this->W);
     mpitic();

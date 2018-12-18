@@ -43,7 +43,9 @@ inline double mpitoc() {
   tictoc_stack.pop();
   return rc;
 }
-
+/**
+ * Captures the memory usage of every mpi process
+ */
 inline void memusage(const int myrank, std::string event) {
   // Based on the answer from stackoverflow
   // http://stackoverflow.com/questions/669438/how-to-get-memory-usage-at-run-time-in-c
@@ -65,17 +67,26 @@ inline void memusage(const int myrank, std::string event) {
   }
 }
 
-// n is the size of the tensor on that dimension
-// p is the number of splits of n
-// r is the rank of the mpi process in that mode. fiber rank
+/**
+ * The dimension a particular rank holds out of 
+ * the global dimension n across p processes.
+ * @param[in] n is the global size of the tensor on that dimension
+ * @param[in] p is the number of splits of n. 
+ *            Typically number of processes on a particular mode
+ * @param[in] r is the rank of the mpi process in that mode. fiber rank
+ */
 inline int itersplit(int n, int p, int r) {
   int split = (r < n % p) ? n / p + 1 : n / p;
   return split;
 }
 
-// n is the size of the tensor on that dimension
-// p is the number of splits of n.
-// r is the rank of the mpi process in that mode. fiber rank
+/**
+ * Returns the start idx of the current rank r
+ * for a global dimension n across p processes. 
+ * @param[in] n is the size of the tensor on that dimension
+ * @param[in] p is the number of splits of n.
+ * @param[in] r is the rank of the mpi process in that mode. fiber rank
+ */
 inline int startidx(int n, int p, int r) {
   int rem = n % p;
   int idx =

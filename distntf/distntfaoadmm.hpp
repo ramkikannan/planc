@@ -20,6 +20,13 @@ class DistNTFAOADMM : public DistAUNTF {
   double tolerance;
 
  protected:
+   /**
+   * This is openmp multithreaded ANLS/BPP update function.
+   * Given the MTTKRP and the hadamard of all the grams, we 
+   * determine the factor matrix to be updated. 
+   * @param[in] Mode of the factor to be updated
+   * @returns The new updated factor
+   */
   MAT update(const int mode) {
     // return variable
     MAT updated_fac(this->m_local_ncp_factors.factor(mode));

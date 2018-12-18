@@ -76,7 +76,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
   }
 
  protected:
-  // updateW given HtH and AHt
+  /// updateW given HtH and AHt
   void updateW() {
     // Calculate modified Gram Matrix
     // tempHtH = arma::conv_to<MAT >::from(this->HtH);
@@ -158,7 +158,7 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         stop_iter = true;
     }
   }
-  // updateH given WtW and WtA
+  /// updateH given WtW and WtA
   void updateH() {
     // Calculate the Gram Matrix
     tempWtW = arma::conv_to<MAT>::from(this->WtW);

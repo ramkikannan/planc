@@ -10,15 +10,15 @@
 #include "distnmf/distnmf.hpp"
 #include "distnmf/mpicomm.hpp"
 
-/*
+/**
  * There are totally prxpc process.
  * Each process will hold the following
- * An A of size (globalm/pr) x (globaln/pc)
- * Here each process m=globalm/pr and n=globaln/pc
- * H of size (globaln/p)xk
- * W of size (globalm/p)xk
- * A is mxn matrix
- * H is nxk matrix
+ * An A of size \f$\frac{globalm}{p_r} \times \frac{globaln}{p_c}\f$
+ * Here each process \f$m=\frac{globalm}{p_r} and n=\frac{globaln}{p_c}\f$
+ * H of size \f$\frac{globaln}{p} \times k\f$
+ * W of size \f${globalm}{p} \times k\f$
+ * A is \f$m \times n\f$ matrix
+ * H is \f$n \times k\f$ matrix
  */
 namespace planc {
 
@@ -27,32 +27,32 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   // needed in derived algorithms to
   // call BPP routines
  protected:
-  MAT HtH;    // H is of size (globaln/p)*k;
-  MAT WtW;    // W is of size (globaln/p)*k;
-  MAT AHtij;  // AHtij is of size k*(globalm/p)
-  MAT WtAij;  // WtAij is of size k*(globaln/p)
-  MAT Wt;     // Wt is of size k*(globalm/p)
-  MAT Ht;     // Ht is of size k*(globaln/p)
+  MAT HtH;    /// H is of size (globaln/p)*k;
+  MAT WtW;    /// W is of size (globaln/p)*k;
+  MAT AHtij;  /// AHtij is of size k*(globalm/p)
+  MAT WtAij;  /// WtAij is of size k*(globaln/p)
+  MAT Wt;     /// Wt is of size k*(globalm/p)
+  MAT Ht;     /// Ht is of size k*(globaln/p)
 
   virtual void updateW() = 0;
   virtual void updateH() = 0;
 
  private:
   // Things needed while solving for W
-  MAT localHtH;         // H is of size (globaln/p)*k;
-  MAT Hjt, Hj;          // Hj is of size n*k;
-  MAT AijHj, AijHjt;    // AijHj is of size m*k;
-  INPUTMATTYPE A_ij_t;  // n*m
+  MAT localHtH;         /// H is of size (globaln/p)*k;
+  MAT Hjt, Hj;          /// Hj is of size n*k;
+  MAT AijHj, AijHjt;    /// AijHj is of size m*k;
+  INPUTMATTYPE A_ij_t;  /// n*m matrix. Transpose of A_ij
   // Things needed while solving for H
-  MAT localWtW;        // W is of size (globalm/p)*k;
-  MAT Wit, Wi;         // Wi is of size m*k;
-  MAT WitAij, AijWit;  // WijtAij is of size k*n;
+  MAT localWtW;        /// W is of size (globalm/p)*k;
+  MAT Wit, Wi;         /// Wi is of size m*k;
+  MAT WitAij, AijWit;  /// WijtAij is of size k*n;
 
   // needed for error computation
   MAT prevH;        // used for error computation
   MAT prevHtH;      // used for error computation
-  MAT WtAijH;       // global k*k matrix.
-  MAT localWtAijH;  // local k*k matrix
+  MAT WtAijH;       /// global k*k matrix.
+  MAT localWtAijH;  /// local k*k matrix
   MAT errMtx;
   MAT A_errMtx;
 
@@ -68,6 +68,9 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   int num_k_blocks;
   int perk;
 
+  /**
+   * Allocates matrices
+   */
   void allocateMatrices() {
     // collective call related initializations.
     // These initialization are for solving W.
@@ -159,6 +162,16 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   }
 
  public:
+  /**
+   * Public constructor with local input matrix, local factors and communicator
+   * @param[in] local input matrix of size \f$\frac{globalm}{p_r} \times \frac{globaln}{p_c}\f$.
+   *            Each process owns \f$m=\frac{globalm}{p_r}\f$ and \f$n=\frac{globaln}{p_c}\f$
+   * @param[in] local left low rank factor of size \f$\frac{globalm}{p} \times k \f$
+   * @param[in] local right low rank factor of size \f$\frac{globaln}{p} \times k \f$
+   * @param[in] MPICommunicator that has row and column communicators
+   * @param[in] numkblks. the columns of the local factor can further be
+   *            partitioned into numkblks
+   */
   DistAUNMF(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
             const MAT &rightlowrankfactor, const MPICommunicator &communicator,
             const int numkblks)
@@ -176,7 +189,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     // freeMatrices();
   }
 
-  /*
+  /**
    * This is a matrix multiplication routine based on
    * reduce_scatter.
    * A is mxn in column major ordering
@@ -265,7 +278,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->time_stats.communication_duration(temp);
     this->time_stats.reducescatter_duration(temp);
   }
-  /*
+  /**
    * There are totally prxpc process.
    * Each process will hold the following
    * An A of size (m/pr) x (n/pc)
@@ -361,12 +374,14 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->time_stats.communication_duration(temp);
     this->time_stats.reducescatter_duration(temp);
   }
-  /*
+  /**
    * There are p processes.
    * Every process i has W in m_i * k
    * At the end of this call, all process will have
    * WtW of size k*k is symmetric. So not to worry
    * about column/row major formats.
+   * @param[in] X is of size m_i x k
+   * @param[out] XtX Every process owns the same kxk global gram matrix of X
    */
   void distInnerProduct(const MAT &X, MAT *XtX) {
     // each process computes its own kxk matrix
@@ -392,7 +407,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->time_stats.communication_duration(temp);
     this->time_stats.allreduce_duration(temp);
   }
-  /*
+  /**
    * This is the main loop function
    * Refer Algorithm 1 in Page 3 of
    * the PPoPP HPC-NMF paper.
@@ -510,19 +525,19 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     }
   }
 
-  /*
+  /**
    * We assume this error function will be called in
    * every iteration before updating the block to
    * compute the error from previous iteration
+   * \f$\|A\|_F^2 - 2trace(H(A^TW))+trace((W^TW)*(HH^T))\f$
+   * each process owns globalsqnormA will have \|A\|_F^2
+   * each process owns WtAij is of size \f$k \times \frac{globaln}{p}\f$
+   * each process owns H is of size \f${globaln}{p} \times k \f$
+   * compute WtAij*H and do an MPI_ALL reduce to get the kxk matrix.
+   * every process local computation
    */
 
   void computeError(const int it) {
-    // (init.norm_A)^2 - 2*trace(H*(A'*W))+trace((W'*W)*(H*H'))
-    // each process owns globalsqnormA will have (init.norm_A)^2
-    // each process owns WtAij is of size k*(globaln/p)
-    // each process owns H is of size (globaln/p)*k
-    // compute WtAij*H and do an MPI_ALL reduce to get the kxk matrix.
-    // every process local computation
     MPITIC;  // computeerror
     this->localWtAijH = this->WtAij * this->prevH;
 #ifdef MPI_VERBOSE
@@ -549,7 +564,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
                       << "::tWtWHtH::" << tWtWHtH);
     this->objective_err = this->m_globalsqnormA - 2 * tWtAijh + tWtWHtH;
   }
-  /*
+    /*
    * Compute error the old-fashioned way
    */
   void computeError2(const int it) {

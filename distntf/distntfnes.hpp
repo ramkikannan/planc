@@ -133,6 +133,8 @@ class DistNTFNES : public DistAUNTF {
 
   MAT update(const int mode) {
     double L, mu, lambda, q, alpha, alpha_prev, beta;
+    int outer_iter = this->current_it();
+    int iter = 0;
     if (mode == 0) {
       m_prev_t.set_lambda(m_prox_t.lambda());
     }
@@ -162,6 +164,7 @@ class DistNTFNES : public DistAUNTF {
                              (modified_gram * m_acc_t.factor(mode)));
       if (stop_iter(mode)) break;
 
+      iter++;
       Htprev = Ht;
       Ht = m_acc_t.factor(mode) - ((1 / (L + lambda)) * m_grad_t.factor(mode));
       fixNumericalError<MAT>(&Ht, EPSILON_1EMINUS16);
@@ -176,6 +179,9 @@ class DistNTFNES : public DistAUNTF {
       Ht.zeros();
       m_grad_t.set(mode, Ht);
     }
+    PRINTROOT("Nesterov Update::mode::" << mode
+              << "::outer_iter::" << outer_iter
+              << "::NLS inner_iter::" << iter);
     m_prox_t.set(mode, Ht);
     m_prox_t.distributed_normalize_rows(mode);
 

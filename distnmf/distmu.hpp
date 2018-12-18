@@ -4,6 +4,12 @@
 #define DISTNMF_DISTMU_HPP_
 #include "distnmf/aunmf.hpp"
 
+/**
+ * Distributed MU factorization.
+ * Offers implementation for the pure virtual function
+ * updateW and updateH based on MU.
+ */
+
 namespace planc {
 
 template <class INPUTMATTYPE>
@@ -14,13 +20,15 @@ class DistMU : public DistAUNMF<INPUTMATTYPE> {
   ROWVEC Wnorm;
 
  protected:
-  // update W given HtH and AHt
+  /**
+   * update W given HtH and AHt
+   * AHtij is of size \f$ k \times \frac{globalm}/{p}\f$.
+   * this->W is of size \f$\frac{globalm}{p} \times k\f$
+   * this->HtH is of size kxk
+   * \f$w_{ij} = w_{ij} .* \frac{(AH)_{ij}}{(WH^TH)_{ij}}\f$
+   * Here ij is the element of W matrix.
+   */
   void updateW() {
-    // AHtij is of size k*(globalm/p).
-    // this->W is of size (globalm/p)xk
-    // this->HtH is of size kxk
-    // w_ij = w_ij .* (AH)_ij/(WHtH)_ij
-    // Here ij is the element of W matrix.
     WHtH = (this->W * this->HtH) + EPSILON;
 #ifdef MPI_VERBOSE
     DISTPRINTINFO("::WHtH::" << endl << this->WHtH);
@@ -50,13 +58,15 @@ class DistMU : public DistAUNMF<INPUTMATTYPE> {
        }*/
     this->Wt = this->W.t();
   }
-
+  /**
+   * updateH given WtAij and WtW
+   * WtAij is of size \f$k \times \frac{globaln}{p} \f$
+   * this->H is of size \f$ \frac{globaln}{p} \times k\f$
+   * this->WtW is of size kxk
+   * \f$h_{ij} = \frac{h_{ij} .* WtAij.t()}{(HW^TW)_{ij}}\f$
+   * Here ij is the element of H matrix.
+   */  
   void updateH() {
-    // WtAij is of size k*(globaln/p)
-    // this->H is of size (globaln/p)xk
-    // this->WtW is of size kxk
-    // h_ij = h_ij .* WtAij.t()/(HWtW)_ij
-    // Here ij is the element of H matrix.
     HWtW = this->H * this->WtW + EPSILON;
     this->H = (this->H % this->WtAij.t()) / HWtW;
 #ifdef MPI_VERBOSE

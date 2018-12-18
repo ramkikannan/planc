@@ -37,8 +37,14 @@ static ULONG powersof10[16] = {1,
 static std::stack<std::chrono::steady_clock::time_point> tictoc_stack;
 static std::stack<double> tictoc_stack_omp_clock;
 
+
+/// start the timer. easy to call as tic(); some code; double t=toc();
 inline void tic() { tictoc_stack.push(std::chrono::steady_clock::now()); }
 
+/***
+ * Returns the time taken between the most recent tic() to itself.
+ * @return time in seconds.  
+*/
 inline double toc() {
   std::chrono::duration<double> time_span =
       std::chrono::duration_cast<std::chrono::duration<double>>(

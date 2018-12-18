@@ -12,6 +12,13 @@ namespace planc {
 
 class DistNTFANLSBPP : public DistAUNTF {
  protected:
+  /**
+   * This is openmp multithreaded ANLS/BPP update function.
+   * Given the MTTKRP and the hadamard of all the grams, we 
+   * determine the factor matrix to be updated. 
+   * @param[in] Mode of the factor to be updated
+   * @returns The new updated factor
+   */
   MAT update(const int mode) {
     MAT othermat(this->m_local_ncp_factors_t.factor(mode));
     if (m_nls_sizes[mode] > 0) {

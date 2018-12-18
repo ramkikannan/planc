@@ -161,7 +161,7 @@ Towards this end, we experiment with various values of $R$ to observe the relati
 %Strong Scaling Realworld Low Rank
 %%%%%%%%%%%%%%%%%
 \begin{figure}
-\includegraphics[width=\textwidth, height=3in]{data/plots/ssrw_tinyimagenet_no16.pdf}
+\includegraphics[width=\textwidth, height=3in]{data/plots/ssrw_tinyimagenet_breakdown.pdf}
 \caption {Strong Scaling on Realworld Tiny Imagenet Dataset on 32, 64, 128, 256, 512 and 1024 nodes in Titan. The algorithms alg=0,1,2,4,5,6 are \MU, \HALS, \BPP, \ADMM, \Nestrov, \CPALS\ respectively.}
 \label{fig:synstrongscaling}
 \end{figure}
@@ -195,5 +195,29 @@ Towards this end, we experiment with various values of $R$ to observe the relati
 \label{fig:confsweep4D}
 \end{figure}
 
+%%%%%%%%%%%%%%%%%
+%Mouse Data
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+	\subfloat[Low rank $k=64$ \label{fig:accuracyrwk64}]{
+		\includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracymouse64.pdf}
+	}
+	\subfloat[Low rank $k=96$ \label{fig:accuracyrwk96}]{
+		\includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracymouse96.pdf}
+	}
+	\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Realworld Low Rank Tensor of size $1040\times1392\times69\times25$ on 64 Titan Nodes as $8\times8\times1\times1$ Processor Grid.}
+	\label{fig:convergencemouse}
+\end{figure}
 
+\begin{figure}
+   \includegraphics[width=0.45\textwidth, height=2in]{data/plots/lucmouse64.pdf}
+	\caption{LUC comparison of \MU, \HALS, \BPP, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size $1040\times1392\times69\times25$ on 64 Titan nodes as $8\times8\times1\times1$ Processor Grid}
+	\label{fig:luccompmouse}
+\end{figure}
+
+\begin{figure}
+	\includegraphics[width=\textwidth, height=3in]{data/plots/ssrw_mouse.pdf}
+	\caption {Strong Scaling on Realworld Mouse MRI Dataset on 32, 64, 128, 256, 512 and 1024 nodes in Titan. The algorithms alg=0,1,2,4,5,6 are \MU, \HALS, \BPP, \ADMM, \Nestrov, \CPALS\ respectively.}
+	\label{fig:synstrongscaling}
+\end{figure}
 

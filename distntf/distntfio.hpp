@@ -237,13 +237,15 @@ class DistNTFIO {
     rc.clear();
     return this->m_global_dims;
   }
-  /*
-    Reading from real input file.
-    Expecting a .tensor text file and .bin file.
-    .info text file will be written by root processor alone
-    .bin file will be an mpi io file
-    Read distributed tensor
-*/
+  /**
+   * Writes distributed tensor.
+   * Expecting a .tensor text file and .bin file.
+   * .info text file will be written by root processor alone
+   * .bin file will be an mpi io file
+   * Read distributed tensor
+   * @param[in] filename
+   * @param[in] local_tensor
+   */
   void write_dist_tensor(const std::string filename,
                          const Tensor &local_tensor) {
     // all processes reading the file_name.info file.
@@ -371,7 +373,9 @@ class DistNTFIO {
         MAT current_factor = factort.t();
         current_factor.save(sw.str(), arma::raw_ascii);
       }
+      sw.clear();
     }
+    sw.clear();
     sw << output_file_name << "_lambda"
        << "_" << MPI_SIZE;
     if (ISROOT) {

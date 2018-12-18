@@ -11,14 +11,21 @@
 #include "pacoss/pacoss.h"
 #endif
 
+/**
+ * Class and function for 2D MPI communicator
+ * with row and column communicators
+ */
+
 namespace planc {
 
 class MPICommunicator {
  private:
-  int m_rank;
-  int m_numProcs;
-  int m_row_rank, m_row_size;
-  int m_col_rank, m_col_size;
+  int m_rank;  /// Local Rank
+  int m_numProcs;  /// Total number of mpi process
+  int m_row_rank;
+  int m_row_size; 
+  int m_col_rank
+  int m_col_size;
   int m_pr, m_pc;
 
   // for 2D communicators
@@ -107,11 +114,17 @@ class MPICommunicator {
     printConfig();
 #endif
   }
+  /// returns the global rank
   const int rank() const { return m_rank; }
+  /// returns the total number of mpi processes
   const int size() const { return m_numProcs; }
+  /// returns its rank in the row processor grid
   const int row_rank() const { return m_row_rank; }
+  /// returns the rank in the column processor grid
   const int col_rank() const { return m_col_rank; }
+  /// Total number of row processors
   const int pr() const { return m_pr; }
+  /// Total number of column processor
   const int pc() const { return m_pc; }
   const MPI_Comm *commSubs() const { return m_commSubs; }
 };

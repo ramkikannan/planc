@@ -11,7 +11,7 @@
 #include "distntf/distntfmpicomm.hpp"
 #include "distntf/distntftime.hpp"
 
-/*
+/**
  * Tensor A of size is M1 x M2 x... x Mn is distributed among
  * P1 x P2 x ... x Pn grid of P processors. That means, every
  * processor has (M1/P1) x (M2/P2) x ... x (Mn/Pn) tensor as
@@ -82,9 +82,13 @@ class DistAUNTF {
   MAT hadamard_all_grams;
 
   DenseDimensionTree *kdt;
-  // do the local syrk only for the current updated factor
-  // and all reduce only for the current updated factor.
-  // computes G^(current_mode)
+
+  /**
+   * do the local syrk only for the current updated factor
+   * and all reduce only for the current updated factor.
+   * computes G^(current_mode)
+   * @param[in] current_mode
+   */
   void update_global_gram(const int current_mode) {
     // computing U
     MPITIC;  // gram
@@ -110,6 +114,13 @@ class DistAUNTF {
     this->time_stats.allreduce_duration(temp);
   }
 
+  /**
+   * Apply L1 and L2 regularization on the gram of hadamards
+   * @param[in] L1 - L1 Regularization parameters as a float
+   * @param[in] L2 - L2 Regularization parameters as a float
+   * @param[out] AtA - L1/L2 regularization applied gram matrix
+   */
+
   void applyReg(float lambda_l2, float lambda_l1, MAT *AtA) {
     // Frobenius norm regularization
     if (lambda_l2 > 0) {
@@ -124,8 +135,11 @@ class DistAUNTF {
     }
   }
 
-  /*
-   * This iterates over all grams and find hadamard of the grams
+  /**
+   * This iterates over all grams leaving out current mode
+   * and finds hadamard of the grams
+   * 
+   * @param[in] current_mode. 
    */
   void gram_hadamard(int current_mode) {
     global_gram.ones();
@@ -140,8 +154,13 @@ class DistAUNTF {
     this->time_stats.compute_duration(temp);
     this->time_stats.gram_duration(temp);
   }
+  /**
+   * factor matrices all gather only on the current updated factor
+   * It performs the gather over the slice communicator
+   * @param[in] current_mode
+   */
 
-  // factor matrices all gather only on the current update factor
+  // 
   void gather_ncp_factor(const int current_mode) {
     m_gathered_ncp_factors_t.factor(current_mode).zeros();
     // Had this comment for debugging memory corruption in all_gather
@@ -214,6 +233,13 @@ class DistAUNTF {
     this->time_stats.trans_duration(temp);
   }
 
+  /**
+   * It perform the mttkrp of the current_mode. That is., it determines
+   * the KRP leaving out the current mode and matrix multiplies with the
+   * current_mode NCP factor. Alternatively, we use the dimension trees for
+   * this.
+   * @param[in] current_mode
+   */
   void distmttkrp(const int &current_mode) {
     double temp;
     if (!this->m_enable_dim_tree) {
@@ -350,6 +376,15 @@ class DistAUNTF {
               << "::max::" << maxtemp);
   }
 
+  /**
+   * Updates the current_mode of the NCP factors with the given
+   * factor matrix. It appropriately normalizes, updates lambda,
+   * updates global_gram and performs gather_ncp_factor to prepare
+   * for the next iteration.
+   * @param[in] current_mode
+   * @param[in] factor matrix
+   */
+
   void update_factor_mode(const int current_mode, const MAT &factor) {
     m_local_ncp_factors.set(current_mode, factor);
     m_local_ncp_factors.distributed_normalize(current_mode);
@@ -367,9 +402,7 @@ class DistAUNTF {
     for (int mode = 0; mode < this->m_modes; mode++) {
       if (mode != current_mode) this->m_stale_mttkrp[mode] = true;
     }
-  }
-
-  VEC lambda() { return m_local_ncp_factors.lambda(); }
+  } 
 
   virtual void accelerate() {}
 
@@ -444,17 +477,27 @@ class DistAUNTF {
       delete kdt;
     }
   }
+  /// Returns number of iterations
   void num_iterations(const int i_n) { this->m_num_it = i_n; }
+  /// Returns the numbers of modes of the tensor
   size_t modes() const { return this->m_modes; }
+  /// Low Rank
   size_t rank() const { return this->m_low_rank_k; }
+  /// L1 and L2 Regularization for every mode
   void regularizers(const FVEC i_regs) { this->m_regularizers = i_regs; }
+  /// Sets whether to compute the error or not
   void compute_error(bool i_error) {
     this->m_compute_error = i_error;
     hadamard_all_grams =
         arma::ones<MAT>(this->m_low_rank_k, this->m_low_rank_k);
   }
+  /// Returns the lambda of the NCP factors
+  VEC lambda() { return m_local_ncp_factors.lambda(); }
+  /// Returns the current outer iteration of the computeNTF
   int current_it() const { return this->m_current_it; }
+  /// Returns the current error 
   double current_error() const { return this->m_rel_error; }
+  /// MTTKRP can be computed with or without dimension trees. Dimtree is default.
   void dim_tree(bool i_dim_tree) {
     this->m_enable_dim_tree = i_dim_tree;
     if (this->m_enable_dim_tree) {
@@ -466,6 +509,7 @@ class DistAUNTF {
       }
     }
   }
+  /// Does the algorithm need acceleration?
   void accelerated(const bool &set_acceleration) {
     this->m_accelerated = set_acceleration;
     this->m_compute_error = true;
@@ -475,7 +519,7 @@ class DistAUNTF {
     return this->m_stale_mttkrp[current_mode];
   }
 
-  /*
+  /**
    * This function will completely reset all the factors
    * and the state of AUNTF. Use it with caution!!!
    * It is the responsibility of the caller to preserve
@@ -498,6 +542,13 @@ class DistAUNTF {
 
   // Preferrably call this after the computeNTF().
   // This is right now called to save the factor matrices.
+  /**
+   * Returns the factor matrix by collected it across all the processors.
+   * Don't call this during the computeNTF loop. It is right now
+   * called after all the iterations to dump the factor matrix. 
+   * @param[in] mode of the factor matrix to be collected across processors
+   * @param[in] factor_matrix. To be allocated and freed by the caller. 
+   */
   void factor(int mode, double *factor_matrix) {
     gather_ncp_factor(mode);
     int sendcnt = m_gathered_ncp_factors_t.factor(mode).n_elem;
@@ -519,6 +570,7 @@ class DistAUNTF {
                 0, this->m_mpicomm.fiber(mode));
   }
 
+  /// The main computeNTF loop
   void computeNTF() {
     // initialize everything.
     // line 3,4,5 of the algorithm
@@ -611,8 +663,11 @@ class DistAUNTF {
     }
     generateReport();
   }
-  /*
+  /**
    * This is naive way of computing error with local rank-k tensor
+   * rel_err = \f$ sqrt(max(\|X\|_F^2 + \lambda^T * Hadamard\; of\; all\; gram *
+               \lambda - 2 * innerprod(X,F_{kten}),0))/\|X\|;
+   * Typically called after the update of the last mode.
    */
 
   double computeError(const MAT &unnorm_factor, int mode) {
@@ -656,6 +711,11 @@ class DistAUNTF {
     }
     return std::sqrt(std::abs(squared_err) / this->m_global_sqnorm_A);
   }
+  /**
+   * This is used to evaluate during acceleration stage. If the accelerated
+   * factors are better than the current factors, we accept the acceleration.
+   * Hence, we pass the accelerated factors to compute error. 
+   */
   double computeError(const NCPFactors &new_factors_t, const int mode) {
     // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram *
     // lambda - 2 * innerprod(X,F_kten),0))/init.nr_X;

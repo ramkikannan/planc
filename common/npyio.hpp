@@ -12,13 +12,13 @@
 namespace planc {
 class NumPyArray {
  private:
-  size_t m_word_size;
+  int64_t m_word_size;
   bool m_fortran_order;
-  size_t m_modes;
+  int64_t m_modes;
   UVEC m_dims;
   void parse_npy_header(FILE* fp) {
     char buffer[256];
-    size_t res = fread(buffer, sizeof(char), 11, fp);
+    int64_t res = fread(buffer, sizeof(char), 11, fp);
     if (res != 11) {
       ERR << "Something wrong. Could not read header " << std::endl;
       exit(-1);
@@ -31,13 +31,13 @@ class NumPyArray {
 
     // fortran order is column major order
     // C order is row major order
-    size_t loc1 = header.find("fortran_order");
+    int64_t loc1 = header.find("fortran_order");
     loc1 += 16;
     this->m_fortran_order = (header.substr(loc1, 4) == "True" ? true : false);
 
     // obtain dimensions
     loc1 = header.find("(");
-    size_t loc2 = header.find(")");
+    int64_t loc2 = header.find(")");
     if (loc1 < 0 || loc2 < 0) {
       ERR << "could not find ()" << std::endl;
       exit(-1);
@@ -54,7 +54,7 @@ class NumPyArray {
     std::stringstream ss(str_shape);
     std::string s;
     ss.str(str_shape);
-    size_t i = 0;
+    int64_t i = 0;
     while (getline(ss, s, ',')) {
       this->m_dims[i++] = ::atoi(s.c_str());
     }
@@ -87,7 +87,7 @@ class NumPyArray {
     }
     parse_npy_header(fp);
     this->m_input_tensor = new Tensor(this->m_dims);
-    size_t nread = fread(m_input_tensor->m_data, sizeof(m_input_tensor->m_data),
+    int64_t nread = fread(m_input_tensor->m_data, sizeof(m_input_tensor->m_data),
                          m_input_tensor->numel(), fp);
     if (nread != m_input_tensor->numel()) {
       WARN << "something wrong ::read::" << nread

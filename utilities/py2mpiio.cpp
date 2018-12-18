@@ -4,8 +4,9 @@
 
 /*
 * For converting numpy array to distributed io
-* Compile as g++ py2mpiio.cpp  -I/ccs/home/ramki/nmflibrary/ 
-* -I$ARMADILLO_INCLUDE_DIR  -I/ccs/home/ramki/rhea/libraries/openblas/include/
+* Compile as g++ -D_FILE_OFFSET_BITS=64 py2mpiio.cpp 
+* -I/ccs/home/ramki/nmflibrary/  -I$ARMADILLO_INCLUDE_DIR  
+* -I/ccs/home/ramki/rhea/libraries/openblas/include/
 */
 
 int main(int argc, char *argv[]) {

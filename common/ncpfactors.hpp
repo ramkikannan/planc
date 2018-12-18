@@ -10,25 +10,34 @@
 #include <mpi.h>
 #endif
 
-// ncp_factors contains the factors of the ncp
-// every ith factor is of size n_i * k
-// number of factors is called as mode of the tensor
-// all idxs are zero idx.
+/**
+ *  ncp_factors contains the factors of the ncp
+ * every ith factor is of size n_i * k
+ * number of factors is called as mode of the tensor
+ * all idxs are zero idx.
+ */
 
 namespace planc {
 
 class NCPFactors {
-  MAT *ncp_factors;
-  int m_modes;
-  int m_k;
-  UVEC m_dimensions;
-  // in the distributed mode all the processes has same lambda
+  MAT *ncp_factors;   /// Array of factors .One factor for every mode.
+  int m_modes;        /// Number of modes in tensor
+  int m_k;            /// Low rank
+  UVEC m_dimensions;  /// Vector of dimensions for every mode
+  /// in the distributed mode all the processes has same lambda
   VEC m_lambda;
-  // normalize the factors of a matrix
+  /// normalize the factors of a matrix
   bool freed_ncp_factors;
 
  public:
-  // constructors
+  /**
+   * constructor that takes the dimensions of every mode, low rank k
+   * All the factors will be initialized with random uniform number
+   * @param[in] vector of dimension for every mode.
+   * @param[in] low rank
+   * @param[in] trans. takes true or false. Transposes every factor.
+   */
+
   NCPFactors(const UVEC &i_dimensions, const int &i_k, bool trans) {
     this->m_dimensions = i_dimensions;
     this->m_modes = i_dimensions.n_rows;
@@ -84,23 +93,36 @@ ncp_factors[i].clear();
   }
 
   // getters
+  /// returns low rank
   int rank() const { return m_k; }
+  /// dimensions of every mode
   UVEC dimensions() const { return m_dimensions; }
+  /// factor matrix of a mode i_n
   MAT &factor(const int i_n) const { return ncp_factors[i_n]; }
+  /// returns number of modes
   int modes() const { return m_modes; }
+  /// returns the lambda vector
   VEC lambda() const { return m_lambda; }
 
   // setters
+  /**
+   * Set the mode i_n with the given factor matrix
+   * @param[in] i_n mode for which given factor matrix will be updated
+   * @param[in] i_factor factor matrix
+   */
   void set(const int i_n, const MAT &i_factor) {
     assert(i_factor.size() == this->ncp_factors[i_n].size());
     this->ncp_factors[i_n] = i_factor;
   }
-
+  /// sets the lambda vector
   void set_lambda(VEC new_lambda) {
     for (int i = 0; i < this->m_modes; i++) m_lambda(i) = new_lambda(i);
   }
-
   // compute gram of all local factors
+  /**
+   * Return the hadamard of the factor grams
+   * @param[out] UtU is a kxk matrix
+   */
   void gram(MAT *o_UtU) {
     MAT currentGram(this->m_k, this->m_k);
     for (int i = 0; i < this->m_modes; i++) {
@@ -111,6 +133,12 @@ ncp_factors[i].clear();
 
   // find the hadamard product of all the factor grams
   // except the n. This is equation 50 of the JGO paper.
+  /**
+   * Returns the hadamard of the factor grams except i_n
+   * @param[in] i_n ith mode that will be excluded in the factor grams
+   * @param[out] UtU is a kxk matrix
+   */
+
   void gram_leave_out_one(const int i_n, MAT *o_UtU) {
     MAT currentGram(this->m_k, this->m_k);
     (*o_UtU) = arma::ones<MAT>(this->m_k, this->m_k);
@@ -121,7 +149,11 @@ ncp_factors[i].clear();
       }
     }
   }
-
+  /**
+   * KRP leaving out the mode i_n
+   * @param[in] mode i_n
+   * @return MAT of size product of dimensions except i_n by k
+   */
   MAT krp_leave_out_one(const int i_n) {
     UWORD krpsize = arma::prod(this->m_dimensions);
     krpsize /= this->m_dimensions[i_n];
@@ -130,12 +162,15 @@ ncp_factors[i].clear();
     return krp;
   }
   // construct low rank tensor using the factors
-
-  // khatrirao leaving out one. we are using the implementation
-  // from tensor toolbox. Always krp for mttkrp is computed in
-  // reverse. Hence assuming the same. The order of the computation
-  // is same a tensor tool box.
-  // size of krp must be product of all dimensions leaving out nxk
+  /**
+   * khatrirao leaving out one. we are using the implementation
+   * from tensor toolbox. Always krp for mttkrp is computed in
+   * reverse. Hence assuming the same. The order of the computation
+   * is same a tensor tool box.
+   * size of krp must be product of all dimensions leaving out nxk
+   * @param[in] i_n mode that will be excluded
+   * @param[out] m_dimensions[i_n]xk
+   */
   void krp_leave_out_one(const int i_n, MAT *o_krp) {
     // matorder = length(A):-1:1;
     // Always krp for mttkrp is computed in
@@ -200,7 +235,11 @@ current_nrows *= rightkrp.n_rows;
       (*o_krp).col(n) = arma::vectorise(ab);
     }
   }
-
+  /**
+   * KRP of the given vector of modes. It can be any subset of the modes.
+   * @param[in] Subset of modes
+   * @param[out] KRP of product of dimensions of the given modes by k
+   */
   void krp(const UVEC i_modes, MAT *o_krp) {
     // matorder = length(A):-1:1;
     // Always krp for mttkrp is computed in
@@ -239,7 +278,12 @@ current_nrows *= rightkrp.n_rows;
   //     Tensor rc(this->m_dimensions, lowranktensor.memptr());
   //     return rc;
   // }
-
+  /**
+   * Construct the rank k tensor out of the factor matrices
+   * Determine the KRP of the n-1 modes leaving out 0 and multiply
+   * with the mode 0 factor matrix
+   * @param[out] Rank-k tensor
+   */
   void rankk_tensor(Tensor &out) {
     UWORD krpsize = arma::prod(this->m_dimensions);
     krpsize /= this->m_dimensions[0];
@@ -250,13 +294,16 @@ current_nrows *= rightkrp.n_rows;
     Tensor rc(this->m_dimensions, lowranktensor.memptr());
     out = rc;
   }
-
+  /**
+   *  prints just the information about the factors. 
+   * it will NOT print the factor
+   */
   void printinfo() {
     INFO << "modes::" << this->m_modes << "::k::" << this->m_k << std::endl;
     INFO << "lambda::" << this->m_lambda << std::endl;
     INFO << "::dims::" << std::endl << this->m_dimensions << std::endl;
   }
-
+  /// prints the entire NCPFactors including the factor matrices
   void print() {
     printinfo();
     for (int i = 0; i < this->m_modes; i++) {
@@ -265,17 +312,25 @@ current_nrows *= rightkrp.n_rows;
       std::cout << this->ncp_factors[i];
     }
   }
+  /**
+   * print the ith factor matrix alone
+   * @param[in] i_n the mode for which the factor matrix to be printed
+   */
   void print(const int i_n) {
     std::cout << i_n << "th factor" << std::endl
               << "=============" << std::endl;
     std::cout << this->ncp_factors[i_n];
   }
+  /**
+   * Transposes the entire factor matrix. 
+   * @param[out] factor_t that contains the transpose of every factor matrix. 
+   */
   void trans(NCPFactors &factor_t) {
     for (int i = 0; i < this->m_modes; i++) {
       factor_t.set(i, this->ncp_factors[i].t());
     }
   }
-  // only during initialization. Reset's all lambda.
+  /// only during initialization. Reset's all lambda.
   void normalize() {
     double colNorm = 0.0;
     m_lambda.ones();
@@ -288,6 +343,11 @@ current_nrows *= rightkrp.n_rows;
     }
   }
   // replaces the existing lambdas
+  /**
+   * Column normalizes the factor matrix of the given mode
+   * and replaces the existing lambda.
+   * @param[in] mode of the factor matrix that will be column normalized
+   */
   void normalize(int mode) {
     for (int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].col(i));
@@ -295,6 +355,11 @@ current_nrows *= rightkrp.n_rows;
     }
   }
   // replaces the existing lambdas
+  /**
+   * Row normalizes the factor matrix of the given mode
+   * and replaces the existing lambda.
+   * @param[in] mode of the factor matrix that will be row normalized
+   */
   void normalize_rows(int mode) {
     for (int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].row(i));
@@ -302,9 +367,11 @@ current_nrows *= rightkrp.n_rows;
     }
   }
 
-  /*
+  /**
+   * initializes the local tensor with the given seed.
    * this is for reinitializing random numbers across different
-   * processors.
+   * processors. 
+   * @param[in] i_seed 
    */
   void randu(const int i_seed) {
     arma::arma_rng::set_seed(i_seed);
@@ -315,11 +382,8 @@ current_nrows *= rightkrp.n_rows;
         ncp_factors[i].zeros();
       }
     }
-  }
-  /*
-   * this is for reinitializing zeros across different
-   * processors.
-   */
+  }  
+  /// this is for reinitializing zeros across different processors.  
   void zeros() {
     for (int i = 0; i < this->m_modes; i++) {
       ncp_factors[i].zeros();
@@ -328,6 +392,10 @@ current_nrows *= rightkrp.n_rows;
 #ifdef MPI_DISTNTF
   // Distribution normalization of factor matrices
   // To be used for MPI code only
+  /**
+   * Distributed column normalize of all the modes 
+   * across different processors. 
+   */
   void distributed_normalize() {
     double local_colnorm;
     double global_colnorm;
@@ -343,6 +411,11 @@ current_nrows *= rightkrp.n_rows;
       }
     }
   }
+  /**
+   * Distributed column normalize of a given mode
+   * across different processors. 
+   * @param[in] mode
+   */
   void distributed_normalize(int mode) {
     double local_colnorm;
     double global_colnorm;
@@ -356,6 +429,11 @@ current_nrows *= rightkrp.n_rows;
       m_lambda(j) = global_colnorm;
     }
   }
+  /**
+   * Distributed row normalize of a given mode
+   * across different processors. 
+   * @param[in] mode
+   */
   void distributed_normalize_rows(int mode) {
     double local_rownorm;
     double global_rownorm;

@@ -17,36 +17,32 @@
 // #define COLLECTSTATS 1
 // #endif
 
-namespace planc{
+namespace planc {
 
 // T must be a either an instance of MAT or sp_MAT
 template <class T>
 class NMF {
  protected:
-  // input MATrix of size mxn
-  T A;
-
-  // low rank factors with size mxk and nxk respectively.
-  MAT W, H;
+  T A;  /// input matrix of size mxn
+  MAT W, H;  /// left and low rank factors of size mxk and nxk respectively
   MAT Winit, Hinit;
-  UINT m, n, k;
+  UINT m, n, k;  /// rows, columns and lowrank  
 
   /*
    * Collected statistics are
    * iteration Htime Wtime totaltime normH normW densityH densityW relError
    */
   MAT stats;
-  double objective_err;
+  double objective_err;  /// objective error at any particular iteration
   double normA, normW, normH;
   double densityW, densityH;
   bool cleared;
-  int m_num_iterations;
-  std::string input_file_name;
+  int m_num_iterations;  /// number of iterations
+  std::string input_file_name; 
   MAT errMtx;       // used for error computation.
   T A_err_sub_mtx;  // used for error computation.
-
-  // The regularization is a vector of two values. The first value specifies
-  // L2 regularization values and the second is L1 regularization.
+  /// The regularization is a vector of two values. The first value specifies
+  /// L2 regularization values and the second is L1 regularization.
   FVEC m_regW;
   FVEC m_regH;
 
@@ -65,12 +61,13 @@ class NMF {
     this->stats(iteration, 8) = this->objective_err;
   }
 
-  /*
+  /**
    * For both L1 and L2 regularizations we only adjust the
    * HtH or WtW. The regularization is a vector of two values.
    * The first value specifies L2 regularization values
    * and the second is L1 regularization.
-   * Mostly we expect
+   * param[in] regularization as a vector
+   * param[out] Gram matrix
    */
   void applyReg(const FVEC &reg, MAT *AtA) {
     // Frobenius norm regularization
@@ -87,6 +84,10 @@ class NMF {
       (*AtA) = (*AtA) + 2 * lambda_l1 * onematrix;
     }
   }
+
+  /**
+   *  L2 normalize column vectors of W
+   */
 
   void normalize_by_W() {
     MAT W_square = arma::pow(this->W, 2);
@@ -110,6 +111,11 @@ class NMF {
   }
 
  public:
+  /**
+   * Constructors with an input matrix and low rank 
+   * @param[in] input matrix as reference. 
+   * @param[in] low rank 
+   */
   NMF(const T &input, const unsigned int rank) {
     this->A = input;
     this->m = A.n_rows;
@@ -131,6 +137,11 @@ class NMF {
     // other intializations
     this->otherInitializations();
   }
+  /**
+   * Constructor with initial left and right low rank factors
+   * Necessary when you want to compare algorithms starting with 
+   * the same initialization
+   */
 
   NMF(const T &input, const MAT &leftlowrankfactor,
       const MAT &rightlowrankfactor) {
@@ -148,12 +159,13 @@ class NMF {
 
     // other initializations
     this->otherInitializations();
-  }
+  }  
 
   virtual void computeNMF() = 0;
 
+  /// Returns the left low rank factor matrix W
   MAT getLeftLowRankFactor() { return W; }
-
+  /// Returns the right low rank factor matrix H
   MAT getRightLowRankFactor() { return H; }
 
   /*
@@ -324,21 +336,19 @@ class NMF {
 
     this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
   }
-
+  /// Sets number of iterations for the NMF algorithms
   void num_iterations(const int it) { this->m_num_iterations = it; }
-
+  /// Sets the regularization on left low rank factor W
   void regW(const FVEC &iregW) { this->m_regW = iregW; }
-
-  void regH(const FVEC &iregH) { this->m_regH = iregH; }
-
-  FVEC regW() { return this->m_regW; }
-
-  FVEC regH() { return this->m_regH; }
-
-  const int num_iterations() const { return m_num_iterations; }
+  /// Sets the regularization on right low rank H
+  void regH(const FVEC &iregH) { this->m_regH = iregH; }  
+  // FVEC regW() { return this->m_regW; }
+  // FVEC regH() { return this->m_regH; }  
+  // const int num_iterations() const { return m_num_iterations; }
 
   ~NMF() { clear(); }
-
+  /// Clear the memory for input matrix A, right low rank factor W
+  /// and left low rank factor H
   void clear() {
     if (!this->cleared) {
       this->A.clear();

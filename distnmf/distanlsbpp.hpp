@@ -6,6 +6,11 @@
 #include "distnmf/aunmf.hpp"
 #include "nnls/bppnnls.hpp"
 
+/**
+ * Provides the updateW and updateH for the
+ * distributed ANLS/BPP algorithm.
+ */
+
 #ifdef BUILD_CUDA
 #define ONE_THREAD_MATRIX_SIZE 1000
 #include <omp.h>
@@ -23,6 +28,9 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
 
   void allocateMatrices() {}
 
+  /**
+   * Multi threaded ANLS/BPP using openMP
+   */
   void updateOtherGivenOneMultipleRHS(const MAT& giventGiven,
                                       const MAT& giventInput, MAT* othermat) {
     UINT numThreads = (giventInput.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
@@ -75,34 +83,24 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
   }
 
  protected:
-  // updateW given HtH and AHt
+  /**
+   * update W given HtH and AHt
+   * AHtij is of size \f$ k \times \frac{globalm}/{p}\f$.
+   * this->W is of size \f$\frac{globalm}{p} \times k \f$
+   * this->HtH is of size kxk
+  */
   void updateW() {
     updateOtherGivenOneMultipleRHS(this->HtH, this->AHtij, &this->W);
-    // BPPNNLS<MAT, VEC> subProblem(this->HtH, this->AHtij, true);
-    // subProblem.solveNNLS();
-    // this->Wt = subProblem.getSolutionMatrix();
-    // fixNumericalError<MAT>(&(this->Wt));
     this->Wt = this->W.t();
-
-    // localWnorm = sum(this->W % this->W);
-    // tic();
-    // MPI_Allreduce(localWnorm.memptr(), Wnorm.memptr(), this->k, MPI_FLOAT,
-    //               MPI_SUM, MPI_COMM_WORLD);
-    // double temp = toc();
-    // this->time_stats.allgather_duration(temp);
-    // for (int i = 0; i < this->k; i++) {
-    //     this->W.col(i) = this->W.col(i) / sqrt(Wnorm(i));
-    // }
-    // this->Wt = this->W.t();
   }
-
-  // updateH given WtW and WtA
+  /**
+   * updateH given WtAij and WtW
+   *  WtAij is of size \f$k \times \frac{globaln}{p} \f$
+   * this->H is of size \f$ \frac{globaln}{p} \times k \f$
+   * this->WtW is of size kxk
+   */  
   void updateH() {
     updateOtherGivenOneMultipleRHS(this->WtW, this->WtAij, &this->H);
-    // BPPNNLS<MAT, VEC> subProblem1(this->WtW, this->WtAij, true);
-    // subProblem1.solveNNLS();
-    // this->Ht = subProblem1.getSolutionMatrix();
-    // fixNumericalError<MAT>(&(this->Ht));
     this->Ht = this->H.t();
   }
 
