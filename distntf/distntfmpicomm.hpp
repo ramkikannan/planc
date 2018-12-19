@@ -7,7 +7,6 @@
 
 #include <mpi.h>
 #include <vector>
-#include "distntf/distntfutils.h"
 namespace planc {
 
 class NTFMPICommunicator {

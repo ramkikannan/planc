@@ -342,9 +342,12 @@ class NMF {
   void regW(const FVEC &iregW) { this->m_regW = iregW; }
   /// Sets the regularization on right low rank H
   void regH(const FVEC &iregH) { this->m_regH = iregH; }  
-  // FVEC regW() { return this->m_regW; }
-  // FVEC regH() { return this->m_regH; }  
-  // const int num_iterations() const { return m_num_iterations; }
+  /// Returns the L2 and L1 regularization parameters of W as a vector
+  FVEC regW() { return this->m_regW; }
+  /// Returns the L2 and L1 regularization parameters of W as a vector
+  FVEC regH() { return this->m_regH; }
+  /// Returns the number of iterations
+  const int num_iterations() const { return m_num_iterations; }
 
   ~NMF() { clear(); }
   /// Clear the memory for input matrix A, right low rank factor W

@@ -23,8 +23,8 @@ class MPICommunicator {
   int m_rank;  /// Local Rank
   int m_numProcs;  /// Total number of mpi process
   int m_row_rank;
-  int m_row_size; 
-  int m_col_rank
+  int m_row_size;
+  int m_col_rank;
   int m_col_size;
   int m_pr, m_pc;
 

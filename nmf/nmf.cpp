@@ -67,7 +67,7 @@ void incrementalGraph(std::string AfileName, std::string WfileName) {
   W.load(WfileName);
   INFO << "Loaded input matrix W=" << PRINTMATINFO(W) << std::endl;
   H.ones(A.n_cols, W.n_cols);
-  BPPNMF<SP_MAT> bppnmf(A, W, H);
+  planc::BPPNMF<SP_MAT> bppnmf(A, W, H);
   H = bppnmf.solveScalableNNLS();
   OUTPUT << H << std::endl;
 }

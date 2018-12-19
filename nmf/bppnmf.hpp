@@ -89,7 +89,7 @@ class BPPNMF : public NMF<T> {
   }
 
  public:
-  BPPNMF(T &A, int lowrank) : NMF<T>(A, lowrank) {
+  BPPNMF(const T &A, int lowrank) : NMF<T>(A, lowrank) {
     giventGiven = arma::zeros<MAT>(lowrank, lowrank);
     this->At = A.t();
   }

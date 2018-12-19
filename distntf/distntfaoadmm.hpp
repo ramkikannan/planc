@@ -21,7 +21,7 @@ class DistNTFAOADMM : public DistAUNTF {
 
  protected:
    /**
-   * This is openmp multithreaded ANLS/BPP update function.
+   * This is ADMM based update function.
    * Given the MTTKRP and the hadamard of all the grams, we 
    * determine the factor matrix to be updated. 
    * @param[in] Mode of the factor to be updated
