@@ -374,10 +374,9 @@ class DistNTFIO {
         current_factor.save(sw.str(), arma::raw_ascii);
       }
       sw.clear();
+      sw.str("");
     }
-    sw.clear();
-    sw << output_file_name << "_lambda"
-       << "_" << MPI_SIZE;
+    sw << output_file_name << "_lambda" << "_" << MPI_SIZE;
     if (ISROOT) {
       ntfsolver->lambda().save(sw.str(), arma::raw_ascii);
     }
