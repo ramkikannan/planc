@@ -138,8 +138,8 @@ class DistAUNTF {
   /**
    * This iterates over all grams leaving out current mode
    * and finds hadamard of the grams
-   * 
-   * @param[in] current_mode. 
+   *
+   * @param[in] current_mode.
    */
   void gram_hadamard(int current_mode) {
     global_gram.ones();
@@ -160,7 +160,7 @@ class DistAUNTF {
    * @param[in] current_mode
    */
 
-  // 
+  //
   void gather_ncp_factor(const int current_mode) {
     m_gathered_ncp_factors_t.factor(current_mode).zeros();
     // Had this comment for debugging memory corruption in all_gather
@@ -402,7 +402,7 @@ class DistAUNTF {
     for (int mode = 0; mode < this->m_modes; mode++) {
       if (mode != current_mode) this->m_stale_mttkrp[mode] = true;
     }
-  } 
+  }
 
   virtual void accelerate() {}
 
@@ -495,9 +495,10 @@ class DistAUNTF {
   VEC lambda() { return m_local_ncp_factors.lambda(); }
   /// Returns the current outer iteration of the computeNTF
   int current_it() const { return this->m_current_it; }
-  /// Returns the current error 
+  /// Returns the current error
   double current_error() const { return this->m_rel_error; }
-  /// MTTKRP can be computed with or without dimension trees. Dimtree is default.
+  /// MTTKRP can be computed with or without dimension trees. Dimtree is
+  /// default.
   void dim_tree(bool i_dim_tree) {
     this->m_enable_dim_tree = i_dim_tree;
     if (this->m_enable_dim_tree) {
@@ -545,9 +546,9 @@ class DistAUNTF {
   /**
    * Returns the factor matrix by collected it across all the processors.
    * Don't call this during the computeNTF loop. It is right now
-   * called after all the iterations to dump the factor matrix. 
+   * called after all the iterations to dump the factor matrix.
    * @param[in] mode of the factor matrix to be collected across processors
-   * @param[in] factor_matrix. To be allocated and freed by the caller. 
+   * @param[in] factor_matrix. To be allocated and freed by the caller.
    */
   void factor(int mode, double *factor_matrix) {
     gather_ncp_factor(mode);
@@ -588,18 +589,25 @@ class DistAUNTF {
       while (temp_cum_prod(split_mode) < split_criteria) {
         split_mode++;
       }
-      // check to see if split mode is left or right.
-      size_t current_left = temp_cum_prod(split_mode);
-      size_t good_criteria = temp_cum_prod(temp_cum_prod.n_rows - 1) /
-                             temp_cum_prod(split_mode - 1);
-      if (current_left > good_criteria) split_mode--;
       PRINTROOT("KDT Split Mode::"
                 << split_mode << "::split criteria::" << split_criteria
-                << "::numerator::" << temp_cum_prod(temp_cum_prod.n_rows - 1)
-                << "::good_criteria::" << good_criteria
-                << "::current_left::" << current_left << std::endl
                 << "::cum prod::" << std::endl
                 << temp_cum_prod << std::endl);
+
+      // check to see if split mode is left or right.
+      if (split_mode > 0) {
+        size_t current_left = temp_cum_prod(split_mode);
+        size_t good_criteria = temp_cum_prod(temp_cum_prod.n_rows - 1) /
+                               temp_cum_prod(split_mode - 1);
+        if (current_left > good_criteria) split_mode--;
+        PRINTROOT("KDT Split Mode::"
+                  << split_mode << "::split criteria::" << split_criteria
+                  << "::numerator::" << temp_cum_prod(temp_cum_prod.n_rows - 1)
+                  << "::good_criteria::" << good_criteria
+                  << "::current_left::" << current_left << std::endl
+                  << "::cum prod::" << std::endl
+                  << temp_cum_prod << std::endl);
+      }
       kdt = new DenseDimensionTree(m_input_tensor, m_gathered_ncp_factors,
                                    split_mode);
     }
@@ -714,7 +722,7 @@ class DistAUNTF {
   /**
    * This is used to evaluate during acceleration stage. If the accelerated
    * factors are better than the current factors, we accept the acceleration.
-   * Hence, we pass the accelerated factors to compute error. 
+   * Hence, we pass the accelerated factors to compute error.
    */
   double computeError(const NCPFactors &new_factors_t, const int mode) {
     // rel_Error = sqrt(max(init.nr_X^2 + lambda^T * Hadamard of all gram *

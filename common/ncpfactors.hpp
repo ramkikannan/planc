@@ -115,9 +115,7 @@ ncp_factors[i].clear();
     this->ncp_factors[i_n] = i_factor;
   }
   /// sets the lambda vector
-  void set_lambda(VEC new_lambda) {
-    for (int i = 0; i < this->m_modes; i++) m_lambda(i) = new_lambda(i);
-  }
+  void set_lambda(const VEC &new_lambda) { m_lambda = new_lambda; }
   // compute gram of all local factors
   /**
    * Return the hadamard of the factor grams
@@ -295,7 +293,7 @@ current_nrows *= rightkrp.n_rows;
     out = rc;
   }
   /**
-   *  prints just the information about the factors. 
+   *  prints just the information about the factors.
    * it will NOT print the factor
    */
   void printinfo() {
@@ -322,8 +320,8 @@ current_nrows *= rightkrp.n_rows;
     std::cout << this->ncp_factors[i_n];
   }
   /**
-   * Transposes the entire factor matrix. 
-   * @param[out] factor_t that contains the transpose of every factor matrix. 
+   * Transposes the entire factor matrix.
+   * @param[out] factor_t that contains the transpose of every factor matrix.
    */
   void trans(NCPFactors &factor_t) {
     for (int i = 0; i < this->m_modes; i++) {
@@ -370,8 +368,8 @@ current_nrows *= rightkrp.n_rows;
   /**
    * initializes the local tensor with the given seed.
    * this is for reinitializing random numbers across different
-   * processors. 
-   * @param[in] i_seed 
+   * processors.
+   * @param[in] i_seed
    */
   void randu(const int i_seed) {
     arma::arma_rng::set_seed(i_seed);
@@ -382,8 +380,8 @@ current_nrows *= rightkrp.n_rows;
         ncp_factors[i].zeros();
       }
     }
-  }  
-  /// this is for reinitializing zeros across different processors.  
+  }
+  /// this is for reinitializing zeros across different processors.
   void zeros() {
     for (int i = 0; i < this->m_modes; i++) {
       ncp_factors[i].zeros();
@@ -393,8 +391,8 @@ current_nrows *= rightkrp.n_rows;
   // Distribution normalization of factor matrices
   // To be used for MPI code only
   /**
-   * Distributed column normalize of all the modes 
-   * across different processors. 
+   * Distributed column normalize of all the modes
+   * across different processors.
    */
   void distributed_normalize() {
     double local_colnorm;
@@ -413,7 +411,7 @@ current_nrows *= rightkrp.n_rows;
   }
   /**
    * Distributed column normalize of a given mode
-   * across different processors. 
+   * across different processors.
    * @param[in] mode
    */
   void distributed_normalize(int mode) {
@@ -431,7 +429,7 @@ current_nrows *= rightkrp.n_rows;
   }
   /**
    * Distributed row normalize of a given mode
-   * across different processors. 
+   * across different processors.
    * @param[in] mode
    */
   void distributed_normalize_rows(int mode) {
