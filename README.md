@@ -1,7 +1,10 @@
 # Parallel Low-rank Approximations with Non-negativity Constraints (PLANC)
 
-In this repository, we offer both MPI and OPENMP implementation for MU, HALS, Nesterov, ADMM and ANLS/BPP based Non-negative Matrix Factorization(NMF) and Non-negative Tensor Factorization(NTF) algorithms. This can run off the shelf as well easy to integrate in other source code. 
-These are very highly tuned NMF algorithms to work on super computers. We have tested
+Given an input matrix A, Non-negative Matrix Factorization(NMF) is about determining two non-negative matrices called factors; each for rows and columns of A;  such that the product of them closely approximates the A. In the recent times, there is a huge interest for non-negative tensor factorization for determining factors of every mode of higher order matrices called tensors. There are wider applications of this matrix and tensor factorization in scientific community such as spectral unmixing, compressing scientific data, scientific visualization, inverse problems etc., as the factors are scientifically interpretable and an important cornerstone for explainable AI and representation learning. Similarly for internet applications such as topic modeling, background separation from video data, hyper-spectral imaging, web-scale clustering, and community detection.  There are many popular algorithms of NMF and NTF such as multiplicative update(MU), hierarchical alternating least squares(HALS), ANLS/BPP etc., and it was a technically highly complex task for scaling them to large number of processor to handle the internet scale scientific data.
+
+PLANC delivers the high performance, flexibility, and scalability necessary to tackle the ever-growing size of today's internet and scientific data sets. Rather than developing separate software for each problem domain, algorithm and mathematical technique, flexibility has been achieved by characterizing nearly all of the current NMF and NTF algorithms in the context of a Block Coordinate Descent(BCD) framework.
+
+In this repository, we offer highly tuned MPI and OPENMP implementation for MU, HALS, Nesterov, ADMM and ANLS/BPP based Non-negative Matrix Factorization(NMF) and Non-negative Tensor Factorization(NTF) algorithms that delivers the high performance, flexibility, and scalability necessary to tackle the ever-growing size of today's internet and scientific data sets. This can run off the shelf as well easy to integrate in other source code. We have tested
 this software in [NERSC](http://www.nersc.gov/users/computational-systems/edison/) as well [OLCF](https://www.olcf.ornl.gov/) cluster. The openmp implementation is tested on
 many different linux variants with intel processors. The library works well for both sparse and dense matrix. If you use this code, kindly cite the following papers appropriately.
 
@@ -17,8 +20,10 @@ Parallel Nonnegative CP Decomposition of Dense Tensors. 25th {IEEE} Internationa
 
 In this library we support the following
 
-* Shared Memory [OPENMP](openmp/README.md)  based implementation of NMF and NTF
-* Distributed Memory [MPI](mpi/README.md) based implementation
+* [Shared Memory NMF](nmf/README.md)  based implementation of NMF and NTF
+* [Distributed Memory NMF](distnmf/README.md) based implementation
+* [Shared Memory NTF](ntf/README.md)  based implementation of NMF and NTF
+* [Distributed Memory NTF](distntf/README.md) based implementation
 
 For other NMF implementations from Prof. Park's lab, please visit [smallk](https://github.com/smallk/smallk)
 
