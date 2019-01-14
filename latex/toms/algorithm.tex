@@ -82,7 +82,6 @@ The computational cost of this operation is also typically lower order, but the 
 \label{alg:simpleDT}
 \begin{algorithmic}
 \Require $\T{X}$ is an $N$-way tensor, $n \in [N]$, $s$ split dimension, $n$ mode to compute MTTKRP for, projection tensor $\hat{\T{X}}$, ktensor $\hat{\T{Y}}$ corresponding to $\hat{\T{X}}$.
-
 \If{n == 0 or n == N-1}
 	\If{n = 0}
 		\State $\M{K} \leftarrow KRP(s+1:N)$
@@ -113,7 +112,6 @@ The computational cost of this operation is also typically lower order, but the 
 		\State $\M{M}(:,i) \leftarrow \hat{\T{X}}_i(n,n+1:Y) \cdot \M{K}_i$
 	\EndFor
 \EndIf
-
 \end{algorithmic}
 \end{algorithm}
 
