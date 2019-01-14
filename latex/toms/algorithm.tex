@@ -285,7 +285,7 @@ This subsection deals with the nonnegative least squares (NLS) solves needed to 
 \label{eqn:nls}
 \end{align}
 
-In the case of updating the local factor matrix $\Mn{H}{n}_{\V{p}}$ we need to solve~\ref{eqn:nls} with $\M{X} = \Mn{H}{n}_{\V{p}}$, $\M{A} = \Mn{S}{n}$ and $\M{B} = \Mn{M}{n}_{\V{p}}$. Our framework is capable of supporting any alternating-updating NLS solver~\cite{KBP16}. The NLS solvers which fit this framework and are implemented in our software package are Multiplicative Update~\cite{LS99}, Hierarchical Alternating Least Squares~\cite{CP2009}, Block Principal Pivoting~\cite{KP2011}, Alternating Direction Method of Multipliers~\cite{HSL2016} and Nesterov-type algorithm~\cite{LKLHS2017}. We briefly describe the different solvers below. Note that the descriptions are for the general form of the NLS solver as shown in~\ref{eqn:nls}.
+In the case of updating the local factor matrix $\Mn{H}{n}_{\V{p}}$ we need to solve~\Cref{eqn:nls} with $\M{X} = \Mn{H}{n}_{\V{p}}$, $\M{A} = \Mn{S}{n}$ and $\M{B} = \Mn{M}{n}_{\V{p}}$. Our framework is capable of supporting any alternating-updating NLS solver~\cite{KBP16}. The NLS solvers which fit this framework and are implemented in our software package are Multiplicative Update~\cite{LS99}, Hierarchical Alternating Least Squares~\cite{CP2009}, Block Principal Pivoting~\cite{KP2011}, Alternating Direction Method of Multipliers~\cite{HSL2016} and Nesterov-type algorithm~\cite{LKLHS2017}. We briefly describe the different solvers below. Note that the descriptions are for the general form of the NLS solver as shown in~\Cref{eqn:nls}.
 
 
 \subsubsection{Multiplicative Update (MU)}
@@ -293,7 +293,7 @@ The MU solve is an elementwise operation. The update rule for each element of $\
 \begin{align}
 \M{X}(i,j) \leftarrow \M{X}(i,j)\frac{\M{B}(i,j)}{\left(\M{A}\M{X}\right)(i,j)}
 \end{align}
-While this rule does not solve~\ref{eqn:nls} to optimality it ensures a reduction in the objective value from the initial value of $\M{X}$.
+While this rule does not solve~\Cref{eqn:nls} to optimality it ensures a reduction in the objective value from the initial value of $\M{X}$.
 
 \subsubsection{Hierarchical Alternating Least Squares (HALS)}
 HALS updates are performed on individual rows of $\M{X}$. The update rule for row $i$ can be written in closed form as,
@@ -303,5 +303,23 @@ HALS updates are performed on individual rows of $\M{X}$. The update rule for ro
 The rows of $\M{X}$ are updated in order so that the latest values are used in every update step.
 
 \subsubsection{Block Principal Pivoting (BPP)}
+BPP is an active-set like method for solving NLS problems. The main subroutine of BPP is the single right hand side version of~\Cref{eqn:nls},
+\begin{align}
+\V{x} \leftarrow \underset{\V{x} \ge 0}{\argmin} \left\lVert \M{A}\V{x} -\V{b}\right\rVert^2_F
+\label{eqn:snls}
+\end{align}
+The Karash-Kuhn-Tucker (KKT) optimality conditions for~\Cref{eqn:snls} are shown below,
+\begin{subequations}
+\begin{align}
+\V{y} &= \M{A}^\Tra\M{A}\V{x} - \M{A}^\Tra\V{b} \\
+\V{y} &\geq \V{0} \\
+\V{x} &\geq \V{0} \\
+x_i y_i &= 0 \quad \forall i
+\end{align}
+\label{eqn:bppkkt}
+\end{subequations}
+The complementary slackness criteria from the KKT conditions forces the support sets, i.e. the non-zero elements, of $\V{x}$ and $\V{y}$ to be disjoint. This makes~\Cref{eqn:bppkkt} an instance of the \emph{Linear Complementarity Problem} which arises frequently in quadratic programming. When $k \ll \min(m.n)$, active-set methods are preferred since they deal with small matrices of size $m \times k$, $n \times k$ and $k \times k$. In the optimal solution, the active-set is the set of indices where $x_i = 0$ and the remaining indices are referred to as the passive set. Once the active-set is found, we can find the optimal solution to~\Cref{eqn:snls} by using solving an unconstrained least squares problem on the passive set of indices. The BPP algorithm attempts to find the active-set by greedily swapping indices between the intermediate active and passive sets until it finds a solution that satisfies the KKT conditions. Kim and Park discuss the method in greater detail in~\cite{KP2011}. The unconstrained least squares is solved using the Normal Equations method in the software though other methods can also be used.
+
 \subsubsection{Alternating Direction Method of Multipliers (ADMM)}
+
 \subsubsection{Nesterov-type algorithm}
