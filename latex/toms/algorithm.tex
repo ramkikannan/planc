@@ -77,23 +77,26 @@ The other subroutine necessary for implementing the dimension tree approach is t
 We implement the operation as a row-wise Hadamard product of a set of factor matrix rows, and we use OpenMP parallelization to obtain on-node parallelism.
 The computational cost of this operation is also typically lower order, but the running time in practice suffers from also being memory bandwidth bound.
 
+\Cref{alg:simpleDT} gives pseudo code for the dimension tree implemented in PLANC. This code follows a dimension tree format which computes MTTKRPS in ascending order, that is 0 to $N$. There is a need for extra storage space to save the results of partial MTTKRPs and multi-TTVs. This is denoted as a tensor $\hat{\T{X}}$. Note that this tensor is always $R \ \times$ a subset of contiguous tensor dimensions. This means that $\hat{\T{X}}$ can always be thought of as a column major matrix with $R$ columns. The multi-TTV operations require that the columns of $\hat{\T{X}}$ be logically reshaped into smaller matrices to perform $R$ matrix vector products. $\hat{\T{X}}^i$ denotes accessing the data which makes up the ith column of $\hat{\T{X}}$. The amount of additional memory needed for $\hat{\T{X}}$  is the size of the larger partial MTTKRP and is $O(I)$ if $R$ is less than the smallest tensor dimension.
+
+
 \begin{algorithm}
 \caption{Simple Dim Tree}
 \label{alg:simpleDT}
 \begin{algorithmic}
-\Require $\T{X}$ is an $N$-way tensor, $n \in [N]$, $s$ split dimension, $n$ mode to compute MTTKRP for, projection tensor $\hat{\T{X}}$, ktensor $\hat{\T{Y}}$ corresponding to $\hat{\T{X}}$.
+\Require $\T{X}$ is an $N$-way tensor, $n \in [N]$, $s$ split dimension, $n$ loops over $0:N-1$, and projection tensor $\hat{\T{X}}$ for storing intermediate tensor products.
 \If{n == 0 or n == N-1}
 	\If{n = 0}
-		\State $\M{K} \leftarrow KRP(s+1:N)$
+		\State $\M{K} \leftarrow (\M{H}^{(s+1)} \bigodot ... \bigodot \M{H}^{(N)}) $
 		\State $\hat{\T{X}} \leftarrow \T{X}(0:s,s+1:N) \cdot \M{K}$
 		\For{i=1:R}
-			\State $\M{M}(:,i) \leftarrow \hat{\T{X}}_i(0,1:s) \cdot KRP(1:s)$
+			\State $\M{M}(:,i) \leftarrow \hat{\T{X}}^i(0,1:s) \cdot (\M{H}^{(1)} \bigodot ... \bigodot \M{H}^{(s)})$
 		\EndFor
 	\Else % N-1 = n
-		\State $\M{K} \leftarrow KRP(0:s)$
+		\State $\M{K} \leftarrow (\M{H}^{(0)} \bigodot ... \bigodot \M{H}^{(s)})$
 		\State $\hat{\T{X}} \leftarrow \Tr{X}(0:s,s+1:N)^\Tra \cdot \M{K}$
 		\For{i=1:R}
-			\State $\M{M}(:,i) \leftarrow \hat{\T{X}}_i(s+1,s+2:N) \cdot KRP(s+2:N)$
+			\State $\M{M}(:,i) \leftarrow \hat{\T{X}}^i(s+1,s+2:N) \cdot (\M{H}^{(s+2)} \bigodot ... \bigodot \M{H}^{(N)})$
 		\EndFor
 	\EndIf
 \
@@ -104,12 +107,12 @@ The computational cost of this operation is also typically lower order, but the 
 		\State Y = N
 	\EndIf
 	\For{i=1:R}
-		\State  $\M{K} \leftarrow KRP(n-1)$
-		\State $\hat{\T{X}}_i \leftarrow \M{K}_i \cdot \hat{\T{X}}_i(n-1,n:Y)$ % Update to X
+		\State  $\M{K} \leftarrow \M{H}^{(n-1)}$
+		\State $\hat{\T{X}}^i \leftarrow \M{K}_i \cdot \hat{\T{X}}^i(n-1,n:Y)$ % Update to X
 	\EndFor
 	\For{i=1:R}
-		\State  $\M{K} \leftarrow KRP(n+1:Y)$
-		\State $\M{M}(:,i) \leftarrow \hat{\T{X}}_i(n,n+1:Y) \cdot \M{K}_i$
+		\State  $\M{K} \leftarrow (\M{H}^{(n+1)} \bigodot ... \bigodot \M{H}^{(Y)})$
+		\State $\M{M}(:,i) \leftarrow \hat{\T{X}}^i(n,n+1:Y) \cdot \M{K}_i$
 	\EndFor
 \EndIf
 \end{algorithmic}
