@@ -18,12 +18,17 @@ class DistNTFAOADMM : public DistAUNTF {
   MAT tempgram;
   int admm_iter;
   double tolerance;
+  double chol_time;
+  double stop_iter_time;
+  double proj_time;
+  double solve_time;
+  double norm_time;
 
  protected:
-   /**
+  /**
    * This is ADMM based update function.
-   * Given the MTTKRP and the hadamard of all the grams, we 
-   * determine the factor matrix to be updated. 
+   * Given the MTTKRP and the hadamard of all the grams, we
+   * determine the factor matrix to be updated.
    * @param[in] Mode of the factor to be updated
    * @returns The new updated factor
    */
@@ -35,6 +40,7 @@ class DistNTFAOADMM : public DistAUNTF {
     // Set up ADMM iteration
     double alpha = 0.0;
 
+    MPITIC;
     if (m_nls_sizes[mode] > 0) {
       alpha = arma::trace(this->global_gram) / this->m_local_ncp_factors.rank();
       alpha = (alpha > 0) ? alpha : 0.01;
@@ -43,6 +49,7 @@ class DistNTFAOADMM : public DistAUNTF {
       L = arma::chol(tempgram, "lower");
       Lt = L.t();
     }
+    chol_time += MPITOC;
     bool stop_iter = false;
 
     // Start ADMM loop from here
@@ -50,7 +57,7 @@ class DistNTFAOADMM : public DistAUNTF {
       if (m_nls_sizes[mode] > 0) {
         prev_fac = updated_fac;
         m_local_ncp_aux_t.set(mode, m_local_ncp_aux.factor(mode).t());
-
+        MPITIC;
         m_temp_local_ncp_aux_t.set(
             mode, arma::solve(arma::trimatl(L),
                               this->ncp_local_mttkrp_t[mode] +
@@ -59,14 +66,15 @@ class DistNTFAOADMM : public DistAUNTF {
         m_local_ncp_aux_t.set(mode,
                               arma::solve(arma::trimatu(Lt),
                                           m_temp_local_ncp_aux_t.factor(mode)));
-
+        solve_time += MPITOC;
         // Update factor matrix
         updated_fac = m_local_ncp_aux_t.factor(mode).t();
+        MPITIC;
         fixNumericalError<MAT>(&(updated_fac), EPSILON_1EMINUS16);
         updated_fac = updated_fac - m_local_ncp_aux.factor(mode);
         updated_fac.for_each(
             [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });
-
+        proj_time += MPITOC;
         // Update dual variable
         m_local_ncp_aux.set(mode, m_local_ncp_aux.factor(mode) + updated_fac -
                                       m_local_ncp_aux_t.factor(mode).t());
@@ -82,7 +90,7 @@ class DistNTFAOADMM : public DistAUNTF {
         r = norm(updated_fac.t() - m_local_ncp_aux_t.factor(mode), "fro");
         s = norm(updated_fac - prev_fac, "fro");
       }
-
+      MPITIC;
       // factor norm
       local_facnorm *= local_facnorm;
       double global_facnorm = 0.0;
@@ -110,8 +118,11 @@ class DistNTFAOADMM : public DistAUNTF {
       if (global_r < (tolerance * global_facnorm) &&
           global_s < (tolerance * global_dualnorm))
         stop_iter = true;
+      stop_iter_time += MPITOC;
     }
+    MPITIC;
     m_local_ncp_aux.distributed_normalize(mode);
+    norm_time += MPITOC;
     return updated_fac.t();
   }
 
@@ -133,7 +144,21 @@ class DistNTFAOADMM : public DistAUNTF {
     tempgram.zeros(i_k, i_k);
     admm_iter = 5;
     tolerance = 0.01;
+    chol_time = 0.0;
+    stop_iter_time = 0.0;
+    proj_time = 0.0;
+    solve_time = 0.0;
+    norm_time = 0.0;
   }
+
+  ~DistNTFAOADMM() {
+    PRINTROOT("::chol time::" << chol_time
+                              << "::stop_iter_time::" << stop_iter_time
+                              << "::proj_time::" << proj_time
+                              << "::solve_time::" << solve_time
+                              << "::norm_time::" << norm_time);
+  }
+
 };  // class DistNTFAOADMM
 
 }  // namespace planc

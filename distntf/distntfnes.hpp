@@ -19,11 +19,15 @@ class DistNTFNES : public DistAUNTF {
   double delta1;  // Termination value for absmax
   double delta2;  // Termination value for min
   // Acceleration Variables
-  int acc_start;   // Starting iteration for acceleration
-  int acc_exp;     // Step size exponent
-  int acc_fails;   // Acceleration Fails
-  int fail_limit;  // Acceleration Fail limit
+  int acc_start;                   // Starting iteration for acceleration
+  int acc_exp;                     // Step size exponent
+  int acc_fails;                   // Acceleration Fails
+  int fail_limit;                  // Acceleration Fail limit
   const int NUM_INNER_ITERS = 20;  // Capping inner iter
+  double eig_time;
+  double stop_iter_time;
+  double proj_time;
+  double norm_time;
 
  protected:
   inline double get_lambda(double L, double mu) {
@@ -54,6 +58,7 @@ class DistNTFNES : public DistAUNTF {
   }
 
   bool stop_iter(const int mode) {
+    MPITIC;
     bool stop = false;
     double local_absmax, local_min, global_absmax, global_min;
     local_absmax = 0.0;
@@ -72,7 +77,7 @@ class DistNTFNES : public DistAUNTF {
                   MPI_COMM_WORLD);
 
     if (global_absmax <= delta1 && global_min >= -delta2) stop = true;
-
+    stop_iter_time += MPITOC;
     return stop;
   }
 
@@ -144,8 +149,9 @@ class DistNTFNES : public DistAUNTF {
     MAT Htprev = Ht;
     m_acc_t.set(mode, Ht);
     modified_gram = this->global_gram;
-
+    MPITIC;
     VEC eigval = arma::eig_sym(modified_gram);
+    eig_time += MPITOC;
     L = eigval.max();
     mu = eigval.min();
     lambda = get_lambda(L, mu);
@@ -168,8 +174,10 @@ class DistNTFNES : public DistAUNTF {
       iter++;
       Htprev = Ht;
       Ht = m_acc_t.factor(mode) - ((1 / (L + lambda)) * m_grad_t.factor(mode));
+      MPITIC;
       fixNumericalError<MAT>(&Ht, EPSILON_1EMINUS16);
       Ht.for_each([](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });
+      proj_time += MPITOC;
       alpha_prev = alpha;
       alpha = get_alpha(alpha_prev, q);
       beta =
@@ -181,11 +189,12 @@ class DistNTFNES : public DistAUNTF {
       m_grad_t.set(mode, Ht);
     }
     PRINTROOT("Nesterov Update::mode::" << mode
-              << "::outer_iter::" << outer_iter
-              << "::NLS inner_iter::" << iter);
+                                        << "::outer_iter::" << outer_iter
+                                        << "::NLS inner_iter::" << iter);
     m_prox_t.set(mode, Ht);
+    MPITIC;
     m_prox_t.distributed_normalize_rows(mode);
-
+    norm_time += MPITOC;
     return Ht;
   }
 
@@ -211,8 +220,18 @@ class DistNTFNES : public DistAUNTF {
     acc_exp = 3;
     acc_fails = 0;
     fail_limit = 5;
+    eig_time = 0.0;
+    stop_iter_time = 0.0;
+    proj_time = 0.0;
+    norm_time = 0.0;
     // Set Accerated to be true
     this->accelerated(true);
+  }
+  ~DistNTFNES() {
+    PRINTROOT("::eigen time::" << eig_time
+                               << "::stop_iter_time::" << stop_iter_time
+                               << "::proj_time::" << proj_time
+                               << "::norm_time::" << norm_time);
   }
 };  // class DistNTFNES
 

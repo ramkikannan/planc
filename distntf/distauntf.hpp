@@ -558,6 +558,10 @@ class DistAUNTF {
     std::vector<int> recvcnts(fiber_size, 0);
     std::vector<int> displs(fiber_size, 0);
 
+    DISTPRINTINFO("Collecting mode::" << mode << "::sendcnt::" << sendcnt
+                                      << "::fiber_size::" << fiber_size
+                                      << "::global_size::" << global_size);
+
     // int dimsize = m_factor_local_dims[current_mode];
     for (int i = 0; i < fiber_size; i++) {
       recvcnts[i] = itersplit(global_size, fiber_size, i) * m_low_rank_k;
@@ -589,10 +593,10 @@ class DistAUNTF {
       while (temp_cum_prod(split_mode) < split_criteria) {
         split_mode++;
       }
-      PRINTROOT("KDT Split Mode::"
-                << split_mode << "::split criteria::" << split_criteria
-                << "::cum prod::" << std::endl
-                << temp_cum_prod << std::endl);
+      PRINTROOT("KDT Split Mode::" << split_mode
+                                   << "::split criteria::" << split_criteria
+                                   << "::cum prod::" << std::endl
+                                   << temp_cum_prod << std::endl);
 
       // check to see if split mode is left or right.
       if (split_mode > 0) {

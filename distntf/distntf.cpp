@@ -78,17 +78,8 @@ class DistNTF {
       // }
       // return;
     }
-    // planc::Tensor A(dio.A()->dimensions(), dio.A()->m_data);
     planc::Tensor A;
     A = dio.A();
-    if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
-      UVEC local_dims = A.dimensions();
-      /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
-       *            MPI_SUM, mpicomm.commSubs()[0]);
-       * MPI_Allreduce(&localn, &(this->m_globaln), 1, MPI_INT,
-       *            MPI_SUM, mpicomm.commSubs()[1]);*/
-      this->m_global_dims = local_dims % this->m_proc_grids;
-    }
     INFO << mpicomm.rank()
          << "::Completed generating tensor A=" << A.dimensions()
          << "::start indices::" << A.global_idx()
