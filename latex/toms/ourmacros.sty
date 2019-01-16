@@ -1,0 +1,167 @@
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\leq}{\leqslant}
+\newcommand{\Cal}[1]{\mathcal{#1}}
+\newcommand{\Rm}[1]{\mathrm{#1}}
+\newcommand{\Bb}[1]{\mathbb{#1}}
+\newcommand{\Br}[1]{\left(#1\right)}
+\newcommand{\DotBr}[1]{\left\langle#1\right\rangle}
+\newcommand{\ClBr}[1]{\left\{#1\right\}}
+\newcommand{\SqBr}[1]{\left[#1\right]}
+\newcommand{\NormBr}[1]{\left\|#1\right\|}
+\newcommand{\Trm}[1]{\textrm{#1}}
+\newcommand{\Prob}[1]{\mathrm{Pr}\ClBr{#1}}
+\newcommand{\Rn}[1]{\mathbb{R}^{#1}}
+\newcommand{\Rnplus}[1]{\mathbb{R}_+^{#1}}
+\newcommand{\What}[1]{\widehat{#1}}
+\newcommand{\Wtilde}[1]{\widetilde{#1}}
+\newcommand{\FrPa}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\Half}{\frac{1}{2}}
+\renewcommand{\Bar}[1]{\overline{#1}}
+\newcommand{\Tr}[1]{\mathrm{Tr}\Br{#1}}
+\newcommand{\Ave}[2]{\frac{1}{#2}\sum_{{#1}=1}^{#2}}
+\newcommand{\Geq}{\geqslant}
+\renewcommand{\it}[1]{^{(#1)}}
+%\newcommand{\argmin}{\mathrm{argmin}}
+%\newcommand{\Argmin}[1]{\underset{#1}{\mathrm{argmin}}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\dstyle}{\displaystyle}
+\newcommand{\lt}{\left}
+\newcommand{\rt}{\right}
+
+\newcommand{\Split}[1]{\begin{equation*}\begin{split}#1\end{split}\end{equation*}}
+\newcommand{\SplitN}[2]{\begin{equation}#1\begin{split}#2\end{split}\end{equation}}
+\newcommand{\SplitS}[2]{\begin{subequations}#1\begin{align}#2\end{align}\end{subequations}}
+
+%% Packages for tensor macros
+% For \circledast
+\usepackage{amssymb,amsfonts,amsmath}
+% For \mathscr
+\usepackage[mathscr]{eucal}
+% For \llbracket and \rrbracket, \varoast, \varoslash
+\usepackage{stmaryrd}
+% For \boldsymbol
+\usepackage{amsbsy}
+% For \bm (bold math)
+\usepackage{bm}
+% For \set, \Set
+\usepackage{braket}
+
+%% --- Extras ---
+% Transpose
+\newcommand{\Tra}{{\sf T}} 
+\newcommand{\parens}[1]{(#1)}
+\newcommand{\Parens}[1]{\left(#1\right)}
+\newcommand{\dsquare}[1]{\llbracket #1 \rrbracket}
+\newcommand{\Dsquare}[1]{\left\llbracket #1 \right\rrbracket}
+\newcommand{\curly}[1]{\{ #1 \}}
+\newcommand{\Curly}[1]{\left\{ #1 \right\}}
+\newcommand{\Real}{\mathbb{R}}
+\newcommand{\qtext}[1]{\quad\text{#1}\quad}
+
+%% --- Vectors ---
+% vector
+\newcommand{\V}[2][]{{\bm{#1{\mathbf{\MakeLowercase{#2}}}}}} 
+% element of vector
+\newcommand{\VE}[3][]{#1{\MakeLowercase{#2}}_{#3}} 
+% vector in series
+\newcommand{\Vn}[3][]{{\bm{#1\mathbf{\MakeLowercase{#2}}}}^{(#3)}} 
+% transposed vector in series
+\newcommand{\VnTra}[3][]{{\bm{#1\mathbf{\MakeLowercase{#2}}}}^{(#3)\Tra}} 
+% element of vector in series
+\newcommand{\VnE}[4][]{#1{\MakeLowercase{#2}}^{(#3)}_{#4}} 
+
+%% --- Matrices ---
+% matrix
+\newcommand{\M}[2][]{{\bm{#1{\mathbf{\MakeUppercase{#2}}}}}} 
+% matrix in series
+\newcommand{\Mn}[3][]{{\bm{#1\mathbf{\MakeUppercase{#2}}}}^{(#3)}} 
+% transposed matrix in series 
+\newcommand{\MnTra}[3][]{{\bm{#1\mathbf{\MakeUppercase{#2}}}}^{(#3)\Tra}} 
+% matrix column
+\newcommand{\MC}[3][]{\V[#1]{#2}_{#3}} 
+% column of matrix in series
+\newcommand{\MnC}[4][]{\Vn[#1]{#2}{#3}_{#4}} 
+% transposed column of matrix in series
+\newcommand{\MnCTra}[4][]{\VnTra[#1]{#2}{#3}_{#4}} 
+% matrix element
+\newcommand{\ME}[3][]{#1{\MakeLowercase{#2}}_{#3}} 
+% element of matrix in series
+\newcommand{\MnE}[4][]{#1{\MakeLowercase{#2}}^{(#3)}_{#4}} 
+
+%% --- Tensors ---
+% tensor
+\newcommand{\T}[2][]{\boldsymbol{#1\mathscr{\MakeUppercase{#2}}}} 
+% tensor slice
+\newcommand{\TS}[3][]{\M[#1]{#2}_{#3}}
+% tensor element
+\newcommand{\TE}[3][]{#1{\MakeLowercase{#2}}_{#3}}
+% matricized tensor
+\newcommand{\Mz}[3][]{\M[#1]{#2}_{(#3)}}
+
+%% --- Operators ---
+% outer product
+\newcommand{\Oprod}{\circ} 
+% Kronecker product
+\newcommand{\Kron}{\otimes} 
+% Khatri-Rao product
+\newcommand{\Khat}{\odot} 
+% Hadamard (elementwise multiply)
+\newcommand{\Hada}{\ast} 
+\newcommand{\BigHada}{\mathop{\mbox{\fontsize{18}{19}\selectfont $\circledast$}}} 
+% Elementwise divide
+\newcommand{\Divi}{\varoslash}
+
+
+%% Other stuff
+\newcommand{\Tsize}[2]{\ensuremath#1_1 \times #1_2 \times \cdots \times #1_#2}
+\newcommand{\Tidx}[2]{\ensuremath#1_1 #1_2 \cdots #1_#2}
+\newcommand{\Tentry}[2]{\ensuremath(#1_1,#1_2,\dots,#1_#2)}
+\newcommand{\nrank}[1][n]{\ensuremath\text{rank}_#1}
+
+
+\newcommand{\xx}{\mathbf{x}}
+\newcommand{\XX}{\mathbf{X}}
+\newcommand{\yy}{\mathbf{y}}
+\renewcommand{\aa}{\mathbf{a}}
+\renewcommand{\AA}{\mathbf{A}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\BB}{\mathbf{B}}
+\newcommand{\CC}{\mathbf{C}}
+\newcommand{\FF}{\mathbf{F}}
+\newcommand{\WW}{\mathbf{W}}
+\newcommand{\HH}{\mathbf{H}}
+\newcommand{\ww}{\mathbf{w}}
+\newcommand{\hh}{\mathbf{h}}
+\newcommand{\TT}{\T{T}}
+\newcommand{\TA}{\T{A}}
+\newcommand{\CP}{\dsquare{\Mn{H}{1},\dots,\Mn{H}{N}}}
+\newcommand{\CPl}{\dsquare{\V{\lambda};\Mn{H}{1},\dots,\Mn{H}{N}}}
+
+\newcommand{\grey}[1]{{\color{blue}{\bf [Grey: #1]}}}
+\newcommand{\ramki}[1]{{\color{red}{\bf [Ramki: #1]}}}
+\newcommand{\koby}[1]{{\color{purple}{\bf [Koby: #1]}}}
+\newcommand{\delete}[1]{\sout{#1}}
+\newcommand{\update}[1]{{\color{blue}{#1}}}
+
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+%\newenvironment{proof}[1][Proof]{\begin{trivlist}
+%\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{example}[1][Example]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{remark}[1][Remark]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+%\newcommand{\qed}{\nobreak \ifvmode \relax \else
+%      \ifdim\lastskip<1.5em \hskip-\lastskip
+%      \hskip1.5em plus0em minus0.5em \fi \nobreak
+%      \vrule height0.75em width0.5em depth0.25em\fi}
+      
+\algrenewcommand{\algorithmiccomment}[1]{\emph{$\%$ #1}}

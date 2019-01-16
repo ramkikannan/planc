@@ -1,36 +1,47 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_DISTMU_HPP_
-#define MPI_DISTMU_HPP_
-#include "aunmf.hpp"
 
-template<class INPUTMATTYPE>
-class DistMU : public DistAUNMF<INPUTMATTYPE>{
+#ifndef DISTNMF_DISTMU_HPP_
+#define DISTNMF_DISTMU_HPP_
+#include "distnmf/aunmf.hpp"
+
+/**
+ * Distributed MU factorization.
+ * Offers implementation for the pure virtual function
+ * updateW and updateH based on MU.
+ */
+
+namespace planc {
+
+template <class INPUTMATTYPE>
+class DistMU : public DistAUNMF<INPUTMATTYPE> {
   MAT HWtW;
   MAT WHtH;
   ROWVEC localWnorm;
   ROWVEC Wnorm;
 
  protected:
-  // update W given HtH and AHt
+  /**
+   * update W given HtH and AHt
+   * AHtij is of size \f$ k \times \frac{globalm}/{p}\f$.
+   * this->W is of size \f$\frac{globalm}{p} \times k\f$
+   * this->HtH is of size kxk
+   * \f$w_{ij} = w_{ij} .* \frac{(AH)_{ij}}{(WH^TH)_{ij}}\f$
+   * Here ij is the element of W matrix.
+   */
   void updateW() {
-    // AHtij is of size k*(globalm/p).
-    // this->W is of size (globalm/p)xk
-    // this->HtH is of size kxk
-    // w_ij = w_ij .* (AH)_ij/(WHtH)_ij
-    // Here ij is the element of W matrix.
     WHtH = (this->W * this->HtH) + EPSILON;
 #ifdef MPI_VERBOSE
     DISTPRINTINFO("::WHtH::" << endl << this->WHtH);
 #endif  // ifdef MPI_VERBOSE
     this->W = (this->W % this->AHtij.t()) / WHtH;
-    DISTPRINTINFO("MU::updateW::HtH::" << PRINTMATINFO(this->HtH)                  \
-                                       << "::WHtH::" << PRINTMATINFO(WHtH)         \
-                                       << "::AHtij::" << PRINTMATINFO(this->AHtij) \
-                                       << "::W::" << PRINTMATINFO(this->W));
-    DISTPRINTINFO("MU::updateW::HtH::" << norm(this->HtH, "fro")                  \
-                                       << "::WHtH::" << norm(WHtH, "fro")         \
-                                       << "::AHtij::" << norm(this->AHtij, "fro") \
-                                       << "::W::" << norm(this->W, "fro"));
+    DISTPRINTINFO("MU::updateW::HtH::"
+                  << PRINTMATINFO(this->HtH) << "::WHtH::" << PRINTMATINFO(WHtH)
+                  << "::AHtij::" << PRINTMATINFO(this->AHtij)
+                  << "::W::" << PRINTMATINFO(this->W));
+    DISTPRINTINFO("MU::updateW::HtH::"
+                  << norm(this->HtH, "fro") << "::WHtH::" << norm(WHtH, "fro")
+                  << "::AHtij::" << norm(this->AHtij, "fro")
+                  << "::W::" << norm(this->W, "fro"));
 
     /*localWnorm = sum(this->W % this->W);
        mpitic();
@@ -47,37 +58,39 @@ class DistMU : public DistAUNMF<INPUTMATTYPE>{
        }*/
     this->Wt = this->W.t();
   }
-
+  /**
+   * updateH given WtAij and WtW
+   * WtAij is of size \f$k \times \frac{globaln}{p} \f$
+   * this->H is of size \f$ \frac{globaln}{p} \times k\f$
+   * this->WtW is of size kxk
+   * \f$h_{ij} = \frac{h_{ij} .* WtAij.t()}{(HW^TW)_{ij}}\f$
+   * Here ij is the element of H matrix.
+   */  
   void updateH() {
-    // WtAij is of size k*(globaln/p)
-    // this->H is of size (globaln/p)xk
-    // this->WtW is of size kxk
-    // h_ij = h_ij .* WtAij.t()/(HWtW)_ij
-    // Here ij is the element of H matrix.
-    HWtW    = this->H * this->WtW + EPSILON;
+    HWtW = this->H * this->WtW + EPSILON;
     this->H = (this->H % this->WtAij.t()) / HWtW;
 #ifdef MPI_VERBOSE
     DISTPRINTINFO("::HWtW::" << endl << HWtW);
 #endif  // ifdef MPI_VERBOSE
 
     // fixNumericalError<MAT>(&this->H);
-    DISTPRINTINFO("MU::updateH::WtW::" << PRINTMATINFO(this->WtW)                  \
-                                       << "::HWtW::" << PRINTMATINFO(HWtW)         \
-                                       << "::WtAij::" << PRINTMATINFO(this->WtAij) \
-                                       << "::H::" << PRINTMATINFO(this->H));
-    DISTPRINTINFO("MU::updateH::WtW::" << norm(this->WtW, "fro")                  \
-                                       << "::HWtW::" << norm(HWtW, "fro")         \
-                                       << "::WtAij::" << norm(this->WtAij, "fro") \
-                                       << "::H::" << norm(this->H, "fro"));
+    DISTPRINTINFO("MU::updateH::WtW::"
+                  << PRINTMATINFO(this->WtW) << "::HWtW::" << PRINTMATINFO(HWtW)
+                  << "::WtAij::" << PRINTMATINFO(this->WtAij)
+                  << "::H::" << PRINTMATINFO(this->H));
+    DISTPRINTINFO("MU::updateH::WtW::"
+                  << norm(this->WtW, "fro") << "::HWtW::" << norm(HWtW, "fro")
+                  << "::WtAij::" << norm(this->WtAij, "fro")
+                  << "::H::" << norm(this->H, "fro"));
     this->Ht = this->H.t();
   }
 
  public:
   DistMU(const INPUTMATTYPE& input, const MAT& leftlowrankfactor,
          const MAT& rightlowrankfactor, const MPICommunicator& communicator,
-         const int numkblks) :
-    DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor,
-                            rightlowrankfactor, communicator, numkblks) {
+         const int numkblks)
+      : DistAUNMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor,
+                                communicator, numkblks) {
     WHtH.zeros(this->globalm() / this->m_mpicomm.size(), this->k);
     HWtW.zeros(this->globaln() / this->m_mpicomm.size(), this->k);
     localWnorm.zeros(this->k);
@@ -85,4 +98,7 @@ class DistMU : public DistAUNMF<INPUTMATTYPE>{
     PRINTROOT("DistMU() constructor successful");
   }
 };
-#endif  // MPI_DISTMU_HPP_
+
+}  // namespace planc
+
+#endif  // DISTNMF_DISTMU_HPP_

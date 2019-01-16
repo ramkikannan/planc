@@ -1,0 +1,205 @@
+%-----------------------------------------------------------------------------
+%
+%               Template for sigplanconf LaTeX Class
+%
+% Name:         sigplanconf-template.tex
+%	
+% Purpose:      A template for sigplanconf.cls, which is a LaTeX 2e class
+%               file for SIGPLAN conference proceedings.
+%
+% Guide:        Refer to "Author's Guide to the ACM SIGPLAN Class,"
+%               sigplanconf-guide.pdf
+%
+% Author:       Paul C. Anagnostopoulos
+%               Windfall Software
+%               978 371-2316
+%               paul@windfall.com
+%
+% Created:      15 February 2005Eq.
+%
+%-----------------------------------------------------------------------------
+
+
+%\documentclass[acmtkdd]{acmsmall}
+\documentclass[review=true, screen=true]{acmart}
+% to alleviate the error too many math alphabets used in version bold.
+% solution found at https://tex.stackexchange.com/questions/3676/too-many-math-alphabets-error
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+
+
+\usepackage{amsfonts,amsmath,latexsym,amssymb}
+\usepackage{algorithm,algpseudocode}
+\usepackage{graphicx,xcolor}
+\usepackage{hyperref,cleveref}
+\usepackage{tikz}
+\usetikzlibrary{3d}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{etoolbox}
+\usetikzlibrary{patterns}
+%\usepackage{subcaption}
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage{url}
+% to include our macros
+\usepackage{ourmacros}
+%\usepackage[subtle,tracking=normal,leading=tight,leadingfraction=0.98, indent=tight, wordspacing=normal]{savetrees}
+%\usepackage[subtle,tracking=normal, indent=tight, wordspacing=normal, lists=tight,leading=tight,leadingfraction=0.99]{savetrees}
+
+\graphicspath{{./figs/}}
+
+%\pgfplotsset{compat=1.13}
+%not good 
+\pgfplotsset{filter discard warning=false}
+\usepgfplotslibrary{external} 
+\tikzexternalize[prefix=tikz/]
+
+\newcommand{\ignore}[1]{}
+\newcommand{\nnz}{\text{nnz}}
+\newcommand{\NaiveAlg}{Naive-Parallel-AUNMF}
+\newcommand{\ParNMF}{PLANC}
+
+\newcommand{\Naive}{\textbf{Naive}}
+\newcommand{\MU}{\textbf{MU}}
+\newcommand{\HALS}{\textbf{HALS}}
+\newcommand{\BPP}{\textbf{ABPP}}
+\newcommand{\ADMM}{\textbf{ADMM}}
+\newcommand{\Nestrov}{\textbf{Nesterov}}
+\newcommand{\CPALS}{\textbf{CP-ALS}}
+\newcommand{\LUC}{LUC}
+
+
+% for type-3 font error while submitting the tkde document.
+%\pdfminorversion=4 
+
+%remove acm footer in first page
+\makeatletter \def\runningfoot{\def\@runningfoot{}} \def\firstfoot{\def\@firstfoot{}} \makeatother 
+  
+\begin{document}
+
+% Uncomment one of the following two, if you are not going for the 
+% traditional copyright transfer agreement.
+
+%\exclusivelicense                % ACM gets exclusive license to publish, 
+                                  % you retain copyright
+
+%\permissiontopublish             % ACM gets nonexclusive license to publish
+                                  % (paid open-access papers, 
+                                  % short abstracts)
+
+\title{PLANC: Parallel Low Rank Approximation with Non-negativity Constraints}
+
+
+ Title portion. Note the short title for running heads
+\author{Ramakrishnan Kannan} 
+\author{Michael A. Matheson}
+\authornote{This manuscript has been authored by UT-Battelle, LLC under
+Contract No. DE-AC05-00OR22725 with the U.S. Department of Energy.
+The United States Government retains and the publisher, by accepting
+the article for publication, acknowledges that the United States
+Government retains a non-exclusive, paid-up, irrevocable, world-wide
+license to publish or reproduce the published form of this manuscript,
+or allow others to do so, for United States Government purposes.
+The Department of Energy will provide public access to these results of
+federally sponsored research in accordance with the DOE Public Access
+Plan (\url{http://energy.gov/downloads/doe-public-access-plan}).
+}
+\orcid{0000-0002-5852-4806}
+\affiliation{%
+  \institution{Oak Ridge National Laboratory}
+  \streetaddress{One Bethel Valley Rd}
+  \city{Oak Ridge}
+  \state{TN}
+  %\postcode{37831}
+  %\country{USA}
+}  
+\email{kannanr, mathesonma@ornl.gov}
+
+
+\author{Grey Ballard}
+\affiliation{%
+  \institution{Wake Forest University}
+  \city{Winston-Salem}
+  \state{NC}
+  %\country{France}
+}
+\email{ballard@wfu.edu}
+
+\author{Srinivas Eswar}
+\author{Koby Hayashi}
+\author{Haesun Park}
+\affiliation{%
+  \institution{Georgia Institute of Technology}
+  \city{Atlanta}
+  \state{GA}
+  %\country{France}
+}
+\email{seswar3, ???, hpark@gatech.edu}
+
+\input{abstract}
+%\IEEEtitleabstractindextext{%
+%\input{abstract}
+%
+%% Note that keywords are not normally used for peerreview papers.
+%\begin{IEEEkeywords}
+%HPC, NMF, MPI, 2D
+%\end{IEEEkeywords}}
+
+%\category{}{}{}
+%\category{}{}{}
+
+% general terms are not compulsory anymore, 
+% you may leave them out
+%\terms
+%term1, term2
+%\terms{Algorithms, Performance}
+
+%\keywords
+%keywords go here, ...
+
+%\begin{bottomstuff}
+%\end{bottomstuff}
+
+\maketitle
+
+\input{introduction}
+\input{prelim}
+\input{survey}
+%%\input{aunmf}
+\input{algorithm}
+\input{software}
+\input{experiments}
+\input{conclusion}
+\input{ack}
+
+% We recommend abbrvnat bibliography style.
+\vspace{-0.1in}
+
+%\bibliographystyle{abbrvnat}
+%\bibliographystyle{alpha}
+%\def\url#1{} %for disablng the doi url
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{paper}
+
+% The bibliography should be embedded for final submission.
+
+%\begin{thebibliography}{28}
+%\providecommand{\natexlab}[1]{#1}
+%\providecommand{\url}[1]{\texttt{#1}}
+%\expandafter\ifx\csname urlstyle\endcsname\relax
+%  \providecommand{\doi}[1]{doi: #1}\else
+%  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+%\end{thebibliography}
+
+%\input{bio}
+%\input{appendix}
+
+\end{document}
+
+%                       Revision History
+%                       -------- -------
+%  Date         Person  Ver.    Change
+%  ----         ------  ----    ------
+
+%  2013.06.29   TU      0.1--4  comments on permission/copyright notices
+

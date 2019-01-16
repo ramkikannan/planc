@@ -40,6 +40,10 @@ if(CMAKE_WITH_PACOSS)
   set(PACOSS_INCLUDE_DIR ${DISTNMF_SOURCE_DIR}/../pacoss/src) 
   set(PACOSS_INCLUDE_DIR ${PACOSS_INCLUDE_DIR} ${DISTNMF_SOURCE_DIR}/../tmpi/src)
   set(PACOSS_LIB_DIR ${DISTNMF_SOURCE_DIR}/../pacoss/lib)
+  link_directories(
+    ${PACOSS_LIB_DIR}  
+  )
+  set(NMFLIB_LIBS "${NMFLIB_LIBS} pacoss")
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0 -rdynamic")
@@ -65,12 +69,6 @@ include_directories(
   ${MKL_INCLUDE_DIR}
   ${OPENBLAS_INCLUDE_DIR}
 )
-
-if(CMAKE_WITH_PACOSS)
-  link_directories(
-    ${PACOSS_LIB_DIR}  
-  )
-endif()
 
 add_executable(distnmf
   distnmf.cpp

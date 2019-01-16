@@ -1,30 +1,21 @@
 /* Copyright 2016 Ramakrishnan Kannan */
-#ifndef MPI_DISTNMF_HPP_
-#define MPI_DISTNMF_HPP_
+
+#ifndef DISTNMF_DISTNMF_HPP_
+#define DISTNMF_DISTNMF_HPP_
 
 #include <string>
-#include "mpicomm.hpp"
-#include "nmf.hpp"
+#include "common/nmf.hpp"
+#include "distnmf/mpicomm.hpp"
 #include "distnmftime.hpp"
 #ifdef USE_PACOSS
 #include "pacoss.h"
 #endif
 
-/*
- * There are totally prxpc process.
- * Each process will hold the following
- *   An A of size (m/pr) x (n/pc)
- * H of size (n/p)xk
- * W of size (m/p)xk
- * A is mxn matrix
- * H is nxk matrix
- */
-
-
+namespace planc {
 template <typename INPUTMATTYPE>
 class DistNMF : public NMF<INPUTMATTYPE> {
  protected:
-  const MPICommunicator& m_mpicomm;
+  const MPICommunicator &m_mpicomm;
 #ifdef USE_PACOSS
   Pacoss_Communicator<double> *m_rowcomm;
   Pacoss_Communicator<double> *m_colcomm;
@@ -41,21 +32,30 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   ROWVEC Wnorm;
 
  public:
+  /**
+   * There are totally prxpc process.
+   * Each process will hold the following
+   * @param[in] A of size \f$\frac{globalm}{p_r} \times \frac{globaln}{p_c}\f$
+   * @param[in] right low rank factor H of size \f$\frac{globaln}{p} \times k\f$
+   * @param[in] left low rank factor W of size \f$\frac{globalm}{p} \times k\f$
+   * @param[in] MPI Communicator for row and column communicators
+   */  
   DistNMF(const INPUTMATTYPE &input, const MAT &leftlowrankfactor,
-          const MAT &rightlowrankfactor, const MPICommunicator& communicator):
-    NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
-    m_mpicomm(communicator), time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
+          const MAT &rightlowrankfactor, const MPICommunicator &communicator)
+      : NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
+        m_mpicomm(communicator),
+        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     double sqnorma = this->normA * this->normA;
     this->m_globalm = 0;
     this->m_globaln = 0;
-    MPI_Allreduce(&sqnorma, &(this->m_globalsqnormA), 1, MPI_DOUBLE,
-                  MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&sqnorma, &(this->m_globalsqnormA), 1, MPI_DOUBLE, MPI_SUM,
+                  MPI_COMM_WORLD);
     this->m_ownedm = this->W.n_rows;
     this->m_ownedn = this->H.n_rows;
 #ifdef USE_PACOSS
-    // TODO: This is a hack for now. Talk to Ramki.
-    this->m_globalm = this->W.n_rows * this->m_mpicomm.size(); 
-    this->m_globaln = this->H.n_rows * this->m_mpicomm.size(); 
+    // TODO(kayaogz): This is a hack for now. Talk to Ramki.
+    this->m_globalm = this->W.n_rows * this->m_mpicomm.size();
+    this->m_globaln = this->H.n_rows * this->m_mpicomm.size();
 #else
     MPI_Allreduce(&(this->m), &(this->m_globalm), 1, MPI_INT, MPI_SUM,
                   this->m_mpicomm.commSubs()[0]);
@@ -65,7 +65,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     if (ISROOT) {
       INFO << "globalsqnorma::" << this->m_globalsqnormA
            << "::globalm::" << this->m_globalm
-           << "::globaln::" << this->m_globaln << endl;
+           << "::globaln::" << this->m_globaln << std::endl;
     }
     this->m_compute_error = 0;
     localWnorm.zeros(this->k);
@@ -73,29 +73,40 @@ class DistNMF : public NMF<INPUTMATTYPE> {
   }
 
 #ifdef USE_PACOSS
-  void set_rowcomm(Pacoss_Communicator<double> *rowcomm) { this->m_rowcomm = rowcomm; }
-  void set_colcomm(Pacoss_Communicator<double> *colcomm) { this->m_colcomm = colcomm; }
+  void set_rowcomm(Pacoss_Communicator<double> *rowcomm) {
+    this->m_rowcomm = rowcomm;
+  }
+  void set_colcomm(Pacoss_Communicator<double> *colcomm) {
+    this->m_colcomm = colcomm;
+  }
 #endif
-  const int globalm() const {return m_globalm;}
-  const int globaln() const {return m_globaln;}
-  const double globalsqnorma() const {return m_globalsqnormA;}
-  void compute_error(const uint &ce) {this->m_compute_error = ce;}
-  const bool is_compute_error() const {return (this->m_compute_error);}
-  void algorithm(algotype dat) {this->m_algorithm = dat;}
+  /// returns globalm
+  const int globalm() const { return m_globalm; }
+  /// returns globaln
+  const int globaln() const { return m_globaln; }
+  /// returns global squared norm of A
+  const double globalsqnorma() const { return m_globalsqnormA; }
+  /// return the current error
+  void compute_error(const uint &ce) { this->m_compute_error = ce; }
+  /// returns the flag to compute error or not.
+  const bool is_compute_error() const { return (this->m_compute_error); }
+  /// returns the NMF algorithm
+  void algorithm(algotype dat) { this->m_algorithm = dat; }
+  /// Reports the time
   void reportTime(const double temp, const std::string &reportstring) {
     double mintemp, maxtemp, sumtemp;
     MPI_Allreduce(&temp, &maxtemp, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(&temp, &mintemp, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     MPI_Allreduce(&temp, &sumtemp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    PRINTROOT(reportstring \
-              << "::m::" << this->m_globalm << "::n::" << this->m_globaln \
-              << "::k::" << this->k << "::SIZE::" << MPI_SIZE \
-              << "::algo::" << this->m_algorithm \
-              << "::root::" << temp \
-              << "::min::" << mintemp \
-              << "::avg::" << (sumtemp) / (MPI_SIZE) \
-              << "::max::" << maxtemp);
+    PRINTROOT(reportstring << "::m::" << this->m_globalm
+                           << "::n::" << this->m_globaln << "::k::" << this->k
+                           << "::SIZE::" << MPI_SIZE
+                           << "::algo::" << this->m_algorithm
+                           << "::root::" << temp << "::min::" << mintemp
+                           << "::avg::" << (sumtemp) / (MPI_SIZE)
+                           << "::max::" << maxtemp);
   }
+  /// Column Normalizes the distributed W matrix
   void normalize_by_W() {
     localWnorm = sum(this->W % this->W);
     mpitic();
@@ -112,4 +123,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
     }
   }
 };
-#endif  // MPI_DISTNMF_HPP_
+
+}  // namespace planc
+
+#endif  // DISTNMF_DISTNMF_HPP_

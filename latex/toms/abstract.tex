@@ -1,0 +1,9 @@
+% !TEX root = paper.tex
+
+\begin{abstract}
+We consider the problem of low-rank approximation of massive dense non-negative matrix and tensor data, for example to discover latent patterns in video and imaging applications.
+As the size of data sets grows, single workstations are hitting bottlenecks in both computation time and available memory.
+We propose a distributed-memory parallel computing solution to handle massive data sets, loading the input data across the memories of multiple nodes and performing efficient and scalable parallel algorithms to compute the low-rank approximation.
+We present a software package called PLANC, which implements our solution and allows for extension in terms of data (dense or sparse), algorithm (e.g., from multiplicative updating techniques to alternating direction method of multipliers), and architecture (we exploit GPUs to accelerate the computation in this work).
+We describe our parallel distributions and algorithms, which are careful to avoid unnecessary communication and computation, show how to extend the software to include new algorithms and/or constraints, and report efficiency and scalability results for both synthetic and real-world data sets coming from a variety of fields.
+\end{abstract}

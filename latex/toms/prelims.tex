@@ -1,0 +1,222 @@
+% !TEX root = paper.tex
+
+\section{Preliminaries} 
+\label{sec:prelims}
+
+\subsection{Notation}
+
+Tensors will be denoted using Euler script (e.g., $\T{T}$), 
+matrices will be denoted with uppercase boldface (e.g., $\M{M}$), vectors will be denoted with lowercase boldface  
+(e.g., $\V{v}$), and scalars will not be boldface (e.g., $s$). 
+We use Matlab style notation to index into tensors, matrices, and vectors, and we use 1-indexing. 
+For example, $\M{M}(:,c)$ gives the $c$th column of the matrix M.
+
+We use $\circ$ to denote the outer product of two or more vectors.
+The Hadamard product is the element-wise matrix product and will be denoted using $\Hada$. 
+The Khatri-Rao product, abbreviated KRP, will be denoted with $\Khat$. 
+Given matrices $\M{A}$ and $\M{B}$ that are $I_{A} \times R$ and $I_{B} \times R$, the KRP $\M{K} = \M{A} \Khat \M{B}$ is $I_{A}I_{B} \times R$. 
+It can be thought of as a row-wise Hadamard product, where $\M{K}(i+I_{A}(j{-}1),:) = \M{A}(i,:) \Hada \M{B}(j,:)$, or a column-wise Kronecker product, where \red{$\M{K}(:,c) =  \M{A}(:,c) \Kron \M{B}(:,c)$}.
+
+The CP decomposition of a tensor (also referred to as the CANDECOMP/PARAFAC or canonical polyadic decomposition) is a low-rank approximation of a tensor, where the approximation is a sum of rank-one tensors and each rank-one tensor is the outer product of vectors.
+We use the notation
+$$\TA \approx \CP = \sum_{r=1}^R \Mn{H}{1}(:,r) \circ \cdots \circ \Mn{H}{N}(:,r)$$
+to represent a rank-$R$ CP model, where $\Mn{H}{n}$ is called a factor matrix and collects the mode-$n$ vectors of the rank-one tensors as columns.
+The columns of the factor matrices are often normalized, with weights collected into an auxiliary vector $\V{\lambda}$ of length $R$; in this case we use the notation $\CPl$.
+
+A Nonnegative CP decomposition (NNCP) constrains the factor matrices to have nonnegative values.
+In this work, we are interested in NNCP models that are good approximations to $\TA$ in the least squares sense.
+That is, we seek 
+$$\min_{\HH^{(i)} \geq 0}  \| \TA - \CPl \|,$$
+where the tensor norm is a generalization of the matrix Frobenius or vector 2-norm, the square root of the sum of squares of the entries.
+
+The $n$th mode matricized tensor denoted by $\M{A}_{(n)}$ is a $I_n\times I/I_n$ matrix formed by organizing the $n$th mode fibers of a tensor $\T{X}$ with dimensions $I_{1} \times ... \times I_{N}$ (and $I=\prod I_n$) into the columns of a matrix. 
+The Matricized-Tensor Times Khatri-Rao Product or MTTKRP will be central to this work and takes the form \red{$\Mn{M}{n} = \Mz{A}{n} \Mn{K}{n}$, where $\Mn{K}{n}= \Mn{H}{N} \Khat \cdots \Khat \Mn{H}{n+1} \Khat \Mn{H}{n-1} \Khat  \cdots \Khat \Mn{H}{1}$}. 
+
+\subsection {Block Coordinate Descent for NNCP}
+
+While there are multiple optimization methods to compute NNCP, we will focus on a class of methods that use Block Coordinate Descent (BCD), which is also known as the nonlinear Gauss-Seidel method \cite{Bertsekas1999}.
+In BCD, the variables are partitioned into blocks, and each variable block is cyclically updated to optimality with all other blocks fixed.
+For details on the convergence properties and comparisons of BCD methods for nonnegative matrix and tensor decomposition problems, see \cite{KHP2014}.
+We consider BCD methods for NNCP that choose the entire factor matrices as the blocks, which is also often referred to as Alternating Least Squares.
+In this case, every subproblem is a linear nonnegative least squares problem. Formally, the following problem 
+is solved iteratively for $n = 1 \cdots N$:
+
+%\SplitN{\label{eqn:bcdnncp}}{
+$$\HH^{(n)} \leftarrow \argmin_{\HH \geq 0}  \| \Mn{S}{n} \HH^T - {\Mn{M}{n}}^T \|_F^2.$$
+%}
+\red{The BCD iteration is guaranteed to converge to a stationary point, but there is no guarantee that it converges to a global minimum.
+The number of outer iterations to convergence is problem dependent but typically ranges from 10s to 1000s.}
+
+%where, $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$. 
+
+\Cref{alg:nncp} shows the pseudocode for BCD applied to NNCP.
+\Cref{line:MTTKRP,line:GH,line:Gn} compute matrices involved in the gradients of the subproblem objective functions, and \cref{line:NLS} uses those matrices to update the current factor matrix.
+
+The NLS-Update in \cref{line:NLS} can be implemented in different ways.
+In a faithful BCD algorithm, the subproblems are solved exactly; in this case, the subproblem is a nonnegative linear least squares problem, which is convex.
+We use the Block Principal Pivoting (BPP) method \cite{KP2011,KHP2014}, which is an active-set-like method, to solve the subproblem exactly.
+%BPP is an active-set-like method for solving the NLS subproblems in Eq. \eqref{eqn:single NLS}.
+
+However, as discussed in \cite{KBP2018} for the matrix case, there are other reasonable alternatives to updating the factor matrix without solving the subproblem exactly.
+For example, we can more efficiently update individual columns of the factor matrix as is done in the Hierarchical Alternating Least Squares (HALS) method \cite{CP2009}.
+In this case, the update rule is 
+$$\Mn{H}{n}(:,r) \leftarrow \lt[ \Mn{H}{n}(:,r) + \Mn{M}{n}(:,r) - (\Mn{H}{n} \Mn{S}{n})(:,r)  \rt]_+$$
+which involves the same matrices $\Mn{M}{n}$ and $\Mn{S}{n}$ as BPP.
+Other possible BCD methods include Alternating Optimization and Alternating Direction Method of Multipliers (AO-ADMM) \cite{HSL2015, SBK2017} and Nestrov-based algorithms \cite{LKLHS2017}.
+The parallel algorithm presented in this paper is generally agnostic to the approach used to solve the nonnegative least squares subproblems, as all these methods are bottlenecked by the subroutine they have in common, the MTTKRP. 
+
+
+%In this section, we will see relevant foundation for using  this
+%framework.  The explanation of this section is mainly motivated out of
+%Kim, He and Park \cite{KHP2014}. Consider a constrained non-linear optimization problem
+%as follows:
+%\begin{gather}
+%\min f(x)\:\mbox{ subject to }\:x \in\mathcal{X},\label{eq:general_nonlinear}
+%\end{gather}
+%Here,  $\mathcal{X}$ is a closed convex subset of $\mathbb{R}^{n}$.
+%An important assumption to be exploited in the BCD method is that
+%the set $\mathcal{X}$ is represented by a Cartesian product:
+%\begin{equation}
+%\mathcal{X}=\mathcal{X}_{1}\times\cdots\times\mathcal{X}_{m},\label{eq:bcd-cartesian-product}
+%\end{equation}
+%where $\mathcal{X}_{j}$, $j=1,\cdots,m$, is a closed convex subset
+%of $\mathbb{R}^{N_{j}}$, satisfying $n=\sum_{j=1}^{m}N_{j}$.
+%Accordingly, the vector $\mathbf{x}$ is partitioned as
+%$\mathbf{x}=(\mathbf{x}_{1},\cdots,\mathbf{x}_{m})$ so that
+%$\mathbf{x}_{j}\in\mathcal{X}_{j}$ for $j=1,\cdots,m$. The BCD
+%method solves for $\mathbf{x}_{j}$ by fixing all other subvectors of
+%$\mathbf{x}$ in a cyclic manner. That is, if
+%$\mathbf{x}^{(i)}=(\mathbf{x}_{1}^{(i)},\cdots,\mathbf{x}_{m}^{(i)})$
+%is given as the current iterate at the $i^{th}$ step, the algorithm
+%generates the next iterate
+%$\mathbf{x}^{(i+1)}=(\mathbf{x}_{1}^{(i+1)},\cdots,\mathbf{x}_{m}^{(i+1)})$
+%block by block, according to the solution of the following
+%subproblem:
+%\begin{equation}
+%\mathbf{x}_{j}^{(k+1)}\leftarrow\underset{\mathbf{\xi}\in\mathcal{X}_{j}}{\text{argmin}}
+%f(\mathbf{x}_{1}^{(k+1)},\cdots,\mathbf{x}_{j-1}^{(k+1)},\mathbf{\xi},\mathbf{x}_{j+1}^{(k)},\cdots,\mathbf{x}_{m}^{(k)}).\label{eq:bcd-method}
+%\end{equation}
+%Also known as a \textit{non-linear Gauss-Seidel}
+%method~\cite{Bertsekas1999}, this algorithm updates one block each
+%time, always using the most recently updated values of other blocks
+%$\mathbf{x}_{\tilde{j}},\tilde{j}\ne j$. This is important since it
+%ensures that after each update, the objective function value does
+%not increase. For a sequence $\left\lbrace
+%\mathbf{x}^{(i)}\right\rbrace $ where each $\mathbf{x}^{(i)}$ is
+%generated by the BCD method, the following property holds.
+%\begin{theorem}
+%\label{thm:bcd}
+%Suppose $f$ is continuously differentiable in $\mathcal{X}=\mathcal{X}_{1}\times\dots\times\mathcal{X}_{m}$,
+%where $\mathcal{X}_{j}$, $j=1,\cdots,m$, are closed convex sets.
+%Furthermore, suppose that for all $j$ and $i$, the minimum of
+%\[
+%\min_{\mathbf{\mathbf{\xi}}\in\mathcal{X}_{j}}f(\mathbf{x}_{1}^{(k+1)},\cdots,\mathbf{x}_{j-1}^{(k+1)},\mathbf{\xi},\mathbf{x}_{j+1}^{(k)},\cdots,\mathbf{x}_{m}^{(k)})
+%\]
+%is uniquely attained. Let $\left\lbrace
+%\mathbf{x}^{(i)}\right\rbrace $ be the sequence generated by the
+%block coordinate descent method as in Eq.~\eqref{eq:bcd-method}.
+%Then, every limit point of $\left\lbrace
+%\mathbf{x}^{(i)}\right\rbrace $ is a stationary point. The
+%uniqueness of the minimum is not required for the case when  $m=2$
+%\cite{GS2000}.
+%\end{theorem}
+%
+%The proof of this theorem for an arbitrary number of blocks is shown
+%in Bertsekas~\cite{Bertsekas1999}.
+%For a non-convex optimization problem, most algorithms only guarantee
+%the stationarity of a limit point \cite{Lin2007}.
+%
+%When applying the BCD method to a constrained non-linear programming
+%problem, we have to ensure the following (a) it is critical to wisely choose a partition of
+%$\mathcal{X}$, whose Cartesian product constitutes $\mathcal{X}$. 
+%(b)  the dependency among the subproblems -- independent blocks can be 
+%computed simultaneously  (c) when updating a block, ensure we are 
+%using the most recent other blocks and (d) importantly, every block
+%must be solved optimally. Every NTF variant will have different the partition
+%scheme for blocks with natural partition such as scalar \cite{SL2001}, vector \cite{CP2009} and matrix \cite{KP2011}. 
+%Also, the update equation for determining the optimal block given
+%other blocks such as projected gradient, block principal pivoting \cite{KP2011}  etc. 
+%A detailed discussion of equivalences and comparison of different NMF and NTF algorithm
+%is presented at \cite{KHP2014}. 
+
+\begin{algorithm}
+%\caption{$(\CPl,\epsilon) = \text{NNCP}(\TA,k)$}
+\caption{$\CP = \text{NNCP}(\TA,R)$}
+\label{alg:nncp}
+\begin{algorithmic}[1]
+\Require $\TA$ is $I_1\times \cdots \times I_N$ tensor, $R$ is approximation rank
+\State \Comment{Initialize data}
+%\State $\alpha = \|\TA\|^2$
+\For{$n=2$ to $N$}
+	\State Initialize $\Mn{H}{n}$ 
+	\State $\Mn{G}{n} = \MnTra{H}{n}\Mn{H}{n}$
+\EndFor
+\State \Comment{Compute NNCP approximation}
+\While{not converged}
+	\State \Comment{Perform outer iteration of BCD}
+	\For{$n=1$ to $N$}
+	\State \Comment{Compute new factor matrix in $n$th mode}
+	\State $\Mn{M}{n} = \text{MTTKRP}(\TA,\{\Mn{H}{i}\},n)$
+		\label{line:MTTKRP}
+	\State $\Mn{S}{n} = \Mn{G}{1} \Hada \cdots \Hada \Mn{G}{n-1} \Hada \Mn{G}{n+1} \Hada \cdots \Hada \Mn{G}{N}$
+		\label{line:GH}
+	\State $\Mn{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$
+		\label{line:NLS}
+%	\State $\Mn[\hat]{H}{n} = \text{NLS-Update}(\Mn{S}{n},\Mn{M}{n})$
+%	\State \Comment{Normalize columns}
+%	\State $\V{\lambda} = \text{Col-Norms}(\Mn[\hat]{H}{n})$
+%	\State $\Mn{H}{n} = \text{Col-Scale}(\Mn[\hat]{H}{n},\V{\lambda})$
+%	\State \Comment{Organize data for later modes}
+	\State $\Mn{G}{n} = \MnTra{H}{n}\Mn{H}{n}$
+		\label{line:Gn}
+	\EndFor
+%	\State \Comment{Compute relative error $\epsilon$ from mode-$N$ matrices}
+%	\State $\beta = \langle \Mn{M}{N},\Mn[\hat]{H}{N} \rangle$
+%	\State $\gamma = \V{\lambda}^\Tra (\Mn{S}{N} \Hada \Mn{G}{N}) \V{\lambda}$
+%	\State $\epsilon = \sqrt{(\alpha-2\beta+\gamma)/\alpha}$ 
+\EndWhile
+%\Ensure $\|\TA - \dsquare{\V{\lambda}; \Mn{H}{1},\dots,\Mn{H}{N}}\| /\|\TA\| = \epsilon$
+\Ensure $\TA \approx \CP$
+\end{algorithmic}
+\end{algorithm}
+
+%\subsubsection{Hierarchical Alternating Least Squares (HALS)}
+%\label{sec:HALS}
+%
+%In the case of HALS \cite{CP2009}, updates are performed on individual columns of $\HH$ with all other entries in the factor matrices fixed.
+%The update rules \cite[Algorithm 2]{CP2009} can be written in closed form:
+%\SplitN{\label{eqn:halsupdate}} {
+%\Mn[\hat]{H}{n}_{\V{p}}(:,i) &\leftarrow \lt[ \Mn{H}{n}_{\V{p}}(:,i) + \Mn{M}{n}_{\V{p}}(:,i) - (\Mn{H}{n}_{\V{p}} \Mn{S}{n})(:,i)  \rt]_+\\
+%% \ww^i &\leftarrow \lt[ \ww^i + (\AA\HH^T)^i - \WW (\HH \HH^T)^i \rt]_+
+%}, 
+%
+%where, $\Mn{H}{n}_{\V{p}}(:,i) \in \Rn{I_n/P}$ is the $i^{th}$ column of the factor matrix $\Mn{H}{n}_{\V{p}}$.
+%Note that the columns of $\Mn{H}{n}_{\V{p}}$ are updated in order, so that the most up-to-date values are always used, and these $nk$ updates can be done in an arbitrary order.  In our case we are updating all the $k$ vectors of a factor $\Mn{H}{n}_{\V{p}}$ one by one. 
+%
+%\subsection{Alternating Nonnegative Least Squares with Block Principal Pivoting}
+%\label{sec:BPP}
+%
+%Kim and Park \cite{KP2011} first proposed the algorithm and the detail of the BPP algorithm for NTF is explained subsequently in detailed at \cite{KHP2014}. In this paper, we will leverage it to solve the factors $\Mn{H}{n}$. 
+%Block Principal Pivoting (BPP) is an active-set-like method for solving the NLS subproblems in Eq. \eqref{eqn:single NLS}.
+%\SplitN{\label{eqn:single NLS}}{
+%\min_{\xx\geq 0} \|\CC\XX-\BB\|_2.
+%}. 
+%Kannan, Ballard and Park \cite{KBP2018}, have explained solving the active-set based non-negative least squares 
+%using normal equations with $\CC^T\CC$ and $\CC^T\BB$ for determining the non-negative factors of NMF. 
+%In our case, $\CC^T\CC$ is $\Mn{S}{n}$ and $\CC^T\BB$ is $\Mn{M}{n}_{\V{p}}$. We use the same implementation
+%of BPP from $MPIFAUN$.
+%
+%Our paper can be extended to other NTF algorithms such as Alternating Optimization and Alternating Direction Method of Multipliers (AO-ADMM) \cite{HSL2015, SBK2017} and Nestrov based updates
+%\cite{LKLHS2017} by changing the $Local-NLS-Update$ function of the proposed Algorithm \ref{alg:2D}. 
+
+\subsection{Parallel Computation Model}
+
+%MPI collectives for Prelims
+To analyze our algorithms we use the MPI model of distributed-memory parallel computation, where we assume a fully connected network. 
+Sending a message of $W$ words from one processor to another costs $\alpha + \beta W$, where $\alpha$ is the latency and $\beta$ to be the per word or bandwidth cost. 
+In particular, we will use collective communication over groups of $P$ processors, and we will assume the use of efficient algorithms \cite{TRG05,CH+07}.
+In this case, an All-Reduce, which sums data initially distributed across processors and stores the result of size $W$ redundantly on every processor, costs $2\alpha \log P + 2\beta W (P-1)/P$.
+An All-Gather collects data initially distributed across processors and stores the union of size $W$ redundantly on all processors and costs $\alpha \log P + \beta W (P-1)/P$.
+A Reduce-Scatter sums data initially distributed across processors and partitions the result across processors, which costs $\alpha \log P + \beta W (P-1)/P$, where $W$ is the size of the data that each processor initially stores.
+Reduction operations also include a flop cost but we will omit it because it is usually dominated by communication. 
+

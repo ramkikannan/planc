@@ -1,12 +1,15 @@
+MPI Based DistNMF and DistNTF 
+=============================
+
 Install Instructions
-====================
+--------------------
 
 This program depends on:
 
-- Armadillo library which can be found at https://arma.sourceforge.net
-- OpenBLAS https://github.com/xianyi/OpenBLAS
+- Download Armadillo library which can be found at https://arma.sourceforge.net
+- Download and build OpenBLAS https://github.com/xianyi/OpenBLAS
 
-Once you have installed these libraries set the following environment variables.
+Once the above steps are completed, set the following environment variables.
 
 ````
 export ARMADILLO_INCLUDE_DIR=/home/rnu/libraries/armadillo-6.600.5/include/
@@ -31,7 +34,17 @@ Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
 Building on Cray-EOS/Titan
 -----------------------
-CC=CC CXX=CC cmake ~/nmflibrary/mpi/ -DCMAKE_IGNORE_MKL=1
+CC=CC CXX=CC cmake ~/nmflibrary/distnmf/ -DCMAKE_IGNORE_MKL=1
+
+Building on Titan with NVBLAS
+-----------------------------
+We are using NVBLAS to offload computations to GPU.
+By default we enable building with cuda in Titan.
+The sample configurations files for nvblas can be found at conf/nvblas_cuda75.conf
+and conf/nvblas_cuda91.conf for CUDA Toolkit 7.5 and 9.1 respectively.
+
+CC=CC CXX=CC cmake ~/nmflibrary/distnmf/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
+
 
 Other Macros
 -------------
@@ -41,6 +54,7 @@ Other Macros
   For sparse NMF - cmake -DBUILD_SPARSE=1 - Default dense build
   For timing with barrier after mpi calls - cmake -DCMAKE_WITH_BARRIER_TIMING - Default with barrier timing
   For performance, disable the WITH__BARRIER__TIMING. Run as "cmake -DCMAKE_WITH_BARRIER_TIMING:BOOL=OFF"
+  For building cuda - -DCMAKE_BUILD_CUDA=1 - Default is off.
 
 * Code level macros - Defined in distutils.h
 

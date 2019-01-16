@@ -1,0 +1,24 @@
+%!TEX root = ../talk.tex
+
+\begin{tikzpicture}[scale=.8]
+\renewcommand{\datafile}{data/modeled.dat}
+\begin{axis}[
+	title=Modeled Strong-Scaling Comparison,
+	xlabel=Processors,
+	ylabel=Words Communicated,
+	width=\columnwidth,
+	xmode=log,
+	log basis x={2},
+	xmin=1,xmax=2^31,
+	xtick={1,32,1024,32768,1048576,33554432,1073741824},
+	ymode=log,
+	legend pos=south west
+	]
+	\addplot [black,thick,dashed,mark options={solid},mark=x] table [x={P}, y={MM}] {\datafile};
+	\addlegendentry{Matrix Multiplication}
+	\addplot [red,thick,dashed,mark options={solid},mark=asterisk] table [x={P}, y={Alg3}] {\datafile};
+	\addlegendentry{Stationary Tensor}
+	\addplot [blue,thick,dashed,mark options={solid},mark=o] table [x={P}, y={Alg4}] {\datafile};
+	\addlegendentry{General Tensor}
+\end{axis}
+\end{tikzpicture}

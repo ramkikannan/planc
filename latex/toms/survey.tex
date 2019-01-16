@@ -1,0 +1,30 @@
+% !TEX root = paper.tex
+
+\section{Related Work} 
+\label{sec:survey}
+
+The formulation of NNCP with least squares error and algorithms for computing it go back to \cite{Paatero97,WW01}, developed in part as a generalization of nonnegative matrix factorization algorithms \cite{LS99} to tensors.
+Sidiropoulos et al. \cite{SLFHPF2017} provide a more detailed and complete survey that includes basic tensor factorization models with and without constraints, broad coverage of algorithms, and recent driving applications.
+The tensor operations discussed and the notation used in this paper follow Kolda and Bader's survey \cite{KB2009}. 
+
+Recently, there has been growing interest in scaling tensor operations to bigger data and more processors in both the data mining/machine learning and the high performance computing communities. 
+For sparse tensors, there have been parallelization efforts to compute CP decompositions both on shared-memory platforms \cite{SRSK2015,LCPSV17} as well as distributed-memory platforms \cite{KU16,SK16,KU18}, and these approaches can be generalized to constrained problems \cite{SBK2017}.
+The focus of this work is on dense tensors, but many of the ideas for sparse tensors are applicable to the dense case, including parallel data distributions, communication pattern, and techniques to avoid recomputation across modes.
+
+In particular, Liavas et al. \cite{LK+17b} extend a parallel algorithm designed for sparse tensors \cite{SK16} to the 3D dense case.
+They use the ``medium-grained'' dense tensor distribution and row-wise factor matrix distribution, which is exactly the same as our distribution strategy (see \cref{sec:datadist}), and they use a Nesterov-based algorithm to enforce the nonnegativity constraints.
+Their code is publicly available, and we compare our performance with theirs in \cref{sec:experiments}.
+A similar data distribution and parallel algorithm for computing a single dense MTTKRP computation is proposed by Ballard, Knight, and Rouse \cite{BKR17-TR}. 
+They prove that the algorithm is communication optimal, but they do not provide an implementation.
+Another approach to parallelizing NNCP decomposition of dense tensors is presented by Phan and Cichocki \cite{PC11}, but they use a dynamic tensor factorization, which performs different, more independent computations across processors.
+
+The idea of using dimension trees (discussed in \cref{sec:dimtrees}) to avoid recomputation within MTTKRPs across modes is introduced in \cite{PTC13a} for computing the CP decomposition of dense tensors.
+It has also been used for sparse CP \cite{LCPSV17,KU18} and other tensor computations \cite{KU16}.
+
+%Given these recent work on the sparse tensors, we survey the literature around dense tensor -- the interest of this paper. Unlike sparse tensor, there are very few activities around dense tensors that are important for analyzing tensors from images and scientific world such as 2D Ronchigram from pytography data. With the advent of the deep learning and the interest of the community in processing higher order tensors from hyper spectral image and medical imaging, we have used these real world in conducting experiments of this paper. 
+%
+%Austin, Ballard, and Kolda \cite{ABK16} distributed-memory parallel implementation for the Tucker decomposition to compress 8TB of scientific data. Tucker decomposition is unconstrained and a completely different decomposition over constrained Non-negative Tensor Factorization explained in this paper.  Recently,  Ballard, Knight, Rouse \cite{BKR17-TR} have proposed Communication Lower Bounds for Matricized Tensor Times Khatri-Rao Product under particular distribution of dense tensors. The proposed algorithm \ref{alg:2D} is motivated out of this work. 
+%
+%With this detailed survey, we would like to highlight the contribution of this paper.
+
+%\subsection{Contributions:}
