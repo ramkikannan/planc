@@ -282,7 +282,7 @@ If the tensor dimensions can be partitioned into two parts with approximately eq
 This subsection deals with the nonnegative least squares (NLS) solves needed to update the factor at each inner iteration of the algorithm (\cref{line:locNLS} in \Cref{alg:Par-NNCP-short}). The general problem to be solved in each inner iteration is a constrained least squares problem of the form,
 
 \begin{align}
-\M{X} \leftarrow \underset{\M{X} \ge 0}{\argmin} \left\lVert \M{A}\M{X} -\M{B}\right\rVert^2_F
+\M{X} \leftarrow \underset{\M{X} \ge \M{0}}{\argmin} \left\lVert \M{A}\M{X} -\M{B}\right\rVert^2_F
 \label{eqn:nls}
 \end{align}
 
@@ -322,5 +322,41 @@ x_i y_i &= 0 \quad \forall i
 The complementary slackness criteria from the KKT conditions forces the support sets, i.e. the non-zero elements, of $\V{x}$ and $\V{y}$ to be disjoint. This makes~\Cref{eqn:bppkkt} an instance of the \emph{Linear Complementarity Problem} which arises frequently in quadratic programming. When $k \ll \min(m.n)$, active-set methods are preferred since they deal with small matrices of size $m \times k$, $n \times k$ and $k \times k$. In the optimal solution, the active-set is the set of indices where $x_i = 0$ and the remaining indices are referred to as the passive set. Once the active-set is found, we can find the optimal solution to~\Cref{eqn:snls} by using solving an unconstrained least squares problem on the passive set of indices. The BPP algorithm attempts to find the active-set by greedily swapping indices between the intermediate active and passive sets until it finds a solution that satisfies the KKT conditions. Kim and Park discuss the method in greater detail in~\cite{KP2011}. The unconstrained least squares is solved using the Normal Equations method in the software though other methods can also be used.
 
 \subsubsection{Alternating Direction Method of Multipliers (ADMM)}
+In the ADMM solver the optimization problem~\Cref{eqn:nls} is reformulated by introducing an auxiliary variable $\M{\hat{X}}$ of size $k \times n$,
+\begin{align}
+\begin{split}
+&\underset{\M{X},\M{\hat{X}}}{\min} \quad \frac 1 2 \left\lVert \M{A}\M{\hat{X}} - \M{B}\right\rVert_F^2 + r(\M{X}) \\
+&\textnormal{subject to } \M{X} = \M{\hat{X}}^\Tra 
+\end{split}
+\label{eqn:admmnls}
+\end{align}
+Here $r(\cdot)$ is the indicator function of $\mathbb{R}_+$. The updates for the ADMM algorithm becomes,
+\begin{align}
+\begin{split}
+\M{\hat{X}} &\leftarrow \left(\M{A}^\Tra\M{A} + \rho\M{I} \right)^{-1}\left(\M{A}^\Tra\M{B} + \rho\left(\M{X} + \M{U}\right)^\Tra\right) \\
+\M{X} &\leftarrow \underset{\M{X}}{\argmin}\ r(\M{X}) + \frac{\rho}{2} \left\lVert \M{X} - \M{\hat{X}}^\Tra + \M{U}\right\rVert_F^2 \\
+\M{U} &\leftarrow \M{U} + \M{X} - \M{\hat{X}}^\Tra
+\end{split}
+\end{align}
+where $\M{U}$ is the scaled version of the dual variables corresponding to the equality constraints $\M{X} = \M{\hat{X}}^\Tra$ and $\rho$ is a step size specified by the user. The advantage of using ADMM is the clever splitting of the non-negativity constraints into updates of two blocks of variables $\M{X}$ and $\M{\hat{X}}$. This allows for an unconstrained least squares solve for $\M{\hat{X}}$ and element-wise projections onto $\mathbb{R}_+$ for $\M{X}$. One important fact to notice is that the same matrix $\M{A}^\Tra\M{B}$ and matrix inverse $\Br{\M{A}^\Tra\M{A} + \rho \M{I}}^{-1}$ is used for all the updates. We can therefore cache $\M{A}^\Tra\M{B}$ and the Cholesky decomposition of  $\Br{\M{A}^\Tra\M{A} + \rho \M{I}}$ to save some computations. A comprehensive guide to the ADMM method, convergence properties and selection of optimal $\rho$ can be found in~\cite{boyd2011distributed}.
 
 \subsubsection{Nesterov-type algorithm}
+The Nesterov-type algorithm in this package was introduced by Liavas et al~\cite{LKLHS2017}. Their method solves a modified version of NLS problem~\Cref{eqn:nls} with the introduction of a proximal term. The proximal term is useful to handle ill-conditioned instances and guarantee strong convexity. The objective function tackled is,
+\begin{align}
+\underset{\M{X} \ge \M{0}}{\min} f_p(\M{X}) := \frac 1 2 \left\lVert \M{B}^\Tra - \M{X}^\Tra\M{A}^\Tra \right\rVert_F^2 + \frac{\lambda}{2}\left\lVert\M{X} -\M{X_*}\right\rVert_F^2
+\label{eqn:nesnls}
+\end{align}
+The gradient of $f_p$ is given by the expression,
+\begin{align}
+\nabla f_p(\M{X}) = -(\M{B}^\Tra - \M{X}^\Tra\M{A}^\Tra)\M{A} + \lambda(\M{X}-\M{X_*})
+\end{align}
+The first order updates to $\M{X}$ are iterative and sketched below. They are repeated until a termination criteria is triggered. Different criteria are discussed in~\cite{LKLHS2017},
+\begin{align}
+\begin{split}
+\M{Y}_{k+1} &\leftarrow \left[ \M{X}_k - \alpha \nabla f_p(\M{X}_k)\right]_+ \\
+\M{X}_{k+1} &\leftarrow \M{Y}_{k+1} + \beta \Br{\M{Y}_{k+1} - \M{Y}_k}
+\end{split}
+\label{eqn:nesupd}
+\end{align}
+Here $[\cdot]_+$ is the projection operator in to $\mathbb{R}_+$. The selection of hyperparameters $\lambda, \alpha$ and $\beta$ depends on the spectrum of $\M{A}\M{A}^\Tra$ and is necessary for developing an Nesterov-like method for solving~\Cref{eqn:nesnls}. Details of the selection procedure and different cases can be found in the original paper~\cite{LKLHS2017}. In addition to the acceleration performed during each NLS solve~\Cref{eqn:nesupd} we can also perform an acceleration step for every outer iteration in~\Cref{alg:Par-NNCP-short}~\Cref{line:while}. In this step all factor matrices are updated using the previous iterate values till the objective stops decreasing.
+
