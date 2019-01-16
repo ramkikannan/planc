@@ -90,7 +90,7 @@ Towards this end, we experiment with various values of $R$ to observe the relati
 \subfloat[Low rank $k=96$ \label{fig:accuracylr81k96}]{
 \includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracylr96.pdf}
 }
-\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 162x162x162x162 on 81 Titan Nodes as 3x3x3x3 Processor Grid.}
+\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 384x384x384x384 on 81 Titan Nodes as 3x3x3x3 Processor Grid.}
 \label{fig:convergencelowrank}
 \end{figure}
 
@@ -105,7 +105,7 @@ Towards this end, we experiment with various values of $R$ to observe the relati
 	\subfloat[Low rank $k=96$ \label{fig:accuracyrwk96}]{
 		\includegraphics[width=0.45\textwidth, height=2in]{data/plots/accuracyrw96.pdf}
 	}
-	\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Realworld Low Rank Tensor of size $200 \times 500 \times 64 \times 192$ on 64 Titan Nodes as $2\times4\times2\times4$ Processor Grid.}
+	\caption{Relative error comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Realworld Low Rank Tensor of size $200 \times 500 \times 64 \times 192$ on 64 Titan Nodes as $4\times4\times1\times4$ Processor Grid.}
 	\label{fig:convergencerealworld}
 \end{figure}
 
@@ -122,7 +122,7 @@ Towards this end, we experiment with various values of $R$ to observe the relati
 \subfloat[GPU \label{fig:gpulr81}]{
 \includegraphics[width=0.45\textwidth, height=2in]{data/plots/cpuvsgpulr811.pdf}
 }
-\caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 162x162x162x162 on 81 Titan Nodes as 3x3x3x3 Processor Grid on CPU and GPU.}
+\caption{Timing comparison of \MU, \HALS, \BPP\, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size 384x384x384x384 on 81 Titan Nodes as 3x3x3x3 Processor Grid on CPU and GPU.}
 \label{fig:cpuvsgpulowrank}
 \end{figure}
 

@@ -370,9 +370,11 @@ class DistNTFIO {
       ntfsolver->factor(i, factort.memptr());
       // if (isparticipating(i) && this->m_mpicomm.fiber_rank(i) == 0) {
       if (ISROOT) {
+        PRINTROOT("Writing factor " << i << " to " << sw.str());
         MAT current_factor = factort.t();
         current_factor.save(sw.str(), arma::raw_ascii);
       }
+      MPI_Barrier(MPI_COMM_WORLD);
       sw.clear();
       sw.str("");
     }

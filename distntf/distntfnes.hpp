@@ -23,6 +23,7 @@ class DistNTFNES : public DistAUNTF {
   int acc_exp;     // Step size exponent
   int acc_fails;   // Acceleration Fails
   int fail_limit;  // Acceleration Fail limit
+  const int NUM_INNER_ITERS = 20;  // Capping inner iter
 
  protected:
   inline double get_lambda(double L, double mu) {
@@ -159,7 +160,7 @@ class DistNTFNES : public DistAUNTF {
     alpha_prev = 1;
     beta = 1;
 
-    while (true) {
+    while (iter < NUM_INNER_ITERS) {
       m_grad_t.set(mode, modified_local_mttkrp_t +
                              (modified_gram * m_acc_t.factor(mode)));
       if (stop_iter(mode)) break;
