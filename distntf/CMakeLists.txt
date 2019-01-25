@@ -1,6 +1,6 @@
 #Copyright 2016 Ramakrishnan Kannan
 
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.6 FATAL_ERROR)
 
 set(ARMA_USE_WRAPPER true)
 
@@ -48,8 +48,8 @@ include_directories(
   ${OPENBLAS_INCLUDE_DIR}
 )
 
-add_executable(distntf
+add_executable(dense_distntf
   distntf.cpp
 )
 
-target_link_libraries(distntf ${NMFLIB_LIBS})
+target_link_libraries(dense_distntf ${NMFLIB_LIBS})

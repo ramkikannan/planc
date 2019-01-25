@@ -1,7 +1,5 @@
 #Copyright 2016 Ramakrishnan Kannan
 
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-
 set(ARMA_USE_WRAPPER true)
 
 # the settings below will be automatically configured by the rest of this script
@@ -32,9 +30,16 @@ include_directories(
   ${MKL_INCLUDE_DIR}
   ${OPENBLAS_INCLUDE_DIR}
 )
+if(CMAKE_BUILD_SPARSE)
+  add_executable(sparse_nmf
+    nmf.cpp
+  )
+  target_link_libraries(sparse_nmf ${NMFLIB_LIBS})
+else()
+  add_executable(dense_nmf
+    nmf.cpp
+  )
+  target_link_libraries(dense_nmf ${NMFLIB_LIBS})
+endif()
 
-add_executable(nmf
-  nmf.cpp
-)
 
-target_link_libraries(nmf ${NMFLIB_LIBS})
