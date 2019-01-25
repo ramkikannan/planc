@@ -27,6 +27,10 @@ In this library we support the following
 
 For other NMF implementations from Prof. Park's lab, please visit [smallk](https://github.com/smallk/smallk)
 
+## Documentation
+
+[PLANC API](https://ramkikannan.github.io/planc-api/)
+
 ## Contributors
 
 * [Ramakrishnan Kannan](https://ramkikannan.github.io) - Oak Ridge National Laboratory
