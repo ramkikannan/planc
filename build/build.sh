@@ -33,6 +33,14 @@ then
     module load cudatoolkit
 fi
 
+if [ "$SYSTEM" = "summit" ];
+then
+    module unload xl
+    module load gcc
+    module load cmake/3.6.1
+    module load cuda
+fi
+
 for cfg in dense_nmf dense_ntf dense_distnmf dense_distntf sparse_nmf sparse_distnmf;
 do    
     mkdir ../build_$SYSTEM\_$cfg
@@ -55,6 +63,9 @@ do
     if [ "$SYSTEM" = "titan" ]; then
         CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
     fi
+    if [ "$SYSTEM" = "summit" ]; then
+        CC=gcc CXX=g++ cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
+    fi
     make
     popd
 done
@@ -72,15 +83,18 @@ do
 
     if [ "$SYSTEM" = "titan" ]; then
         CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_SPARSE=1 -DCMAKE_BUILD_CUDA=0
+    fi
+    if [ "$SYSTEM" = "summit" ]; then
+        CC=gcc CXX=g++ cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_SPARSE=1 -DCMAKE_BUILD_CUDA=0
     fi    
     make
     popd
 done
 
 #copy all the executable
-cp ../build_$SYSTEM\_dense_nmf/nmf dense_nmf
-cp ../build_$SYSTEM\_dense_ntf/ntf dense_ntf 
-cp ../build_$SYSTEM\_dense_distnmf/distnmf dense_distnmf
-cp ../build_$SYSTEM\_dense_distntf/distntf dense_distntf
-cp ../build_$SYSTEM\_sparse_nmf/nmf sparse_nmf
-cp ../build_$SYSTEM\_sparse_distnmf/distnmf sparse_distnmf
+cp ../build_$SYSTEM\_dense_nmf/dense_nmf .
+cp ../build_$SYSTEM\_dense_ntf/dense_ntf .
+cp ../build_$SYSTEM\_dense_distnmf/dense_distnmf .
+cp ../build_$SYSTEM\_dense_distntf/dense_distntf .
+cp ../build_$SYSTEM\_sparse_nmf/sparse_nmf .
+cp ../build_$SYSTEM\_sparse_distnmf/sparse_distnmf .

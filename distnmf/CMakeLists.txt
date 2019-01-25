@@ -1,6 +1,6 @@
 #Copyright 2016 Ramakrishnan Kannan
 
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.6 FATAL_ERROR)
 
 set(ARMA_USE_WRAPPER true)
 
@@ -70,14 +70,22 @@ include_directories(
   ${OPENBLAS_INCLUDE_DIR}
 )
 
-add_executable(distnmf
-  distnmf.cpp
-)
-
 add_definitions(-std=c++11 -w)
 
 if(CMAKE_WITH_PACOSS)
-  target_link_libraries(distnmf ${NMFLIB_LIBS} pacoss)
+  add_executable(sparse_distnmf
+    distnmf.cpp
+  )
+  target_link_libraries(sparse_distnmf ${NMFLIB_LIBS} pacoss)
+elseif(CMAKE_BUILD_SPARSE)
+  add_executable(sparse_distnmf
+    distnmf.cpp
+  )
+  target_link_libraries(sparse_distnmf ${NMFLIB_LIBS})
 else()
-  target_link_libraries(distnmf ${NMFLIB_LIBS})
+  add_executable(dense_distnmf
+    distnmf.cpp
+  )
+  target_link_libraries(dense_distnmf ${NMFLIB_LIBS})
 endif()
+

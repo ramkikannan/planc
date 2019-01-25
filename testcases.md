@@ -1,3 +1,5 @@
+# Testcases
+
 Sample test cases to execute are. You should see the error going down. We also tested the scaling up on a relatively small size of matrix say 20000 by 10000 of dense. The scale out on large number of cluster with big size matrix also works good. Ensure that the objective error is decreasing at every iteration. 
 
 Openmp Dense NMF:
