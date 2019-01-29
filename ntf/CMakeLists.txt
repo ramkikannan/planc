@@ -40,3 +40,7 @@ ntf.cpp
 )
 
 target_link_libraries(dense_ntf ${NTFLIB_LIBS} ${NMFLIB_LIBS})
+install(TARGETS dense_ntf
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} )
