@@ -6,6 +6,8 @@
 
 \subsection{Datasets}
 
+\GB{This section is out of date...}
+
 \subsubsection{Hyperspectral Images (HSI)}
 For comparison with previous work \cite{LK+17b}, we consider the same 3D hyperspectral imaging dataset called ``Souto\_wood\_pile'' \cite{FAN16}. 
 NNCP is often used on HSI data sets for classification and blind source separation of materials with differing spectral signatures.
@@ -34,6 +36,9 @@ For the purposes of benchmarking, we run a fixed number of iterations of the BCD
 %tensor and processor grid dimensions are $128k\times 128k\times 128k\times 128k$ and $k\times k\times k\times k$ for $k\in\{1,2,3,4\}$. In all the cases the dimensions were considered such that synthetic tensors can be accommodated even on single node with 64GB for scale up plots. 
 
 \subsection{Machine Details}
+
+\GB{This section is out of date...}
+
 The entire experimentation was performed on Eos, a supercomputer at the Oak Ridge Leadership Computing Facility. 
 Eos is a 736-node Cray XC30 cluster of Intel Xeon E5-2670 processors with a total of 47.104TB of memory. 
 Its compute nodes are organized in blades where each blade contains 4 nodes, and every node has 2 sockets with 8 physical cores and 64GB memory. 
@@ -50,22 +55,77 @@ For dense BLAS and LAPACK operations, we linked Armadillo with the default LAPAC
 For compiler, we use GNU C++ Compiler (g++ (GCC) 6.3.0) and MPI library is from Cray.  We could also 
 compile and run the code in Rhea the commodity cluster from OLCF with entire open source libraries such as OpenBLAS and OpenMPI. 
 
-\subsection{Comparison Implementations}
-The implementation proposed by Liavas et al. \cite{LK+17b} is the only publicly available distributed-memory software (of which we are aware) for computing the CP decomposition of dense tensors, with or without constraints.
-We use the acronym NbAO-NTF for Nesterov-based Alternating Optimization Nonnegative Tensor Factorization to refer to their code.
+\subsection{Microbenchmarks with Synthetic Data}
 
-It is based on the same parallel algorithm as our implementation, though it is limited to 3D tensors.
-The code uses MPI collectives for communication and Eigen \cite{eigenweb} as an interface to BLAS and LAPACK.
-We compiled the code linked to BLAS/LAPACK wrappers from Cray  (the same BLAS implementation used by our code) but we were unable to run multithreaded BLAS with their code.
-For fair comparison, we use a flat MPI configuration (one MPI process per core) on all comparisons between the two implementations.
+\subsubsection{Comparison across Algorithms}
 
-We also point out a difference between the Nesterov-based algorithm and the BPP algorithm for solving the NLS subproblems.
-The Nesterov-based algorithm attempts an acceleration step using a linear combination of the current and proposed future step; however, it re-computes the residual error before deciding whether or not to accept or reject the acceleration step.
-This residual error cannot always be computed cheaply, using the technique described in \cref{sec:error}, and it contributes significantly (approximately 25\%) to the overall run time.
-Because the BPP algorithm does not require this extra computation, and studying convergence behavior of the different NLS algorithms is beyond the scope of this work, we remove the time spent in the acceleration step of NbAO-NTF in all our comparisons.
+\begin{itemize}
+	\item MU and CP-ALS clearly cheapest, should scale like $k^2$
+	\item Nesterov most expensive, due to inner iterations
+	\item HALS, AO-ADMM, Nesterov all involve communication during ``LUC"
+\end{itemize}
 
-Our proposed algorithm uses dimension trees, but we also benchmark our implementation without that optimization to highlight its importance.
-We use an existing implementation to perform the individual MTTKRPs \cite{HBJT18} with this approach.
+%%%%%%%%%%%%%%%%%
+%LUC Running Time Comparison
+%%%%%%%%%%%%%%%%%
+
+\begin{figure}
+\subfloat[Synthetic Low Rank \label{fig:luclr81}]{
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/luclr81.pdf}
+}
+\subfloat[Tiny Imagenet \label{fig:lucrw}]{
+\includegraphics[width=0.45\textwidth, height=2in]{data/plots/lucrw64.pdf}
+}
+\caption{LUC comparison of \MU, \HALS, \BPP, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size $384 \times 384 \times 384 \times 384$ on 81 Titan nodes as 3x3x3x3 Processor Grid on CPU and Realworld TinyImagenet Dataset on 64 Titan nodes as 2x4x2x4 processor grid}
+\label{fig:luccomp}
+\end{figure}
+
+\subsubsection{Comparison across Processor Grids}
+
+%%%%%%%%%%%%%%%%%
+%Configuration Sweep
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+\includegraphics[width=\textwidth, height=2.5in]{data/plots/confsweep4d.pdf}
+\caption{Processor Grid sweep of a $384 \times 384 \times 384 \times 384$ synthetic low rank tensor on 81 nodes in Titan as 81x1x1x1, 27x3x1x1, 9x3x3x3, 3x3x3x3 grids represented as p=1,2,3,4 respectively. The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
+\label{fig:confsweep4D}
+\end{figure}
+
+\subsection{Scaling Studies with Synthetic Data}
+
+\subsubsection{Weak Scaling}
+
+%%%%%%%%%%%%%%%%%
+%Weak Scaling Synthetic Low Rank
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+\subfloat[Synthetic 3D Low Rank \label{fig:wksca3d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/wksca3d.pdf}
+}\\
+\subfloat[Synthetic 4D Low Rank \label{fig:wksca4d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/wksca4d.pdf}
+}
+\caption {Weak Scaling on Synthetic 3D and 4D low rank tensors. For 3D, the input tensor is of size 128x128x128, 256x256x256, 378x378x378 and 512x512x512 on 1, 8, 27 and 64 Titan Nodes. The 4D tensors were of size 128, 256, 405, 512 for each mode on 1, 16, 81 and 256 Titan nodes.  The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
+\label{fig:synweakscaling}
+\end{figure}
+
+\subsubsection{Strong Scaling}
+
+%%%%%%%%%%%%%%%%%
+%Strong Scaling Synthetic Low Rank
+%%%%%%%%%%%%%%%%%
+\begin{figure}
+\subfloat[Synthetic 3D Low Rank \label{fig:strsca3d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/strsca3d.pdf}
+}\\
+\subfloat[Synthetic 4D Low Rank \label{fig:strsca4d}]{
+\includegraphics[width=\textwidth, height=3in]{data/plots/strsca4d.pdf}
+}
+\caption {Strong Scaling on Synthetic 3D and 4D low rank tensors. For 3D, the input tensor is of size 1024x1024x1024 and 256x256x256x256 for 4D on 8,16, 32, 64 and 128 nodes in Titan. The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
+\label{fig:synstrongscaling}
+\end{figure}
+
+\GB{Everything after this point is still disorganized...}
 
 \subsection{Varying Approximation Rank}
 
@@ -126,36 +186,11 @@ Towards this end, we experiment with various values of $R$ to observe the relati
 \label{fig:cpuvsgpulowrank}
 \end{figure}
 
-%%%%%%%%%%%%%%%%%
-%LUC Running Time Comparison
-%%%%%%%%%%%%%%%%%
 
-\begin{figure}
-\subfloat[Synthetic Low Rank \label{fig:luclr81}]{
-\includegraphics[width=0.45\textwidth, height=2in]{data/plots/luclr81.pdf}
-}
-\subfloat[Tiny Imagenet \label{fig:lucrw}]{
-\includegraphics[width=0.45\textwidth, height=2in]{data/plots/lucrw64.pdf}
-}
-\caption{LUC comparison of \MU, \HALS, \BPP, \ADMM, \Nestrov\ on 4D Synthetic Low Rank Tensor of size $384 \times 384 \times 384 \times 384$ on 81 Titan nodes as 3x3x3x3 Processor Grid on CPU and Realworld TinyImagenet Dataset on 64 Titan nodes as 2x4x2x4 processor grid}
-\label{fig:luccomp}
-\end{figure}
 
 \subsection{Strong Scaling Time Breakdown}
 
-%%%%%%%%%%%%%%%%%
-%Strong Scaling Synthetic Low Rank
-%%%%%%%%%%%%%%%%%
-\begin{figure}
-\subfloat[Synthetic 3D Low Rank \label{fig:strsca3d}]{
-\includegraphics[width=\textwidth, height=3in]{data/plots/strsca3d.pdf}
-}\\
-\subfloat[Synthetic 4D Low Rank \label{fig:strsca4d}]{
-\includegraphics[width=\textwidth, height=3in]{data/plots/strsca4d.pdf}
-}
-\caption {Strong Scaling on Synthetic 3D and 4D low rank tensors. For 3D, the input tensor is of size 1024x1024x1024 and 256x256x256x256 for 4D on 8,16, 32, 64 and 128 nodes in Titan. The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
-\label{fig:synstrongscaling}
-\end{figure}
+
 
 %%%%%%%%%%%%%%%%%
 %Strong Scaling Realworld Low Rank
@@ -168,32 +203,13 @@ Towards this end, we experiment with various values of $R$ to observe the relati
 
 \subsection{Weak Scaling Time Breakdown}
 
-%%%%%%%%%%%%%%%%%
-%Weak Scaling Synthetic Low Rank
-%%%%%%%%%%%%%%%%%
-\begin{figure}
-\subfloat[Synthetic 3D Low Rank \label{fig:wksca3d}]{
-\includegraphics[width=\textwidth, height=3in]{data/plots/wksca3d.pdf}
-}\\
-\subfloat[Synthetic 4D Low Rank \label{fig:wksca4d}]{
-\includegraphics[width=\textwidth, height=3in]{data/plots/wksca4d.pdf}
-}
-\caption {Weak Scaling on Synthetic 3D and 4D low rank tensors. For 3D, the input tensor is of size 128x128x128, 256x256x256, 378x378x378 and 512x512x512 on 1, 8, 27 and 64 Titan Nodes. The 4D tensors were of size 128, 256, 405, 512 for each mode on 1, 16, 81 and 256 Titan nodes.  The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
-\label{fig:synweakscaling}
-\end{figure}
+
 
 
 
 \subsection{Varying Processor Grid}
 
-%%%%%%%%%%%%%%%%%
-%Configuration Sweep
-%%%%%%%%%%%%%%%%%
-\begin{figure}
-\includegraphics[width=\textwidth, height=2.5in]{data/plots/confsweep4d.pdf}
-\caption{Processor Grid sweep of a $384 \times 384 \times 384 \times 384$ synthetic low rank tensor on 81 nodes in Titan as 81x1x1x1, 27x3x1x1, 9x3x3x3, 3x3x3x3 grids represented as p=1,2,3,4 respectively. The algorithms alg=0,1,2,4,5 are \MU, \HALS, \BPP, \ADMM, \Nestrov\ respectively.}
-\label{fig:confsweep4D}
-\end{figure}
+
 
 %%%%%%%%%%%%%%%%%
 %Mouse Data
