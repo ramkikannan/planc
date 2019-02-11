@@ -50,36 +50,16 @@ class DistNTF {
 
   template <class NTFTYPE>
   void callDistNTF() {
+    planc::Tensor A;
     std::string rand_prefix("rand_");
     planc::NTFMPICommunicator mpicomm(this->m_argc, this->m_argv,
                                       this->m_proc_grids);
     mpicomm.printConfig();
-    planc::DistNTFIO dio(mpicomm);
-    if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
-      dio.readInput(m_Afile_name, this->m_global_dims, this->m_proc_grids,
+    planc::DistNTFIO dio(mpicomm, A);
+    dio.readInput(m_Afile_name, this->m_global_dims, this->m_proc_grids,
                     this->m_k, this->m_sparsity);
-      // dio.write_dist_tensor("distntfiotestbin", dio.A());
-      // return;
-    } else {
-      if (mpicomm.rank() == 0) {
-        INFO << "calling read_dist_tensor for" << m_Afile_name << std::endl;
-      }
-      this->m_global_dims = dio.read_dist_tensor(m_Afile_name);
-      // int modes = this->m_proc_grids.n_elem;
-      // UVEC m_global_sub = arma::zeros<UVEC>(modes);
-      // this->m_global_dims = dio.read_dist_tensor(m_Afile_name,
-      // &m_global_sub); planc::Tensor A; A = dio.A();
-      // for (int i = 0; i < mpicomm.size(); i++) {
-      //   if (i == mpicomm.rank()) {
-      //     DISTPRINTINFO("local tensor:")
-      //     A.print(this->m_global_dims, m_global_sub);
-      //   }
-      //   MPI_Barrier(MPI_COMM_WORLD);
-      // }
-      // return;
-    }
-    planc::Tensor A;
-    A = dio.A();
+    this->m_global_dims = dio.global_dims();
+    memusage(mpicomm.rank(), "after input io");
     INFO << mpicomm.rank()
          << "::Completed generating tensor A=" << A.dimensions()
          << "::start indices::" << A.global_idx()

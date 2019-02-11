@@ -31,7 +31,7 @@ class DenseDimensionTree {
     buffer_Tensor = reinterpret_cast<tensor *>(malloc(sizeof *buffer_Tensor));
     projection_Ktensor =
         reinterpret_cast<ktensor *>(malloc(sizeof *projection_Ktensor));
-    m_local_T->data = i_input_tensor.m_data;
+    m_local_T->data = const_cast<double *>(&i_input_tensor.m_data[0]);
     m_local_T->nmodes = i_input_tensor.modes();
     m_local_T->dims_product = i_input_tensor.numel();
     m_local_Y->factors = reinterpret_cast<double **>(
@@ -81,7 +81,6 @@ class DenseDimensionTree {
     projection_Tensor->dims_product = m_local_T->dims_product;
     buffer_Tensor->dims_product = m_local_T->dims_product;
     ktensor_copy_constructor(m_local_Y, projection_Ktensor);
-    long int max_mode = arma::max(i_input_tensor.dimensions());
     for (long int i = 0; i < i_ncp_factors.modes(); i++) {
       MAT temp = i_ncp_factors.factor(i).t();
       std::memcpy(m_local_Y->factors[i], temp.memptr(),

@@ -11,8 +11,8 @@ namespace planc {
 
 class NTFMPICommunicator {
  private:
-  int m_global_rank;
-  int m_num_procs;
+  unsigned int m_global_rank;
+  unsigned int m_num_procs;
   UVEC m_proc_grids;
   MPI_Comm m_cart_comm;
   /// for mode communicators (*,...,p_n,...,*)
@@ -32,21 +32,23 @@ class NTFMPICommunicator {
       INFO << "processor grid size::" << m_proc_grids;
       int slice_size;
       MPI_Comm current_slice_comm;
-      for (int i = 0; i < MPI_CART_DIMS; i++) {
+      for (unsigned int i = 0; i < MPI_CART_DIMS; i++) {
         current_slice_comm = this->m_slice_comm[i];
         MPI_Comm_size(current_slice_comm, &slice_size);
         INFO << "Numprocs in slice " << i << "::" << slice_size << std::endl;
       }
       int fiber_size;
       MPI_Comm current_fiber_comm;
-      for (int i = 0; i < MPI_CART_DIMS; i++) {
+      for (unsigned int i = 0; i < MPI_CART_DIMS; i++) {
         current_fiber_comm = this->m_fiber_comm[i];
         MPI_Comm_size(current_fiber_comm, &fiber_size);
         INFO << "Numprocs in fiber " << i << "::" << fiber_size << std::endl;
       }
     }
     UVEC cooprint(MPI_CART_DIMS);
-    for (int ii = 0; ii < MPI_CART_DIMS; ii++) cooprint[ii] = m_coords[ii];
+    for (unsigned int ii = 0; ii < MPI_CART_DIMS; ii++) {
+      cooprint[ii] = m_coords[ii];
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < size(); i++) {
@@ -69,9 +71,8 @@ class NTFMPICommunicator {
       : m_proc_grids(i_dims) {
     // Get the number of MPI processes
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &m_global_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &m_num_procs);
-    int grid_count = m_proc_grids[0];
+    MPI_Comm_rank(MPI_COMM_WORLD, reinterpret_cast<int *>(&m_global_rank));
+    MPI_Comm_size(MPI_COMM_WORLD, reinterpret_cast<int *>(&m_num_procs));
     if (m_num_procs != arma::prod(m_proc_grids)) {
       ERR << "number of mpi process and process grid doesn't match";
       MPI_Barrier(MPI_COMM_WORLD);
@@ -82,7 +83,7 @@ class NTFMPICommunicator {
     std::vector<int> periods(MPI_CART_DIMS);
     std::vector<int> m_proc_grids_vec =
         arma::conv_to<std::vector<int>>::from(m_proc_grids);
-    for (int i = 0; i < MPI_CART_DIMS; i++) periods[i] = 1;
+    for (unsigned int i = 0; i < MPI_CART_DIMS; i++) periods[i] = 1;
     int reorder = 0;
     MPI_Cart_create(MPI_COMM_WORLD, MPI_CART_DIMS, &m_proc_grids_vec[0],
                     &periods[0], reorder, &m_cart_comm);
@@ -93,21 +94,21 @@ class NTFMPICommunicator {
 
     // Get the subcommunicators
     std::vector<int> remainDims(MPI_CART_DIMS);
-    for (int i = 0; i < remainDims.size(); i++) remainDims[i] = 1;
+    for (unsigned int i = 0; i < remainDims.size(); i++) remainDims[i] = 1;
     // initialize the fiber ranks
     m_slice_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
     int current_slice_rank;
-    for (int i = 0; i < MPI_CART_DIMS; i++) {
+    for (unsigned int i = 0; i < MPI_CART_DIMS; i++) {
       remainDims[i] = 0;
       MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_slice_comm[i]));
       remainDims[i] = 1;
       MPI_Comm_rank(m_slice_comm[i], &current_slice_rank);
       m_slice_ranks[i] = current_slice_rank;
     }
-    for (int i = 0; i < remainDims.size(); i++) remainDims[i] = 0;
+    for (unsigned int i = 0; i < remainDims.size(); i++) remainDims[i] = 0;
     m_fiber_ranks = arma::zeros<UVEC>(MPI_CART_DIMS);
     int current_fiber_rank;
-    for (int i = 0; i < MPI_CART_DIMS; i++) {
+    for (unsigned int i = 0; i < MPI_CART_DIMS; i++) {
       remainDims[i] = 1;
       MPI_Cart_sub(m_cart_comm, &remainDims[0], &(m_fiber_comm[i]));
       remainDims[i] = 0;
@@ -119,7 +120,7 @@ class NTFMPICommunicator {
     MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, &m_coords[0]);
     // Get the slice size
     m_slice_sizes = arma::zeros<UVEC>(MPI_CART_DIMS);
-    for (int i = 0; i < MPI_CART_DIMS; i++) {
+    for (unsigned int i = 0; i < MPI_CART_DIMS; i++) {
       m_slice_sizes[i] = m_num_procs / m_proc_grids[i];
     }
   }
@@ -130,7 +131,7 @@ class NTFMPICommunicator {
     MPI_Finalized(&finalized);
 
     if (!finalized) {
-      for (int i = 0; i < MPI_CART_DIMS; i++) {
+      for (unsigned int i = 0; i < MPI_CART_DIMS; i++) {
         MPI_Comm_free(&m_fiber_comm[i]);
         MPI_Comm_free(&m_slice_comm[i]);
       }
@@ -142,9 +143,9 @@ class NTFMPICommunicator {
   const MPI_Comm &cart_comm() const { return m_cart_comm; }
   void coordinates(int *o_c) const {
     MPI_Cart_coords(m_cart_comm, m_global_rank, MPI_CART_DIMS, o_c);
-  }  
+  }
   std::vector<int> coordinates() const { return this->m_coords; }
-  /// Returns the fiber communicator. 
+  /// Returns the fiber communicator.
   const MPI_Comm &fiber(const int i) const { return m_fiber_comm[i]; }
   /// Returns the slice communicator
   const MPI_Comm &slice(const int i) const { return m_slice_comm[i]; }
@@ -181,7 +182,7 @@ class NTFMPICommunicator {
   bool isparticipating(int mode) {
     bool rc = true;
     size_t num_modes = this->m_proc_grids.n_rows;
-    for (int i = 0; i < num_modes; i++) {
+    for (unsigned int i = 0; i < num_modes; i++) {
       if (i != mode && this->m_coords[i] != 0) {
         rc = false;
         break;

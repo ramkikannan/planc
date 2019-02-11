@@ -48,7 +48,7 @@ class DistAUNTF {
   virtual MAT update(int current_mode) = 0;
 
  private:
-  const Tensor m_input_tensor;
+  const Tensor &m_input_tensor;
   NCPFactors m_gathered_ncp_factors;
   NCPFactors m_gathered_ncp_factors_t;
   // mttkrp related variables
@@ -58,17 +58,17 @@ class DistAUNTF {
   MAT *factor_global_grams;  // G in the algorithm
 
   // NTF related variable.
-  const int m_low_rank_k;
-  const int m_modes;
+  const unsigned int m_low_rank_k;
+  const unsigned int m_modes;
   const algotype m_updalgo;
   const UVEC m_global_dims;
   const UVEC m_factor_local_dims;
-  int m_num_it;
-  int current_mode;
+  unsigned int m_num_it;
+  unsigned int current_mode;
   FVEC m_regularizers;
   bool m_compute_error;
   bool m_enable_dim_tree;
-  int m_current_it;
+  unsigned int m_current_it;
   double m_rel_error;
 
   // needed for acceleration algorithms.
@@ -433,7 +433,7 @@ class DistAUNTF {
             const UVEC &i_global_dims, const UVEC &i_local_dims,
             const UVEC &i_nls_sizes, const UVEC &i_nls_idxs,
             const NTFMPICommunicator &i_mpicomm)
-      : m_input_tensor(i_tensor.dimensions(), i_tensor.m_data),
+      : m_input_tensor(i_tensor),
         m_low_rank_k(i_k),
         m_updalgo(i_algo),
         m_mpicomm(i_mpicomm),

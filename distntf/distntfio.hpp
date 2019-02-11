@@ -28,7 +28,7 @@ namespace planc {
 class DistNTFIO {
  private:
   const NTFMPICommunicator &m_mpicomm;
-  Tensor m_A;
+  Tensor &m_A;
   // don't start getting prime number from 2;
   static const int kPrimeOffset = 10;
   // Hope no one hits on this number.
@@ -60,6 +60,10 @@ class DistNTFIO {
     }
     local_factors.rankk_tensor(m_A);
   }
+
+  /*
+  * Every process reads the global tensor and extracts its local tensor.
+  * It is no more needed. We will use distributed mpi io.
 
   void build_local_tensor() {
     // assumption is that the m_A has global tensor with it now.
@@ -107,13 +111,15 @@ class DistNTFIO {
     }
     this->m_A = local_tensor;
   }
+  */
 
  public:
-  explicit DistNTFIO(const NTFMPICommunicator &mpic) : m_mpicomm(mpic) {}
+  explicit DistNTFIO(const NTFMPICommunicator &mpic, Tensor &in)
+      : m_mpicomm(mpic), m_A(in) {}
   ~DistNTFIO() {
     // delete this->m_A;
   }
-  void readInput(const std::string file_name) {
+  /*void readInput(const std::string file_name) {
     // In this case we are reading from a file.
     // We can read .bin file, .npy file, .txt file.
     // Look at the extension and appropriately
@@ -145,7 +151,7 @@ class DistNTFIO {
     } else if (extension == "txt") {
       m_A.read(ss.str());
     }
-  }
+  }*/
 
   /*
       Reading from real input file.
@@ -218,7 +224,7 @@ class DistNTFIO {
       PRINTROOT("file read size ::" << 8.0 * count << " > 2GB" << std::endl);
     }
     MPI_Status status;
-    ret = MPI_File_read_all(fh, rc.m_data, count, MPI_DOUBLE, &status);
+    ret = MPI_File_read_all(fh, &rc.m_data[0], count, MPI_DOUBLE, &status);
     int nread;
     MPI_Get_count(&status, MPI_DOUBLE, &nread);
     if (ret != MPI_SUCCESS) {
@@ -233,8 +239,7 @@ class DistNTFIO {
     delete[] global_dims;
     delete[] local_dims;
     delete[] start_idxs;
-    this->m_A = rc;
-    rc.clear();
+    swap(this->m_A, rc);
     return this->m_global_dims;
   }
   /**
@@ -302,8 +307,8 @@ class DistNTFIO {
     int count = local_tensor.numel();
     assert(count <= std::numeric_limits<int>::max());
     MPI_Status status;
-    ret =
-        MPI_File_write_all(fh, local_tensor.m_data, count, MPI_DOUBLE, &status);
+    ret = MPI_File_write_all(fh, &local_tensor.m_data[0], count, MPI_DOUBLE,
+                             &status);
     if (ret != MPI_SUCCESS) {
       DISTPRINTINFO("Error: Could not write file " << filename << std::endl);
     }
@@ -345,7 +350,7 @@ class DistNTFIO {
       if (!file_name.compare("rand_uniform")) {
         // Tensor temp(i_global_dims / i_proc_grids);
         Tensor temp(this->m_local_dims, start_rows);
-        this->m_A = temp;
+        swap(m_A, temp);
         // generate again. otherwise all processes will have
         // same input tensor because of the same seed.
         this->m_A.randu(449 * MPI_RANK + 677);
@@ -378,7 +383,8 @@ class DistNTFIO {
       sw.clear();
       sw.str("");
     }
-    sw << output_file_name << "_lambda" << "_" << MPI_SIZE;
+    sw << output_file_name << "_lambda"
+       << "_" << MPI_SIZE;
     if (ISROOT) {
       ntfsolver->lambda().save(sw.str(), arma::raw_ascii);
     }
@@ -386,6 +392,7 @@ class DistNTFIO {
   void writeRandInput() {}
   const Tensor &A() const { return m_A; }
   const NTFMPICommunicator &mpicomm() const { return m_mpicomm; }
+  UVEC global_dims() const { return m_global_dims; }
 };
 }  // namespace planc
 
