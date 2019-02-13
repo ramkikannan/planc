@@ -168,9 +168,9 @@ class NTFNES : public AUNTF {
   NTFNES(const Tensor &i_tensor, const int i_k, algotype i_algo)
       : AUNTF(i_tensor, i_k, i_algo),
         m_prox_t(i_tensor.dimensions(), i_k, true),
-        m_prev_t(i_tensor.dimensions(), i_k, true),
         m_acc_t(i_tensor.dimensions(), i_k, true),
-        m_grad_t(i_tensor.dimensions(), i_k, true) {
+        m_grad_t(i_tensor.dimensions(), i_k, true),
+        m_prev_t(i_tensor.dimensions(), i_k, true) {
     m_prox_t.zeros();
     m_prev_t.zeros();
     m_acc_t.zeros();

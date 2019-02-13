@@ -222,7 +222,7 @@ current_nrows *= rightkrp.n_rows;
     // end
     for (unsigned int n = 0; n < this->m_k; n++) {
       MAT ab = ncp_factors[matorder[0]].col(n);
-      for (int i = 1; i < this->m_modes - 1; i++) {
+      for (unsigned int i = 1; i < this->m_modes - 1; i++) {
         VEC oldabvec = arma::vectorise(ab);
         VEC currentvec = ncp_factors[matorder[i]].col(n);
         ab.clear();
@@ -240,8 +240,7 @@ current_nrows *= rightkrp.n_rows;
     // matorder = length(A):-1:1;
     // Always krp for mttkrp is computed in
     // reverse. Hence assuming the same.
-    UVEC matorder = arma::zeros<UVEC>(i_modes.n_rows - 1);
-    int current_ncols = this->m_k;
+    UVEC matorder = arma::zeros<UVEC>(i_modes.n_rows - 1);    
     int j = 0;
     for (int i = i_modes.n_rows - 1; i >= 0; i--) {
       matorder(j++) = i_modes[i];

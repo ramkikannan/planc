@@ -181,7 +181,7 @@ void partial_MTTKRP_with_KRP(Output_Layout OL, long int s, direction D,
 
   if ((s < 0) || (s >= T->nmodes - 1)) {  // s cannot be negative or be equal to
                                           // N-1 or be greater than N-1
-    printf("Invalid value of s in partial_MTTKRP_with_KRP(), s = %d\nExit\n",
+    printf("Invalid value of s in partial_MTTKRP_with_KRP(), s = %ld\nExit\n",
            s);
     exit(-1);
   }
@@ -333,7 +333,7 @@ void multi_TTV(Output_Layout OL, long int s, direction D, tensor *T, double *A,
   }
   if (r != T->dims[T->nmodes - 1]) {  // the last mode of T must be of length r
     printf(
-        "r and the last mode of the tensor T must be equal, r = %d, "
+        "r and the last mode of the tensor T must be equal, r = %ld, "
         "T->dims[T->nmodes-1] = %ld\nmulti_TTV()\n\nExit\n",
         r, T->dims[T->nmodes - 1]);
     exit(-1);
@@ -424,7 +424,7 @@ void multi_TTV_with_KRP(Output_Layout OL, long int s, direction D, tensor *T,
   // the tensour should have 1 more mode than the ktensor
   if (T->nmodes != Y->nmodes + 1) {
     printf(
-        "In multi_TTV_with_KRP(), T->nmodes = %ld and Y->nmodes = %d\nThe "
+        "In multi_TTV_with_KRP(), T->nmodes = %ld and Y->nmodes = %ld\nThe "
         "tensor should have 1 more mode than the ktensor.\nExit\n",
         T->nmodes, Y->nmodes);
     exit(-1);
