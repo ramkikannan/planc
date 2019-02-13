@@ -136,7 +136,7 @@ ncp_factors[i].clear();
    * @param[out] UtU is a kxk matrix
    */
 
-  void gram_leave_out_one(const int i_n, MAT *o_UtU) {
+  void gram_leave_out_one(const unsigned int i_n, MAT *o_UtU) {
     MAT currentGram(this->m_k, this->m_k);
     (*o_UtU) = arma::ones<MAT>(this->m_k, this->m_k);
     for (unsigned int i = 0; i < this->m_modes; i++) {
@@ -151,7 +151,7 @@ ncp_factors[i].clear();
    * @param[in] mode i_n
    * @return MAT of size product of dimensions except i_n by k
    */
-  MAT krp_leave_out_one(const int i_n) {
+  MAT krp_leave_out_one(const unsigned int i_n) {
     UWORD krpsize = arma::prod(this->m_dimensions);
     krpsize /= this->m_dimensions[i_n];
     MAT krp(krpsize, this->m_k);
@@ -168,7 +168,7 @@ ncp_factors[i].clear();
    * @param[in] i_n mode that will be excluded
    * @param[out] m_dimensions[i_n]xk
    */
-  void krp_leave_out_one(const int i_n, MAT *o_krp) {
+  void krp_leave_out_one(const unsigned int i_n, MAT *o_krp) {
     // matorder = length(A):-1:1;
     // Always krp for mttkrp is computed in
     // reverse. Hence assuming the same.
@@ -251,9 +251,9 @@ current_nrows *= rightkrp.n_rows;
          << "::matorder::" << matorder << std::endl;
 #endif
     (*o_krp).zeros();
-    for (int n = 0; n < this->m_k; n++) {
+    for (unsigned int n = 0; n < this->m_k; n++) {
       MAT ab = ncp_factors[matorder[0]].col(n);
-      for (int i = 1; i < i_modes.n_rows - 1; i++) {
+      for (unsigned int i = 1; i < i_modes.n_rows - 1; i++) {
         VEC oldabvec = arma::vectorise(ab);
         VEC currentvec = ncp_factors[matorder[i]].col(n);
         ab.clear();
@@ -312,7 +312,7 @@ current_nrows *= rightkrp.n_rows;
    * print the ith factor matrix alone
    * @param[in] i_n the mode for which the factor matrix to be printed
    */
-  void print(const int i_n) {
+  void print(const unsigned int i_n) {
     std::cout << i_n << "th factor" << std::endl
               << "=============" << std::endl;
     std::cout << this->ncp_factors[i_n];
@@ -356,7 +356,7 @@ current_nrows *= rightkrp.n_rows;
    * and replaces the existing lambda.
    * @param[in] mode of the factor matrix that will be row normalized
    */
-  void normalize_rows(int mode) {
+  void normalize_rows(unsigned int mode) {
     for (unsigned int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].row(i));
       if (m_lambda(i) > 0) this->ncp_factors[mode].row(i) /= m_lambda(i);
@@ -412,7 +412,7 @@ current_nrows *= rightkrp.n_rows;
    * across different processors.
    * @param[in] mode
    */
-  void distributed_normalize(int mode) {
+  void distributed_normalize(unsigned int mode) {
     double local_colnorm;
     double global_colnorm;
     for (unsigned int j = 0; j < this->m_k; j++) {
@@ -430,7 +430,7 @@ current_nrows *= rightkrp.n_rows;
    * across different processors.
    * @param[in] mode
    */
-  void distributed_normalize_rows(int mode) {
+  void distributed_normalize_rows(unsigned int mode) {
     double local_rownorm;
     double global_rownorm;
     for (unsigned int j = 0; j < this->m_k; j++) {

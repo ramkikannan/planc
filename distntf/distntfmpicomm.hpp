@@ -179,7 +179,7 @@ class NTFMPICommunicator {
    * coordinates are non-zero for the mode and zero
    * non-modes
    */
-  bool isparticipating(int mode) {
+  bool isparticipating(unsigned int mode) {
     bool rc = true;
     size_t num_modes = this->m_proc_grids.n_rows;
     for (unsigned int i = 0; i < num_modes; i++) {

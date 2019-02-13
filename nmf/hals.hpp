@@ -48,8 +48,7 @@ class HALSNMF : public NMF<T> {
     this->At = this->A.t();
   }
   void computeNMF() {
-    int currentIteration = 0;
-    double t1, t2;
+    unsigned int currentIteration = 0;    
     INFO << "computed transpose At=" << PRINTMATINFO(this->At) << std::endl;
     while (currentIteration < this->num_iterations()) {
       tic();
@@ -64,7 +63,7 @@ class HALSNMF : public NMF<T> {
       tic();
       double normConst;
       VEC Hx;
-      for (int x = 0; x < this->k; x++) {
+      for (unsigned int x = 0; x < this->k; x++) {
         // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
         Hx = this->H.col(x) + (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
         fixNumericalError<VEC>(&Hx);
@@ -85,7 +84,7 @@ class HALSNMF : public NMF<T> {
            << std::endl;
       tic();
       VEC Wx;
-      for (int x = 0; x < this->k; x++) {
+      for (unsigned int x = 0; x < this->k; x++) {
         // FVEC Wx = W(:,x) + (AHt(:,x)-W*HHt(:,x))/HHtDiag(x);
 
         // W(:,i) = W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i);
@@ -117,6 +116,6 @@ class HALSNMF : public NMF<T> {
   ~HALSNMF() {}
 };
 
-}  // namespace planc 
+}  // namespace planc
 
 #endif  // NMF_HALS_HPP_

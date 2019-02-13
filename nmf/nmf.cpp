@@ -19,7 +19,7 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
 #else
   MAT A;
 #endif
-  double t1, t2;
+  double t2;
   if (!AfileName.empty() &&
       !AfileName.compare(AfileName.size() - 4, 4, "rand")) {
 #ifdef BUILD_SPARSE
@@ -133,6 +133,8 @@ void parseCommandLineandCallNMF(int argc, char* argv[]) {
           pc.iterations());
 #endif
       break;
+    default:
+      ERR << "Not a valid algorithm" << std::endl;
   }
 }
 

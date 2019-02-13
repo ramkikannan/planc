@@ -334,7 +334,7 @@ class DistAUNTF {
     factor_local_grams.zeros(this->m_low_rank_k, this->m_low_rank_k);
     global_gram.ones(this->m_low_rank_k, this->m_low_rank_k);
     UWORD current_size = 0;
-    for (int i = 0; i < m_modes; i++) {
+    for (unsigned int i = 0; i < m_modes; i++) {
       current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
       if (!m_enable_dim_tree) {
         ncp_krp[i] = arma::zeros(current_size, this->m_low_rank_k);

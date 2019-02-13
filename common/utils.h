@@ -56,6 +56,7 @@ enum normtype { NONE, L2NORM, MAXNORM };
 #define SP_FMAT arma::sp_fmat
 #define SP_MAT arma::sp_mat
 #define UVEC arma::uvec
+#define IVEC arma::ivec
 #define UWORD arma::uword
 #define VEC arma::vec
 

@@ -79,7 +79,7 @@ class Tensor {
   /**
    * Constructor that takes only dimensions of every mode as a vector
    */
-  Tensor(const UVEC &i_dimensions)
+  explicit Tensor(const UVEC &i_dimensions)
       : m_modes(i_dimensions.n_rows),
         m_dimensions(i_dimensions),
         m_numel(arma::prod(i_dimensions)),
@@ -88,8 +88,8 @@ class Tensor {
     randu();
   }
   Tensor(const UVEC &i_dimensions, const UVEC &i_start_idx)
-      : m_dimensions(i_dimensions),
-        m_modes(i_dimensions.n_rows),
+      : m_modes(i_dimensions.n_rows),
+        m_dimensions(i_dimensions),
         m_numel(arma::prod(i_dimensions)),
         m_global_idx(i_start_idx),
         rand_seed(103) {
