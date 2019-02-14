@@ -26,7 +26,7 @@ class NMF {
   T A;  /// input matrix of size mxn
   MAT W, H;  /// left and low rank factors of size mxk and nxk respectively
   MAT Winit, Hinit;
-  UINT m, n, k;  /// rows, columns and lowrank  
+  UINT m, n, k;  /// rows, columns and lowrank
 
   /*
    * Collected statistics are
@@ -37,8 +37,8 @@ class NMF {
   double normA, normW, normH;
   double densityW, densityH;
   bool cleared;
-  int m_num_iterations;  /// number of iterations
-  std::string input_file_name; 
+  unsigned int m_num_iterations;  /// number of iterations
+  std::string input_file_name;
   MAT errMtx;       // used for error computation.
   T A_err_sub_mtx;  // used for error computation.
   /// The regularization is a vector of two values. The first value specifies
@@ -92,7 +92,7 @@ class NMF {
   void normalize_by_W() {
     MAT W_square = arma::pow(this->W, 2);
     ROWVEC norm2 = arma::sqrt(arma::sum(W_square, 0));
-    for (int i = 0; i < this->k; i++) {
+    for (unsigned int i = 0; i < this->k; i++) {
       if (norm2(i) > 0) {
         this->W.col(i) = this->W.col(i) / norm2(i);
         this->H.col(i) = this->H.col(i) * norm2(i);
@@ -159,7 +159,7 @@ class NMF {
 
     // other initializations
     this->otherInitializations();
-  }  
+  }
 
   virtual void computeNMF() = 0;
 
@@ -290,7 +290,7 @@ class NMF {
       errMtx = arma::zeros<MAT>(PER_SPLIT, A.n_cols);
       A_err_sub_mtx = arma::zeros<T>(PER_SPLIT, A.n_cols);
     }
-    for (int i = 0; i <= numSplits; i++) {
+    for (unsigned int i = 0; i <= numSplits; i++) {
       UWORD beginIdx = i * PER_SPLIT;
       UWORD endIdx = (i + 1) * PER_SPLIT - 1;
       if (colSplit) {
@@ -341,13 +341,13 @@ class NMF {
   /// Sets the regularization on left low rank factor W
   void regW(const FVEC &iregW) { this->m_regW = iregW; }
   /// Sets the regularization on right low rank H
-  void regH(const FVEC &iregH) { this->m_regH = iregH; }  
+  void regH(const FVEC &iregH) { this->m_regH = iregH; }
   /// Returns the L2 and L1 regularization parameters of W as a vector
   FVEC regW() { return this->m_regW; }
   /// Returns the L2 and L1 regularization parameters of W as a vector
   FVEC regH() { return this->m_regH; }
   /// Returns the number of iterations
-  const int num_iterations() const { return m_num_iterations; }
+  const unsigned int num_iterations() const { return m_num_iterations; }
 
   ~NMF() { clear(); }
   /// Clear the memory for input matrix A, right low rank factor W

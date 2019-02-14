@@ -46,7 +46,6 @@ class DistNTFTime {
               double err_comp, double err_comm)
       : m_duration(d),
         m_compute_duration(compute_d),
-        m_trans_duration(trans_d),
         m_communication_duration(communication_d),
         m_allgather_duration(allgather_d),
         m_allreduce_duration(allreduce_d),
@@ -57,7 +56,8 @@ class DistNTFTime {
         m_multittv_duration(multittv_d),
         m_nnls_duration(nnls_d),
         m_err_compute_duration(err_comp),
-        m_err_communication_duration(err_comm) {}
+        m_err_communication_duration(err_comm),
+        m_trans_duration(trans_d) {}
   DistNTFTime(double d, double compute_d, double communication_d, double gram_d,
               double krp_d, double mttkrp_d, double multittv_d, double nnls_d,
               double err_comp, double err_comm)

@@ -10,6 +10,8 @@
 #include <random>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 #include "common/utils.h"
 
 namespace planc {
@@ -31,10 +33,9 @@ class Tensor {
  private:
   int m_modes;
   UVEC m_dimensions;
-  UVEC m_global_idx;
   UWORD m_numel;
+  UVEC m_global_idx;
   unsigned int rand_seed;
-  bool freed_on_destruction;
 
   // for the time being it is used for debugging purposes
   size_t sub2ind(UVEC sub, UVEC dimensions) {
@@ -69,54 +70,46 @@ class Tensor {
   }
 
  public:
-  double *m_data;
+  std::vector<double> m_data;
+
   Tensor() {
     this->m_modes = 0;
     this->m_numel = 0;
-    this->m_data = NULL;
-    freed_on_destruction = false;
   }
   /**
    * Constructor that takes only dimensions of every mode as a vector
    */
-  Tensor(const UVEC &i_dimensions)
-      : m_dimensions(i_dimensions),
-        m_modes(i_dimensions.n_rows),
+  explicit Tensor(const UVEC &i_dimensions)
+      : m_modes(i_dimensions.n_rows),
+        m_dimensions(i_dimensions),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
-    m_data = new double[this->m_numel];
-    freed_on_destruction = false;
+    m_data.resize(m_numel);
     randu();
   }
   Tensor(const UVEC &i_dimensions, const UVEC &i_start_idx)
-      : m_dimensions(i_dimensions),
-        m_global_idx(i_start_idx),
-        m_modes(i_dimensions.n_rows),
+      : m_modes(i_dimensions.n_rows),
+        m_dimensions(i_dimensions),
         m_numel(arma::prod(i_dimensions)),
+        m_global_idx(i_start_idx),
         rand_seed(103) {
-    m_data = new double[this->m_numel];
-    freed_on_destruction = false;
+    m_data.resize(m_numel);
     randu();
   }
   /**
    * Need when copying from matrix to Tensor. otherwise copy constructor
    * will be called. The data will be passed in row major order
+   *
    */
   Tensor(const UVEC &i_dimensions, double *i_data)
-      : m_dimensions(i_dimensions),
-        m_modes(i_dimensions.n_rows),
+      : m_modes(i_dimensions.n_rows),
+        m_dimensions(i_dimensions),
         m_numel(arma::prod(i_dimensions)),
         rand_seed(103) {
-    m_data = new double[this->m_numel];
-    memcpy(this->m_data, i_data, sizeof(double) * this->m_numel);
-    freed_on_destruction = false;
+    m_data.resize(m_numel);
+    memcpy(&this->m_data[0], i_data, sizeof(double) * this->m_numel);
   }
-  ~Tensor() {
-    if (!freed_on_destruction) {
-      delete[] m_data;
-      freed_on_destruction = true;
-    }
-  }
+  ~Tensor() {}
 
   /**
    *  copy constructor
@@ -128,34 +121,38 @@ class Tensor {
     this->m_dimensions = src.dimensions();
     this->m_global_idx = src.global_idx();
     this->rand_seed = 103;
-    m_data = new double[this->m_numel];
-    memcpy(this->m_data, src.m_data, sizeof(double) * this->m_numel);
+    this->m_data = src.m_data;
   }
 
   Tensor &operator=(const Tensor &other) {  // copy assignment
     if (this != &other) {                   // self-assignment check expected
       clear();
-      this->m_data = new double[other.numel()];  // create storage in this
+      // this->m_data = new double[other.numel()];  // create storage in this
       this->m_numel = other.numel();
       this->m_modes = other.modes();
       this->m_dimensions = other.dimensions();
       this->m_global_idx = other.global_idx();
-      this->freed_on_destruction = false;
-      memcpy(this->m_data, other.m_data, sizeof(double) * this->m_numel);
+      this->m_data = other.m_data;
     }
     return *this;
+  }
+
+  void swap(Tensor &in) {
+    using std::swap;
+    swap(m_numel, in.m_numel);
+    swap(m_modes, in.m_modes);
+    swap(m_dimensions, in.m_dimensions);
+    swap(m_global_idx, in.m_global_idx);
+    swap(rand_seed, in.rand_seed);
+    swap(m_data, in.m_data);
   }
   /**
    * Clears the data and also destroys the storage
    */
 
   void clear() {
-    if (this->m_numel > 0 && this->m_data != NULL) {
-      delete[] this->m_data;  // destroy storage in this
-      this->m_numel = 0;
-      this->m_data = NULL;
-      freed_on_destruction = false;
-    }
+    this->m_numel = 0;
+    this->m_data.clear();
   }
 
   /// Return the number of modes. It is a scalar value.
@@ -211,23 +208,23 @@ class Tensor {
     }
   }
   /**
-  * set the tensor with uniform random values starting with a seed.
-  * can be used to generate the same tensor again and again.
-  * @param[in] an integer seed value preferrably a relative prime number
-  */
+   * set the tensor with uniform random values starting with a seed.
+   * can be used to generate the same tensor again and again.
+   * @param[in] an integer seed value preferrably a relative prime number
+   */
   void randu(const int i_seed = -1) {
     std::random_device rd;
     std::uniform_real_distribution<> dis(0, 1);
     if (i_seed == -1) {
       std::mt19937 gen(rand_seed);
 #pragma omp parallel for
-      for (int i = 0; i < this->m_numel; i++) {
+      for (unsigned int i = 0; i < this->m_numel; i++) {
         m_data[i] = dis(gen);
       }
     } else {
       std::mt19937 gen(i_seed);
 #pragma omp parallel for
-      for (int i = 0; i < this->m_numel; i++) {
+      for (unsigned int i = 0; i < this->m_numel; i++) {
         m_data[i] = dis(gen);
       }
     }
@@ -235,11 +232,11 @@ class Tensor {
 
   /**
    * size of krp must be product of all dimensions leaving out nxk.
-   * o_mttkrp will be of size dimension[n]xk.   
+   * o_mttkrp will be of size dimension[n]xk.
    * Memory must be allocated and freed by the caller
    * @param[in]  i_n mode number
    * @param[in]  i_krp Khatri-rao product matrix leaving out mode i_n
-   * @param[out] o_mttkrp pointer to the mttkrp matrix. 
+   * @param[out] o_mttkrp pointer to the mttkrp matrix.
    */
 
   void mttkrp(const int i_n, const MAT &i_krp, MAT *o_mttkrp) const {
@@ -260,14 +257,14 @@ class Tensor {
       // op( A ) an m by k matrix, op( B ) a k by n matrix and C an m by n
       // matrix. matricized tensor is m x k is in column major format krp is k x
       // n is in column major format output is m x n in column major format
-      char transa = 'N';
-      char transb = 'N';
+      // char transa = 'N';
+      // char transb = 'N';
       int m = this->m_dimensions[0];
       int n = i_krp.n_cols;
       int k = i_krp.n_rows;
-      int lda = m;
-      int ldb = k;
-      int ldc = m;
+      // int lda = m;
+      // int ldb = k;
+      // int ldc = m;
       double alpha = 1;
       double beta = 0;
       // sgemm (TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
@@ -276,8 +273,8 @@ class Tensor {
       // printf("mode=%d,i=%d,m=%d,n=%d,k=%d,alpha=%lf,T_stride=%d,lda=%d,krp_stride=%d,ldb=%d,beat=%lf,mttkrp=!!!,ldc=%d\n",0,
       // 0, m, n, k,alpha,0*k*m,m,0*n*k,i_krp.n_rows,beta,n);
       cblas_dgemm(CblasRowMajor, CblasTrans, CblasTrans, m, n, k, alpha,
-                  this->m_data, m, i_krp.memptr(), k, beta, o_mttkrp->memptr(),
-                  n);
+                  &this->m_data[0], m, i_krp.memptr(), k, beta,
+                  o_mttkrp->memptr(), n);
 
     } else {
       int ncols = 1;
@@ -295,18 +292,18 @@ class Tensor {
       }
       // For each matrix...
       for (int i = 0; i < nmats; i++) {
-        char transa = 'T';
-        char transb = 'N';
+        // char transa = 'T';
+        // char transb = 'N';
         int m = this->m_dimensions[i_n];
         int n = lowrankk;
         int k = ncols;
-        int lda = k;  // not sure. could be m. higher confidence on k.
-        int ldb = i_krp.n_rows;
-        int ldc = m;
+        // int lda = k;  // not sure. could be m. higher confidence on k.
+        // int ldb = i_krp.n_rows;
+        // int ldc = m;
         double alpha = 1;
         double beta = (i == 0) ? 0 : 1;
-        double *A = this->m_data + i * k * m;
-        double *B = const_cast<double *>(i_krp.memptr()) + i * k;
+        // double *A = this->m_data + i * k * m;
+        // double *B = const_cast<double *>(i_krp.memptr()) + i * k;
 
         // for KRP move ncols*lowrankk
         // for tensor X move as n_cols*blas_n
@@ -319,7 +316,7 @@ class Tensor {
         // printf("mode=%d,i=%d,m=%d,n=%d,k=%d,alpha=%lf,T_stride=%d,lda=%d,krp_stride=%d,ldb=%d,beat=%lf,mttkrp=!!!,ldc=%d\n",i_n,
         // i, m, n, k,alpha,i*k*m,k,i*n*k,nmats*ncols,beta,n);
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, m, n, k, alpha,
-                    this->m_data + i * k * m, ncols, i_krp.memptr() + i * k,
+                    &this->m_data[0] + i * k * m, ncols, i_krp.memptr() + i * k,
                     ncols * nmats, beta, o_mttkrp->memptr(), n);
       }
     }
@@ -327,7 +324,7 @@ class Tensor {
   /// prints the value of the tensor.
   void print() const {
     INFO << "Dimensions: " << this->m_dimensions;
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       std::cout << i << " : " << this->m_data[i] << std::endl;
     }
   }
@@ -337,7 +334,7 @@ class Tensor {
     // UVEC global_start_sub = ind2sub(global_dims, global_start_idx);
     UVEC global_sub = arma::zeros<UVEC>(global_dims.n_elem);
     int global_idx;
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       local_sub = ind2sub(this->m_dimensions, i);
       global_sub = global_start_sub + local_sub;
       global_idx = sub2ind(global_sub, global_dims);
@@ -348,7 +345,7 @@ class Tensor {
   /// returns the frobenius norm of the tensor
   double norm() const {
     double norm_fro = 0;
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       norm_fro += (this->m_data[i] * this->m_data[i]);
     }
     return norm_fro;
@@ -356,11 +353,11 @@ class Tensor {
   /**
    * Computes the squared error with the input tensor
    * @param[in] b an input tensor
-   */  
+   */
   double err(const Tensor &b) const {
     double norm_fro = 0;
     double err_diff;
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       err_diff = this->m_data[i] - b.m_data[i];
       norm_fro += err_diff * err_diff;
     }
@@ -368,32 +365,32 @@ class Tensor {
   }
   /**
    * Scales the tensor with the constant value.
-   * @param[in] scale can be an int, float or double value 
+   * @param[in] scale can be an int, float or double value
    */
 
   template <typename NumericType>
   void scale(NumericType scale) {
     // static_assert(std::is_arithmetic<NumericType>::value,
     //               "NumericType for scale operation must be numeric");
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       this->m_data[i] = this->m_data[i] * scale;
     }
   }
   /**
-   * Shifts (add or subtract) the tensor with the constant value. 
-   * If the i_shift is negative it subtracts, otherwise it adds. 
+   * Shifts (add or subtract) the tensor with the constant value.
+   * If the i_shift is negative it subtracts, otherwise it adds.
    * @param[in] i_shift can be an int, float or double value
    */
   template <typename NumericType>
   void shift(NumericType i_shift) {
     // static_assert(std::is_arithmetic<NumericType>::value,
     //               "NumericType for shift operation must be numeric");
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       this->m_data[i] = this->m_data[i] + i_shift;
     }
   }
   /**
-   * Truncate all the value between min and max. Any value beyond 
+   * Truncate all the value between min and max. Any value beyond
    * the min and max will be truncated to min and max.
    * @param[in] min - any value less than min will be set to min
    * @param[in] max - any value greater than max will be set to max
@@ -402,7 +399,7 @@ class Tensor {
   void bound(NumericType min, NumericType max) {
     // static_assert(std::is_arithmetic<NumericType>::value,
     //               "NumericType for bound operation must be numeric");
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       if (this->m_data[i] < min) this->m_data[i] = min;
       if (this->m_data[i] > max) this->m_data[i] = max;
     }
@@ -416,13 +413,13 @@ class Tensor {
   void lower_bound(NumericType min) {
     // static_assert(std::is_arithmetic<NumericType>::value,
     //               "NumericType for bound operation must be numeric");
-    for (int i = 0; i < this->m_numel; i++) {
+    for (unsigned int i = 0; i < this->m_numel; i++) {
       if (this->m_data[i] < min) this->m_data[i] = min;
     }
   }
 
   /**
-   * Write the tensor to the given filename. Compile with 
+   * Write the tensor to the given filename. Compile with
    * -D_FILE_OFFSET_BITS=64 to support large files greater than 2GB
    * @param[in] filename as std::string
    */
@@ -446,7 +443,8 @@ class Tensor {
     INFO << "size of the outputfile in GB "
          << (this->m_numel * 8.0) / (1024 * 1024 * 1024) << std::endl;
     size_t nwrite =
-        fwrite(this->m_data, sizeof(this->m_data), this->numel(), fp);
+        fwrite(&this->m_data[0], sizeof(std::vector<double>::value_type),
+               this->numel(), fp);
     if (nwrite != this->numel()) {
       WARN << "something wrong ::write::" << nwrite
            << "::numel::" << this->numel() << std::endl;
@@ -454,18 +452,17 @@ class Tensor {
     fclose(fp);
   }
   /**
-   * Reads a tensor from the file. Compile with 
+   * Reads a tensor from the file. Compile with
    * -D_FILE_OFFSET_BITS=64 to support large files greater than 2GB
    * @param[in] filename as std::string
-   */   
+   */
 
   void read(std::string filename,
             std::ios_base::openmode mode = std::ios_base::in) {
     // clear existing tensor
     if (this->m_numel > 0) {
-      delete[] this->m_data;  // destroy storage in this
+      this->m_data.clear();  // destroy storage in this
       this->m_numel = 0;
-      this->m_data = NULL;  // preserve invariants in case next line throws
     }
     std::string filename_no_extension =
         filename.substr(0, filename.find_last_of("."));
@@ -485,12 +482,14 @@ class Tensor {
     // ifs.open(filename, mode);
     FILE *fp = fopen(filename.c_str(), "rb");
     this->m_numel = arma::prod(this->m_dimensions);
-    this->m_data = new double[this->m_numel];
+    this->m_data.resize(this->m_numel);
     // for (int i = 0; i < this->m_numel; i++) {
     //   ifs >> this->m_data[i];
     // }
     // ifs.read(reinterpret_cast<char *>(this->m_data), sizeof(this->m_data));
-    size_t nread = fread(this->m_data, sizeof(this->m_data), this->numel(), fp);
+    size_t nread =
+        fread(&this->m_data[0], sizeof(std::vector<double>::value_type),
+              this->numel(), fp);
     if (nread != this->numel()) {
       WARN << "something wrong ::write::" << nread
            << "::numel::" << this->numel() << std::endl;
@@ -517,5 +516,7 @@ class Tensor {
   double at(UVEC sub) { return m_data[sub2ind(sub)]; }
 };  // class Tensor
 }  // namespace planc
+
+void swap(planc::Tensor &x, planc::Tensor &y) { x.swap(y); }
 
 #endif  // COMMON_TENSOR_HPP_

@@ -15,11 +15,10 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
                std::string WfileName, std::string HfileName, int numIt) {
 #ifdef BUILD_SPARSE
   SP_MAT A;
-  UWORD nnz;
 #else
   MAT A;
 #endif
-  double t1, t2;
+  double t2;
   if (!AfileName.empty() &&
       !AfileName.compare(AfileName.size() - 4, 4, "rand")) {
 #ifdef BUILD_SPARSE
@@ -59,8 +58,7 @@ void NMFDriver(int k, UWORD m, UWORD n, std::string AfileName,
 }
 #ifdef BUILD_SPARSE
 void incrementalGraph(std::string AfileName, std::string WfileName) {
-  SP_MAT A;
-  UWORD m, n, nnz;
+  SP_MAT A;  
   A.load(AfileName);
   INFO << "Loaded input matrix A=" << PRINTMATINFO(A) << std::endl;
   MAT W, H;
@@ -133,6 +131,8 @@ void parseCommandLineandCallNMF(int argc, char* argv[]) {
           pc.iterations());
 #endif
       break;
+    default:
+      ERR << "Not a valid algorithm" << std::endl;
   }
 }
 

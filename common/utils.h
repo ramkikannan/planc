@@ -56,6 +56,7 @@ enum normtype { NONE, L2NORM, MAXNORM };
 #define SP_FMAT arma::sp_fmat
 #define SP_MAT arma::sp_mat
 #define UVEC arma::uvec
+#define IVEC arma::ivec
 #define UWORD arma::uword
 #define VEC arma::vec
 
@@ -76,7 +77,7 @@ int random_sieve(const int);
 
 template <typename FVT>
 inline void fillVector(const FVT value, std::vector<FVT> *a) {
-  for (int ii = 0; ii < a->size(); ii++) {
+  for (unsigned int ii = 0; ii < a->size(); ii++) {
     (*a)[ii] = value;
   }
 }

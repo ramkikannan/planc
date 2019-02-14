@@ -25,6 +25,9 @@ if(CMAKE_WITH_BARRIER_TIMING)
   add_definitions(-D__WITH__BARRIER__TIMING__=1)
 endif()
 
+#C++11 standard
+set (CMAKE_CXX_STANDARD 11)
+
 #while exception get the stack trace
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -rdynamic -g3 -O0 ")
 
@@ -42,44 +45,53 @@ set(NMFLIB_OS unix)
 set(ARMADILLO_INCLUDE_DIRS ${ARMADILLO_INCLUDE_DIR}/../)
 set(ARMADILLO_LIBRARY_DIRS ${ARMADILLO_INCLUDE_DIR}/../)
 
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
+# for cray wrapper required is failing
+find_package(BLAS)
+find_package(LAPACK)
 
 message(STATUS "    BLAS_FOUND = ${BLAS_FOUND}"    )
 message(STATUS "  LAPACK_FOUND = ${LAPACK_FOUND}"  )
 
 set(NMFLIB_USE_BLAS true)
-set(NMFLIB_LIBS ${NMFLIB_LIBS} ${BLAS_LIBRARIES})
 set(NMFLIB_USE_LAPACK true)
-set(NMFLIB_LIBS ${NMFLIB_LIBS} ${LAPACK_LIBRARIES})
+if(BLAS_FOUND)
+  set(NMFLIB_LIBS ${NMFLIB_LIBS} ${BLAS_LIBRARIES})
+endif()
+if(LAPACK_FOUND)
+  set(NMFLIB_LIBS ${NMFLIB_LIBS} ${LAPACK_LIBRARIES})
+endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-if(DEFINED CMAKE_CXX_COMPILER_ID AND DEFINED CMAKE_CXX_COMPILER_VERSION)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 4.8.3)
-    set(NMFLIB_USE_EXTERN_CXX11_RNG true)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    message(STATUS "Detected gcc 4.8.3 or later. Added '-std=c++11' to compiler flags")
-  endif()
-endif()
 
-OPTION(CMAKE_BUILD_CUDA "Build with CUDA/NVBLAS" OFF)
+#if(DEFINED CMAKE_CXX_COMPILER_ID AND DEFINED CMAKE_CXX_COMPILER_VERSION)
+#  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 4.8.3)
+#    set(NMFLIB_USE_EXTERN_CXX11_RNG true)
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#    message(STATUS "Detected gcc 4.8.3 or later. Added '-std=c++11' to compiler flags")
+#  endif()
+#endif()
+
+#OPTION(CMAKE_BUILD_CUDA "Build with CUDA/NVBLAS" OFF)
 if(CMAKE_BUILD_CUDA)
-  add_definitions(-DBUILD_CUDA=1)
   find_package(CUDA REQUIRED)
-  message(STATUS " CUDA_FOUND = ${CUDA_FOUND}" )
-  if (CUDA_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp") 
-    set(NMFLIB_LIBS ${CUDA_LIBRARIES} ${NMFLIB_LIBS})
-    set(NMFLIB_LIBS ${CUDA_CUBLAS_LIBRARIES} ${NMFLIB_LIBS})
-    find_library(CUDA_NVBLAS_LIBRARY 
-                 NAMES nvblas
-                 PATHS ${CUDA_TOOLKIT_ROOT_DIR}
-                 PATH_SUFFIXES lib64
-                 NO_DEFAULT_PATH)
-    set(NMFLIB_LIBS ${CUDA_NVBLAS_LIBRARY} ${NMFLIB_LIBS})
-    include_directories(${CUDA_INCLUDE_DIRS})
-  endif()
+else()
+  find_package(CUDA)
 endif()
+message(STATUS " CUDA_FOUND = ${CUDA_FOUND}" )
+if (CUDA_FOUND)
+  add_definitions(-DBUILD_CUDA=1)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp") 
+  set(NMFLIB_LIBS ${CUDA_LIBRARIES} ${NMFLIB_LIBS})
+  set(NMFLIB_LIBS ${CUDA_CUBLAS_LIBRARIES} ${NMFLIB_LIBS})
+  find_library(CUDA_NVBLAS_LIBRARY 
+                NAMES nvblas
+                PATHS ${CUDA_TOOLKIT_ROOT_DIR}
+                PATH_SUFFIXES lib64
+                NO_DEFAULT_PATH)
+  set(NMFLIB_LIBS ${CUDA_NVBLAS_LIBRARY} ${NMFLIB_LIBS})
+  include_directories(${CUDA_INCLUDE_DIRS})
+endif()
+#endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -O0" CACHE STRING "CXX_DFLAGS_DEBUG" FORCE )
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3" CACHE STRING "CXX_FLAGS_RELEASE" FORCE )

@@ -1,0 +1,93 @@
+%% ------------------------------------------------------------
+%% PACKAGES
+%% ------------------------------------------------------------
+
+%% For \circledast
+\usepackage{amssymb,amsfonts,amsmath}
+
+%% For \mathscr
+\usepackage[mathscr]{eucal}
+
+%% For \llbracket and \rrbracket, \varoast, \varoslash
+\usepackage{stmaryrd}
+
+%% For \boldsymbol
+\usepackage{amsbsy}
+
+%% For \bm (bold math)
+\usepackage{bm}
+
+%% For \set, \Set
+\usepackage{braket}
+
+%% ------------------------------------------------------------
+%% MACROS
+%% ------------------------------------------------------------
+
+
+%% --- Extras ---
+% Transpose
+\newcommand{\Tra}{{\sf T}} 
+\newcommand{\parens}[1]{(#1)}
+\newcommand{\Parens}[1]{\left(#1\right)}
+\newcommand{\dsquare}[1]{\llbracket #1 \rrbracket}
+\newcommand{\Dsquare}[1]{\left\llbracket #1 \right\rrbracket}
+\newcommand{\curly}[1]{\{ #1 \}}
+\newcommand{\Curly}[1]{\left\{ #1 \right\}}
+\newcommand{\Real}{\mathbb{R}}
+\newcommand{\qtext}[1]{\quad\text{#1}\quad}
+
+%% --- Vectors ---
+% vector
+\newcommand{\V}[2][]{{\bm{#1\mathbf{\MakeLowercase{#2}}}}} 
+% element of vector
+\newcommand{\VE}[3][]{#1{\MakeLowercase{#2}}_{#3}} 
+% vector in series
+\newcommand{\Vn}[3][]{{\bm{#1\mathbf{\MakeLowercase{#2}}}}^{(#3)}} 
+% transposed vector in series
+\newcommand{\VnTra}[3][]{{\bm{#1\mathbf{\MakeLowercase{#2}}}}^{(#3)\Tra}} 
+% element of vector in series
+\newcommand{\VnE}[4][]{#1{\MakeLowercase{#2}}^{(#3)}_{#4}} 
+
+%% --- Matrices ---
+% matrix
+\newcommand{\M}[2][]{{\bm{#1\mathbf{\MakeUppercase{#2}}}}} 
+% matrix in series
+\newcommand{\Mn}[3][]{{\bm{#1\mathbf{\MakeUppercase{#2}}}}^{(#3)}} 
+% transposed matrix in series 
+\newcommand{\MnTra}[4][]{{\bm{#1\mathbf{\MakeUppercase{#2}}}}^{(#3)\Tra}} 
+% matrix column
+\newcommand{\MC}[3][]{\V[#1]{#2}_{#3}} 
+% column of matrix in series
+\newcommand{\MnC}[4][]{\Vn[#1]{#2}{#3}_{#4}} 
+% transposed column of matrix in series
+\newcommand{\MnCTra}[4][]{\VnTra[#1]{#2}{#3}_{#4}} 
+% matrix element
+\newcommand{\ME}[3][]{#1{\MakeLowercase{#2}}_{#3}} 
+% element of matrix in series
+\newcommand{\MnE}[4][]{#1{\MakeLowercase{#2}}^{(#3)}_{#4}} 
+
+%% --- Tensors ---
+% tensor
+\newcommand{\T}[2][]{\boldsymbol{#1\mathscr{\MakeUppercase{#2}}}} 
+% tensor slide
+\newcommand{\TS}[3][]{\M[#1]{#2}_{#3}}
+% tensor element
+\newcommand{\TE}[3][]{#1{\MakeLowercase{#2}}_{#3}}
+% matriczied tensor
+\newcommand{\Mz}[3][]{\M[#1]{#2}_{(#3)}}
+
+%% --- Operators ---
+% outer product
+\newcommand{\Oprod}{\circ} 
+% Kronecker product
+\newcommand{\Kron}{\otimes} 
+% Khatri-Rao product
+\newcommand{\Khat}{\odot} 
+% Hadamard (elementwise multiply)
+\newcommand{\Hada}{\ast} 
+\newcommand{\BigHada}{\mathop{\mbox{\fontsize{18}{19}\selectfont $\circledast$}}} 
+% Elementwise divide
+\newcommand{\Divi}{\varoslash}
+
+

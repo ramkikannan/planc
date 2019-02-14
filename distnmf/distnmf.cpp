@@ -202,8 +202,7 @@ class DistNMFDriver {
       MPI_Barrier(MPI_COMM_WORLD);
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
-#ifdef BUILD_SPARSE
-    UWORD nnz;
+#ifdef BUILD_SPARSE    
     DistIO<SP_MAT> dio(mpicomm, m_distio);
 
     if (mpicomm.rank() == 0) {
@@ -374,6 +373,8 @@ class DistNMFDriver {
 #else   // ifdef BUILD_SPARSE
         callDistNMF2D<DistALS<MAT> >();
 #endif  // ifdef BUILD_SPARSE
+      default:
+        ERR << "Unsupport algorithm" <<  this->m_nmfalgo << std::endl;
     }
   }
 

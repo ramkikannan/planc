@@ -14,7 +14,7 @@ class NTFANLSBPP : public AUNTF {
  protected:
   MAT update(const int mode) {
     MAT othermat(this->m_ncp_factors.factor(mode).t());
-    int numThreads =
+    unsigned int numThreads =
         (this->ncp_mttkrp_t[mode].n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
 #pragma omp parallel for schedule(dynamic)
     for (UINT i = 0; i < numThreads; i++) {

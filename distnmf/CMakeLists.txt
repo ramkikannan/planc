@@ -70,8 +70,6 @@ include_directories(
   ${OPENBLAS_INCLUDE_DIR}
 )
 
-add_definitions(-std=c++11 -w)
-
 if(CMAKE_WITH_PACOSS)
   add_executable(sparse_distnmf
     distnmf.cpp
@@ -88,4 +86,3 @@ else()
   )
   target_link_libraries(dense_distnmf ${NMFLIB_LIBS})
 endif()
-

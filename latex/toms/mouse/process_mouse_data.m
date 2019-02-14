@@ -58,7 +58,8 @@ M = h5read('20161028_f4_try1.hdf5', '/Data/Images');
 %    fprintf('Copying trial %d...\n',i);
 %    T(:,:,:,i) = M(:,:,F(i,1):F(i,4));
 %end
-
+%
+%fprintf('Saving trimmed 4D data to file...\n');
 %save('20161028_f4_try0_trimmed_4D.mat','T','-v7.3');
 
 % copy trimmed data into new 3D array
@@ -69,4 +70,5 @@ for i = 1:num_trials
     T(:,:,i) = reshape(M(:,:,F(i,1):F(i,4)),[width*height,num_frames]);
 end
 
-save('20161028_f4_try0_trimmed_3D.mat','T','-v7.3');
+fprintf('Saving trimmed 3D data to file...\n');
+save('20161028_f4_try0_trimmed_3D.mat','T','height','width','light_frame','water_frame','num_frames','num_trials','-v7.3');
