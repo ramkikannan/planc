@@ -385,7 +385,7 @@ class DistAUNTF {
    * @param[in] factor matrix
    */
 
-  void update_factor_mode(const int current_mode, const MAT &factor) {
+  void update_factor_mode(const unsigned int current_mode, const MAT &factor) {
     m_local_ncp_factors.set(current_mode, factor);
     m_local_ncp_factors.distributed_normalize(current_mode);
     MAT factor_t = m_local_ncp_factors.factor(current_mode).t();
