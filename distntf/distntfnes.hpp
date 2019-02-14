@@ -206,9 +206,9 @@ class DistNTFNES : public DistAUNTF {
       : DistAUNTF(i_tensor, i_k, i_algo, i_global_dims, i_local_dims,
                   i_nls_sizes, i_nls_idxs, i_mpicomm),
         m_prox_t(i_nls_sizes, i_k, true),
-        m_prev_t(i_nls_sizes, i_k, true),
         m_acc_t(i_nls_sizes, i_k, true),
-        m_grad_t(i_nls_sizes, i_k, true) {
+        m_grad_t(i_nls_sizes, i_k, true),
+        m_prev_t(i_nls_sizes, i_k, true) {
     m_prox_t.zeros();
     m_prev_t.zeros();
     m_acc_t.zeros();
@@ -228,9 +228,8 @@ class DistNTFNES : public DistAUNTF {
     this->accelerated(true);
   }
   ~DistNTFNES() {
-    PRINTROOT("::eigen time::" << eig_time
-                               << "::stop_iter_time::" << stop_iter_time
-                               << "::proj_time::" << proj_time
+    PRINTROOT("::eigen time::" << eig_time << "::stop_iter_time::"
+                               << stop_iter_time << "::proj_time::" << proj_time
                                << "::norm_time::" << norm_time);
   }
 };  // class DistNTFNES

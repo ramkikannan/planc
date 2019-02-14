@@ -48,8 +48,7 @@ class DistNTFIO {
     // on all the MPI processor.
     NCPFactors global_factors(i_global_dims, i_k, false);
     global_factors.randu(kW_seed_idx);
-    global_factors.normalize();
-    int tensor_modes = global_factors.modes();
+    global_factors.normalize();    
     NCPFactors local_factors(i_local_dims, i_k, false);
     UWORD start_row, end_row;
     for (int i = 0; i < local_factors.modes(); i++) {
@@ -340,7 +339,7 @@ class DistNTFIO {
       this->m_local_dims = arma::zeros<UVEC>(i_proc_grids.n_rows);
       UVEC start_rows = arma::zeros<UVEC>(i_proc_grids.n_rows);
       // Calculate tensor local dimensions
-      for (int mode = 0; mode < this->m_local_dims.n_rows; mode++) {
+      for (unsigned int mode = 0; mode < this->m_local_dims.n_rows; mode++) {
         int slice_num = this->m_mpicomm.slice_num(mode);
         this->m_local_dims[mode] =
             itersplit(i_global_dims[mode], i_proc_grids[mode], slice_num);
@@ -364,7 +363,7 @@ class DistNTFIO {
   }
   void write(const std::string &output_file_name, DistAUNTF *ntfsolver) {
     std::stringstream sw;
-    for (int i = 0; i < ntfsolver->modes(); i++) {
+    for (unsigned int i = 0; i < ntfsolver->modes(); i++) {
       sw << output_file_name << "_mode" << i << "_" << MPI_SIZE;
       MAT factort;
       if (this->m_mpicomm.fiber_rank(i) == 0) {

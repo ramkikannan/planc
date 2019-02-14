@@ -23,7 +23,7 @@ class NumPyArray {
       ERR << "Something wrong. Could not read header " << std::endl;
       exit(-1);
     }
-    buffer[11] = NULL;
+    buffer[11] = 0;
     std::cout << "first 11 characters::" << buffer << std::endl;
 
     std::string header = fgets(buffer, 256, fp);
