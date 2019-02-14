@@ -13,9 +13,9 @@ namespace planc {
 template <class INPUTMATTYPE>
 class DistNMF1D {
  protected:
+  const MPICommunicator &m_mpicomm;
   INPUTMATTYPE m_Arows;
   INPUTMATTYPE m_Acols;
-  const MPICommunicator &m_mpicomm;
   UWORD m_globalm, m_globaln;
   MAT m_W, m_H;
   MAT m_Wt, m_Ht;
@@ -23,8 +23,8 @@ class DistNMF1D {
   MAT m_globalWt, m_globalHt;
   double m_objective_err;
   double m_globalsqnormA;
-  int m_num_iterations;
-  int m_k;  // low rank k
+  unsigned int m_num_iterations;
+  unsigned int m_k;  // low rank k
   DistNMFTime time_stats;
   MAT m_prevH;    // this is needed for error computation
   MAT m_prevHtH;  // this is needed for error computation
@@ -40,11 +40,11 @@ class DistNMF1D {
   DistNMF1D(const INPUTMATTYPE &Arows, const INPUTMATTYPE &Acols,
             const MAT &leftlowrankfactor, const MAT &rightlowrankfactor,
             const MPICommunicator &mpicomm)
-      : m_Arows(Arows),
+      : m_mpicomm(mpicomm),
+        m_Arows(Arows),
         m_Acols(Acols),
         m_W(leftlowrankfactor),
         m_H(rightlowrankfactor),
-        m_mpicomm(mpicomm),
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     this->m_globalm = Arows.n_rows * MPI_SIZE;
     this->m_globaln = Arows.n_cols;
@@ -163,7 +163,7 @@ class DistNMF1D {
   }*/
 
   virtual void computeNMF() = 0;
-  const int num_iterations() const { return this->m_num_iterations; }
+  const unsigned int num_iterations() const { return this->m_num_iterations; }
   void num_iterations(int it) { m_num_iterations = it; }
   const UWORD globalm() const { return m_globalm; }
   const UWORD globaln() const { return m_globaln; }

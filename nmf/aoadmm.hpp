@@ -82,8 +82,7 @@ class AOADMMNMF : public NMF<T> {
     allocateMatrices();
   }
   void computeNMF() {
-    int currentIteration = 0;
-    double t1, t2;
+    unsigned int currentIteration = 0;
     this->At = this->A.t();
     INFO << "computed transpose At=" << PRINTMATINFO(this->At) << std::endl;
     while (currentIteration < this->num_iterations()) {

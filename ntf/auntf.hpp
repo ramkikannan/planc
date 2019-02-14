@@ -76,8 +76,8 @@ class AUNTF {
 
  public:
   AUNTF(const planc::Tensor &i_tensor, const int i_k, algotype i_algo)
-      : m_input_tensor(i_tensor),
-        m_ncp_factors(i_tensor.dimensions(), i_k, false),
+      : m_ncp_factors(i_tensor.dimensions(), i_k, false),
+        m_input_tensor(i_tensor),
         m_low_rank_k(i_k),
         m_updalgo(i_algo) {
     m_ncp_factors.normalize();
@@ -229,7 +229,7 @@ class AUNTF {
         m_ncp_factors.factor(0) * arma::diagmat(m_ncp_factors.lambda());
     // double *output_tensor = new double[ldc * n];
     dgemm_(&nt, &t, &m, &n, &k, &alpha, unnorm_fac.memptr(), &lda,
-           ncp_krp[0].memptr(), &ldb, &beta, lowranktensor->m_data, &ldc);
+           ncp_krp[0].memptr(), &ldb, &beta, &lowranktensor->m_data[0], &ldc);
     // INFO << "lowrank tensor::" << std::endl;
     // lowranktensor->print();
     // for (int i=0; i < ldc*n; i++){

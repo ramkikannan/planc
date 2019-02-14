@@ -57,7 +57,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
     INPUTMATTYPE Acolst = this->m_Acols.t();
 #endif
 
-    for (int iter = 0; iter < this->num_iterations(); iter++) {
+    for (unsigned int iter = 0; iter < this->num_iterations(); iter++) {
       if (iter > 0 && this->is_compute_error()) {
         this->m_prevH = this->m_H;
         this->m_prevHtH = this->HtH;
