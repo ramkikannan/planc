@@ -7,10 +7,10 @@
 #include "common/parsecommandline.hpp"
 #include "common/tensor.hpp"
 #include "common/utils.h"
-#include "ntf/ntfhals.hpp"
-#include "ntf/ntfmu.hpp"
 #include "ntf/ntfanlsbpp.hpp"
 #include "ntf/ntfaoadmm.hpp"
+#include "ntf/ntfhals.hpp"
+#include "ntf/ntfmu.hpp"
 #include "ntf/ntfnes.hpp"
 
 // ntf -d "2 3 4 5" -k 5 -t 20
@@ -27,17 +27,18 @@ class NTFDriver {
     std::string rand_prefix("rand_");
     std::string filename = pc.input_file_name();
     std::cout << "Input filename = " << filename << std::endl;
-    if (!filename.empty() && filename.compare(0, rand_prefix.size(), rand_prefix)!=0){
+    if (!filename.empty() &&
+        filename.compare(0, rand_prefix.size(), rand_prefix) != 0) {
       my_tensor.read(pc.input_file_name());
       my_tensor.print();
-    }        
+    }
     NTFTYPE ntfsolver(my_tensor, pc.lowrankk(), pc.lucalgo());
     ntfsolver.num_it(pc.iterations());
     ntfsolver.compute_error(pc.compute_error());
     if (pc.dim_tree()) {
       ntfsolver.dim_tree(true);
     }
-    ntfsolver.computeNTF();    
+    ntfsolver.computeNTF();
     // ntfsolver.ncp_factors().print();
   }
   NTFDriver() {}
@@ -66,7 +67,6 @@ int main(int argc, char* argv[]) {
       ntfd.callNTF<planc::NTFNES>(pc);
       break;
     default:
-      ERR << "Wrong algorithm choice. Quitting.." << pc.lucalgo()
-          << std::endl;
+      ERR << "Wrong algorithm choice. Quitting.." << pc.lucalgo() << std::endl;
   }
 }
