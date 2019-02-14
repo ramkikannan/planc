@@ -13,9 +13,9 @@ namespace planc {
 template <class INPUTMATTYPE>
 class DistNMF1D {
  protected:
+  const MPICommunicator &m_mpicomm;
   INPUTMATTYPE m_Arows;
   INPUTMATTYPE m_Acols;
-  const MPICommunicator &m_mpicomm;
   UWORD m_globalm, m_globaln;
   MAT m_W, m_H;
   MAT m_Wt, m_Ht;
@@ -40,11 +40,11 @@ class DistNMF1D {
   DistNMF1D(const INPUTMATTYPE &Arows, const INPUTMATTYPE &Acols,
             const MAT &leftlowrankfactor, const MAT &rightlowrankfactor,
             const MPICommunicator &mpicomm)
-      : m_Arows(Arows),
+      : m_mpicomm(mpicomm),
+        m_Arows(Arows),
         m_Acols(Acols),
         m_W(leftlowrankfactor),
         m_H(rightlowrankfactor),
-        m_mpicomm(mpicomm),
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     this->m_globalm = Arows.n_rows * MPI_SIZE;
     this->m_globaln = Arows.n_cols;

@@ -428,7 +428,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 #ifdef __WITH__BARRIER__TIMING__
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    for (int iter = 0; iter < this->num_iterations(); iter++) {
+    for (unsigned int iter = 0; iter < this->num_iterations(); iter++) {
       // saving current instance for error computation.
       if (iter > 0 && this->is_compute_error()) {
         this->prevH = this->H;
@@ -568,8 +568,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
    * Compute error the old-fashioned way
    */
   void computeError2(const int it) {
-    double local_sqerror = 0.0;
-    double rowcolerr = 0.0;
+    double local_sqerror = 0.0;    
     PRINTROOT("::it=" << it << "::Calling compute error 2");
     MPITIC;
     // DISTPRINTINFO("::norm(Wi,fro)::" << norm(this->Wit, "fro") <<

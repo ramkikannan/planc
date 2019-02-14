@@ -24,7 +24,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
    * column normalize W_i
    */
   void updateW() {
-    for (int i = 0; i < this->k; i++) {
+    for (unsigned int i = 0; i < this->k; i++) {
       // W(:,i) = max(W(:,i) * HHt_reg(i,i) + AHt(:,i) - W *
       // HHt_reg(:,i),epsilon);
       VEC updWi = this->W.col(i) * this->HtH(i, i) +
@@ -65,7 +65,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
    * Here ij is the element of H matrix.
    */
   void updateH() {
-    for (int i = 0; i < this->k; i++) {
+    for (unsigned int i = 0; i < this->k; i++) {
       // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
       VEC updHi = this->H.col(i) +
                   ((this->WtAij.row(i)).t() - this->H * this->WtW.col(i));

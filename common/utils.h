@@ -77,7 +77,7 @@ int random_sieve(const int);
 
 template <typename FVT>
 inline void fillVector(const FVT value, std::vector<FVT> *a) {
-  for (int ii = 0; ii < a->size(); ii++) {
+  for (unsigned int ii = 0; ii < a->size(); ii++) {
     (*a)[ii] = value;
   }
 }
