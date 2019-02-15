@@ -25,7 +25,7 @@ class BPPNMF : public NMF<T> {
   // The transpose is the other problem.
   void updateOtherGivenOneMultipleRHS(const T &input, const MAT &given,
                                       char worh, MAT *othermat) {
-    double t1, t2;
+    double t2;
     UINT numThreads = (input.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
     tic();
     MAT giventInput(this->k, input.n_cols);
@@ -179,7 +179,7 @@ class BPPNMF : public NMF<T> {
     }
   }
   void computeNMF() {
-    int currentIteration = 0;
+    unsigned int currentIteration = 0;
 #ifdef COLLECTSTATS
     // this->objective_err;
 #endif

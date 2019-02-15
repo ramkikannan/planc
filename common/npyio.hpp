@@ -2,10 +2,10 @@
 #ifndef COMMON_NPYIO_HPP_
 #define COMMON_NPYIO_HPP_
 #include <armadillo>
-#include <cstdio>
-#include <vector>
-#include <string>
 #include <cassert>
+#include <cstdio>
+#include <string>
+#include <vector>
 #include "common/tensor.hpp"
 #include "common/utils.h"
 
@@ -23,7 +23,7 @@ class NumPyArray {
       ERR << "Something wrong. Could not read header " << std::endl;
       exit(-1);
     }
-    buffer[11] = NULL;
+    buffer[11] = 0;
     std::cout << "first 11 characters::" << buffer << std::endl;
 
     std::string header = fgets(buffer, 256, fp);
@@ -87,8 +87,9 @@ class NumPyArray {
     }
     parse_npy_header(fp);
     this->m_input_tensor = new Tensor(this->m_dims);
-    int64_t nread = fread(m_input_tensor->m_data, sizeof(m_input_tensor->m_data),
-                         m_input_tensor->numel(), fp);
+    int64_t nread = fread(&m_input_tensor->m_data[0],
+                          sizeof(std::vector<double>::value_type),
+                          m_input_tensor->numel(), fp);
     if (nread != m_input_tensor->numel()) {
       WARN << "something wrong ::read::" << nread
            << "::numel::" << this->m_input_tensor->numel()

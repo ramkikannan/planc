@@ -57,16 +57,16 @@ void print_Ktensor_RowMajor(ktensor *Y) {
   long int i;
 
   printf("=========Ktensor========\n");
-  printf("Rank = %d\n", Y->rank);
-  printf("Nmodes = %d\n", Y->nmodes);
+  printf("Rank = %ld\n", Y->rank);
+  printf("Nmodes = %ld\n", Y->nmodes);
   printf("Dims = [");
   for (i = 0; i < Y->nmodes; i++) {
     if (i != Y->nmodes - 1)
-      printf("%d,", Y->dims[i]);
+      printf("%ld,", Y->dims[i]);
     else
-      printf("%d]\n", Y->dims[i]);
+      printf("%ld]\n", Y->dims[i]);
   }
-  printf("Num_Eles = %d\n", Y->dims_product);
+  printf("Num_Eles = %ld\n", Y->dims_product);
   printf("Lambdas = [");
   for (i = 0; i < Y->rank; i++) {
     if (i != Y->rank - 1)
@@ -75,7 +75,7 @@ void print_Ktensor_RowMajor(ktensor *Y) {
       printf("%.5lf]\n", Y->lambdas[i]);
   }
   for (i = 0; i < Y->nmodes; i++) {
-    printf("Factor[%d]", i);
+    printf("Factor[%ld]", i);
     printM_RowMajor(Y->factors[i], Y->rank, Y->dims[i]);
   }
   printf("========================\n");
@@ -89,11 +89,11 @@ void print_Ktensor_RowMajor(ktensor *Y) {
 void print_tensor(tensor *T, long int show_data) {
   long int i;
   printf("==========Tensor========\n");
-  printf("T->nmodes = %d\n", T->nmodes);
-  printf("T->dims_product = %d\n", T->dims_product);
+  printf("T->nmodes = %ld\n", T->nmodes);
+  printf("T->dims_product = %ld\n", T->dims_product);
   printf("T->dims[");
   for (i = 0; i < T->nmodes; i++) {
-    printf("%d,", T->dims[i]);
+    printf("%ld,", T->dims[i]);
   }
   printf("]\n");
 
@@ -132,14 +132,14 @@ void print_dgemm_inputs(CBLAS_ORDER dgemm_layout, CBLAS_TRANSPOSE transA,
     printf("Trans\n");
   }
 
-  printf("m = %d\n", m);
-  printf("n = %d\n", n);
-  printf("k = %d\n", k);
+  printf("m = %ld\n", m);
+  printf("n = %ld\n", n);
+  printf("k = %ld\n", k);
   printf("alpha = %lf\n", alpha);
-  printf("strideA = %d\n", strideA);
-  printf("strideB = %d\n", strideB);
+  printf("strideA = %ld\n", strideA);
+  printf("strideB = %ld\n", strideB);
   printf("beta = %lf\n", beta);
-  printf("strideC = %d\n", strideC);
+  printf("strideC = %ld\n", strideC);
   printf("-------------------------------\n");
 }
 
@@ -165,16 +165,16 @@ void print_dgemv_inputs(CBLAS_ORDER dgemv_layout, CBLAS_TRANSPOSE transA,
   } else {
     printf("Trans\n");
   }
-  printf("m = %d\n", m);
-  printf("n = %d\n", n);
+  printf("m = %ld\n", m);
+  printf("n = %ld\n", n);
   printf("alpha = %lf\n", alpha);
-  printf("T_offset = %d\n", T_offset);
-  printf("tensor_stride= %d\n", tensor_stride);
-  printf("A_offset = %d\n", A_offset);
-  printf("A_stride = %d\n", A_stride);
+  printf("T_offset = %ld\n", T_offset);
+  printf("tensor_stride= %ld\n", tensor_stride);
+  printf("A_offset = %ld\n", A_offset);
+  printf("A_stride = %ld\n", A_stride);
   printf("beta = %lf\n", beta);
-  printf("output_col_stride = %d\n", output_col_stride);
-  printf("output_stride = %d\n", output_stride);
+  printf("output_col_stride = %ld\n", output_col_stride);
+  printf("output_stride = %ld\n", output_stride);
   printf("-------------------------------\n");
 }
 
@@ -442,10 +442,10 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
   double alpha, beta;
 
   // for calling dgemm_
-  char nt = 'N';
-  char t = 'T';
-  int i_n = n;
-  int i_rank = rank;
+  // char nt = 'N';
+  // char t = 'T';
+  // int i_n = n;
+  // int i_rank = rank;
 
   if (n == 0) {
     // long int ncols = 1;
@@ -479,7 +479,7 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
     */
 
     // printf("Input args to cblas_dgemm
-    // function\nnDim=%d\nrank=%d\n,ncols=%d\n",*(T->dims+n-1), rank, ncols);
+    // function\nnDim=%ld\nrank=%ld\n,ncols=%ld\n",*(T->dims+n-1), rank, ncols);
     // This does M*KR
     // cblas_dgemm( CblasRowMajor, CblasTrans, CblasNoTrans, nDim, rank, ncols,
     // alpha, T->data, nDim, K, rank, beta, C, rank );
@@ -514,7 +514,7 @@ void MTTKRP_RowMajor(tensor *T, double *K, double *C, long int rank,
       nDim = T->dims[n];
 
       // printf("Input args to cblas_dgemm
-      // function\nnDim=%d\nrank=%d\ncols=%d\nnmats=%d\ni=%d\n",nDim, rank,
+      // function\nnDim=%ld\nrank=%ld\ncols=%ld\nnmats=%ld\ni=%ld\n",nDim, rank,
       // ncols, nmats, i);
 
       /*
@@ -699,11 +699,11 @@ void Full_nMode_Matricization_RowMajor(tensor *T, ktensor *Y, long int n) {
   cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, Y->dims[n],
               (Y->dims_product / Y->dims[n]), Y->rank, alpha, Y->factors[n],
               Y->rank, KR, Y->rank, beta, T->data, Y->dims[n]);
-  int i_m = Y->dims[n];
-  int i_n = (Y->dims_product / Y->dims[n]);
-  int i_k = Y->rank;
-  char t = 'T';
-  char nt = 'N';
+  // int i_m = Y->dims[n];
+  // int i_n = (Y->dims_product / Y->dims[n]);
+  // int i_k = Y->rank;
+  // char t = 'T';
+  // char nt = 'N';
   // dgemm_(&t, &nt, &i_m, &i_n, &i_k, &alpha, Y->factors[n], &i_k, KR, &i_k,
   //        &beta, T->data, &i_m);
 
@@ -804,7 +804,7 @@ void dims_check(long int *dims, long int length) {
   }
   for (i = 0; i < length; i++) {
     if (dims[i] < 1) {
-      printf("From dims_check():: dims[%d] < 1, Exit(-3)", i);
+      printf("From dims_check():: dims[%ld] < 1, Exit(-3)", i);
       exit(-3);
     }
   }
@@ -854,10 +854,10 @@ void compute_KRP_Indices(long int j, ktensor *Y, long int *indeces) {
     if (p != 0) indeces[i] = j / p;
     j -= indeces[i] * p;
   }
-  // printf("nmodes = %d\n",Y->nmodes);
+  // printf("nmodes = %ld\n",Y->nmodes);
   // printf("Indeces = ");
   // for( i = 0; i < Y->nmodes; i++){
-  //    printf("%d,",indeces[i]);
+  //    printf("%ld,",indeces[i]);
   //}
   // printf("\n");
   // Y->nmodes = Y->nmodes + 1;
@@ -1220,19 +1220,19 @@ void process_inputs(long int argc, char *argv[], tensor_inputs *inputs) {
 
   offset = j;
 
-  printf("N=%d\n", inputs->nmodes);
+  printf("N=%ld\n", inputs->nmodes);
   inputs->dims = (long int *)malloc(sizeof(long int) * inputs->nmodes);
   for (i = 0; i < inputs->nmodes; i++) inputs->dims[i] = atoi(argv[offset + i]);
 
   if (inputs->num_threads < 1) {
     printf(
-        "From process_inputs(), num_threads = %d, num_threads must be at least "
+        "From process_inputs(), num_threads = %ld, num_threads must be at least "
         "1\nExit\n",
         inputs->num_threads);
     exit(-1);
   }
   if (inputs->rank < 1) {
-    printf("From process_inputs(), rank = %d, rank must be at least 1\nExit\n",
+    printf("From process_inputs(), rank = %ld, rank must be at least 1\nExit\n",
            inputs->rank);
     exit(-1);
   }
@@ -1240,14 +1240,14 @@ void process_inputs(long int argc, char *argv[], tensor_inputs *inputs) {
 
   printf("****************************************\n");
   printf("Processed inputs:\n");
-  printf("inputs->rank = %d\n", inputs->rank);
-  printf("inputs->num_threads = %d\n", inputs->num_threads);
-  printf("inputs->max_iters = %d\n", inputs->max_iters);
+  printf("inputs->rank = %ld\n", inputs->rank);
+  printf("inputs->num_threads = %ld\n", inputs->num_threads);
+  printf("inputs->max_iters = %ld\n", inputs->max_iters);
   printf("inputs->tolerance = %.20lf\n", inputs->tolerance);
-  printf("inputs->nmodes = %d\n", inputs->nmodes);
-  printf("inputs->dims[%d", inputs->dims[0]);
+  printf("inputs->nmodes = %ld\n", inputs->nmodes);
+  printf("inputs->dims[%ld", inputs->dims[0]);
   for (i = 1; i < inputs->nmodes; i++) {
-    printf(",%d", inputs->dims[i]);
+    printf(",%ld", inputs->dims[i]);
   }
   printf("]\n");
   printf("****************************************\n");
@@ -1324,7 +1324,7 @@ void remove_mode_Ktensor(ktensor *Y, long int n) {
   long int i, j;
 
   if (n < 0 || n >= Y->nmodes) {
-    printf("In remove_mode_Ktensor() invalid value of n == %d\nExit\n", n);
+    printf("In remove_mode_Ktensor() invalid value of n == %ld\nExit\n", n);
     exit(-1);
   }
 
@@ -1351,7 +1351,7 @@ void destruct_Ktensor(ktensor *Y, long int clear_factors) {
   if ((clear_factors != 0) && (clear_factors != 1)) {
     printf(
         "clear_factors argument in destruct_Ktensor() was not 0 or 1. Return. "
-        "%d\n",
+        "%ld\n",
         clear_factors);
     return;
   }

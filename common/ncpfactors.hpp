@@ -21,8 +21,8 @@ namespace planc {
 
 class NCPFactors {
   MAT *ncp_factors;   /// Array of factors .One factor for every mode.
-  int m_modes;        /// Number of modes in tensor
-  int m_k;            /// Low rank
+  unsigned int m_modes;        /// Number of modes in tensor
+  unsigned int m_k;            /// Low rank
   UVEC m_dimensions;  /// Vector of dimensions for every mode
   /// in the distributed mode all the processes has same lambda
   VEC m_lambda;
@@ -43,9 +43,8 @@ class NCPFactors {
     this->m_modes = i_dimensions.n_rows;
     ncp_factors = new MAT[this->m_modes];
     this->m_k = i_k;
-    UWORD numel = arma::prod(this->m_dimensions);
     arma::arma_rng::set_seed(103);
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       // ncp_factors[i] = arma::randu<MAT>(i_dimensions[i], this->m_k);
       int rsize = (i_dimensions[i] > 0) ? i_dimensions[i] : 1;
       if (trans) {
@@ -123,7 +122,7 @@ ncp_factors[i].clear();
    */
   void gram(MAT *o_UtU) {
     MAT currentGram(this->m_k, this->m_k);
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       currentGram = ncp_factors[i].t() * ncp_factors[i];
       (*o_UtU) = (*o_UtU) % currentGram;
     }
@@ -137,10 +136,10 @@ ncp_factors[i].clear();
    * @param[out] UtU is a kxk matrix
    */
 
-  void gram_leave_out_one(const int i_n, MAT *o_UtU) {
+  void gram_leave_out_one(const unsigned int i_n, MAT *o_UtU) {
     MAT currentGram(this->m_k, this->m_k);
     (*o_UtU) = arma::ones<MAT>(this->m_k, this->m_k);
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       if (i != i_n) {
         currentGram = ncp_factors[i].t() * ncp_factors[i];
         (*o_UtU) = (*o_UtU) % currentGram;
@@ -152,7 +151,7 @@ ncp_factors[i].clear();
    * @param[in] mode i_n
    * @return MAT of size product of dimensions except i_n by k
    */
-  MAT krp_leave_out_one(const int i_n) {
+  MAT krp_leave_out_one(const unsigned int i_n) {
     UWORD krpsize = arma::prod(this->m_dimensions);
     krpsize /= this->m_dimensions[i_n];
     MAT krp(krpsize, this->m_k);
@@ -169,12 +168,11 @@ ncp_factors[i].clear();
    * @param[in] i_n mode that will be excluded
    * @param[out] m_dimensions[i_n]xk
    */
-  void krp_leave_out_one(const int i_n, MAT *o_krp) {
+  void krp_leave_out_one(const unsigned int i_n, MAT *o_krp) {
     // matorder = length(A):-1:1;
     // Always krp for mttkrp is computed in
     // reverse. Hence assuming the same.
     UVEC matorder = arma::zeros<UVEC>(this->m_modes - 1);
-    int current_ncols = this->m_k;
     int j = 0;
     for (int i = this->m_modes - 1; i >= 0; i--) {
       if (i != i_n) {
@@ -222,9 +220,9 @@ current_nrows *= rightkrp.n_rows;
     //     % Fill nth column of P with reshaped result
     //     P(:,n) = ab(:);
     // end
-    for (int n = 0; n < this->m_k; n++) {
+    for (unsigned int n = 0; n < this->m_k; n++) {
       MAT ab = ncp_factors[matorder[0]].col(n);
-      for (int i = 1; i < this->m_modes - 1; i++) {
+      for (unsigned int i = 1; i < this->m_modes - 1; i++) {
         VEC oldabvec = arma::vectorise(ab);
         VEC currentvec = ncp_factors[matorder[i]].col(n);
         ab.clear();
@@ -242,8 +240,7 @@ current_nrows *= rightkrp.n_rows;
     // matorder = length(A):-1:1;
     // Always krp for mttkrp is computed in
     // reverse. Hence assuming the same.
-    UVEC matorder = arma::zeros<UVEC>(i_modes.n_rows - 1);
-    int current_ncols = this->m_k;
+    UVEC matorder = arma::zeros<UVEC>(i_modes.n_rows - 1);    
     int j = 0;
     for (int i = i_modes.n_rows - 1; i >= 0; i--) {
       matorder(j++) = i_modes[i];
@@ -253,9 +250,9 @@ current_nrows *= rightkrp.n_rows;
          << "::matorder::" << matorder << std::endl;
 #endif
     (*o_krp).zeros();
-    for (int n = 0; n < this->m_k; n++) {
+    for (unsigned int n = 0; n < this->m_k; n++) {
       MAT ab = ncp_factors[matorder[0]].col(n);
-      for (int i = 1; i < i_modes.n_rows - 1; i++) {
+      for (unsigned int i = 1; i < i_modes.n_rows - 1; i++) {
         VEC oldabvec = arma::vectorise(ab);
         VEC currentvec = ncp_factors[matorder[i]].col(n);
         ab.clear();
@@ -304,7 +301,7 @@ current_nrows *= rightkrp.n_rows;
   /// prints the entire NCPFactors including the factor matrices
   void print() {
     printinfo();
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       std::cout << i << "th factor" << std::endl
                 << "=============" << std::endl;
       std::cout << this->ncp_factors[i];
@@ -314,7 +311,7 @@ current_nrows *= rightkrp.n_rows;
    * print the ith factor matrix alone
    * @param[in] i_n the mode for which the factor matrix to be printed
    */
-  void print(const int i_n) {
+  void print(const unsigned int i_n) {
     std::cout << i_n << "th factor" << std::endl
               << "=============" << std::endl;
     std::cout << this->ncp_factors[i_n];
@@ -324,7 +321,7 @@ current_nrows *= rightkrp.n_rows;
    * @param[out] factor_t that contains the transpose of every factor matrix.
    */
   void trans(NCPFactors &factor_t) {
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       factor_t.set(i, this->ncp_factors[i].t());
     }
   }
@@ -332,8 +329,8 @@ current_nrows *= rightkrp.n_rows;
   void normalize() {
     double colNorm = 0.0;
     m_lambda.ones();
-    for (int i = 0; i < this->m_modes; i++) {
-      for (int j = 0; j < this->m_k; j++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
+      for (unsigned int j = 0; j < this->m_k; j++) {
         colNorm = arma::norm(this->ncp_factors[i].col(j));
         if (colNorm > 0) this->ncp_factors[i].col(j) /= colNorm;
         m_lambda(j) *= colNorm;
@@ -347,7 +344,7 @@ current_nrows *= rightkrp.n_rows;
    * @param[in] mode of the factor matrix that will be column normalized
    */
   void normalize(int mode) {
-    for (int i = 0; i < this->m_k; i++) {
+    for (unsigned int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].col(i));
       if (m_lambda(i) > 0) this->ncp_factors[mode].col(i) /= m_lambda(i);
     }
@@ -358,8 +355,8 @@ current_nrows *= rightkrp.n_rows;
    * and replaces the existing lambda.
    * @param[in] mode of the factor matrix that will be row normalized
    */
-  void normalize_rows(int mode) {
-    for (int i = 0; i < this->m_k; i++) {
+  void normalize_rows(unsigned int mode) {
+    for (unsigned int i = 0; i < this->m_k; i++) {
       m_lambda(i) = arma::norm(this->ncp_factors[mode].row(i));
       if (m_lambda(i) > 0) this->ncp_factors[mode].row(i) /= m_lambda(i);
     }
@@ -373,7 +370,7 @@ current_nrows *= rightkrp.n_rows;
    */
   void randu(const int i_seed) {
     arma::arma_rng::set_seed(i_seed);
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       if (m_dimensions[i] > 0) {
         ncp_factors[i].randu();
       } else {
@@ -383,7 +380,7 @@ current_nrows *= rightkrp.n_rows;
   }
   /// this is for reinitializing zeros across different processors.
   void zeros() {
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       ncp_factors[i].zeros();
     }
   }
@@ -397,8 +394,8 @@ current_nrows *= rightkrp.n_rows;
   void distributed_normalize() {
     double local_colnorm;
     double global_colnorm;
-    for (int i = 0; i < this->m_modes; i++) {
-      for (int j = 0; j < this->m_k; j++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
+      for (unsigned int j = 0; j < this->m_k; j++) {
         local_colnorm = arma::norm(this->ncp_factors[i].col(j));
         local_colnorm *= local_colnorm;
         MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
@@ -414,10 +411,10 @@ current_nrows *= rightkrp.n_rows;
    * across different processors.
    * @param[in] mode
    */
-  void distributed_normalize(int mode) {
+  void distributed_normalize(unsigned int mode) {
     double local_colnorm;
     double global_colnorm;
-    for (int j = 0; j < this->m_k; j++) {
+    for (unsigned int j = 0; j < this->m_k; j++) {
       local_colnorm = arma::norm(this->ncp_factors[mode].col(j));
       local_colnorm *= local_colnorm;
       MPI_Allreduce(&local_colnorm, &global_colnorm, 1, MPI_DOUBLE, MPI_SUM,
@@ -432,10 +429,10 @@ current_nrows *= rightkrp.n_rows;
    * across different processors.
    * @param[in] mode
    */
-  void distributed_normalize_rows(int mode) {
+  void distributed_normalize_rows(unsigned int mode) {
     double local_rownorm;
     double global_rownorm;
-    for (int j = 0; j < this->m_k; j++) {
+    for (unsigned int j = 0; j < this->m_k; j++) {
       local_rownorm = arma::norm(this->ncp_factors[mode].row(j));
       local_rownorm *= local_rownorm;
       MPI_Allreduce(&local_rownorm, &global_rownorm, 1, MPI_DOUBLE, MPI_SUM,

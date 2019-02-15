@@ -31,6 +31,11 @@ namespace planc {
 
 class DistAUNTF {
  protected:
+  // communication related variables
+  const NTFMPICommunicator &m_mpicomm;
+  // NLS solve sizes
+  UVEC m_nls_sizes;
+  UVEC m_nls_idxs;
   // local ncp factors
   NCPFactors m_local_ncp_factors;
   NCPFactors m_local_ncp_factors_t;
@@ -39,16 +44,11 @@ class DistAUNTF {
   MAT *ncp_local_mttkrp_t;
   // hadamard of the global_grams
   MAT global_gram;
-  // communication related variables
-  const NTFMPICommunicator &m_mpicomm;
-  // NLS solve sizes
-  UVEC m_nls_sizes;
-  UVEC m_nls_idxs;
 
   virtual MAT update(int current_mode) = 0;
 
  private:
-  const Tensor m_input_tensor;
+  const Tensor &m_input_tensor;
   NCPFactors m_gathered_ncp_factors;
   NCPFactors m_gathered_ncp_factors_t;
   // mttkrp related variables
@@ -58,17 +58,17 @@ class DistAUNTF {
   MAT *factor_global_grams;  // G in the algorithm
 
   // NTF related variable.
-  const int m_low_rank_k;
-  const int m_modes;
+  const unsigned int m_low_rank_k;
+  const unsigned int m_modes;
   const algotype m_updalgo;
   const UVEC m_global_dims;
   const UVEC m_factor_local_dims;
-  int m_num_it;
-  int current_mode;
+  unsigned int m_num_it;
+  unsigned int current_mode;
   FVEC m_regularizers;
   bool m_compute_error;
   bool m_enable_dim_tree;
-  int m_current_it;
+  unsigned int m_current_it;
   double m_rel_error;
 
   // needed for acceleration algorithms.
@@ -141,10 +141,10 @@ class DistAUNTF {
    *
    * @param[in] current_mode.
    */
-  void gram_hadamard(int current_mode) {
+  void gram_hadamard(unsigned int current_mode) {
     global_gram.ones();
     MPITIC;  // gram hadamard
-    for (int i = 0; i < m_modes; i++) {
+    for (unsigned int i = 0; i < m_modes; i++) {
       if (i != current_mode) {
         //%= element-wise multiplication
         global_gram %= factor_global_grams[i];
@@ -284,7 +284,6 @@ class DistAUNTF {
     MPI_Comm current_slice_comm = this->m_mpicomm.slice(current_mode);
     int slice_size;
     int slice_rank;
-
     MPI_Comm_size(current_slice_comm, &slice_size);
     slice_rank = this->m_mpicomm.slice_rank(current_mode);
     std::vector<int> recvmttkrpsize(slice_size);
@@ -334,7 +333,7 @@ class DistAUNTF {
     factor_local_grams.zeros(this->m_low_rank_k, this->m_low_rank_k);
     global_gram.ones(this->m_low_rank_k, this->m_low_rank_k);
     UWORD current_size = 0;
-    for (int i = 0; i < m_modes; i++) {
+    for (unsigned int i = 0; i < m_modes; i++) {
       current_size = TENSOR_LOCAL_NUMEL / TENSOR_LOCAL_DIM[i];
       if (!m_enable_dim_tree) {
         ncp_krp[i] = arma::zeros(current_size, this->m_low_rank_k);
@@ -348,7 +347,7 @@ class DistAUNTF {
   }
 
   void freeMatrices() {
-    for (int i = 0; i < m_modes; i++) {
+    for (unsigned int i = 0; i < m_modes; i++) {
       if (!m_enable_dim_tree) {
         ncp_krp[i].clear();
       }
@@ -385,7 +384,7 @@ class DistAUNTF {
    * @param[in] factor matrix
    */
 
-  void update_factor_mode(const int current_mode, const MAT &factor) {
+  void update_factor_mode(const unsigned int current_mode, const MAT &factor) {
     m_local_ncp_factors.set(current_mode, factor);
     m_local_ncp_factors.distributed_normalize(current_mode);
     MAT factor_t = m_local_ncp_factors.factor(current_mode).t();
@@ -399,7 +398,7 @@ class DistAUNTF {
       kdt->set_factor(m_gathered_ncp_factors_t.factor(current_mode).memptr(),
                       current_mode);
     }
-    for (int mode = 0; mode < this->m_modes; mode++) {
+    for (unsigned int mode = 0; mode < this->m_modes; mode++) {
       if (mode != current_mode) this->m_stale_mttkrp[mode] = true;
     }
   }
@@ -433,19 +432,19 @@ class DistAUNTF {
             const UVEC &i_global_dims, const UVEC &i_local_dims,
             const UVEC &i_nls_sizes, const UVEC &i_nls_idxs,
             const NTFMPICommunicator &i_mpicomm)
-      : m_input_tensor(i_tensor.dimensions(), i_tensor.m_data),
-        m_low_rank_k(i_k),
-        m_updalgo(i_algo),
-        m_mpicomm(i_mpicomm),
-        m_modes(m_input_tensor.modes()),
-        m_global_dims(i_global_dims),
-        m_factor_local_dims(i_local_dims),
+      : m_mpicomm(i_mpicomm),
         m_nls_sizes(i_nls_sizes),
         m_nls_idxs(i_nls_idxs),
         m_local_ncp_factors(i_nls_sizes, i_k, false),
         m_local_ncp_factors_t(i_nls_sizes, i_k, true),
+        m_input_tensor(i_tensor),
         m_gathered_ncp_factors(i_tensor.dimensions(), i_k, false),
         m_gathered_ncp_factors_t(i_tensor.dimensions(), i_k, true),
+        m_low_rank_k(i_k),
+        m_modes(m_input_tensor.modes()),
+        m_updalgo(i_algo),
+        m_global_dims(i_global_dims),
+        m_factor_local_dims(i_local_dims),
         time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     this->m_compute_error = false;
     this->m_enable_dim_tree = false;
@@ -456,7 +455,7 @@ class DistAUNTF {
     // will be same.
     m_local_ncp_factors.randu(149 * i_mpicomm.rank() + 103);
     m_local_ncp_factors.distributed_normalize();
-    for (int i = 0; i < this->m_modes; i++) {
+    for (unsigned int i = 0; i < this->m_modes; i++) {
       MAT current_factor = arma::trans(m_local_ncp_factors.factor(i));
       m_local_ncp_factors_t.set(i, current_factor);
       this->m_stale_mttkrp.push_back(true);
@@ -503,7 +502,7 @@ class DistAUNTF {
     this->m_enable_dim_tree = i_dim_tree;
     if (this->m_enable_dim_tree) {
       if (this->ncp_krp != NULL) {
-        for (int i = 0; i < m_modes; i++) {
+        for (unsigned int i = 0; i < m_modes; i++) {
           ncp_krp[i].clear();
         }
         delete[] ncp_krp;
@@ -529,11 +528,11 @@ class DistAUNTF {
 
   void reset(const NCPFactors &new_factors, bool trans = false) {
     if (!trans) {
-      for (int i = 0; i < m_modes; i++) {
+      for (unsigned int i = 0; i < m_modes; i++) {
         update_factor_mode(i, new_factors.factor(i));
       }
     } else {
-      for (int i = 0; i < m_modes; i++) {
+      for (unsigned int i = 0; i < m_modes; i++) {
         update_factor_mode(i, new_factors.factor(i).t());
       }
     }
@@ -579,7 +578,7 @@ class DistAUNTF {
   void computeNTF() {
     // initialize everything.
     // line 3,4,5 of the algorithm
-    for (int i = 1; i < m_modes; i++) {
+    for (unsigned int i = 1; i < m_modes; i++) {
       update_global_gram(i);
       gather_ncp_factor(i);
     }
@@ -626,7 +625,8 @@ class DistAUNTF {
     for (this->m_current_it = 0; this->m_current_it < m_num_it;
          this->m_current_it++) {
       MAT unnorm_factor;
-      for (int current_mode = 0; current_mode < m_modes; current_mode++) {
+      for (unsigned int current_mode = 0; current_mode < m_modes;
+           current_mode++) {
         // line 9 and 10 of the algorithm
         if (is_stale_mttkrp(current_mode)) distmttkrp(current_mode);
         // line 11 of the algorithm

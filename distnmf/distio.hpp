@@ -143,7 +143,8 @@ class DistIO {
    * the value is computed as low rank.
    */
   void randomLowRank(const UWORD m, const UWORD n, const UWORD k, MATTYPE* X) {
-    uint start_row = 0, end_row = 0, start_col = 0, end_col = 0;
+    uint start_row = 0, start_col = 0;
+    uint end_row = 0, end_col = 0;
     switch (m_distio) {
       case ONED_ROW:
         start_row = MPI_RANK * (*X).n_rows;
@@ -206,9 +207,9 @@ class DistIO {
     } else if ((*X).n_rows == m) {  // ONED_COL
       MAT myHcols = Hrnd.cols(start_col, end_col);
       templr = Wrnd * myHcols;
-    } else if ((*X).n_rows == (m / MPI_SIZE) && (*X).n_cols == (n / MPI_SIZE) ||
-               ((*X).n_rows == (m / this->m_mpicomm.pr()) &&
-                (*X).n_cols == (n / this->m_mpicomm.pc()))) {
+    } else if ((((*X).n_rows == (m / MPI_SIZE)) && ((*X).n_cols == (n / MPI_SIZE))) ||
+               (((*X).n_rows == (m / this->m_mpicomm.pr())) &&
+                ((*X).n_cols == (n / this->m_mpicomm.pc())))) {
       MAT myWrnd = Wrnd.rows(start_row, end_row);
       MAT myHcols = Hrnd.cols(start_col, end_col);
       templr = myWrnd * myHcols;
@@ -223,9 +224,9 @@ class DistIO {
     // sometimes in the pacoss it gives nearly equal
     // distribution. we have to make sure everyone of
     // same size;
-    int max_rows = 0, max_cols = 0;
-    int my_rows = A.n_rows;
-    int my_cols = A.n_cols;
+    unsigned int max_rows = 0, max_cols = 0;
+    unsigned int my_rows = A.n_rows;
+    unsigned int my_cols = A.n_cols;
     bool last_exist = false;
     double my_min_value = 0.0;
     double overall_min;

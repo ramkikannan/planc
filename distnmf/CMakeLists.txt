@@ -70,8 +70,6 @@ include_directories(
   ${OPENBLAS_INCLUDE_DIR}
 )
 
-add_definitions(-std=c++11 -w)
-
 if(CMAKE_WITH_PACOSS)
   set(DENSE_OR_SPARSE sparse)
   add_executable(sparse_distnmf

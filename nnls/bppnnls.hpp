@@ -65,7 +65,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
 #endif
         UINT alpha = 3;
         UINT beta = this->q + 1;
-        int numIterations = 0;
+        unsigned int numIterations = 0;
         setprecision(64);
         bool solutionFound = false;
         // main loop
@@ -168,7 +168,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                        this->Ctb.memptr(), this->x.memptr(), rNorm);
             double *nnlsDual = anls.getDual();
             INFO << "Activeset NNLS Dual:" << endl;
-            for (int i = 0; i < this->q; i++) {
+            for (unsigned int i = 0; i < this->q; i++) {
                 INFO << nnlsDual[i] << endl;
             }
         }
@@ -188,7 +188,7 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
         UVEC Gv(this->q * this->r);
         arma::umat V(this->q, this->r);
         STDVEC allIdxs;
-        UVEC alphaZeroIdxs(this->r);
+        IVEC alphaZeroIdxs(this->r);
         bool solutionFound = false;
         for (UINT i = 0; i < this->q * this->r; i++) {
             Gv(i) = i;
@@ -511,7 +511,6 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
         lapack_int nrhs = B.n_cols;
         lapack_int lda = A.n_rows;
         lapack_int ldb = A.n_rows;
-        lapack_int CONSTONE = 1;
         if (n <= 0 || nrhs <= 0) {
             ERR << "something wrong in input" << " n=" << n
                 << " nrhs=" << nrhs << endl;

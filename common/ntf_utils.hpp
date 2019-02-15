@@ -16,10 +16,10 @@ void khatrirao(const MAT &i_A, const MAT &i_B, MAT *o_C) {
   assert(i_A.n_cols == i_B.n_cols);
   VEC acol = arma::zeros<VEC>(i_A.n_rows);
   VEC bcol = arma::zeros<VEC>(i_B.n_rows);
-  for (int i = 0; i < i_A.n_cols; i++) {
+  for (unsigned int i = 0; i < i_A.n_cols; i++) {
     acol = i_A.col(i);
     bcol = i_B.col(i);
-    for (int j = 0; j < acol.n_rows; j++) {
+    for (unsigned int j = 0; j < acol.n_rows; j++) {
       (*o_C)(arma::span(j * bcol.n_rows, (j + 1) * bcol.n_rows - 1), i) =
           acol(j) * bcol;
     }
@@ -32,7 +32,7 @@ void khatrirao(const MAT &i_A, const MAT &i_B, MAT *o_C) {
  * @param[out] output vector of size mn
  */
 inline void kronecker(const VEC &i_acol, const VEC &i_bcol, VEC *o_c) {
-  for (int j = 0; j < i_acol.n_rows; j++) {
+  for (unsigned int j = 0; j < i_acol.n_rows; j++) {
     (*o_c).rows(arma::span(j * i_bcol.n_rows, (j + 1) * i_bcol.n_rows - 1)) =
         i_acol(j) * i_bcol;
   }
