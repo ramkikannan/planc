@@ -71,18 +71,26 @@ include_directories(
 )
 
 if(CMAKE_WITH_PACOSS)
+  set(DENSE_OR_SPARSE sparse)
   add_executable(sparse_distnmf
     distnmf.cpp
   )
   target_link_libraries(sparse_distnmf ${NMFLIB_LIBS} pacoss)
 elseif(CMAKE_BUILD_SPARSE)
+  set(DENSE_OR_SPARSE sparse)
   add_executable(sparse_distnmf
     distnmf.cpp
   )
   target_link_libraries(sparse_distnmf ${NMFLIB_LIBS})
 else()
+  set(DENSE_OR_SPARSE dense)
   add_executable(dense_distnmf
     distnmf.cpp
   )
   target_link_libraries(dense_distnmf ${NMFLIB_LIBS})
 endif()
+
+install(TARGETS ${DENSE_OR_SPARSE}_distnmf
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} )

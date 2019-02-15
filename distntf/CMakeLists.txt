@@ -53,3 +53,7 @@ add_executable(dense_distntf
 )
 
 target_link_libraries(dense_distntf ${NMFLIB_LIBS})
+install(TARGETS dense_distntf
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} )

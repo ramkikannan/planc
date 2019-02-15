@@ -32,16 +32,16 @@ include_directories(
   ${MKL_INCLUDE_DIR}
   ${OPENBLAS_INCLUDE_DIR}
 )
+
 if(CMAKE_BUILD_SPARSE)
-  add_executable(sparse_nmf
-    nmf.cpp
-  )
-  target_link_libraries(sparse_nmf ${NMFLIB_LIBS})
+  set(DENSE_OR_SPARSE sparse)
 else()
-  add_executable(dense_nmf
-    nmf.cpp
-  )
-  target_link_libraries(dense_nmf ${NMFLIB_LIBS})
+  set(DENSE_OR_SPARSE dense)
 endif()
 
-
+add_executable(${DENSE_OR_SPARSE}_nmf nmf.cpp)
+target_link_libraries(${DENSE_OR_SPARSE}_nmf ${NMFLIB_LIBS})
+install(TARGETS ${DENSE_OR_SPARSE}_nmf
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} )
