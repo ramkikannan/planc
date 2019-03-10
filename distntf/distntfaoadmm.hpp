@@ -54,10 +54,10 @@ class DistNTFAOADMM : public DistAUNTF {
 
     // Start ADMM loop from here
     for (int i = 0; i < admm_iter && !stop_iter; i++) {
+      MPITIC;
       if (m_nls_sizes[mode] > 0) {
         prev_fac = updated_fac;
         m_local_ncp_aux_t.set(mode, m_local_ncp_aux.factor(mode).t());
-        MPITIC;
         m_temp_local_ncp_aux_t.set(
             mode, arma::solve(arma::trimatl(L),
                               this->ncp_local_mttkrp_t[mode] +
@@ -66,19 +66,17 @@ class DistNTFAOADMM : public DistAUNTF {
         m_local_ncp_aux_t.set(mode,
                               arma::solve(arma::trimatu(Lt),
                                           m_temp_local_ncp_aux_t.factor(mode)));
-        solve_time += MPITOC;
         // Update factor matrix
         updated_fac = m_local_ncp_aux_t.factor(mode).t();
-        MPITIC;
         fixNumericalError<MAT>(&(updated_fac), EPSILON_1EMINUS16);
         updated_fac = updated_fac - m_local_ncp_aux.factor(mode);
         updated_fac.for_each(
             [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });
-        proj_time += MPITOC;
         // Update dual variable
         m_local_ncp_aux.set(mode, m_local_ncp_aux.factor(mode) + updated_fac -
                                       m_local_ncp_aux_t.factor(mode).t());
       }
+      solve_time += MPITOC;
       // stopping criteria variables
       double local_facnorm = 0.0;
       double local_dualnorm = 0.0;
@@ -146,7 +144,6 @@ class DistNTFAOADMM : public DistAUNTF {
     tolerance = 0.01;
     chol_time = 0.0;
     stop_iter_time = 0.0;
-    proj_time = 0.0;
     solve_time = 0.0;
     norm_time = 0.0;
   }
@@ -154,7 +151,6 @@ class DistNTFAOADMM : public DistAUNTF {
   ~DistNTFAOADMM() {
     PRINTROOT("::chol time::" << chol_time
                               << "::stop_iter_time::" << stop_iter_time
-                              << "::proj_time::" << proj_time
                               << "::solve_time::" << solve_time
                               << "::norm_time::" << norm_time);
   }
