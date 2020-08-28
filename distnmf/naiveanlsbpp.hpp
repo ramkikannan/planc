@@ -108,7 +108,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
         BPPNNLS<MAT, VEC> subProblem2(WtW, AcolstW, true);
         subProblem2.solveNNLS();
         this->m_Ht = subProblem2.getSolutionMatrix();
-        fixNumericalError<MAT>(&(this->m_Ht));
+        fixNumericalError<MAT>(&(this->m_Ht), EPSILON_1EMINUS12, 0.0);
         DISTPRINTINFO("OptimizeBlock::NNLS::" << PRINTMATINFO(this->m_Ht));
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->m_Ht));
@@ -161,7 +161,7 @@ class DistNaiveANLSBPP : public DistNMF1D<INPUTMATTYPE> {
         BPPNNLS<MAT, VEC> subProblem1(HtH, ArowsH, true);
         subProblem1.solveNNLS();
         this->m_Wt = subProblem1.getSolutionMatrix();
-        fixNumericalError<MAT>(&(this->m_Wt));
+        fixNumericalError<MAT>(&(this->m_Wt), EPSILON_1EMINUS12, 0.0);
         DISTPRINTINFO("OptimizeBlock::NNLS::" << PRINTMATINFO(this->m_Wt));
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->m_Wt));

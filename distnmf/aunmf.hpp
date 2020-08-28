@@ -42,7 +42,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   MAT localHtH;         /// H is of size (globaln/p)*k;
   MAT Hjt, Hj;          /// Hj is of size n*k;
   MAT AijHj, AijHjt;    /// AijHj is of size m*k;
-  INPUTMATTYPE A_ij_t;  /// n*m matrix. Transpose of A_ij
+  // INPUTMATTYPE A_ij_t;  /// n*m matrix. Transpose of A_ij
   // Things needed while solving for H
   MAT localWtW;        /// W is of size (globalm/p)*k;
   MAT Wit, Wi;         /// Wi is of size m*k;
@@ -56,14 +56,24 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   MAT errMtx;
   MAT A_errMtx;
 
+  // needed for symm regularization
+  MAT crossFac;     // holds the appropriate row of W,H
+  int paired_proc;  // processor to swap factors with
+
   // needed for block implementation to save memory
   MAT Ht_blk;
   MAT AHtij_blk;
   MAT Wt_blk;
   MAT WtAij_blk;
 
-  std::vector<int> recvWtAsize;
-  std::vector<int> recvAHsize;
+  // Gatherv and Reducescatter variables
+  std::vector<int> gatherWtAcnts;
+  std::vector<int> gatherWtAdisp;
+  std::vector<int> scatterWtAcnts;
+
+  std::vector<int> gatherAHcnts;
+  std::vector<int> gatherAHdisp;
+  std::vector<int> scatterAHcnts;
 
   int num_k_blocks;
   int perk;
@@ -84,10 +94,14 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     Hjt.zeros(this->perk, this->n);
     AijHj.zeros(this->m, this->perk);
     AijHjt.zeros(this->perk, this->m);
-    AHtij.zeros(this->k, this->globalm() / MPI_SIZE);
-    this->recvAHsize.resize(NUMCOLPROCS);
-    int fillsize = this->perk * (this->globalm() / MPI_SIZE);
-    fillVector<int>(fillsize, &recvAHsize);
+    AHtij.zeros(this->k, this->W.n_rows);
+    this->scatterAHcnts.resize(NUMCOLPROCS);
+    int fillsize = this->perk * (this->W.n_rows);
+    fillVector<int>(fillsize, &scatterAHcnts);
+    this->gatherAHcnts.resize(NUMROWPROCS);
+    fillVector<int>(0, &gatherAHcnts);
+    this->gatherAHdisp.resize(NUMROWPROCS);
+    fillVector<int>(0, &gatherAHdisp);
 #ifdef MPI_VERBOSE
     if (ISROOT) {
       INFO << "::recvAHsize::";
@@ -95,25 +109,34 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     }
 #endif
     // allocated for block implementation.
-    Ht_blk.zeros(this->perk, (this->globalm() / MPI_SIZE));
-    AHtij_blk.zeros(this->perk, this->globalm() / MPI_SIZE);
+    Ht_blk.zeros(this->perk, (this->W.n_rows));
+    AHtij_blk.zeros(this->perk, this->W.n_rows);
 
     // These initialization are for solving H.
-    Wt.zeros(this->k, this->globalm() / MPI_SIZE);
+    Wt.zeros(this->k, this->W.n_rows);
     WtW.zeros(this->k, this->k);
     localWtW.zeros(this->k, this->k);
     Wi.zeros(this->m, this->perk);
     Wit.zeros(this->perk, this->m);
     WitAij.zeros(this->perk, this->n);
     AijWit.zeros(this->n, this->perk);
-    WtAij.zeros(this->k, this->globaln() / MPI_SIZE);
-    this->recvWtAsize.resize(NUMROWPROCS);
-    fillsize = this->perk * (this->globaln() / MPI_SIZE);
-    fillVector<int>(fillsize, &recvWtAsize);
+    WtAij.zeros(this->k, this->H.n_rows);
+    this->scatterWtAcnts.resize(NUMROWPROCS);
+    fillsize = this->perk * (this->H.n_rows);
+    fillVector<int>(fillsize, &scatterWtAcnts);
+    this->gatherWtAcnts.resize(NUMCOLPROCS);
+    fillVector<int>(0, &gatherWtAcnts);
+    this->gatherWtAdisp.resize(NUMCOLPROCS);
+    fillVector<int>(0, &gatherWtAdisp);
 
     // allocated for block implementation
-    Wt_blk.zeros(this->perk, this->globalm() / MPI_SIZE);
-    WtAij_blk.zeros(this->perk, this->globaln() / MPI_SIZE);
+    Wt_blk.zeros(this->perk, this->W.n_rows);
+    WtAij_blk.zeros(this->perk, this->H.n_rows);
+
+    // allocated for symmetric regularisation
+    if (this->symm_reg() > 0) {
+      crossFac.zeros(this->k, this->H.n_rows);
+    }
 #ifdef MPI_VERBOSE
     if (ISROOT) {
       INFO << "::recvWtAsize::";
@@ -144,7 +167,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     WitAij.clear();
     AijWit.clear();
     WtAij.clear();
-    A_ij_t.clear();
+    // A_ij_t.clear();
     if (this->is_compute_error()) {
       prevH.clear();
       prevHtH.clear();
@@ -155,9 +178,45 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     AHtij_blk.clear();
     Wt_blk.clear();
     WtAij_blk.clear();
+    if (this->symm_reg() > 0) {
+      crossFac.clear();
+    }
     if (this->is_compute_error()) {
       errMtx.clear();
       A_errMtx.clear();
+    }
+  }
+
+  /**
+   * Sets up the communication pattern for the matrix multiplies
+  */
+  void setupCommcounts() {
+    // WtA
+    // Allgatherv counts
+    gatherWtAcnts[0] = itersplit(this->A.n_rows, NUMCOLPROCS, 0) * this->perk;
+    gatherWtAdisp[0] = 0;
+    for (int i = 1; i < NUMCOLPROCS; i++) {
+      gatherWtAcnts[i] = itersplit(this->A.n_rows,
+                                   NUMCOLPROCS, i) * this->perk;
+      gatherWtAdisp[i] = gatherWtAdisp[i-1] + gatherWtAcnts[i-1];
+    }
+    // Reducescatter counts
+    for (int i = 0; i < NUMROWPROCS; i++) {
+      scatterWtAcnts[i] = itersplit(this->A.n_cols,
+                                    NUMROWPROCS, i) * this->perk;
+    }
+    // AH
+    // Allgatherv counts
+    gatherAHcnts[0] = itersplit(this->A.n_cols, NUMROWPROCS, 0) * this->perk;
+    gatherAHdisp[0] = 0;
+    for (int i = 1; i < NUMROWPROCS; i++) {
+      gatherAHcnts[i] = itersplit(this->A.n_cols, NUMROWPROCS, i) * this->perk;
+      gatherAHdisp[i] = gatherAHdisp[i-1] + gatherAHcnts[i-1];
+    }
+    // Reducescatter counts
+    for (int i = 0; i < NUMCOLPROCS; i++) {
+      scatterAHcnts[i] = itersplit(this->A.n_rows,
+                                   NUMCOLPROCS, i) * this->perk;
     }
   }
 
@@ -180,9 +239,18 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     num_k_blocks = numkblks;
     perk = this->k / num_k_blocks;
     allocateMatrices();
+    setupCommcounts();
     this->Wt = leftlowrankfactor.t();
     this->Ht = rightlowrankfactor.t();
-    A_ij_t = input.t();
+    // A_ij_t = input.t();
+    if (this->symm_reg() >= 0) {
+      // Get paired processor
+      int coords[2];
+      coords[0] = MPI_COL_RANK;
+      coords[1] = MPI_ROW_RANK;
+      MPI_Cart_rank(this->m_mpicomm.gridComm(), &coords[0], &paired_proc);
+      DISTPRINTINFO("rank::" << MPI_RANK << "::paired_proc::" << paired_proc);
+    }
     PRINTROOT("aunmf()::constructor succesful");
   }
   ~DistAUNMF() {
@@ -220,12 +288,12 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->m_rowcomm->expCommBegin(Wit.memptr(), this->perk);
     this->m_rowcomm->expCommFinish(Wit.memptr(), this->perk);
 #else
-    int sendcnt = (this->globalm() / MPI_SIZE) * this->perk;
-    int recvcnt = (this->globalm() / MPI_SIZE) * this->perk;
+    int sendcnt = (this->W.n_rows) * this->perk;
     Wit.zeros();
     MPITIC;  // allgather WtA
-    MPI_Allgather(Wt_blk.memptr(), sendcnt, MPI_DOUBLE, Wit.memptr(), recvcnt,
-                  MPI_DOUBLE, this->m_mpicomm.commSubs()[1]);
+    MPI_Allgatherv(Wt_blk.memptr(), sendcnt, MPI_DOUBLE, Wit.memptr(),
+                  &(gatherWtAcnts[0]), &(gatherWtAdisp[0]), MPI_DOUBLE,
+                  this->m_mpicomm.commSubs()[1]);
 #endif
     double temp = MPITOC;  // allgather WtA
     PRINTROOT("n::" << this->n << "::k::" << this->k << PRINTMATINFO(Wt)
@@ -271,7 +339,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     WtAij_blk.zeros();
     MPITIC;  // reduce_scatter WtA
     MPI_Reduce_scatter(this->WitAij.memptr(), this->WtAij_blk.memptr(),
-                       &(this->recvWtAsize[0]), MPI_DOUBLE, MPI_SUM,
+                       &(scatterWtAcnts[0]), MPI_DOUBLE, MPI_SUM,
                        this->m_mpicomm.commSubs()[0]);
     temp = MPITOC;  // reduce_scatter WtA
 #endif
@@ -314,13 +382,12 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->m_colcomm->expCommBegin(Hjt.memptr(), this->perk);
     this->m_colcomm->expCommFinish(Hjt.memptr(), this->perk);
 #else
-    int sendcnt = (this->globaln() / MPI_SIZE) * this->perk;
-    int recvcnt = (this->globaln() / MPI_SIZE) * this->perk;
+    int sendcnt = (this->H.n_rows) * this->perk;
     Hjt.zeros();
     MPITIC;  // allgather AH
-    MPI_Allgather(this->Ht_blk.memptr(), sendcnt, MPI_DOUBLE,
-                  this->Hjt.memptr(), recvcnt, MPI_DOUBLE,
-                  this->m_mpicomm.commSubs()[0]);
+    MPI_Allgatherv(this->Ht_blk.memptr(), sendcnt, MPI_DOUBLE,
+                  this->Hjt.memptr(), &(gatherAHcnts[0]), &(gatherAHdisp[0]),
+                  MPI_DOUBLE, this->m_mpicomm.commSubs()[0]);
 #endif
     PRINTROOT("n::" << this->n << "::k::" << this->k << PRINTMATINFO(Ht)
                     << PRINTMATINFO(Hjt));
@@ -328,12 +395,24 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 #ifdef MPI_VERBOSE
     DISTPRINTINFO(PRINTMAT(Ht_blk));
     DISTPRINTINFO(PRINTMAT(Hjt));
-    DISTPRINTINFO(PRINTMAT(this->A_ij_t));
+    // DISTPRINTINFO(PRINTMAT(this->A_ij_t));
 #endif
     this->time_stats.communication_duration(temp);
     this->time_stats.allgather_duration(temp);
     MPITIC;  // mm AH
-    this->AijHjt = this->Hjt * this->A_ij_t;
+/*
+#ifdef BUILD_SPARSE
+    this->Hj = this->Hjt.t();
+    this->AijHj = this->A * this->Hj;
+    this->AijHjt = this->AijHj.t();
+#else
+    this->AijHjt = this->Hjt * this->A.t();
+#endif
+More memory efficient to rewrite code as above since A.t() will construct a
+copy of the A in the sparse case. However sparse x dense matmul is much slower
+than in dense x sparse. Keeping current version for performance reasons.
+*/
+    this->AijHjt = this->Hjt * this->A.t();
     // #if defined(MKL_FOUND) && defined(BUILD_SPARSE)
     //     // void ARMAMKLSCSCMM(const SRC &mklMat, const DESTN &Bt, const char
     //     transa,
@@ -350,8 +429,8 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     //     DISTPRINTINFO(PRINTMAT(this->AijHjt));
     // #endif
     temp = MPITOC;  // mm AH
-    PRINTROOT(PRINTMATINFO(this->A_ij_t)
-              << PRINTMATINFO(this->Hjt) << PRINTMATINFO(this->AijHjt));
+    // PRINTROOT(PRINTMATINFO(this->A_ij_t)
+    PRINTROOT(PRINTMATINFO(this->Hjt) << PRINTMATINFO(this->AijHjt));
     this->time_stats.compute_duration(temp);
     this->time_stats.mm_duration(temp);
     this->reportTime(temp, "AH::");
@@ -367,7 +446,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     AHtij_blk.zeros();
     MPITIC;  // reduce_scatter AH
     MPI_Reduce_scatter(this->AijHjt.memptr(), this->AHtij_blk.memptr(),
-                       &(this->recvAHsize[0]), MPI_DOUBLE, MPI_SUM,
+                       &(this->scatterAHcnts[0]), MPI_DOUBLE, MPI_SUM,
                        this->m_mpicomm.commSubs()[1]);
     temp = MPITOC;  // reduce_scatter AH
 #endif
@@ -414,7 +493,6 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
    */
   void computeNMF() {
     PRINTROOT("computeNMF started");
-
 #ifdef MPI_VERBOSE
     DISTPRINTINFO(PRINTMAT(this->A));
 #endif
@@ -446,6 +524,22 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 #endif
         // compute WtA
         this->distWtA();
+        if (this->symm_reg() > 0) {
+          // Get the appropriate Wt from the transposed processor
+          this->crossFac.zeros(arma::size(this->Ht));
+          int recvsize = this->crossFac.n_elem;
+          int sendsize = this->Wt.n_elem;
+          MPITIC;
+          MPI_Sendrecv(this->Wt.memptr(), sendsize, MPI_DOUBLE, paired_proc, 0,
+              this->crossFac.memptr(), recvsize, MPI_DOUBLE, paired_proc, 0,
+              this->m_mpicomm.gridComm(), MPI_STATUS_IGNORE);
+          double temp = MPITOC;  // sendrecv
+          this->time_stats.communication_duration(temp);
+          this->time_stats.sendrecv_duration(temp);
+
+          this->applySymmetricReg(this->symm_reg(), &this->WtW,
+                  &this->crossFac, &this->WtAij);
+        }
         // PRINTROOT(PRINTMATINFO(this->WtAij));
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->WtAij));
@@ -473,6 +567,22 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
 #endif
         // compute AH
         this->distAH();
+        if (this->symm_reg() > 0) {
+          // Get the appropriate Ht from the transposed processor
+          this->crossFac.zeros(arma::size(this->Wt));
+          int recvsize = this->crossFac.n_elem;
+          int sendsize = this->Ht.n_elem;
+          MPITIC;
+          MPI_Sendrecv(this->Ht.memptr(), sendsize, MPI_DOUBLE, paired_proc, 0,
+              this->crossFac.memptr(), recvsize, MPI_DOUBLE, paired_proc, 0,
+              this->m_mpicomm.gridComm(), MPI_STATUS_IGNORE);
+          double temp = MPITOC;  // sendrecv
+          this->time_stats.communication_duration(temp);
+          this->time_stats.sendrecv_duration(temp);
+
+          this->applySymmetricReg(this->symm_reg(), &this->HtH,
+                &this->crossFac, &this->AHtij);
+        }
         // PRINTROOT(PRINTMATINFO(this->AHtij));
 #ifdef MPI_VERBOSE
         DISTPRINTINFO(PRINTMAT(this->AHtij));
@@ -502,6 +612,28 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
                         << this->k << "::err::" << sqrt(this->objective_err)
                         << "::relerr::"
                         << sqrt(this->objective_err / this->m_globalsqnormA));
+
+        // Compute the difference between factor matrices
+        if (this->symm_reg() > 0) {
+          double localdiff = arma::norm(this->Wt-this->crossFac, "fro");
+          double globaldiff = 0.0;
+
+          // Compute global difference
+          localdiff = localdiff * localdiff;
+          MPI_Allreduce(&localdiff, &globaldiff, 1,
+              MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+          double localWnorm = arma::norm(this->Wt, "fro");
+          double globalWnorm = 0.0;
+
+          // Compute global W norm
+          localWnorm = localWnorm * localWnorm;
+          MPI_Allreduce(&localWnorm, &globalWnorm, 1,
+              MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+          PRINTROOT("it=" << iter << "::symmdiff::" << globaldiff
+                    << "::reldiff::" << sqrt(globaldiff / globalWnorm));
+        }
       }
       PRINTROOT("completed it=" << iter
                                 << "::taken::" << this->time_stats.duration());
@@ -517,6 +649,9 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     this->reportTime(this->time_stats.gram_duration(), "total_gram");
     this->reportTime(this->time_stats.mm_duration(), "total_mm");
     this->reportTime(this->time_stats.nnls_duration(), "total_nnls");
+    if (this->symm_reg() > 0) {
+      this->reportTime(this->time_stats.sendrecv_duration(), "total_sendrecv");
+    }
     if (this->is_compute_error()) {
       this->reportTime(this->time_stats.err_compute_duration(),
                        "total_err_compute");
@@ -564,11 +699,11 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
                       << "::tWtWHtH::" << tWtWHtH);
     this->objective_err = this->m_globalsqnormA - 2 * tWtAijh + tWtWHtH;
   }
-    /*
+  /*
    * Compute error the old-fashioned way
    */
   void computeError2(const int it) {
-    double local_sqerror = 0.0;    
+    double local_sqerror = 0.0;
     PRINTROOT("::it=" << it << "::Calling compute error 2");
     MPITIC;
     // DISTPRINTINFO("::norm(Wi,fro)::" << norm(this->Wit, "fro") <<
@@ -587,6 +722,9 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     temp = MPITOC;
     this->time_stats.err_communication_duration(temp);
   }
+
+  // Set the LUC inner iterations for iterative LUC
+  void set_luciters(int max_luciters) {}
 };
 
 }  // namespace planc

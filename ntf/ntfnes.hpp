@@ -149,7 +149,8 @@ class NTFNES : public AUNTF {
 
       Htprev = Ht;
       Ht = m_acc_t.factor(mode) - ((1 / (L + lambda)) * m_grad_t.factor(mode));
-      fixNumericalError<MAT>(&Ht, EPSILON_1EMINUS16);
+      // Uncomment if numerical issues are seen
+      // fixNumericalError<MAT>(&Ht, EPSILON_1EMINUS16, 0.0);
       Ht.for_each([](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });
       alpha_prev = alpha;
       alpha = get_alpha(alpha_prev, q);

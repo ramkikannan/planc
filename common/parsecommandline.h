@@ -20,6 +20,10 @@
 #define NUMKBLOCKS 2004
 #define NORMALIZATION 2005
 #define DIMTREE 2006
+#define SYMMETRICREG 2007
+#define ADJRAND 2008
+#define NUMLUCITERS 2009
+#define INITSEED 2010
 
 // enum factorizationtype{FT_NMF, FT_DISTNMF, FT_NTF, FT_DISTNTF};
 
@@ -70,19 +74,23 @@
 // mpirun -np 12 distnmf algotype lowrank Afile  outputfile numIteration pr pc
 
 struct option plancopts[] = {
-    {"algo", optional_argument, 0, 'a'},
+    {"algo", required_argument, 0, 'a'},
     {"dimensions", required_argument, 0, 'd'},
-    {"error", optional_argument, 0, 'e'},
+    {"error", required_argument, 0, 'e'},
     {"input", required_argument, 0, 'i'},
     {"lowrank", required_argument, 0, 'k'},
-    {"output", optional_argument, 0, 'o'},
-    {"processors", optional_argument, 0, 'p'},
-    {"regularizer", optional_argument, 0, 'r'},
-    {"sparsity", optional_argument, 0, 's'},
-    {"iter", optional_argument, 0, 't'},
-    {"numkblocks", optional_argument, 0, NUMKBLOCKS},
-    {"normalization", optional_argument, 0, NORMALIZATION},
-    {"dimtree", optional_argument, 0, DIMTREE},
+    {"output", required_argument, 0, 'o'},
+    {"processors", required_argument, 0, 'p'},
+    {"regularizer", required_argument, 0, 'r'},
+    {"sparsity", required_argument, 0, 's'},
+    {"iter", required_argument, 0, 't'},
+    {"numkblocks", required_argument, 0, NUMKBLOCKS},
+    {"normalization", required_argument, 0, NORMALIZATION},
+    {"dimtree", required_argument, 0, DIMTREE},
+    {"symm", required_argument, 0, SYMMETRICREG},
+    {"adjrand", no_argument, 0, ADJRAND},
+    {"luciters", required_argument, 0, NUMLUCITERS},
+    {"seed", required_argument, 0, INITSEED},
     {0, 0, 0, 0}};
 
 #endif  // COMMON_PARSECOMMANDLINE_H_

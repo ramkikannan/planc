@@ -1,12 +1,11 @@
 /* Copyright Ramakrishnan Kannan 2017 */
 
-#include <armadillo>
 #include <iostream>
+#include "common/utils.h"
 #include "common/ncpfactors.hpp"
 #include "common/ntf_utils.hpp"
 #include "common/parsecommandline.hpp"
 #include "common/tensor.hpp"
-#include "common/utils.h"
 #include "ntf/ntfanlsbpp.hpp"
 #include "ntf/ntfaoadmm.hpp"
 #include "ntf/ntfhals.hpp"

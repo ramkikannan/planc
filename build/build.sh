@@ -9,9 +9,9 @@ echo $SYSTEM
 #load modules RHEA
 if [ "$SYSTEM" = "rhea" ];
 then
-    module unload PE-intel
-    module load PE-gnu
-    module swap gcc gcc/6.2.0
+    module load gcc/6.2.0
+    module load openblas 
+    module load cmake
 fi
 
 #load modules EOS
@@ -35,10 +35,10 @@ fi
 
 if [ "$SYSTEM" = "summit" ];
 then
-    module unload xl
     module load gcc
     module load cmake/3.6.1
     module load cuda
+    module load openblas
 fi
 
 for cfg in dense_nmf dense_ntf dense_distnmf dense_distntf sparse_nmf sparse_distnmf;
@@ -61,10 +61,10 @@ do
     fi
 
     if [ "$SYSTEM" = "titan" ]; then
-        CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
+        CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=0
     fi
     if [ "$SYSTEM" = "summit" ]; then
-        CC=gcc CXX=g++ cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
+        CC=gcc CXX=g++ cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=0
     fi
     make
     popd

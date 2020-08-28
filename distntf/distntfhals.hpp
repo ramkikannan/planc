@@ -29,7 +29,7 @@ class DistNTFHALS : public DistAUNTF {
         updHi.zeros();
       }
 
-      fixNumericalError<VEC>(&updHi);
+      fixNumericalError<VEC>(&updHi, EPSILON_1EMINUS16, EPSILON_1EMINUS16);
       double normHi = arma::norm(updHi, 2);
       normHi *= normHi;
       double globalnormHi = normHi;

@@ -27,6 +27,7 @@ class MPICommunicator {
   int m_col_rank;
   int m_col_size;
   int m_pr, m_pc;
+  MPI_Comm m_gridComm;
 
   // for 2D communicators
   // MPI Related stuffs
@@ -81,7 +82,7 @@ class MPICommunicator {
     dimSizes[0] = pr;
     dimSizes[1] = pc;
     periods.resize(nd);
-    MPI_Comm gridComm;
+    //MPI_Comm gridComm;
     std::vector<int> gridCoords;
     fillVector<int>(1, &periods);
     // int MPI_Cart_create(MPI_Comm comm_old, int ndims, const int dims[],
@@ -96,15 +97,15 @@ class MPICommunicator {
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
     MPI_Cart_create(MPI_COMM_WORLD, nd, &dimSizes[0], &periods[0], reorder,
-                    &gridComm);
+                    &m_gridComm);
     gridCoords.resize(nd);
-    MPI_Cart_get(gridComm, nd, &dimSizes[0], &periods[0], &(gridCoords[0]));
+    MPI_Cart_get(m_gridComm, nd, &dimSizes[0], &periods[0], &(gridCoords[0]));
     this->m_commSubs = new MPI_Comm[nd];
     int *keepCols = new int[nd];
     for (int i = 0; i < nd; i++) {
       std::fill_n(keepCols, nd, 0);
       keepCols[i] = 1;
-      MPI_Cart_sub(gridComm, keepCols, &(this->m_commSubs[i]));
+      MPI_Cart_sub(m_gridComm, keepCols, &(this->m_commSubs[i]));
     }
     MPI_Comm_size(m_commSubs[0], &m_row_size);
     MPI_Comm_size(m_commSubs[1], &m_col_size);
@@ -127,6 +128,7 @@ class MPICommunicator {
   /// Total number of column processor
   const int pc() const { return m_pc; }
   const MPI_Comm *commSubs() const { return m_commSubs; }
+  const MPI_Comm gridComm() const { return m_gridComm; }
 };
 
 }  // namespace planc

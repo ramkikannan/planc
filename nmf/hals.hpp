@@ -48,7 +48,7 @@ class HALSNMF : public NMF<T> {
     this->At = this->A.t();
   }
   void computeNMF() {
-    unsigned int currentIteration = 0;    
+    unsigned int currentIteration = 0;
     INFO << "computed transpose At=" << PRINTMATINFO(this->At) << std::endl;
     while (currentIteration < this->num_iterations()) {
       tic();
@@ -56,6 +56,7 @@ class HALSNMF : public NMF<T> {
       tic();
       WtA = this->W.t() * this->A;
       WtW = this->W.t() * this->W;
+      this->applyReg(this->regH(), &this->WtW);
       INFO << "starting H Prereq for "
            << " took=" << toc() << PRINTMATINFO(WtW) << PRINTMATINFO(WtA)
            << std::endl;
@@ -66,7 +67,7 @@ class HALSNMF : public NMF<T> {
       for (unsigned int x = 0; x < this->k; x++) {
         // H(i,:) = max(H(i,:) + WtA(i,:) - WtW_reg(i,:) * H,epsilon);
         Hx = this->H.col(x) + (((WtA.row(x)).t()) - (this->H * (WtW.col(x))));
-        fixNumericalError<VEC>(&Hx);
+        fixNumericalError<VEC>(&Hx, EPSILON_1EMINUS16, EPSILON_1EMINUS16);
         normConst = norm(Hx);
         if (normConst != 0) {
           this->H.col(x) = Hx;
@@ -79,6 +80,7 @@ class HALSNMF : public NMF<T> {
       tic();
       AH = this->A * this->H;
       HtH = this->H.t() * this->H;
+      this->applyReg(this->regW(), &this->HtH);
       INFO << "starting W Prereq for "
            << " took=" << toc() << PRINTMATINFO(HtH) << PRINTMATINFO(AH)
            << std::endl;
@@ -87,10 +89,11 @@ class HALSNMF : public NMF<T> {
       for (unsigned int x = 0; x < this->k; x++) {
         // FVEC Wx = W(:,x) + (AHt(:,x)-W*HHt(:,x))/HHtDiag(x);
 
-        // W(:,i) = W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i);
+        // W(:,i) = max(W(:,i) * HHt_reg(i,i) + AHt(:,i) - W * HHt_reg(:,i),
+        //              epsilon);
         Wx = (this->W.col(x) * HtH(x, x)) +
              (((AH.col(x))) - (this->W * (HtH.col(x))));
-        fixNumericalError<VEC>(&Wx);
+        fixNumericalError<VEC>(&Wx, EPSILON_1EMINUS16, EPSILON_1EMINUS16);
         normConst = norm(Wx);
         if (normConst != 0) {
           Wx = Wx / normConst;

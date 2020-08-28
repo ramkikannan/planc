@@ -68,7 +68,8 @@ class DistNTFAOADMM : public DistAUNTF {
                                           m_temp_local_ncp_aux_t.factor(mode)));
         // Update factor matrix
         updated_fac = m_local_ncp_aux_t.factor(mode).t();
-        fixNumericalError<MAT>(&(updated_fac), EPSILON_1EMINUS16);
+        // Uncomment if numerical issues are seen
+        // fixNumericalError<MAT>(&(updated_fac), EPSILON_1EMINUS16, 0.0);
         updated_fac = updated_fac - m_local_ncp_aux.factor(mode);
         updated_fac.for_each(
             [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });

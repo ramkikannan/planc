@@ -54,6 +54,7 @@ class MUNMF : public NMF<T> {
       tic();
       AtW = this->At * this->W;
       WtW = this->W.t() * this->W;
+      this->applyReg(this->regH(), &this->WtW);
       INFO << "starting H Prereq for "
            << " took=" << toc();
       INFO << PRINTMATINFO(WtW) << PRINTMATINFO(AtW) << std::endl;
@@ -69,6 +70,7 @@ class MUNMF : public NMF<T> {
       tic();
       AH = this->A * this->H;
       HtH = this->H.t() * this->H;
+      this->applyReg(this->regW(), &this->HtH);
       INFO << "starting W Prereq for "
            << " took=" << toc() << PRINTMATINFO(HtH) << PRINTMATINFO(AH)
            << std::endl;

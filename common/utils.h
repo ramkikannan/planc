@@ -7,7 +7,7 @@
 // #define _VERBOSE 1
 // #endif
 
-enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS };
+enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS, GNSYM };
 
 enum normtype { NONE, L2NORM, MAXNORM };
 
@@ -62,7 +62,7 @@ enum normtype { NONE, L2NORM, MAXNORM };
 
 #define PRINTMATINFO(A) "::" #A "::" << (A).n_rows << "x" << (A).n_cols
 
-#define PRINTMAT(A) PRINTMATINFO((A)) << endl << (A)
+#define PRINTMAT(A) PRINTMATINFO((A)) << std::endl << (A)
 
 typedef std::vector<int> STDVEC;
 typedef unsigned int UINT;

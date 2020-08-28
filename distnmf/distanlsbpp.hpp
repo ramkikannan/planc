@@ -95,7 +95,7 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
   }
   /**
    * updateH given WtAij and WtW
-   *  WtAij is of size \f$k \times \frac{globaln}{p} \f$
+   * WtAij is of size \f$k \times \frac{globaln}{p} \f$
    * this->H is of size \f$ \frac{globaln}{p} \times k \f$
    * this->WtW is of size kxk
    */  

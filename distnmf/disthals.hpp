@@ -32,7 +32,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("b4 fixNumericalError::" << endl << updWi);
 #endif  // ifdef MPI_VERBOSE
-      fixNumericalError<VEC>(&updWi);
+      fixNumericalError<VEC>(&updWi, EPSILON_1EMINUS16, EPSILON_1EMINUS16);
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("after fixNumericalError::" << endl << updWi);
 #endif  // ifdef MPI_VERBOSE
@@ -50,7 +50,6 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
 
       if (globalnormWi > 0) {
         this->W.col(i) = updWi / sqrt(globalnormWi);
-        this->H.col(i) = this->H.col(i) * sqrt(globalnormWi);
       }
     }
     this->Wt = this->W.t();
@@ -72,7 +71,7 @@ class DistHALS : public DistAUNMF<INPUTMATTYPE> {
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("b4 fixNumericalError::" << endl << updHi);
 #endif  // ifdef MPI_VERBOSE
-      fixNumericalError<VEC>(&updHi);
+      fixNumericalError<VEC>(&updHi, EPSILON_1EMINUS16, EPSILON_1EMINUS16);
 #ifdef MPI_VERBOSE
       DISTPRINTINFO("after fixNumericalError::" << endl << updHi);
 #endif  // ifdef MPI_VERBOSE

@@ -142,8 +142,10 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
 #endif
             this->x(G).zeros();
             y(F).zeros();
-            fixNumericalError<VECTYPE>(&this->x);
-            fixNumericalError<VECTYPE>(&y);
+            // X(abs(X)<1e-12) = 0;
+            fixAbsNumericalError<VECTYPE>(&this->x, EPSILON_1EMINUS12, 0.0);
+            // Y(abs(Y)<1e-12) = 0;
+            fixAbsNumericalError<VECTYPE>(&y, EPSILON_1EMINUS12, 0.0);
             // according to lawson and hanson if for alpha==0, the computed
             // x at V is negative, it is because of the numerical error of
             // y at V being negative. Set it to zero.
@@ -321,8 +323,10 @@ class BPPNNLS : public NNLS<MATTYPE, VECTYPE> {
                                    PassiveSet.cols(FvCols));
             Y.cols(FvCols) = (this->CtC * this->X.cols(FvCols))
                              - this->CtB.cols(FvCols);
-            fixNumericalError<MATTYPE>(&this->X);
-            fixNumericalError<MATTYPE>(&Y);
+            // X(abs(X)<1e-12) = 0;
+            fixAbsNumericalError<MATTYPE>(&this->X, EPSILON_1EMINUS12, 0.0);
+            // Y(abs(Y)<1e-12) = 0;
+            fixAbsNumericalError<MATTYPE>(&Y, EPSILON_1EMINUS12, 0.0);
             // according to lawson and hanson if for alpha==0, the computed
             // x at V is negative, it is because of the numerical error of
             // y at V being negative. Set it to zero.

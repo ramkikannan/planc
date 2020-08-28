@@ -24,16 +24,22 @@ class BPPNMF : public NMF<T> {
   // designed as if W is given and H is found.
   // The transpose is the other problem.
   void updateOtherGivenOneMultipleRHS(const T &input, const MAT &given,
-                                      char worh, MAT *othermat) {
+                                      char worh, MAT *othermat, FVEC reg) {
     double t2;
     UINT numThreads = (input.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
     tic();
     MAT giventInput(this->k, input.n_cols);
     // This is WtW
     giventGiven = given.t() * given;
+    this->applyReg(reg, &giventGiven);
     // This is WtA
     // tic();
     giventInput = given.t() * input;
+    if (this->symm_reg() > 0) {
+        MAT fac = given.t();
+        this->applySymmetricReg(this->symm_reg(), &giventGiven,
+            &fac, &giventInput);
+    }
     // INFO << "matmul ::" << toc() << std::endl;
     t2 = toc();
     INFO << "starting " << worh << ". Prereq for " << worh << " took=" << t2
@@ -108,6 +114,7 @@ class BPPNMF : public NMF<T> {
       // solve for H given W;
       MAT Wt = this->W.t();
       MAT WtW = Wt * this->W;
+      this->applyReg(this->regH(), &this->WtW);
       MAT WtA = Wt * this->A;
       Wt.clear();
       {
@@ -142,6 +149,7 @@ class BPPNMF : public NMF<T> {
         WtA.clear();
         MAT Ht = this->H.t();
         MAT HtH = Ht * this->H;
+        this->applyReg(this->regW(), &this->HtH);
         MAT HtAt = Ht * At;
         Ht.clear();
 // solve for W given H;
@@ -205,10 +213,12 @@ class BPPNMF : public NMF<T> {
       this->stats(currentIteration + 1, 0) = currentIteration + 1;
 #endif
       tic();
-      updateOtherGivenOneMultipleRHS(this->At, this->H, 'W', &(this->W));
+      updateOtherGivenOneMultipleRHS(this->At, this->H, 'W', &(this->W),
+                                      this->regW());
       double totalW2 = toc();
       tic();
-      updateOtherGivenOneMultipleRHS(this->A, this->W, 'H', &(this->H));
+      updateOtherGivenOneMultipleRHS(this->A, this->W, 'H', &(this->H),
+                                      this->regH());
       double totalH2 = toc();
 
 #ifdef COLLECTSTATS
@@ -218,11 +228,12 @@ class BPPNMF : public NMF<T> {
 
       this->stats(currentIteration + 1, 3) = totalW2 + totalH2;
 #endif
-      INFO << "completed it=" << currentIteration
-           << " time taken = " << totalW2 + totalH2 << std::endl;
+      INFO << "Completed It (" << currentIteration << "/"
+           << this->num_iterations() << ")"
+           << " time =" << totalW2 + totalH2 << std::endl;
       this->computeObjectiveError();
-      INFO << "error:it = " << currentIteration
-           << " bpperr =" << sqrt(this->objective_err) / this->normA
+      INFO << "Completed it = " << currentIteration
+           << " BPPERR=" << sqrt(this->objective_err) / this->normA
            << std::endl;
       currentIteration++;
     }

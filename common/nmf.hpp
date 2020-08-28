@@ -23,7 +23,7 @@ namespace planc {
 template <class T>
 class NMF {
  protected:
-  T A;  /// input matrix of size mxn
+  const T &A;       /// input matrix of size mxn
   MAT W, H;  /// left and low rank factors of size mxk and nxk respectively
   MAT Winit, Hinit;
   UINT m, n, k;  /// rows, columns and lowrank
@@ -37,6 +37,7 @@ class NMF {
   double normA, normW, normH;
   double densityW, densityH;
   bool cleared;
+  double m_symm_reg;              /// Symmetric Regularization parameter
   unsigned int m_num_iterations;  /// number of iterations
   std::string input_file_name;
   MAT errMtx;       // used for error computation.
@@ -86,6 +87,23 @@ class NMF {
   }
 
   /**
+   * This is for symmetric ANLS variant.
+   *
+   * If we are trying to solve for H using normal equation WtWH = WtA
+   * Symmetric regularization will translate to solve
+   * (WtW+sym_regI)H = WtA + sym_regWt
+   * In the following function, lhs is WtW, rhs is WtA and fac is Wt
+   */
+
+  void applySymmetricReg(double sym_reg, MAT *lhs, MAT *fac, MAT *rhs) {
+    if (sym_reg > 0) {
+      MAT identity = arma::eye<MAT>(this->k, this->k);
+      (*lhs) = (*lhs) + sym_reg * identity;
+      (*rhs) = (*rhs) + sym_reg * (*fac);
+    }
+  }
+
+  /**
    *  L2 normalize column vectors of W
    */
 
@@ -112,12 +130,12 @@ class NMF {
 
  public:
   /**
-   * Constructors with an input matrix and low rank 
-   * @param[in] input matrix as reference. 
-   * @param[in] low rank 
+   * Constructors with an input matrix and low rank
+   * @param[in] input matrix as reference.
+   * @param[in] low rank
    */
-  NMF(const T &input, const unsigned int rank) {
-    this->A = input;
+  NMF(const T &input, const unsigned int rank) : A(input) {
+    // this->A = input;
     this->m = A.n_rows;
     this->n = A.n_cols;
     this->k = rank;
@@ -139,14 +157,14 @@ class NMF {
   }
   /**
    * Constructor with initial left and right low rank factors
-   * Necessary when you want to compare algorithms starting with 
+   * Necessary when you want to compare algorithms starting with
    * the same initialization
    */
 
   NMF(const T &input, const MAT &leftlowrankfactor,
-      const MAT &rightlowrankfactor) {
+      const MAT &rightlowrankfactor): A(input) {
     assert(leftlowrankfactor.n_cols == rightlowrankfactor.n_cols);
-    this->A = input;
+    // this->A = input;
     this->W = leftlowrankfactor;
     this->H = rightlowrankfactor;
     this->Winit = this->W;
@@ -235,7 +253,8 @@ class NMF {
     }
 
 #else  // ifdef BUILD_SPARSE
-  void computeObjectiveError() {
+  // Removing blk error calculations as default method
+  void computeObjectiveError_blk() {
     // (init.norm_A)^2 - 2*trace(H'*(A'*W))+trace((W'*W)*(H*H'))
     // MAT WtW = this->W.t() * this->W;
     // MAT HtH = this->H.t() * this->H;
@@ -326,6 +345,19 @@ class NMF {
     this->objective_err = arma::sum(splitErr);
   }
 
+  void computeObjectiveError() {
+    MAT AtW = this->A.t() * this->W;
+    MAT WtW = this->W.t() * this->W;
+    MAT HtH = this->H.t() * this->H;
+
+    double sqnormA = this->normA * this->normA;
+    double TrHtAtW = arma::trace(this->H.t() * AtW);
+    double TrWtWHtH = arma::trace(WtW * HtH);
+
+    double raw_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
+
+    this->objective_err = (raw_err > 0)? raw_err : 0.0;
+  }
 #endif  // ifdef BUILD_SPARSE
   void computeObjectiveError(const T &At, const MAT &WtW, const MAT &HtH) {
     MAT AtW = At * this->W;
@@ -346,6 +378,11 @@ class NMF {
   FVEC regW() { return this->m_regW; }
   /// Returns the L2 and L1 regularization parameters of W as a vector
   FVEC regH() { return this->m_regH; }
+  /// Set the Symmetric regularization parameter
+  void symm_reg(const double &i_symm_reg) { this->m_symm_reg = i_symm_reg; }
+  /// Returns the Symmetric regularization parameter
+  double symm_reg() { return this->m_symm_reg; }
+
   /// Returns the number of iterations
   const unsigned int num_iterations() const { return m_num_iterations; }
 
@@ -354,7 +391,7 @@ class NMF {
   /// and left low rank factor H
   void clear() {
     if (!this->cleared) {
-      this->A.clear();
+      // this->A.clear();
       this->W.clear();
       this->H.clear();
       this->stats.clear();

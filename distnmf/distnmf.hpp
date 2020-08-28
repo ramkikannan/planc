@@ -44,7 +44,7 @@ class DistNMF : public NMF<INPUTMATTYPE> {
           const MAT &rightlowrankfactor, const MPICommunicator &communicator)
       : NMF<INPUTMATTYPE>(input, leftlowrankfactor, rightlowrankfactor),
         m_mpicomm(communicator),
-        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
+        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     double sqnorma = this->normA * this->normA;
     this->m_globalm = 0;
     this->m_globaln = 0;

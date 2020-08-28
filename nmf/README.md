@@ -1,7 +1,7 @@
 # OpenMP Non-negative Matrix Factorization 
 
-Install Instructions
----------------------
+## Install Instructions
+
 
 This program depends on:
 
@@ -25,25 +25,25 @@ export CPATH=CPATH:$INCLUDE:
 * run cmake [PATH TO THE CMakeList.txt]
 * make
 
-Sparse NMF
----------
+### Sparse NMF
+
 Run cmake with -DCMAKE_BUILD_SPARSE=1
 
-Sparse Debug build
-------------------
+### Sparse Debug build
+
 Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
-Building on Cray-EOS/Titan
------------------------
+### Building on Cray-EOS/Titan
+
 CC=CC CXX=CC cmake ~/nmflibrary/mpi/ -DCMAKE_IGNORE_MKL=1
 
-Intel MKL vs Openblas
-=====================
+## Intel MKL vs Openblas
+
 - ````export LD_LIBRARY_PATH=MKL_LIB path````
 - source the ````$MKLROOT/bin/mkl_vars.sh intel64````
 
-Runtime usage
-=============
+## Runtime usage
+
 Tell OpenBlas how many threads you want to use. For example on a quad core system use the following.
 
 ````
@@ -52,8 +52,7 @@ export MKL_NUM_THREADS=4
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MKL_LIB
 ````
 
-Command Line options
-====================
+## Command Line options
 
 The single alphabet is called short option and the string equivalent is called
 long option. For eg., "input" is the long equivalent of short option 'i'. 
@@ -87,6 +86,7 @@ Usage3 : Sparse/Dense NMF for an input file with lowrank k=20 for 20 iterations 
 from the initialization matrix defined in winit and hinit. Finally, it dumps the output
 W and H in the specified file
 ````NMFLibrary --algo=[0/1/2] --lowrank=20 --input=filename --winit=filename --hinit=filename --w=woutputfilename --h=outputfilename --iter=20````
+
 
 Citation
 ========
