@@ -6,7 +6,10 @@
 #include <unistd.h>
 
 #include <armadillo>
+#include <cinttypes>
 #include <string>
+
+#include <algorithm>
 
 #include "common/distutils.hpp"
 #include "distnmf/mpicomm.hpp"
@@ -30,7 +33,7 @@ class DistIO {
   const MPICommunicator& m_mpicomm;
   MATTYPE m_Arows;  /// ONED_ROW and ONED_DOUBLE
   MATTYPE m_Acols;  /// ONED_COL and ONED_DOUBLE
-  MATTYPE& m_A;     /// TWOD
+  MATTYPE& m_A;  /// TWOD
   // don't start getting prime number from 2;
   static const int kPrimeOffset = 10;
   // Hope no one hits on this number.
@@ -318,7 +321,7 @@ class DistIO {
     }
     if (adj_rand) {
       (*X).for_each(
-          [](MAT::elem_type &val) { val = ceil(kalpha * val + kbeta);});
+          [](MAT::elem_type& val) { val = ceil(kalpha * val + kbeta); });
     }
 #endif
   }
@@ -534,7 +537,7 @@ class DistIO {
         // sr << file_name << MPI_RANK;
         // The global rank to pr, pc is not deterministic and can be different.
         // Hence naming the file for 2D distributed with pr, pc.
-        sr << file_name << MPI_ROW_RANK << "_" << MPI_COL_RANK;
+        // sr << file_name << MPI_ROW_RANK << "_" << MPI_COL_RANK;
         int pr = m_mpicomm.pr();
         int pc = m_mpicomm.pc();
 
@@ -561,7 +564,7 @@ class DistIO {
         // uniform_dist_matrix(m_A);
         m_A.resize(srow, scol);
 #else
-        m_A.load(sr.str());
+        readInputMatrix(m, n, file_name);
 #endif
       }
     }
@@ -571,8 +574,54 @@ class DistIO {
     }
 #endif
   }
+
+  void readInputMatrix(int global_m, int global_n,
+                       const std::string& input_file_name) {
+    int pr = m_mpicomm.pr();
+    int pc = m_mpicomm.pc();
+    int row_rank = m_mpicomm.row_rank();
+    int col_rank = m_mpicomm.col_rank();
+
+    int local_m = itersplit(global_m, pr, row_rank);
+    int local_n = itersplit(global_n, pc, col_rank);
+    m_A.zeros(local_m, local_n);
+
+    int gsizes[] = {global_m, global_n};
+    int lsizes[] = {local_m, local_n};
+    int starts[] = {startidx(global_m, pr, row_rank),
+                    startidx(global_n, pc, col_rank)};
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    MPI_Datatype view;
+    MPI_Type_create_subarray(2, gsizes, lsizes, starts, MPI_ORDER_FORTRAN,
+                             MPI_DOUBLE, &view);
+    MPI_Type_commit(&view);
+
+    MPI_File fh;
+    int ret = MPI_File_open(MPI_COMM_WORLD, input_file_name.c_str(),
+                            MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+    if (ISROOT && ret != MPI_SUCCESS) {
+      DISTPRINTINFO("Error: Could not open file " << input_file_name
+                                                  << std::endl);
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    MPI_Offset disp = 0;
+    MPI_File_set_view(fh, disp, MPI_DOUBLE, view, "native", MPI_INFO_NULL);
+
+    int count = lsizes[0] * lsizes[1];
+    MPI_Status status;
+    ret = MPI_File_read_all(fh, m_A.memptr(), count, MPI_DOUBLE, &status);
+    if (ISROOT && ret != MPI_SUCCESS) {
+      DISTPRINTINFO("Error could not read file " << input_file_name
+                                                 << std::endl);
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    MPI_File_close(&fh);
+    MPI_Type_free(&view);
+  }
   /**
-   * Writes the factor matrix as output_file_name_W_MPISIZE_MPIRANK
+   * Writes the factor matrix as output_file_name_W/H
    * @param[in] Local W factor matrix
    * @param[in] Local H factor matrix
    * @param[in] output file name
@@ -581,15 +630,89 @@ class DistIO {
                    const std::string& output_file_name) {
     std::stringstream sw, sh;
     if (m_distio == TWOD) {
-      sw << output_file_name << "_W_" << MPI_ROW_RANK << "_" << MPI_COL_RANK;
-      sh << output_file_name << "_H_" << MPI_ROW_RANK << "_" << MPI_COL_RANK;
+      sw << output_file_name << "_W";
+      sh << output_file_name << "_H";
     } else {
-      sw << output_file_name << "_W_" << MPI_SIZE << "_" << MPI_RANK;
-      sh << output_file_name << "_H_" << MPI_SIZE << "_" << MPI_RANK;
+      sw << output_file_name << "_W_" << MPI_SIZE;
+      sh << output_file_name << "_H_" << MPI_SIZE;
     }
-    W.save(sw.str(), arma::raw_ascii);
-    H.save(sh.str(), arma::raw_ascii);
+    int size = m_mpicomm.size();
+
+    int pr = m_mpicomm.pr();
+    int pc = m_mpicomm.pc();
+
+    int rrank = m_mpicomm.row_rank();
+    int crank = m_mpicomm.col_rank();
+
+    int Wm = W.n_rows;
+    int Hm = H.n_rows;
+
+    // AllReduce global sizes of W,H in case W,H are inconsistent
+    int global_Wm, global_Hm;
+    MPI_Allreduce(&Wm, &global_Wm, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&Hm, &global_Hm, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    int Widx = startidx(global_Wm, pr, rrank) +
+               startidx(itersplit(global_Wm, pr, rrank), pc, crank);
+    int Hidx = startidx(global_Hm, pc, crank) +
+               startidx(itersplit(global_Hm, pc, crank), pr, rrank);
+
+    writeOutputMatrix(W, global_Wm, Widx, sw.str());
+    writeOutputMatrix(H, global_Hm, Hidx, sh.str());
   }
+
+  /**
+   * Uses MPIIO to write an output matrix X to a binary file with output_file_name.
+   * X is assumed to be distributed in a 1D row-wise process grid.
+   * @param[in] local output matrix
+   * @param[in] global row count
+   * @param[in] starting index in global matrix
+   * @param[in] output file name
+   */
+  void writeOutputMatrix(const MAT& X, int global_m, int idx,
+                         const std::string& output_file_name) {
+    int rank = m_mpicomm.rank();
+    int size = m_mpicomm.size();
+
+    int local_m = X.n_rows;
+    int global_n = X.n_cols;
+
+    int gsizes[] = {global_m, global_n};
+    int lsizes[] = {local_m, global_n};
+    int starts[] = {idx, 0};
+
+    MPI_Datatype view;
+    if (local_m > 0) {  // process owns some part of X
+      MPI_Type_create_subarray(2, gsizes, lsizes, starts, MPI_ORDER_FORTRAN,
+                               MPI_DOUBLE, &view);
+    } else {  // process owns no data and so previous function will fail
+      MPI_Type_contiguous(0, MPI_DOUBLE, &view);
+    }
+    MPI_Type_commit(&view);
+
+    MPI_File fh;
+    int ret =
+        MPI_File_open(m_mpicomm.gridComm(), output_file_name.c_str(),
+                      MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+    if (ISROOT & ret != MPI_SUCCESS) {
+      DISTPRINTINFO("Error: Could not open file " << output_file_name
+                                                  << std::endl);
+    }
+
+    MPI_Offset disp = 0;
+    MPI_File_set_view(fh, disp, MPI_DOUBLE, view, "native", MPI_INFO_NULL);
+
+    int count = lsizes[0] * lsizes[1];
+    MPI_Status status;
+    ret = MPI_File_write_all(fh, X.memptr(), count, MPI_DOUBLE, &status);
+    if (ISROOT && ret != MPI_SUCCESS) {
+      DISTPRINTINFO("Error could not write file " << output_file_name
+                                                  << std::endl);
+    }
+    MPI_File_close(&fh);
+    MPI_Type_free(&view);
+  }
+
   void writeRandInput() {
     std::string file_name("Arnd");
     std::stringstream sr, sc;
@@ -637,7 +760,6 @@ class DistIO {
 
 // run with mpi run 3.
 void testDistIO(char argc, char* argv[]) {
-
   planc::MPICommunicator mpicomm(argc, argv);
 #ifdef BUILD_SPARSE
   SP_MAT A;

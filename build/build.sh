@@ -36,24 +36,23 @@ fi
 if [ "$SYSTEM" = "summit" ];
 then
     module load gcc
-    module load cmake/3.6.1
-    module load cuda
+    module load cmake
     module load openblas
 fi
 
-for cfg in dense_nmf dense_ntf dense_distnmf dense_distntf sparse_nmf sparse_distnmf;
+for cfg in dense_nmf dense_ntf dense_distnmf dense_distntf sparse_nmf sparse_distnmf dense_hiernmf sparse_hiernmf;
 do    
     mkdir ../build_$SYSTEM\_$cfg
 done
 #dense builds
-for cfg in nmf ntf distnmf distntf;
+for cfg in nmf ntf distnmf distntf hiernmf;
 do
     echo $SYSTEM
     echo $cfg
     echo build_$SYSTEM\_dense_$cfg
     pushd ../build_$SYSTEM\_dense_$cfg
     if [ "$SYSTEM" = "rhea" ]; then
-        cmake $SRC_DIR/$cfg/
+        cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1
     fi
     #we consider this as eos/titan    
     if [ "$SYSTEM" = "eos" ]; then
@@ -70,11 +69,11 @@ do
     popd
 done
 #sparse builds
-for cfg in nmf distnmf;
+for cfg in nmf distnmf hiernmf;
 do
     pushd ../build_$SYSTEM\_sparse_$cfg/
     if [ "$SYSTEM" = "rhea" ]; then
-        cmake $SRC_DIR/$cfg/ -DCMAKE_BUILD_SPARSE=1
+        cmake $SRC_DIR/$cfg/ -DCMAKE_BUILD_SPARSE=1 -DCMAKE_IGNORE_MKL=1
     fi
     #we consider this as eos/titan
     if [ "$SYSTEM" = "eos" ]; then
@@ -98,3 +97,6 @@ cp ../build_$SYSTEM\_dense_distnmf/dense_distnmf .
 cp ../build_$SYSTEM\_dense_distntf/dense_distntf .
 cp ../build_$SYSTEM\_sparse_nmf/sparse_nmf .
 cp ../build_$SYSTEM\_sparse_distnmf/sparse_distnmf .
+cp ../build_$SYSTEM\_dense_hiernmf/dense_hiernmf .
+cp ../build_$SYSTEM\_sparse_hiernmf/sparse_hiernmf .
+

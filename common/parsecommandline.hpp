@@ -45,6 +45,7 @@ class ParseCommandLine {
   int m_pr;
   int m_pc;
   double m_symm_reg;
+  double m_tolerance;
 
   // dist ntf
   int m_num_modes;
@@ -54,6 +55,9 @@ class ParseCommandLine {
 
   // LUC params (optional)
   int m_max_luciters;
+
+  // hiernmf related values
+  int m_num_nodes;
 
   void parseArrayofString(const char opt, const char *input) {
     std::stringstream ss(input);
@@ -111,13 +115,14 @@ class ParseCommandLine {
     this->m_symm_reg = -1;
     this->m_adj_rand = false;
     this->m_max_luciters = -1;
+    this->m_tolerance = -1;
     this->m_initseed = 193957;  // Random 6 digit prime
   }
   /// parses the command line parameters
   void parseplancopts() {
     int opt, long_index;
     while ((opt = getopt_long(this->m_argc, this->m_argv,
-                              "a:d:e:i:k:o:p:r:s:t:h", plancopts,
+                              "a:d:e:i:k:o:p:r:s:t:h:l:n", plancopts,
                               &long_index)) != -1) {
       switch (opt) {
         case 'a':
@@ -125,6 +130,9 @@ class ParseCommandLine {
           break;
         case 'e':
           this->m_compute_error = atoi(optarg);
+          break;
+        case 'l':
+          this->m_tolerance = atof(optarg);
           break;
         case 'i': {
           std::string temp = std::string(optarg);
@@ -149,6 +157,9 @@ class ParseCommandLine {
           break;
         case 't':
           this->m_num_it = atoi(optarg);
+          break;
+        case 'n':
+          this->m_num_nodes = atoi(optarg);
           break;
         case NUMKBLOCKS:
           this->m_num_k_blocks = atoi(optarg);
@@ -218,7 +229,8 @@ class ParseCommandLine {
               << "::k::" << this->m_k << "::m::" << this->m_globalm
               << "::n::" << this->m_globaln << "::t::" << this->m_num_it
               << "::pr::" << this->m_pr << "::pc::" << this->m_pc
-              << "::error::" << this->m_compute_error << "::regW::"
+              << "::error::" << this->m_compute_error  << "::tol::" << this->m_tolerance
+              << "::regW::"
               << "l2::" << this->m_regW(0) << "::l1::" << this->m_regW(1)
               << "::regH::"
               << "l2::" << this->m_regH(0) << "::l1::" << this->m_regH(1)
@@ -430,6 +442,10 @@ class ParseCommandLine {
   int num_k_blocks() { return m_num_k_blocks; }
   /// Returns number of iterations. passed as -t or --iter
   int iterations() { return m_num_it; }
+  /// Returns error tolerance for stopping NMF iterations. Passed as -l or --tolerance
+  double tolerance() { return m_tolerance; }
+  /// Returns number of nodes to compute in a H2NMF tree. Passed as -n or --nodes
+  int nodes() { return m_num_nodes; }
   /// Input parameter for generating sparse matrix. Passed as -s or --sparsity
   float sparsity() { return m_sparsity; }
   /// Returns input file name. Passed as -i or --input

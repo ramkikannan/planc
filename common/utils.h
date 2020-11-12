@@ -7,7 +7,7 @@
 // #define _VERBOSE 1
 // #endif
 
-enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS, GNSYM };
+enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS, GNSYM, R2};
 
 enum normtype { NONE, L2NORM, MAXNORM };
 
@@ -50,8 +50,10 @@ enum normtype { NONE, L2NORM, MAXNORM };
 // defines for namespace confusion
 #define FMAT arma::fmat
 #define MAT arma::mat
+#define UMAT arma::umat
 #define FROWVEC arma::frowvec
 #define ROWVEC arma::rowvec
+#define UROWVEC arma::urowvec
 #define FVEC arma::fvec
 #define SP_FMAT arma::sp_fmat
 #define SP_MAT arma::sp_mat

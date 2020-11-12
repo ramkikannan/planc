@@ -13,6 +13,7 @@
 #include "distnmf/mpicomm.hpp"
 #include "distnmf/naiveanlsbpp.hpp"
 #include "distnmf/distgnsymnmf.hpp"
+#include "distnmf/distr2.hpp"
 #ifdef BUILD_CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -40,6 +41,7 @@ class DistNMFDriver {
   double m_sparsity;
   iodistributions m_distio;
   uint m_compute_error;
+  double m_tolerance;
   int m_num_k_blocks;
   static const int kprimeoffset = 17;
   normtype m_input_normalization;
@@ -89,7 +91,7 @@ class DistNMFDriver {
 #endif
 
   void printConfig() {
-    cout << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
+    INFO << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
          << "::k::" << this->m_k << "::m::" << this->m_globalm
          << "::n::" << this->m_globaln << "::t::" << this->m_num_it
          << "::pr::" << this->m_pr << "::pc::" << this->m_pc
@@ -368,6 +370,7 @@ class DistNMFDriver {
     this->m_globalm = pc.globalm();
     this->m_globaln = pc.globaln();
     this->m_compute_error = pc.compute_error();
+    this->m_tolerance = pc.tolerance();
     this->m_symm_reg = pc.symm_reg();
     this->m_symm_flag = 0;
     this->m_adj_rand = pc.adj_rand();
@@ -459,6 +462,13 @@ class DistNMFDriver {
         callDistNMF2D<DistGNSym<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
         callDistNMF2D<DistGNSym<MAT> >();
+#endif  // ifdef BUILD_SPARSE
+        break;
+      case R2:
+#ifdef BUILD_SPARSE
+        callDistNMF2D<DistR2<SP_MAT> >();
+#else   // ifdef BUILD_SPARSE
+        callDistNMF2D<DistR2<MAT> >();
 #endif  // ifdef BUILD_SPARSE
         break;
       default:

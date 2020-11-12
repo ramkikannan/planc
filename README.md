@@ -37,10 +37,11 @@ For other NMF implementations from Prof. Park's lab, please visit [smallk](https
 * [Grey Ballard](http://users.wfu.edu/ballard/) - Wake Forest University
 * [Haesun Park](http://www.cc.gatech.edu/~hpark/) - Georgia Institute of Technology, GA
 * [Rich Vuduc](http://vuduc.org/v2/) - Georgia Institute of Technology, GA
+* [Oguz Kaya](http://kayaogz.github.io/) - Université Paris-Sud/Paris-Saclay
+* Michael A. Matheson - Oak Ridge National Laboratory
 * Srinivas Eswar - Georgia Institute of Technology, GA
 * Koby Hayashi - Georgia Institute of Technology, GA
-* Michael A. Matheson - Oak Ridge National Laboratory
-* [Oguz Kaya](http://kayaogz.github.io/) - Université Paris-Sud/Paris-Saclay
+* Lawton Manning - Wake Forest University
 
 ## Build Procedure
 
@@ -63,6 +64,8 @@ Any opinions, findings and conclusions or recommendations expressed in this mate
 * Added symmetric regularization for NMF (SymNMF) for the ANLS variant
 * Added Gauss-Newton algorithm for SymNMF
 * Handle uneven split of rows and columns of the input matrix in the processor grid
+* Added MPI-IO for NMF
+* Added Rank-2 NMF and HierNMF
 
 ### Version 0.8
 

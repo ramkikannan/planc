@@ -15,7 +15,7 @@
 #define ONE_THREAD_MATRIX_SIZE 1000
 #include <omp.h>
 #else
-#define ONE_THREAD_MATRIX_SIZE giventInput.n_cols + 5
+#define ONE_THREAD_MATRIX_SIZE 2000
 #endif
 
 namespace planc {
@@ -29,56 +29,46 @@ class DistANLSBPP : public DistAUNMF<INPUTMATTYPE> {
   void allocateMatrices() {}
 
   /**
-   * Multi threaded ANLS/BPP using openMP
+   * ANLS/BPP with chunking the RHS into smaller independent
+   * subproblems
    */
   void updateOtherGivenOneMultipleRHS(const MAT& giventGiven,
                                       const MAT& giventInput, MAT* othermat) {
-    UINT numThreads = (giventInput.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
-#pragma omp parallel for schedule(dynamic)
-    for (UINT i = 0; i < numThreads; i++) {
+    UINT numChunks = giventInput.n_cols / ONE_THREAD_MATRIX_SIZE;
+    if (numChunks * ONE_THREAD_MATRIX_SIZE < giventInput.n_cols) numChunks++;
+
+// #pragma omp parallel for schedule(dynamic)
+    for (UINT i = 0; i < numChunks; i++) {
       UINT spanStart = i * ONE_THREAD_MATRIX_SIZE;
       UINT spanEnd = (i + 1) * ONE_THREAD_MATRIX_SIZE - 1;
       if (spanEnd > giventInput.n_cols - 1) {
         spanEnd = giventInput.n_cols - 1;
       }
-      // if it is exactly divisible, the last iteration is unnecessary.
-      BPPNNLS<MAT, VEC>* subProblem;
-      if (spanStart <= spanEnd) {
-        if (spanStart == spanEnd) {
-          subProblem = new BPPNNLS<MAT, VEC>(
-              giventGiven, (VEC)giventInput.col(spanStart), true);
-        } else {  // if (spanStart < spanEnd)
-          subProblem = new BPPNNLS<MAT, VEC>(
-              giventGiven, (MAT)giventInput.cols(spanStart, spanEnd), true);
-        }
-#ifdef MPI_VERBOSE
-#pragma omp parallel
-        {
-          DISTPRINTINFO("Scheduling " << worh << " start=" << spanStart
-                                      << ", end=" << spanEnd
-                                      << ", tid=" << omp_get_thread_num());
-        }
-#endif
-        subProblem->solveNNLS();
-#ifdef MPI_VERBOSE
-#pragma omp parallel
-        {
-          DISTPRINTINFO("completed " << worh << " start=" << spanStart
-                                     << ", end=" << spanEnd
-                                     << ", tid=" << omp_get_thread_num()
-                                     << " cpu=" << sched_getcpu());
-        }
-#endif
-        if (spanStart == spanEnd) {
-          ROWVEC solVec = subProblem->getSolutionVector().t();
-          (*othermat).row(i) = solVec;
-        } else {  // if (spanStart < spanEnd)
-          (*othermat).rows(spanStart, spanEnd) =
-              subProblem->getSolutionMatrix().t();
-        }
-        subProblem->clear();
-        delete subProblem;
+      BPPNNLS<MAT, VEC> subProblem(giventGiven,
+                            (MAT)giventInput.cols(spanStart, spanEnd), true);
+#ifdef _VERBOSE
+      // #pragma omp critical
+      {
+        INFO << "Scheduling " << worh << " start=" << spanStart
+             << ", end=" << spanEnd
+             // << ", tid=" << omp_get_thread_num()
+             << std::endl
+             << "LHS ::" << std::endl
+             << giventGiven << std::endl
+             << "RHS ::" << std::endl
+             << (MAT)giventInput.cols(spanStart, spanEnd) << std::endl;
       }
+#endif
+
+      subProblem.solveNNLS();
+
+#ifdef _VERBOSE
+      INFO << "completed " << worh << " start=" << spanStart
+           << ", end=" << spanEnd
+           // << ", tid=" << omp_get_thread_num() << " cpu=" << sched_getcpu()
+           << " time taken=" << t2 << std::endl;
+#endif
+      (*othermat).rows(spanStart, spanEnd) = subProblem.getSolutionMatrix().t();
     }
   }
 

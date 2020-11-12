@@ -39,6 +39,7 @@ class NMF {
   bool cleared;
   double m_symm_reg;              /// Symmetric Regularization parameter
   unsigned int m_num_iterations;  /// number of iterations
+  double m_tolerance; // error tolerance
   std::string input_file_name;
   MAT errMtx;       // used for error computation.
   T A_err_sub_mtx;  // used for error computation.
@@ -370,6 +371,10 @@ class NMF {
   }
   /// Sets number of iterations for the NMF algorithms
   void num_iterations(const int it) { this->m_num_iterations = it; }
+  /// Sets the relative error tolerance for NMF algorithms
+  void tolerance(const double tol) { this->m_tolerance = tol; }
+  // Returns the relative error tolerance for NMF algorithms
+  double tolerance() { return this->m_tolerance; }
   /// Sets the regularization on left low rank factor W
   void regW(const FVEC &iregW) { this->m_regW = iregW; }
   /// Sets the regularization on right low rank H

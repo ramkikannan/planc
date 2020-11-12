@@ -84,6 +84,8 @@ struct option plancopts[] = {
     {"regularizer", required_argument, 0, 'r'},
     {"sparsity", required_argument, 0, 's'},
     {"iter", required_argument, 0, 't'},
+    {"nodes", required_argument, 0, 'n'},
+    {"tolerance", required_argument, 0, 'l'},
     {"numkblocks", required_argument, 0, NUMKBLOCKS},
     {"normalization", required_argument, 0, NORMALIZATION},
     {"dimtree", required_argument, 0, DIMTREE},

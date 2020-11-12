@@ -122,6 +122,10 @@ class DistNMF : public NMF<INPUTMATTYPE> {
       }
     }
   }
+
+  DistNMFTime * times() {
+    return new DistNMFTime(this->time_stats);
+  }
 };
 
 }  // namespace planc
