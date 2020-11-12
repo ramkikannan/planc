@@ -4,6 +4,10 @@
 #define DISTNMF_DISTAOADMM_HPP_
 
 #include "distnmf/aunmf.hpp"
+/**
+ * Provides the updateW and updateH for the
+ * distributed ADMM algorithm.
+ */
 
 namespace planc {
 
@@ -76,7 +80,12 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
   }
 
  protected:
-  /// updateW given HtH and AHt
+  /**
+   * Inexact ADMM to update W given AHtij and HtH
+   * AHtij is of size \f$ k \times \frac{globalm}/{p}\f$.
+   * this->W is of size \f$\frac{globalm}{p} \times k \f$
+   * this->HtH is of size kxk
+   */
   void updateW() {
     // Calculate modified Gram Matrix
     // tempHtH = arma::conv_to<MAT >::from(this->HtH);
@@ -106,7 +115,8 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
       // Update W
       // this->Wt = arma::conv_to<MAT >::from(Wtaux);
       this->Wt = Wtaux;
-      fixNumericalError<MAT>(&(this->Wt), EPSILON_1EMINUS16);
+      // Uncomment if numerical issues are seen
+      // fixNumericalError<MAT>(&(this->Wt), EPSILON_1EMINUS16, 0.0);
       this->Wt = this->Wt - this->Ut;
       this->Wt.for_each(
           [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });
@@ -158,7 +168,12 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
         stop_iter = true;
     }
   }
-  /// updateH given WtW and WtA
+  /**
+   * Inexact ADMM to update H given WtAij and WtW
+   * WtAij is of size \f$k \times \frac{globaln}{p} \f$
+   * this->H is of size \f$ \frac{globaln}{p} \times k \f$
+   * this->WtW is of size kxk
+   */
   void updateH() {
     // Calculate the Gram Matrix
     tempWtW = arma::conv_to<MAT>::from(this->WtW);
@@ -187,7 +202,8 @@ class DistAOADMM : public DistAUNMF<INPUTMATTYPE> {
       // Update H
       // this->Ht = arma::conv_to<MAT >::from(Htaux);
       this->Ht = Htaux;
-      fixNumericalError<MAT>(&(this->Ht), EPSILON_1EMINUS16);
+      // Uncomment if numerical issues are seen
+      // fixNumericalError<MAT>(&(this->Ht), EPSILON_1EMINUS16, 0.0);
       this->Ht = this->Ht - this->Vt;
       this->Ht.for_each(
           [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });

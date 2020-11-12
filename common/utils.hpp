@@ -55,9 +55,18 @@ inline double toc() {
 }
 
 template <class T>
-void fixNumericalError(T *X, const double prec = EPSILON_1EMINUS16) {
+void fixNumericalError(T *X, const double prec = EPSILON_1EMINUS16,
+                       const double repl = 0.0) {
   (*X).for_each(
-      [&](typename T::elem_type &val) { val = (val < prec) ? prec : val; });
+      [&](typename T::elem_type &val) { val = (val < prec) ? repl : val; });
+}
+
+template <class T>
+void fixAbsNumericalError(T *X, const double prec = EPSILON_1EMINUS16,
+                       const double repl = 0.0) {
+  (*X).for_each([&](typename T::elem_type &val) {
+        val = (std::abs(val) < prec) ? repl : val;
+      });
 }
 
 template <class T>

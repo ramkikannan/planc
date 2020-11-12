@@ -4,19 +4,19 @@ Given an input matrix A, Non-negative Matrix Factorization (NMF) is about determ
 
 PLANC delivers the high performance, flexibility, and scalability necessary to tackle the ever-growing size of today's internet and scientific data sets. Rather than developing separate software for each problem domain, algorithm and mathematical technique, flexibility has been achieved by characterizing nearly all of the current NMF and NTF algorithms in the context of a Block Coordinate Descent(BCD) framework.
 
-In this repository, we offer highly tuned MPI and OPENMP implementation for MU, HALS, Nesterov, ADMM and ANLS/BPP based Non-negative Matrix Factorization(NMF) and Non-negative Tensor Factorization(NTF) algorithms that delivers the high performance, flexibility, and scalability necessary to tackle the ever-growing size of today's internet and scientific data sets. This can run off the shelf as well easy to integrate in other source code. We have tested
-this software in [NERSC](http://www.nersc.gov/users/computational-systems/edison/) as well [OLCF](https://www.olcf.ornl.gov/) cluster. The openmp implementation is tested on
+In this repository, we offer highly tuned MPI and OpenMP implementation for MU, HALS, Nesterov, ADMM and ANLS/BPP based Non-negative Matrix Factorization(NMF) and Non-negative Tensor Factorization(NTF) algorithms that delivers the high performance, flexibility, and scalability necessary to tackle the ever-growing size of today's internet and scientific data sets. This can run off the shelf as well easy to integrate in other source code. We have tested
+this software in [NERSC](http://www.nersc.gov/users/computational-systems/edison/) as well [OLCF](https://www.olcf.ornl.gov/) clusters. The OpenMP implementation is tested on
 many different linux variants with intel processors. The library works well for both sparse and dense matrix. If you use this code, kindly cite the following papers appropriately.
 
 * Ramakrishnan Kannan, Grey Ballard, and Haesun Park. 2016. A high-performance parallel algorithm for nonnegative matrix factorization. In Proceedings of the 21st ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming (PPoPP '16). ACM, New York, NY, USA, , Article 9 , 11 pages. DOI: http://dx.doi.org/10.1145/2851141.2851152
-* James P. Fairbanks, Ramakrishnan Kannan, Haesun Park, David A. Bader, Behavioral clusters in dynamic graphs, Parallel Computing, Volume 47, August 2015, Pages 38-50, ISSN 0167-8191, http://dx.doi.org/10.1016/j.parco.2015.03.002.
+* James P. Fairbanks, Ramakrishnan Kannan, Haesun Park, David A. Bader, Behavioral clusters in dynamic graphs, Parallel Computing, Volume 47, August 2015, Pages 38-50, ISSN 0167-8191. DOI: http://dx.doi.org/10.1016/j.parco.2015.03.002.
 * Kannan, Ramakrishnan. "SCALABLE AND DISTRIBUTED CONSTRAINED LOW RANK APPROXIMATIONS." (Doctoral Disseration) (2016). https://smartech.gatech.edu/handle/1853/54962
 * 	Ramakrishnan Kannan, Grey Ballard, Haesun Park:
-MPI-FAUN: An MPI-Based Framework for Alternating-Updating Nonnegative Matrix Factorization. IEEE Trans. Knowl. Data Eng. 30(3): 544-558 (2018)
+MPI-FAUN: An MPI-Based Framework for Alternating-Updating Nonnegative Matrix Factorization. IEEE Trans. Knowl. Data Eng. 30(3): 544-558 (2018). DOI: https://doi.org/10.1109/TKDE.2017.2767592
 * Oguz Kaya, Ramakrishnan Kannan, Grey Ballard:
-Partitioning and Communication Strategies for Sparse Non-negative Matrix Factorization. ICPP 2018: 90:1-90:10
+Partitioning and Communication Strategies for Sparse Non-negative Matrix Factorization. ICPP 2018: 90:1-90:10. DOI: https://doi.org/10.1145/3225058.3225127
 * 	Grey Ballard, Koby Hayashi, Ramakrishnan Kannan:
-Parallel Nonnegative CP Decomposition of Dense Tensors. 25th {IEEE} International Conference on High Performance Computing(HiPC) 2018, Accepted
+Parallel Nonnegative CP Decomposition of Dense Tensors. 25th {IEEE} International Conference on High Performance Computing(HiPC) 2018. DOI: https://doi.org/10.1109/HiPC.2018.00012
 
 In this library we support the following
 
@@ -36,10 +36,12 @@ For other NMF implementations from Prof. Park's lab, please visit [smallk](https
 * [Ramakrishnan Kannan](https://ramkikannan.github.io) - Oak Ridge National Laboratory
 * [Grey Ballard](http://users.wfu.edu/ballard/) - Wake Forest University
 * [Haesun Park](http://www.cc.gatech.edu/~hpark/) - Georgia Institute of Technology, GA
+* [Rich Vuduc](http://vuduc.org/v2/) - Georgia Institute of Technology, GA
+* [Oguz Kaya](http://kayaogz.github.io/) - Université Paris-Sud/Paris-Saclay
+* Michael A. Matheson - Oak Ridge National Laboratory
 * Srinivas Eswar - Georgia Institute of Technology, GA
 * Koby Hayashi - Georgia Institute of Technology, GA
-* Michael A. Matheson - Oak Ridge National Laboratory
-* [Oguz Kaya](http://kayaogz.github.io/) - Assistant professorship position (maître de conférences) at Université Paris-Sud/Paris-Saclay
+* Lawton Manning - Wake Forest University
 
 ## Build Procedure
 
@@ -57,6 +59,20 @@ The United States Government retains and the publisher, by accepting the article
 Any opinions, findings and conclusions or recommendations expressed in this material are those of the authors and do not necessarily reflect the views of the USDOE, NERSC, AFOSR, NSF or DARPA.
 
 ## Release Details
+### Version 0.81
+
+* Added symmetric regularization for NMF (SymNMF) for the ANLS variant
+* Added Gauss-Newton algorithm for SymNMF
+* Handle uneven split of rows and columns of the input matrix in the processor grid
+* Added MPI-IO for NMF
+* Added Rank-2 NMF and HierNMF
+
+### Version 0.8
+
+* Newly added algorithms - CP-ALS, Nesterov, ADMM for both NMF and NTF
+* New build procedure
+* Offloding dense operations to GPU through NVBLAS
+* Loading and processing [NumPy](https://numpy.org/) arrays
 
 ### Version 0.51
 
@@ -67,10 +83,3 @@ Any opinions, findings and conclusions or recommendations expressed in this mate
 * Support for L1 and L2 regularization
 * Removed boost and mkl requirements. Works on Cray systems such as EOS and Titan as well
 * Bug fixes on error computation
-
-### Version 0.8
-
-* Newly added algorithms - CP-ALS, Nesterov, ADMM for both NMF and NTF
-* New build procedure
-* Offloding dense operations to GPU through NVBLAS
-* Loading and processing NUMPY arrays

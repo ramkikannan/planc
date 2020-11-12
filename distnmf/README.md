@@ -1,8 +1,6 @@
-MPI Based DistNMF and DistNTF 
-=============================
+# MPI Based DistNMF and DistNTF 
 
-Install Instructions
---------------------
+## Install Instructions
 
 This program depends on:
 
@@ -24,20 +22,20 @@ export MKLROOT=/ccs/compilers/intel/rh6-x86_64/16.0.0/mkl/
 
 If you have got MKL, please source MKLVARS.sh before running make/cmake
 
-Sparse NMF
----------
+### Sparse NMF
+
 Run cmake with -DCMAKE_BUILD_SPARSE
 
-Sparse Debug build
-------------------
+### Sparse Debug build
+
 Run cmake with -DCMAKE_BUILD_SPARSE -DCMAKE_BUILD_TYPE=Debug
 
-Building on Cray-EOS/Titan
------------------------
+### Building on Cray-EOS/Titan
+
 CC=CC CXX=CC cmake ~/nmflibrary/distnmf/ -DCMAKE_IGNORE_MKL=1
 
-Building on Titan with NVBLAS
------------------------------
+### Building on Titan with NVBLAS
+
 We are using NVBLAS to offload computations to GPU.
 By default we enable building with cuda in Titan.
 The sample configurations files for nvblas can be found at conf/nvblas_cuda75.conf
@@ -45,9 +43,19 @@ and conf/nvblas_cuda91.conf for CUDA Toolkit 7.5 and 9.1 respectively.
 
 CC=CC CXX=CC cmake ~/nmflibrary/distnmf/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=1
 
+- Module swap PrgEnv-pgi PrgEnv-gnu
+- Module load cmake3
+- Module load cudatoolkit
+- mkdir /lustre/atlas/world-shared/csc209/ramki/titan/planc-build
+- CC=CC CXX=CC cmake ~/planc-github/ -DCMAKE_INSTALL_PREFIX=/lustre/atlas/world-shared/csc209/ramki/titan/planc/
+- Make
+- Make install
+- Cd /lustre/atlas/world-shared/csc209/ramki/titan/planc/bin
+- Copied planc-github/conf/nvblas91.conf nvblas.conf
+- ldd dense_disntf to get the libsci_gnu_mp_61.so.5 path and set the NVBLAS_CPU_BLAS_LIB
+- Run the experiment
 
-Other Macros
--------------
+### Other Macros
 
 * CMAKE macros
 
@@ -62,18 +70,18 @@ Other Macros
 			   Try this only for very very small matrix that is of size less than 10.
   WRITE_RAND_INPUT - for dumping the generated random matrix
 
-Output interpretation
-======================
+## Output interpretation
+
 For W matrix row major ordering. That is., W_0, W_1, .., W_p
 For H matrix column major ordering. That is., for 6 processes
 with pr=3, pc=2, interpret as H_0, H_2, H_4, H_1, H_3, H_5
 
-Running
-=======
+## Running
+
 mpirun -np 16 ./distnmf -a [0/1/2/3] -i rand_[lowrank/uniform] -d "rows cols" -p "pr pc" -r "W_l2 W_l1 H_l2 H_l0" -k 20 -t 20 -e 1
 
-Citation:
-=========
+## Citation:
+
 
 If you are using this MPI implementation, kindly cite.
 

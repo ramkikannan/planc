@@ -91,6 +91,7 @@ class AOADMMNMF : public NMF<T> {
       tic();
       WtA = this->W.t() * this->A;
       WtW = this->W.t() * this->W;
+      this->applyReg(this->regH(), &this->WtW);
       beta = trace(WtW) / this->k;
       beta = beta > 0 ? beta : 0.01;
       WtW.diag() += beta;
@@ -112,7 +113,8 @@ class AOADMMNMF : public NMF<T> {
         Htaux = arma::solve(arma::trimatu(L.t()), tempHtaux);
 
         this->H = Htaux.t();
-        fixNumericalError<MAT>(&(this->H), EPSILON_1EMINUS16);
+        // Uncomment if numerical issues are seen
+        // fixNumericalError<MAT>(&(this->H), EPSILON_1EMINUS16, 0.0);
         this->H = this->H - V;
         this->H.for_each(
             [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });
@@ -136,6 +138,7 @@ class AOADMMNMF : public NMF<T> {
       tic();
       AH = this->A * this->H;
       HtH = this->H.t() * this->H;
+      this->applyReg(this->regW(), &this->HtH);
       alpha = trace(HtH) / this->k;
       alpha = alpha > 0 ? alpha : 0.01;
       HtH.diag() += alpha;
@@ -156,7 +159,8 @@ class AOADMMNMF : public NMF<T> {
         Wtaux = arma::solve(arma::trimatu(L.t()), tempWtaux);
 
         this->W = Wtaux.t();
-        fixNumericalError<MAT>(&(this->W), EPSILON_1EMINUS16);
+        // Uncomment if numerical issues are seen
+        // fixNumericalError<MAT>(&(this->W), EPSILON_1EMINUS16, 0.0);
         this->W = this->W - U;
         this->W.for_each(
             [](MAT::elem_type &val) { val = val > 0.0 ? val : 0.0; });

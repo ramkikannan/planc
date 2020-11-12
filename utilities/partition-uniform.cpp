@@ -59,9 +59,15 @@ int main(int argc, char **argv) {
   fclose(file);
 
   for (int i = 0; i < procCount; i++) {
+    int row_rank, col_rank;
     printf("Writing the matrix for part %d...\n", i);
+    // zero indexed and row major ordering of pr and pc.
+    row_rank = i / colProcCount;
+    col_rank = i - row_rank * colProcCount;
     std::string outFileName(argv[1]);
-    outFileName += std::to_string(i);
+    outFileName += std::to_string(row_rank);
+    outFileName += '_';
+    outFileName += std::to_string(col_rank);
     file = fopen(outFileName.c_str(), "w");
     if (file == NULL) {
       printf("Unable to open file %s.\n", outFileName.c_str());

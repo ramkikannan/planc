@@ -45,7 +45,7 @@ class DistNMF1D {
         m_Acols(Acols),
         m_W(leftlowrankfactor),
         m_H(rightlowrankfactor),
-        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
+        time_stats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) {
     this->m_globalm = Arows.n_rows * MPI_SIZE;
     this->m_globaln = Arows.n_cols;
     this->m_Wt = this->m_W.t();

@@ -4,6 +4,7 @@
 #define NMF_BPPNMF_HPP_
 
 #include <omp.h>
+
 #include "common/nmf.hpp"
 #include "nnls/bppnnls.hpp"
 
@@ -24,63 +25,67 @@ class BPPNMF : public NMF<T> {
   // designed as if W is given and H is found.
   // The transpose is the other problem.
   void updateOtherGivenOneMultipleRHS(const T &input, const MAT &given,
-                                      char worh, MAT *othermat) {
+                                      char worh, MAT *othermat, FVEC reg) {
     double t2;
-    UINT numThreads = (input.n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
+    UINT numChunks = input.n_cols / ONE_THREAD_MATRIX_SIZE;
+    if (numChunks * ONE_THREAD_MATRIX_SIZE < input.n_cols) numChunks++;
+
     tic();
     MAT giventInput(this->k, input.n_cols);
     // This is WtW
     giventGiven = given.t() * given;
+    this->applyReg(reg, &giventGiven);
     // This is WtA
-    // tic();
     giventInput = given.t() * input;
-    // INFO << "matmul ::" << toc() << std::endl;
+    if (this->symm_reg() > 0) {
+      MAT fac = given.t();
+      this->applySymmetricReg(this->symm_reg(), &giventGiven, &fac,
+                              &giventInput);
+    }
     t2 = toc();
     INFO << "starting " << worh << ". Prereq for " << worh << " took=" << t2
-         << " NumThreads=" << numThreads << PRINTMATINFO(giventGiven)
-         << PRINTMATINFO(giventInput) << std::endl;
+         << " NumChunks=" << numChunks << std::endl;
+#ifdef _VERBOSE
+    INFO << "LHS::" << std::endl
+         << giventGiven << std::endl
+         << "RHS::" << std::endl
+         << giventInput << std::endl;
+#endif
     tic();
-#pragma omp parallel for schedule(dynamic)
-    for (UINT i = 0; i < numThreads; i++) {
+
+// #pragma omp parallel for schedule(dynamic)
+    for (UINT i = 0; i < numChunks; i++) {
       UINT spanStart = i * ONE_THREAD_MATRIX_SIZE;
       UINT spanEnd = (i + 1) * ONE_THREAD_MATRIX_SIZE - 1;
       if (spanEnd > input.n_cols - 1) {
         spanEnd = input.n_cols - 1;
       }
-      // if it is exactly divisible, the last iteration is unnecessary.
-      BPPNNLS<MAT, VEC> *subProblem;
-      if (spanStart <= spanEnd) {
-        if (spanStart == spanEnd) {
-          subProblem = new BPPNNLS<MAT, VEC>(
-              giventGiven, (VEC)giventInput.col(spanStart), true);
-        } else {  // if (spanStart < spanEnd)
-          subProblem = new BPPNNLS<MAT, VEC>(
-              giventGiven, (MAT)giventInput.cols(spanStart, spanEnd), true);
-        }
+
+      BPPNNLS<MAT, VEC> subProblem(giventGiven,
+                              (MAT)giventInput.cols(spanStart, spanEnd), true);
 #ifdef _VERBOSE
+      // #pragma omp critical
+      {
         INFO << "Scheduling " << worh << " start=" << spanStart
-             << ", end=" << spanEnd << ", tid=" << omp_get_thread_num()
-             << std::endl;
-#endif
-        // tic();
-        subProblem->solveNNLS();
-        // t2 = toc();
-#ifdef _VERBOSE
-        INFO << "completed " << worh << " start=" << spanStart
-             << ", end=" << spanEnd << ", tid=" << omp_get_thread_num()
-             << " cpu=" << sched_getcpu() << " time taken=" << t2
-             << " num_iterations()=" << numIter << std::endl;
-#endif
-        if (spanStart == spanEnd) {
-          ROWVEC solVec = subProblem->getSolutionVector().t();
-          (*othermat).row(i) = solVec;
-        } else {  // if (spanStart < spanEnd)
-          (*othermat).rows(spanStart, spanEnd) =
-              subProblem->getSolutionMatrix().t();
-        }
-        subProblem->clear();
-        delete subProblem;
+             << ", end=" << spanEnd
+             // << ", tid=" << omp_get_thread_num()
+             << std::endl
+             << "LHS ::" << std::endl
+             << giventGiven << std::endl
+             << "RHS ::" << std::endl
+             << (MAT)giventInput.cols(spanStart, spanEnd) << std::endl;
       }
+#endif
+
+      subProblem.solveNNLS();
+
+#ifdef _VERBOSE
+      INFO << "completed " << worh << " start=" << spanStart
+           << ", end=" << spanEnd
+           // << ", tid=" << omp_get_thread_num() << " cpu=" << sched_getcpu()
+           << " time taken=" << t2 << std::endl;
+#endif
+      (*othermat).rows(spanStart, spanEnd) = subProblem.getSolutionMatrix().t();
     }
     double totalH2 = toc();
     INFO << worh << " total time taken :" << totalH2 << std::endl;
@@ -108,11 +113,11 @@ class BPPNMF : public NMF<T> {
       // solve for H given W;
       MAT Wt = this->W.t();
       MAT WtW = Wt * this->W;
+      this->applyReg(this->regH(), &this->WtW);
       MAT WtA = Wt * this->A;
       Wt.clear();
       {
-#pragma omp parallel for
-        // int i=251;
+// #pragma omp parallel for
         for (UINT i = 0; i < this->n; i++) {
           BPPNNLS<MAT, VEC> *subProblemforH =
               new BPPNNLS<MAT, VEC>(WtW, (VEC)WtA.col(i), true);
@@ -142,10 +147,11 @@ class BPPNMF : public NMF<T> {
         WtA.clear();
         MAT Ht = this->H.t();
         MAT HtH = Ht * this->H;
+        this->applyReg(this->regW(), &this->HtH);
         MAT HtAt = Ht * At;
         Ht.clear();
 // solve for W given H;
-#pragma omp parallel for
+// #pragma omp parallel for
         for (UINT i = 0; i < this->m; i++) {
           BPPNNLS<MAT, VEC> *subProblemforW =
               new BPPNNLS<MAT, VEC>(HtH, (VEC)HtAt.col(i), true);
@@ -205,10 +211,12 @@ class BPPNMF : public NMF<T> {
       this->stats(currentIteration + 1, 0) = currentIteration + 1;
 #endif
       tic();
-      updateOtherGivenOneMultipleRHS(this->At, this->H, 'W', &(this->W));
+      updateOtherGivenOneMultipleRHS(this->At, this->H, 'W', &(this->W),
+                                     this->regW());
       double totalW2 = toc();
       tic();
-      updateOtherGivenOneMultipleRHS(this->A, this->W, 'H', &(this->H));
+      updateOtherGivenOneMultipleRHS(this->A, this->W, 'H', &(this->H),
+                                     this->regH());
       double totalH2 = toc();
 
 #ifdef COLLECTSTATS
@@ -218,11 +226,12 @@ class BPPNMF : public NMF<T> {
 
       this->stats(currentIteration + 1, 3) = totalW2 + totalH2;
 #endif
-      INFO << "completed it=" << currentIteration
-           << " time taken = " << totalW2 + totalH2 << std::endl;
+      INFO << "Completed It (" << currentIteration << "/"
+           << this->num_iterations() << ")"
+           << " time =" << totalW2 + totalH2 << std::endl;
       this->computeObjectiveError();
-      INFO << "error:it = " << currentIteration
-           << " bpperr =" << sqrt(this->objective_err) / this->normA
+      INFO << "Completed it = " << currentIteration
+           << " BPPERR=" << sqrt(this->objective_err) / this->normA
            << std::endl;
       currentIteration++;
     }
@@ -245,7 +254,7 @@ class BPPNMF : public NMF<T> {
     return this->H;
   }
   ~BPPNMF() { this->At.clear(); }
-};
+};  // class BPPNMF
 
 }  // namespace planc
 

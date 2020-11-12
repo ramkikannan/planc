@@ -13,7 +13,7 @@ namespace planc {
 class DistNTFANLSBPP : public DistAUNTF {
  protected:
   /**
-   * This is openmp multithreaded ANLS/BPP update function.
+   * ANLS/BPP update function.
    * Given the MTTKRP and the hadamard of all the grams, we 
    * determine the factor matrix to be updated. 
    * @param[in] Mode of the factor to be updated
@@ -22,51 +22,43 @@ class DistNTFANLSBPP : public DistAUNTF {
   MAT update(const int mode) {
     MAT othermat(this->m_local_ncp_factors_t.factor(mode));
     if (m_nls_sizes[mode] > 0) {
-      unsigned int numThreads =
-        (this->ncp_local_mttkrp_t[mode].n_cols / ONE_THREAD_MATRIX_SIZE) + 1;
-      #pragma omp parallel for schedule(dynamic)
-      for (UINT i = 0; i < numThreads; i++) {
+      UINT nrhs = this->ncp_local_mttkrp_t[mode].n_cols;
+      UINT numChunks = nrhs / ONE_THREAD_MATRIX_SIZE;
+      if (numChunks * ONE_THREAD_MATRIX_SIZE < nrhs) numChunks++;
+      // #pragma omp parallel for schedule(dynamic)
+      for (UINT i = 0; i < numChunks; i++) {
         UINT spanStart = i * ONE_THREAD_MATRIX_SIZE;
         UINT spanEnd = (i + 1) * ONE_THREAD_MATRIX_SIZE - 1;
-        if (spanEnd > this->ncp_local_mttkrp_t[mode].n_cols - 1) {
-          spanEnd = this->ncp_local_mttkrp_t[mode].n_cols - 1;
+        if (spanEnd > nrhs - 1) {
+          spanEnd = nrhs - 1;
         }
-        // if it is exactly divisible, the last iteration is unnecessary.
-        BPPNNLS<MAT, VEC> *subProblem;
-        if (spanStart <= spanEnd) {
-          if (spanStart == spanEnd) {
-            subProblem = new BPPNNLS<MAT, VEC>(
-              this->global_gram,
-              (VEC)this->ncp_local_mttkrp_t[mode].col(spanStart), true);
-          } else {  // if (spanStart < spanEnd)
-            subProblem = new BPPNNLS<MAT, VEC>(
-              this->global_gram,
-              (MAT)this->ncp_local_mttkrp_t[mode].cols(spanStart, spanEnd),
-              true);
-          }
+        BPPNNLS<MAT, VEC> subProblem(this->global_gram,
+                  (MAT)this->ncp_local_mttkrp_t[mode].cols(spanStart, spanEnd),
+                  true);
 #ifdef _VERBOSE
+      // #pragma omp critical
+        {
           INFO << "Scheduling " << worh << " start=" << spanStart
-             << ", end=" << spanEnd << ", tid=" << omp_get_thread_num()
+             << ", end=" << spanEnd
+             // << ", tid=" << omp_get_thread_num()
+             << std::endl
+             << "LHS ::" << std::endl
+             << giventGiven << std::endl
+             << "RHS ::" << std::endl
+             << this->ncp_local_mttkrp_t[mode].cols(spanStart, spanEnd)
              << std::endl;
-#endif
-          // tic();
-          subProblem->solveNNLS();
-          // t2 = toc();
-#ifdef _VERBOSE
-          INFO << "completed " << worh << " start=" << spanStart
-             << ", end=" << spanEnd << ", tid=" << omp_get_thread_num()
-             << " cpu=" << sched_getcpu() << " time taken=" << t2
-             << " num_iterations()=" << numIter << std::endl;
-#endif
-          if (spanStart == spanEnd) {
-            VEC solVec = subProblem->getSolutionVector();
-            othermat.col(i) = solVec;
-          } else {  // if (spanStart < spanEnd)
-            othermat.cols(spanStart, spanEnd) = subProblem->getSolutionMatrix();
-          }
-          subProblem->clear();
-          delete subProblem;
         }
+#endif
+
+        subProblem.solveNNLS();
+
+#ifdef _VERBOSE
+        INFO << "completed " << worh << " start=" << spanStart
+           << ", end=" << spanEnd
+           // << ", tid=" << omp_get_thread_num() << " cpu=" << sched_getcpu()
+           << " time taken=" << t2 << std::endl;
+#endif
+        othermat.cols(spanStart, spanEnd) = subProblem.getSolutionMatrix();
       }
     } else {
       othermat.zeros();

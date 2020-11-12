@@ -17,7 +17,7 @@ class NTFHALS : public AUNTF {
       VEC updHi =
           H.col(i) + ((this->ncp_mttkrp_t[mode].row(i)).t() -
                       H * this->gram_without_one.col(i));
-      fixNumericalError<VEC>(&updHi);
+      fixNumericalError<VEC>(&updHi, EPSILON_1EMINUS16, EPSILON_1EMINUS16);
       double normHi = arma::norm(updHi, 2);
       normHi *= normHi;
       double globalnormHi = normHi;

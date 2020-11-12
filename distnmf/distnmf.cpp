@@ -12,6 +12,8 @@
 #include "distnmf/distmu.hpp"
 #include "distnmf/mpicomm.hpp"
 #include "distnmf/naiveanlsbpp.hpp"
+#include "distnmf/distgnsymnmf.hpp"
+#include "distnmf/distr2.hpp"
 #ifdef BUILD_CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -32,13 +34,19 @@ class DistNMFDriver {
   int m_pc;
   FVEC m_regW;
   FVEC m_regH;
+  double m_symm_reg;
+  int m_symm_flag;
+  bool m_adj_rand;
   algotype m_nmfalgo;
   double m_sparsity;
   iodistributions m_distio;
   uint m_compute_error;
+  double m_tolerance;
   int m_num_k_blocks;
   static const int kprimeoffset = 17;
   normtype m_input_normalization;
+  int m_max_luciters;
+  int m_initseed;
 
 #ifdef BUILD_CUDA
   void printDevProp(cudaDeviceProp devProp) {
@@ -83,7 +91,7 @@ class DistNMFDriver {
 #endif
 
   void printConfig() {
-    cout << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
+    INFO << "a::" << this->m_nmfalgo << "::i::" << this->m_Afile_name
          << "::k::" << this->m_k << "::m::" << this->m_globalm
          << "::n::" << this->m_globaln << "::t::" << this->m_num_it
          << "::pr::" << this->m_pr << "::pc::" << this->m_pc
@@ -92,6 +100,8 @@ class DistNMFDriver {
          << "l2::" << this->m_regW(0) << "::l1::" << this->m_regW(1)
          << "::regH::"
          << "l2::" << this->m_regH(0) << "::l1::" << this->m_regH(1)
+         << "symm_reg::" << this->m_symm_reg
+         << "symm_flag::" << this->m_symm_flag
          << "::num_k_blocks::" << this->m_num_k_blocks
          << "::normtype::" << this->m_input_normalization << std::endl;
   }
@@ -101,24 +111,26 @@ class DistNMFDriver {
     std::string rand_prefix("rand_");
     MPICommunicator mpicomm(this->m_argc, this->m_argv);
 #ifdef BUILD_SPARSE
-    DistIO<SP_MAT> dio(mpicomm, m_distio);
+    SP_MAT A;
+    DistIO<SP_MAT> dio(mpicomm, m_distio, A);
 #else   // ifdef BUILD_SPARSE
-    DistIO<MAT> dio(mpicomm, m_distio);
+    MAT A;
+    DistIO<MAT> dio(mpicomm, m_distio, A);
 #endif  // ifdef BUILD_SPARSE
 
     if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
       dio.readInput(m_Afile_name, this->m_globalm, this->m_globaln, this->m_k,
-                    this->m_sparsity, this->m_pr, this->m_pc,
-                    this->m_input_normalization);
+                    this->m_sparsity, this->m_pr, this->m_pc, this->m_symm_flag,
+                    this->m_adj_rand, this->m_input_normalization);
     } else {
       dio.readInput(m_Afile_name);
     }
 #ifdef BUILD_SPARSE
-    SP_MAT Arows(dio.Arows());
-    SP_MAT Acols(dio.Acols());
+    SP_MAT Arows = dio.Arows();
+    SP_MAT Acols = dio.Acols();
 #else   // ifdef BUILD_SPARSE
-    MAT Arows(dio.Arows());
-    MAT Acols(dio.Acols());
+    MAT Arows = dio.Arows();
+    MAT Acols = dio.Acols();
 #endif  // ifdef BUILD_SPARSE
 
     if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
@@ -202,63 +214,62 @@ class DistNMFDriver {
       MPI_Barrier(MPI_COMM_WORLD);
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
-#ifdef BUILD_SPARSE    
-    DistIO<SP_MAT> dio(mpicomm, m_distio);
+#ifdef BUILD_SPARSE
+    SP_MAT A;
+    DistIO<SP_MAT> dio(mpicomm, m_distio, A);
 
     if (mpicomm.rank() == 0) {
-      INFO << "sparse case" << std::endl;
+      INFO << "sparse case::sparsity::" << this->m_sparsity << std::endl;
     }
 #else   // ifdef BUILD_SPARSE
-    DistIO<MAT> dio(mpicomm, m_distio);
+    MAT A;
+    DistIO<MAT> dio(mpicomm, m_distio, A);
 #endif  // ifdef BUILD_SPARSE. One outstanding PACOSS
 
     if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
       dio.readInput(m_Afile_name, this->m_globalm, this->m_globaln, this->m_k,
-                    this->m_sparsity, this->m_pr, this->m_pc,
-                    this->m_input_normalization);
+                    this->m_sparsity, this->m_pr, this->m_pc, this->m_symm_flag,
+                    this->m_adj_rand, this->m_input_normalization);
     } else {
-      dio.readInput(m_Afile_name);
+      dio.readInput(m_Afile_name, this->m_globalm, this->m_globaln, this->m_k,
+                    this->m_sparsity, this->m_pr, this->m_pc, this->m_symm_flag,
+                    this->m_adj_rand, this->m_input_normalization);
     }
-#ifdef BUILD_SPARSE
-    // SP_MAT A(dio.A().row_indices, dio.A().col_ptrs, dio.A().values,
-    // dio.A().n_rows, dio.A().n_cols);
-    SP_MAT A(dio.A());
-#else   // ifdef BUILD_SPARSE
-    MAT A(dio.A());
-#endif  // ifdef BUILD_SPARSE. One outstanding PACOSS
+    A = dio.A();
 
-    if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
-      UWORD localm = A.n_rows;
-      UWORD localn = A.n_cols;
-
-      /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
-       *            MPI_SUM, mpicomm.commSubs()[0]);
-       * MPI_Allreduce(&localn, &(this->m_globaln), 1, MPI_INT,
-       *            MPI_SUM, mpicomm.commSubs()[1]);*/
-      this->m_globalm = localm * m_pr;
-      this->m_globaln = localn * m_pc;
-    }
+    //if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
+    //  UWORD localm = A.n_rows;
+    //  UWORD localn = A.n_cols;
+    //
+    //  /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
+    //   *            MPI_SUM, mpicomm.commSubs()[0]);
+    //   * MPI_Allreduce(&localn, &(this->m_globaln), 1, MPI_INT,
+    //   *            MPI_SUM, mpicomm.commSubs()[1]);*/
+    //  this->m_globalm = localm * m_pr;
+    //  this->m_globaln = localn * m_pc;
+    //}
 #ifdef WRITE_RAND_INPUT
     dio.writeRandInput();
 #endif  // ifdef WRITE_RAND_INPUT
 #endif  // ifdef USE_PACOSS. Everything over. No more outstanding ifdef's.
-
     // don't worry about initializing with the
     // same matrix as only one of them will be used.
-    arma::arma_rng::set_seed(mpicomm.rank());
+    arma::arma_rng::set_seed(this->m_initseed + mpicomm.rank());
 #ifdef USE_PACOSS
     MAT W = arma::randu<MAT>(rowcomm->localOwnedRowCount(), this->m_k);
     MAT H = arma::randu<MAT>(colcomm->localOwnedRowCount(), this->m_k);
 #else   // ifdef USE_PACOSS
-    MAT W = arma::randu<MAT>(this->m_globalm / mpicomm.size(), this->m_k);
-    MAT H = arma::randu<MAT>(this->m_globaln / mpicomm.size(), this->m_k);
+    MAT W = arma::randu<MAT>(itersplit(A.n_rows, m_pc,
+                              mpicomm.col_rank()), this->m_k);
+    MAT H = arma::randu<MAT>(itersplit(A.n_cols, m_pr,
+                              mpicomm.row_rank()), this->m_k);
 #endif  // ifdef USE_PACOSS
         // sometimes for really very large matrices starting w/
         // rand initialization hurts ANLS BPP running time. For a better
         // initializer we run couple of iterations of HALS.
 #ifndef USE_PACOSS
 #ifdef BUILD_SPARSE
-    if (m_nmfalgo == ANLSBPP) {
+    if (m_nmfalgo == ANLSBPP && this->m_symm_reg < 0) {
       DistHALS<SP_MAT> lrinitializer(A, W, H, mpicomm, this->m_num_k_blocks);
       lrinitializer.num_iterations(4);
       lrinitializer.algorithm(HALS);
@@ -279,6 +290,30 @@ class DistNMFDriver {
     memusage(mpicomm.rank(), "b4 constructor ");
     // TODO(ramkikannan): I was here. Need to modify the reallocations by using
     // localOwnedRowCount instead of m_globalm.
+    double global_A_sum = 0.0;
+    double global_A_mean = 0.0;
+    double global_A_max = 0.0;
+    if (this->m_symm_reg >= 0) {
+      double local_A_sum = arma::accu(A);
+      MPI_Allreduce(&local_A_sum, &global_A_sum, 1, MPI_DOUBLE, MPI_SUM,
+                    MPI_COMM_WORLD);
+      global_A_mean = global_A_sum / (this->m_globalm * this->m_globalm);
+      // standard symm nmf initialization as per Da Kuang's code.
+      int rowprime = 17;
+      int colprime = 29;
+
+      int hseed = this->m_initseed
+                  + rowprime*mpicomm.row_rank() + colprime*mpicomm.col_rank();
+      arma::arma_rng::set_seed(hseed);
+      H.randu();
+      H = 2 * std::sqrt(global_A_mean / this->m_k) * H;
+
+      int wseed = this->m_initseed
+                  + colprime*mpicomm.row_rank() + rowprime*mpicomm.col_rank();
+      arma::arma_rng::set_seed(wseed);
+      W.randu();
+      W = 2 * std::sqrt(global_A_mean / this->m_k) * W;
+    }
     NMFTYPE nmfAlgorithm(A, W, H, mpicomm, this->m_num_k_blocks);
 #ifdef USE_PACOSS
     nmfAlgorithm.set_rowcomm(rowcomm);
@@ -290,6 +325,17 @@ class DistNMFDriver {
     nmfAlgorithm.algorithm(this->m_nmfalgo);
     nmfAlgorithm.regW(this->m_regW);
     nmfAlgorithm.regH(this->m_regH);
+    if (this->m_symm_reg == 0) {
+      double local_A_max = A.max();
+      MPI_Allreduce(&local_A_max, &global_A_max, 1, MPI_DOUBLE, MPI_MAX,
+                    MPI_COMM_WORLD);
+      this->m_symm_reg = global_A_max * global_A_max;
+    }
+    nmfAlgorithm.symm_reg(this->m_symm_reg);
+
+    // Optional LUC Algorithm params
+    nmfAlgorithm.set_luciters(this->m_max_luciters);
+
     MPI_Barrier(MPI_COMM_WORLD);
     try {
       mpitic();
@@ -301,12 +347,11 @@ class DistNMFDriver {
       printf("Failed rank %d: %s\n", mpicomm.rank(), e.what());
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
-#ifndef USE_PACOSS
+
     if (!m_outputfile_name.empty()) {
       dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                       nmfAlgorithm.getRightLowRankFactor(), m_outputfile_name);
     }
-#endif  // ifndef USE_PACOSS
   }
   void parseCommandLine() {
     ParseCommandLine pc(this->m_argc, this->m_argv);
@@ -325,6 +370,43 @@ class DistNMFDriver {
     this->m_globalm = pc.globalm();
     this->m_globaln = pc.globaln();
     this->m_compute_error = pc.compute_error();
+    this->m_tolerance = pc.tolerance();
+    this->m_symm_reg = pc.symm_reg();
+    this->m_symm_flag = 0;
+    this->m_adj_rand = pc.adj_rand();
+    this->m_max_luciters = pc.max_luciters();
+    this->m_initseed = pc.initseed();
+    this->m_outputfile_name = pc.output_file_name();
+
+    // Put in the default LUC iterations
+    if (this->m_max_luciters == -1) {
+      this->m_max_luciters = this->m_k;
+    }
+
+    // check the conditions for symm nmf
+    if (this->m_symm_reg != -1) {
+      this->m_symm_flag = 1;
+      if (this->m_pr != this->m_pc) {
+        ERR << "Symmetric Regularization enabled"
+            << " and process grid is not square"
+            << "::pr::" << this->m_pr << "::pc::" << this->m_pc << std::endl;
+        return;
+      }
+      if (this->m_globalm != this->m_globaln) {
+        // TODO: Add file prefix check
+        ERR << "Symmetric Regularization enabled"
+            << " and input matrix is not square"
+            << "::m::" << this->m_globalm << "::n::" << this->m_globaln
+            << std::endl;
+        return;
+      }
+      if ((this->m_nmfalgo != ANLSBPP) && (this->m_nmfalgo != GNSYM)) {
+        ERR << "Symmetric Regularization enabled "
+            << "is only enabled for ANLSBPP and GNSYM"
+            << std::endl;
+        return;
+      }
+    }
     if (this->m_nmfalgo == NAIVEANLSBPP) {
       this->m_distio = ONED_DOUBLE;
     } else {
@@ -367,14 +449,30 @@ class DistNMFDriver {
 #else   // ifdef BUILD_SPARSE
         callDistNMF2D<DistAOADMM<MAT> >();
 #endif  // ifdef BUILD_SPARSE
+        break;
       case CPALS:
 #ifdef BUILD_SPARSE
         callDistNMF2D<DistALS<SP_MAT> >();
 #else   // ifdef BUILD_SPARSE
         callDistNMF2D<DistALS<MAT> >();
 #endif  // ifdef BUILD_SPARSE
+        break;
+      case GNSYM:
+#ifdef BUILD_SPARSE
+        callDistNMF2D<DistGNSym<SP_MAT> >();
+#else   // ifdef BUILD_SPARSE
+        callDistNMF2D<DistGNSym<MAT> >();
+#endif  // ifdef BUILD_SPARSE
+        break;
+      case R2:
+#ifdef BUILD_SPARSE
+        callDistNMF2D<DistR2<SP_MAT> >();
+#else   // ifdef BUILD_SPARSE
+        callDistNMF2D<DistR2<MAT> >();
+#endif  // ifdef BUILD_SPARSE
+        break;
       default:
-        ERR << "Unsupport algorithm" <<  this->m_nmfalgo << std::endl;
+        ERR << "Unsupported algorithm " << this->m_nmfalgo << std::endl;
     }
   }
 

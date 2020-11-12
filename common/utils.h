@@ -7,7 +7,7 @@
 // #define _VERBOSE 1
 // #endif
 
-enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS };
+enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS, GNSYM, R2};
 
 enum normtype { NONE, L2NORM, MAXNORM };
 
@@ -50,8 +50,10 @@ enum normtype { NONE, L2NORM, MAXNORM };
 // defines for namespace confusion
 #define FMAT arma::fmat
 #define MAT arma::mat
+#define UMAT arma::umat
 #define FROWVEC arma::frowvec
 #define ROWVEC arma::rowvec
+#define UROWVEC arma::urowvec
 #define FVEC arma::fvec
 #define SP_FMAT arma::sp_fmat
 #define SP_MAT arma::sp_mat
@@ -62,7 +64,7 @@ enum normtype { NONE, L2NORM, MAXNORM };
 
 #define PRINTMATINFO(A) "::" #A "::" << (A).n_rows << "x" << (A).n_cols
 
-#define PRINTMAT(A) PRINTMATINFO((A)) << endl << (A)
+#define PRINTMAT(A) PRINTMATINFO((A)) << std::endl << (A)
 
 typedef std::vector<int> STDVEC;
 typedef unsigned int UINT;

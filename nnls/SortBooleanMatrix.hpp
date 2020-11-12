@@ -6,19 +6,17 @@
 #include <vector>
 #include <algorithm>
 
-using namespace std;
-
 template <class T>
 class BooleanArrayComparator {
     const T &X;
-  public:
-    BooleanArrayComparator(const T &input): X(input) {
+ public:
+    explicit BooleanArrayComparator(const T &input): X(input) {
     }
     /*
     * if idxi < idxj return true;
     * if idxi >= idxj return false;
     */
-    bool operator () (UWORD idxi, UWORD idxj) {
+    bool operator() (UWORD idxi, UWORD idxj) {
         for (uint i = 0; i < X.n_rows; i++) {
             if (this->X(i, idxi) < this->X(i, idxj))
                 return true;
@@ -33,14 +31,14 @@ template <class T>
 class SortBooleanMatrix {
     const T &X;
     std::vector<UWORD> idxs;
-  public:
-    SortBooleanMatrix(const T &input) : X(input), idxs(X.n_cols) {
+ public:
+    explicit SortBooleanMatrix(const T &input) : X(input), idxs(X.n_cols) {
         for (uint i = 0; i < X.n_cols; i++) {
             idxs[i] = i;
         }
     }
     std::vector<UWORD> sortIndex() {
-        sort(this->idxs.begin(), this->idxs.end(),
+        std::sort(this->idxs.begin(), this->idxs.end(),
              BooleanArrayComparator<T>(this->X));
         return this->idxs;
     }
