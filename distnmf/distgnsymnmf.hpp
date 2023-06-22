@@ -328,7 +328,7 @@ class DistGNSym : public DistAUNMF<INPUTMATTYPE> {
 
       if (this->is_compute_error()) {
         PRINTROOT("it=" << iter << "::algo::" << this->m_algorithm
-                << "::CG intial residual::" << rsold);
+                << "::CG initial residual::" << rsold);
       }
 
       // Enter CG iterations only if residual is large

@@ -11,6 +11,8 @@
 #include <typeinfo>
 #include <vector>
 #include "common/utils.h"
+#include <random>
+
 #ifdef MKL_FOUND
 #include <mkl.h>
 #else
@@ -282,6 +284,163 @@ void cblas_sgemm(const MAT &A, const MAT &B, double *C) {
   double beta = 0.0;
   cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, m, n, k, alpha,
               A.memptr(), m, B.memptr(), k, beta, C, m);
+}
+
+/**
+ * Generates the same low rank matrix. Matrix columns are seeded to 
+ * easily create different row slices of the matrix. The lowrank matrix
+ * X is expected to be of size n x k where k << n.
+ * 
+ * @param[in] row_start is the starting row of the block to be generated
+ * @param[in] nrows is the number of rows to be generated
+ * @param[in] k is the lowrank (length of each row vector)
+ * @param[in] X is the reference to the matrix to populate
+ * @param[in] trans is a flag to indicate that Xt is sent in.
+ * @param[in] mseed is the seed for the first column of the matrix
+ */
+void gen_discard(int row_start, int nrows, int k, 
+        MAT &X, bool trans, int mseed=7907) {
+  for(int j = 0; j < k; ++j) {
+    std::mt19937 gen(mseed + j);
+    gen.discard(row_start);
+    for(int i = 0; i < nrows; ++i) { 
+      if (trans) {
+          X(j, i) =  ((double)gen()) / gen.max();
+      } else {
+          X(i, j) =  ((double)gen()) / gen.max();
+      }
+    }
+  }
+}
+
+/*
+ * Read in a dense matrix
+ */
+void read_input_matrix(MAT &A, std::string fname) {
+  A.load(fname);
+}
+
+/*
+ * Read in a sparse matrix
+ */
+void read_input_matrix(SP_MAT &A, std::string fname) {
+  A.load(fname, arma::coord_ascii);
+}
+
+/*
+ * Generate random dense matrix
+ */
+void generate_rand_matrix(MAT &A, std::string rtype, 
+        UWORD m, UWORD n, UWORD k, double density, bool symm_flag = false,
+        bool adjrand = false, int kalpha = 1, int kbeta = 0) {
+  if (rtype == "uniform") {
+    if (symm_flag) {
+      A = arma::randu<MAT>(m, n);
+      A = 0.5 * (A + A.t());
+    } else {
+      A = arma::randu<MAT>(m, n);
+    }
+  } else if (rtype == "normal") {
+    if (symm_flag) {
+      A = arma::randn<MAT>(m, n);
+      A = 0.5 * (A + A.t());
+    } else {
+      A = arma::randn<MAT>(m, n);
+    }
+    A.elem(find(A < 0)).zeros();
+  } else {
+    if (symm_flag) {
+      MAT Htrue = arma::zeros<MAT>(n, k);
+      gen_discard(0, n, k, Htrue, false, HTRUE_SEED);
+      A = Htrue * Htrue.t();
+
+      // Free auxiliary variables
+      Htrue.clear();
+    } else {
+      MAT Wtrue = arma::zeros<MAT>(m, k);
+      gen_discard(0, m, k, Wtrue, false, WTRUE_SEED);
+      MAT Htrue = arma::zeros<MAT>(k, n);
+      gen_discard(0, n, k, Htrue, true, HTRUE_SEED);
+      A = Wtrue * Htrue;
+
+      // Free auxiliary variables
+      Wtrue.clear();
+      Htrue.clear();
+    }
+  }
+  if (adjrand) {
+    A = kalpha * (A) + kbeta;
+    A = ceil(A);
+  }
+}
+
+/*
+ * Generate random sparse matrix
+ */
+void generate_rand_matrix(SP_MAT &A, std::string rtype, 
+        UWORD m, UWORD n, UWORD k, double density, bool symm_flag = false,
+        bool adjrand = false, int kalpha = 5, int kbeta = 10) {
+  if (rtype == "uniform") {
+    if (symm_flag) {
+      double dens = 0.5 * density;
+      A = arma::sprandu<SP_MAT>(m, n, dens);
+      A = 0.5 * (A + A.t());
+    } else {
+      A = arma::sprandu<SP_MAT>(m, n, density);
+      INFO << size(nonzeros(A)) << std::endl;
+    }
+  } else if (rtype == "normal") {
+    if (symm_flag) {
+      double dens = 0.5 * density;
+      A = arma::sprandn<SP_MAT>(m, n, dens);
+      A = 0.5 * (A + A.t());
+    } else {
+      A = arma::sprandn<SP_MAT>(m, n, density);
+    }
+  } else if (rtype == "lowrank") {
+    if (symm_flag) {
+      double dens = 0.5 * density;
+      SP_MAT mask = arma::sprandu<SP_MAT>(m, n, dens);
+      mask = 0.5 * (mask + mask.t());
+      mask = arma::spones(mask);
+      MAT Htrue = arma::zeros(n, k);
+      gen_discard(0, n, k, Htrue, false, HTRUE_SEED);
+      A = SP_MAT(mask % (Htrue * Htrue.t()));
+
+      // Free auxiliary space
+      Htrue.clear();
+      mask.clear();
+    } else {
+      SP_MAT mask = arma::sprandu<SP_MAT>(m, n, density);
+      mask = arma::spones(mask);
+      MAT Wtrue = arma::zeros(m, k);
+      gen_discard(0, m, k, Wtrue, false, WTRUE_SEED);
+      MAT Htrue = arma::zeros(k, n);
+      gen_discard(0, n, k, Htrue, true, HTRUE_SEED);
+      A = SP_MAT(mask % (Wtrue * Htrue));
+
+      // Free auxiliary space
+      Wtrue.clear();
+      Htrue.clear();
+      mask.clear();
+    }
+  }
+  // Adjust and project non-zeros
+  SP_MAT::iterator start_it = A.begin();
+  SP_MAT::iterator end_it = A.end();
+  for (SP_MAT::iterator it = start_it; it != end_it; ++it) {
+    double curVal = (*it);
+    if (adjrand) {
+      (*it) = ceil(kalpha * curVal + kbeta);
+    }
+    if ((*it) < 0) (*it) = kbeta;
+  }
+}
+
+int debug_hook(){
+  int i = 0;
+  while(i < 1){}
+  return 0;
 }
 
 #endif  // COMMON_UTILS_HPP_

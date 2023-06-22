@@ -230,9 +230,7 @@ class BPPNMF : public NMF<T> {
            << this->num_iterations() << ")"
            << " time =" << totalW2 + totalH2 << std::endl;
       this->computeObjectiveError();
-      INFO << "Completed it = " << currentIteration
-           << " BPPERR=" << sqrt(this->objective_err) / this->normA
-           << std::endl;
+      this->printObjective(currentIteration);
       currentIteration++;
     }
     this->normalize_by_W();

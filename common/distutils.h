@@ -2,8 +2,10 @@
 #ifndef COMMON_DISTUTILS_H_
 #define COMMON_DISTUTILS_H_
 
+#define APPEND_TIME 1
 // #define MPI_VERBOSE       1
 // #define WRITE_RAND_INPUT  1
+// #define INIT_TRUE_LR      1
 
 // enum distalgotype {MU2D, HALS2D, ANLSBPP2D, NAIVEANLSBPP, AOADMM2D};
 
@@ -20,6 +22,15 @@ enum iodistributions { ONED_ROW, ONED_COL, ONED_DOUBLE, TWOD };
 #define MPI_SLICE_RANK(i) this->m_mpicomm.slice_rank(i)
 #define NUMROWPROCS this->m_mpicomm.pr()
 #define NUMCOLPROCS this->m_mpicomm.pc()
+
+// Macros when there are multiple communicators
+#define ISROOT_C(comm) comm.rank() == 0
+#define MPI_SIZE_C(comm) comm.size()
+#define MPI_RANK_C(comm) comm.rank()
+#define MPI_ROW_RANK_C(comm) comm.row_rank()
+#define MPI_COL_RANK_C(comm) comm.col_rank()
+#define NUMROWPROCS_C(comm) comm.pr()
+#define NUMCOLPROCS_C(comm) comm.pc()
 
 // #define MPITIC tic()
 // #define MPITOC toc()

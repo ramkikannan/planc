@@ -201,9 +201,10 @@ class NMFDriver {
     NMFTYPE nmfAlgorithm(A, W, H);
     nmfAlgorithm.num_iterations(this->m_num_it);
     nmfAlgorithm.symm_reg(this->m_symm_reg);
+    nmfAlgorithm.updalgo(this->m_nmfalgo);
+    // Always compute error for shared memory case
     // nmfAlgorithm.compute_error(this->m_compute_error);
-    // nmfAlgorithm.algorithm(this->m_nmfalgo);
-
+    
     if (!this->m_regW.empty()) {
       nmfAlgorithm.regW(this->m_regW);
     }

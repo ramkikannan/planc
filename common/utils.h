@@ -7,9 +7,12 @@
 // #define _VERBOSE 1
 // #endif
 
-enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, NESTEROV, CPALS, GNSYM, R2};
+enum algotype { MU, HALS, ANLSBPP, NAIVEANLSBPP, AOADMM, 
+        NESTEROV, CPALS, GNSYM, R2, PGD, PGNCG };
 
 enum normtype { NONE, L2NORM, MAXNORM };
+
+enum helptype { NMF, DISTNMF, NTF, DISTNTF, JOINTNMF, DISTJOINTNMF, HIERNMF };
 
 // #if !defined(ARMA_64BIT_WORD)
 // #define ARMA_64BIT_WORD
@@ -41,11 +44,14 @@ enum normtype { NONE, L2NORM, MAXNORM };
 #endif
 
 #define EPSILON_1EMINUS16 0.00000000000000001
+#define EPSILON_1EMINUS8 0.00000001
 #define EPSILON 0.000001
 #define EPSILON_1EMINUS12 1e-12
 #define NUMBEROF_DECIMAL_PLACES 12
 #define RAND_SEED 100
 #define RAND_SEED_SPARSE 100
+#define WTRUE_SEED 1196089
+#define HTRUE_SEED 1230587
 
 // defines for namespace confusion
 #define FMAT arma::fmat
@@ -68,6 +74,7 @@ enum normtype { NONE, L2NORM, MAXNORM };
 
 typedef std::vector<int> STDVEC;
 typedef unsigned int UINT;
+typedef unsigned int uint;
 typedef unsigned long ULONG;
 
 void absmat(const FMAT *X);

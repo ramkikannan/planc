@@ -84,8 +84,7 @@ class MUNMF : public NMF<T> {
            << this->num_iterations() << ")"
            << " time =" << toc() << std::endl;
       this->computeObjectiveError();
-      INFO << "Completed it = " << currentIteration
-           << " MUERR=" << sqrt(this->objective_err) / this->normA << std::endl;
+      this->printObjective(currentIteration);
       currentIteration++;
     }
     this->normalize_by_W();

@@ -33,14 +33,16 @@ class NMF {
    * iteration Htime Wtime totaltime normH normW densityH densityW relError
    */
   MAT stats;
-  double objective_err;  /// objective error at any particular iteration
-  double normA, normW, normH;
+  double objective_err, fit_err_sq;  /// objective and fit error at any particular iteration
+  double normA, normW, normH, l1normW, l1normH;  /// norms of input and factor matrices
+  double symmdiff;  /// difference between factors for symmetric regularization
   double densityW, densityH;
   bool cleared;
   double m_symm_reg;              /// Symmetric Regularization parameter
   unsigned int m_num_iterations;  /// number of iterations
   double m_tolerance; // error tolerance
   std::string input_file_name;
+  algotype m_updalgo; // Update algorithm type
   MAT errMtx;       // used for error computation.
   T A_err_sub_mtx;  // used for error computation.
   /// The regularization is a vector of two values. The first value specifies
@@ -76,14 +78,37 @@ class NMF {
     if (reg(0) > 0) {
       MAT identity = arma::eye<MAT>(this->k, this->k);
       float lambda_l2 = reg(0);
-      (*AtA) = (*AtA) + 2 * lambda_l2 * identity;
+      (*AtA) = (*AtA) + (lambda_l2 * identity);
     }
 
     // L1 - norm regularization
     if (reg(1) > 0) {
       MAT onematrix = arma::ones<MAT>(this->k, this->k);
       float lambda_l1 = reg(1);
-      (*AtA) = (*AtA) + 2 * lambda_l1 * onematrix;
+      (*AtA) = (*AtA) + (lambda_l1 * onematrix);
+    }
+  }
+
+  /**
+   * For both L1 and L2 regularizations we only adjust the
+   * HtH or WtW. This function removes the regularization for
+   * error and objective calculations.
+   * param[in] regularization as a vector
+   * param[out] Gram matrix
+   */
+  void removeReg(const FVEC &reg, MAT *AtA) {
+    // Frobenius norm regularization
+    if (reg(0) > 0) {
+      MAT identity = arma::eye<MAT>(this->k, this->k);
+      float lambda_l2 = reg(0);
+      (*AtA) = (*AtA) - (lambda_l2 * identity);
+    }
+
+    // L1 - norm regularization
+    if (reg(1) > 0) {
+      MAT onematrix = arma::ones<MAT>(this->k, this->k);
+      float lambda_l1 = reg(1);
+      (*AtA) = (*AtA) - (lambda_l1 * onematrix);
     }
   }
 
@@ -95,12 +120,28 @@ class NMF {
    * (WtW+sym_regI)H = WtA + sym_regWt
    * In the following function, lhs is WtW, rhs is WtA and fac is Wt
    */
-
   void applySymmetricReg(double sym_reg, MAT *lhs, MAT *fac, MAT *rhs) {
     if (sym_reg > 0) {
       MAT identity = arma::eye<MAT>(this->k, this->k);
-      (*lhs) = (*lhs) + sym_reg * identity;
-      (*rhs) = (*rhs) + sym_reg * (*fac);
+      (*lhs) = (*lhs) + (sym_reg * identity);
+      (*rhs) = (*rhs) + (sym_reg * (*fac));
+    }
+  }
+
+  /**
+   * This is for symmetric ANLS variant.
+   *
+   * If we are trying to solve for H using normal equation WtWH = WtA
+   * Symmetric regularization will translate to solve
+   * (WtW+sym_regI)H = WtA + sym_regWt
+   * This function removes the regularization for error and objective
+   * calculations.
+   */
+  void removeSymmetricReg(double sym_reg, MAT *lhs, MAT *fac, MAT *rhs) {
+    if (sym_reg > 0) {
+      MAT identity = arma::eye<MAT>(this->k, this->k);
+      (*lhs) = (*lhs) - (sym_reg * identity);
+      (*rhs) = (*rhs) - (sym_reg * (*fac));
     }
   }
 
@@ -355,9 +396,31 @@ class NMF {
     double TrHtAtW = arma::trace(this->H.t() * AtW);
     double TrWtWHtH = arma::trace(WtW * HtH);
 
-    double raw_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
+    // Norms of the factors
+    double fro_W_sq = arma::trace(WtW);
+    double fro_W_obj = this->m_regW(0) * fro_W_sq;
+    this->normW = sqrt(fro_W_sq);
+    double fro_H_sq = arma::trace(HtH);
+    double fro_H_obj = this->m_regH(0) * fro_H_sq;
+    this->normH = sqrt(fro_H_sq);
 
-    this->objective_err = (raw_err > 0)? raw_err : 0.0;
+    this->l1normW = arma::norm(arma::sum(this->W, 1), 2);
+    double l1_W_obj = this->m_regW(1) * this->l1normW * this->l1normW;
+    this->l1normH = arma::norm(arma::sum(this->H, 1), 2);
+    double l1_H_obj = this->m_regH(1) * this->l1normH * this->l1normH;
+
+    // Fit of the NMF approximation
+    this->fit_err_sq = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
+
+    double sym_obj = 0.0;
+    if (this->m_symm_reg > 0) {
+      this->symmdiff = arma::norm(this->W - this->H, "fro");
+      sym_obj = this->m_symm_reg * symmdiff * symmdiff;
+    }
+
+    // Objective being minimized
+    this->objective_err = this->fit_err_sq + fro_W_obj + fro_H_obj
+        + l1_W_obj + l1_H_obj + sym_obj;
   }
 #endif  // ifdef BUILD_SPARSE
   void computeObjectiveError(const T &At, const MAT &WtW, const MAT &HtH) {
@@ -367,8 +430,53 @@ class NMF {
     double TrHtAtW = arma::trace(this->H.t() * AtW);
     double TrWtWHtH = arma::trace(WtW * HtH);
 
-    this->objective_err = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
+    // Norms of the factors
+    double fro_W_sq = arma::trace(WtW);
+    double fro_W_obj = this->m_regW(0) * fro_W_sq;
+    this->normW = sqrt(fro_W_sq);
+    double fro_H_sq = arma::trace(HtH);
+    double fro_H_obj = this->m_regH(0) * fro_H_sq;
+    this->normH = sqrt(fro_H_sq);
+
+    this->l1normW = arma::norm(arma::sum(this->W, 1), 2);
+    double l1_W_obj = this->m_regW(1) * this->l1normW * this->l1normW;
+    this->l1normH = arma::norm(arma::sum(this->H, 1), 2);
+    double l1_H_obj = this->m_regH(1) * this->l1normH * this->l1normH;
+
+    // Fit of the NMF approximation
+    this->fit_err_sq = sqnormA - (2 * TrHtAtW) + TrWtWHtH;
+
+    double sym_obj = 0.0;
+    if (this->m_symm_reg > 0) {
+      this->symmdiff = arma::norm(this->W - this->H, "fro");
+      sym_obj = this->m_symm_reg * symmdiff * symmdiff;
+    }
+
+    // Objective being minimized
+    this->objective_err = this->fit_err_sq + fro_W_obj + fro_H_obj
+        + l1_W_obj + l1_H_obj + sym_obj;
   }
+
+  /// Print out the objective stats
+  void printObjective(const int itr) {
+    double err = (this->fit_err_sq > 0)? sqrt(this->fit_err_sq) : this->normA;
+    INFO << "Completed it = " << itr 
+         << "::algo::" << this->m_updalgo << "::k::" << this->k << std::endl;
+    INFO << "objective::" << this->objective_err 
+         << "::squared error::" << this->fit_err_sq << std::endl 
+         << "error::" << err 
+         << "::relative error::" << err / this->normA << std::endl;
+    INFO << "W frobenius norm::" << this->normW 
+         << "::W L_12 norm::" << this->l1normW << std::endl
+         << "H frobenius norm::" << this->normH 
+         << "::H L_12 norm::" << this->l1normH << std::endl;
+    if (this->m_symm_reg > 0) {
+      INFO << "symmdiff::" << this->symmdiff 
+           << "::relative symmdiff::" << this->symmdiff / this->normW
+           << std::endl;
+    }
+  }
+
   /// Sets number of iterations for the NMF algorithms
   void num_iterations(const int it) { this->m_num_iterations = it; }
   /// Sets the relative error tolerance for NMF algorithms
@@ -387,6 +495,8 @@ class NMF {
   void symm_reg(const double &i_symm_reg) { this->m_symm_reg = i_symm_reg; }
   /// Returns the Symmetric regularization parameter
   double symm_reg() { return this->m_symm_reg; }
+  /// Set the update algorithm
+  void updalgo(algotype dat) { this->m_updalgo = dat; }
 
   /// Returns the number of iterations
   const unsigned int num_iterations() const { return m_num_iterations; }

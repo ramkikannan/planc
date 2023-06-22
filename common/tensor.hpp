@@ -3,7 +3,11 @@
 #ifndef COMMON_TENSOR_HPP_
 #define COMMON_TENSOR_HPP_
 
+#ifdef MKL_FOUND
+#include <mkl.h>
+#else
 #include <cblas.h>
+#endif
 #include <armadillo>
 #include <fstream>
 #include <ios>

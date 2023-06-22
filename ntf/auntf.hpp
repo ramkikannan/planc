@@ -6,7 +6,12 @@
 #define MPITIC tic();
 #define MPITOC toc();
 
+#ifdef MKL_FOUND
+#include <mkl.h>
+#else
 #include <cblas.h>
+#endif
+
 #include <armadillo>
 #include <vector>
 #include "common/ncpfactors.hpp"

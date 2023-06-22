@@ -1,0 +1,55 @@
+{
+    "run_nmf_cit": [
+            {
+                "feature_mat_path" : ".../feats.mtx",
+                "conn_mat_path" : ".../conns.mtx",
+                "format" : "mm",
+                "procs" : [4,9,16],
+                "pr" : [2,3,4],
+                "pc" : [2,3,4],
+                "output_path" : ".../sanity_check_cit_hepth",
+                "alpha" : [-1, 0, 10, 20],
+                "beta" : [-1, 0, 1, 2],
+                "m" : 1152,
+                "n" : 4542601,
+                "k" : [10, 5, 12, 14],
+                "algorithm" : [2, 9],
+                "iterations" : [100, 50],
+                "planc_path": ".../build_dist/sparse_distnmf",
+                "mpirun_path" : ".../mpirun",
+                "debug" : "",
+                "error" : "1",
+                "just_parse": false,
+                "partition" : true,
+                "metadata_path": ".../metadata.mat",
+                "matlab_output_path": ".../output/",
+                "partitioner_output_path": ".../output/partitioned/"
+            }
+        ],"run_nmf_oag": [
+            {
+                "feature_mat_path" : ".../feats.mtx",
+                "conn_mat_path" : ".../conns.mtx",
+                "format" : "mm",
+                "procs" : [4,9,16],
+                "pr" : [2,3,4],
+                "pc" : [2,3,4],
+                "output_path" : ".../sanity_check_cit_hepth",
+                "alpha" : [-1, 0, 10, 20],
+                "beta" : [-1, 0, 1, 2],
+                "m" : 1152,
+                "n" : 4542601,
+                "k" : [10, 5, 12, 14],
+                "algorithm" : [2, 9],
+                "iterations" : [100, 50],
+                "planc_path": ".../build_dist/sparse_distnmf",
+                "mpirun_path" : ".../mpirun",
+                "debug" : "",
+                "error" : "1",
+                "just_parse": false,
+                "partition" : true,
+                "metadata_path": ".../metadata.mat",
+                "matlab_output_path": ".../output/",
+                "partitioner_output_path": ".../output/partitioned/"
+            }
+        ]
+}

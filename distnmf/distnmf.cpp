@@ -47,6 +47,7 @@ class DistNMFDriver {
   normtype m_input_normalization;
   int m_max_luciters;
   int m_initseed;
+  int m_unpartitioned = 0;
 
 #ifdef BUILD_CUDA
   void printDevProp(cudaDeviceProp devProp) {
@@ -118,13 +119,16 @@ class DistNMFDriver {
     DistIO<MAT> dio(mpicomm, m_distio, A);
 #endif  // ifdef BUILD_SPARSE
 
-    if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
+    // if (!(m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0)) {
       dio.readInput(m_Afile_name, this->m_globalm, this->m_globaln, this->m_k,
                     this->m_sparsity, this->m_pr, this->m_pc, this->m_symm_flag,
-                    this->m_adj_rand, this->m_input_normalization);
-    } else {
-      dio.readInput(m_Afile_name);
-    }
+                    this->m_adj_rand, this->m_input_normalization, this->m_unpartitioned);
+    // } else {
+    //   dio.readInput(m_Afile_name);
+    // }
+
+    // auto A = dio.A();
+
 #ifdef BUILD_SPARSE
     SP_MAT Arows = dio.Arows();
     SP_MAT Acols = dio.Acols();
@@ -178,6 +182,12 @@ class DistNMFDriver {
 //             gpuQuery();
 //         }
 // #endif
+
+  // int i = 0;
+  // while(i<1){
+  //   sleep(5);
+  // }
+
 #ifdef USE_PACOSS
     std::string dim_part_file_name = this->m_Afile_name;
     dim_part_file_name += ".dpart.part" + std::to_string(mpicomm.rank());
@@ -226,28 +236,16 @@ class DistNMFDriver {
     DistIO<MAT> dio(mpicomm, m_distio, A);
 #endif  // ifdef BUILD_SPARSE. One outstanding PACOSS
 
-    if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) == 0) {
-      dio.readInput(m_Afile_name, this->m_globalm, this->m_globaln, this->m_k,
-                    this->m_sparsity, this->m_pr, this->m_pc, this->m_symm_flag,
-                    this->m_adj_rand, this->m_input_normalization);
-    } else {
-      dio.readInput(m_Afile_name, this->m_globalm, this->m_globaln, this->m_k,
-                    this->m_sparsity, this->m_pr, this->m_pc, this->m_symm_flag,
-                    this->m_adj_rand, this->m_input_normalization);
-    }
+    dio.readInput(m_Afile_name, this->m_globalm, this->m_globaln, this->m_k,
+                this->m_sparsity, this->m_pr, this->m_pc, this->m_symm_flag,
+                this->m_adj_rand, this->m_input_normalization, this->m_unpartitioned);
     A = dio.A();
 
-    //if (m_Afile_name.compare(0, rand_prefix.size(), rand_prefix) != 0) {
-    //  UWORD localm = A.n_rows;
-    //  UWORD localn = A.n_cols;
-    //
-    //  /*MPI_Allreduce(&localm, &(this->m_globalm), 1, MPI_INT,
-    //   *            MPI_SUM, mpicomm.commSubs()[0]);
-    //   * MPI_Allreduce(&localn, &(this->m_globaln), 1, MPI_INT,
-    //   *            MPI_SUM, mpicomm.commSubs()[1]);*/
-    //  this->m_globalm = localm * m_pr;
-    //  this->m_globaln = localn * m_pc;
-    //}
+#ifdef MPI_VERBOSE
+    INFO << "mpicomm.rank(): " << mpicomm.rank() << " A: " << std::endl;
+    A.brief_print();
+#endif
+
 #ifdef WRITE_RAND_INPUT
     dio.writeRandInput();
 #endif  // ifdef WRITE_RAND_INPUT
@@ -348,6 +346,7 @@ class DistNMFDriver {
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    // Write out the factor matrices (if needed)
     if (!m_outputfile_name.empty()) {
       dio.writeOutput(nmfAlgorithm.getLeftLowRankFactor(),
                       nmfAlgorithm.getRightLowRankFactor(), m_outputfile_name);
@@ -377,6 +376,7 @@ class DistNMFDriver {
     this->m_max_luciters = pc.max_luciters();
     this->m_initseed = pc.initseed();
     this->m_outputfile_name = pc.output_file_name();
+    this->m_unpartitioned = pc.unpartitioned();
 
     // Put in the default LUC iterations
     if (this->m_max_luciters == -1) {
