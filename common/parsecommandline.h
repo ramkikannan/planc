@@ -24,6 +24,11 @@
 #define ADJRAND 2008
 #define NUMLUCITERS 2009
 #define INITSEED 2010
+#define ALPHAREG 2011
+#define BETAREG 2012
+#define MAT_TYPE 2013
+#define MOMENTUM 2014
+#define UNPARTITIONED 2015
 
 // enum factorizationtype{FT_NMF, FT_DISTNMF, FT_NTF, FT_DISTNTF};
 
@@ -86,13 +91,20 @@ struct option plancopts[] = {
     {"iter", required_argument, 0, 't'},
     {"nodes", required_argument, 0, 'n'},
     {"tolerance", required_argument, 0, 'l'},
+    {"connection_matrix", required_argument, 0, 'c'},
     {"numkblocks", required_argument, 0, NUMKBLOCKS},
     {"normalization", required_argument, 0, NORMALIZATION},
     {"dimtree", required_argument, 0, DIMTREE},
     {"symm", required_argument, 0, SYMMETRICREG},
+    {"alpha", required_argument, 0, ALPHAREG},
+    {"beta", required_argument, 0, BETAREG},
+    {"mat_type", required_argument, 0, MAT_TYPE},
     {"adjrand", no_argument, 0, ADJRAND},
     {"luciters", required_argument, 0, NUMLUCITERS},
     {"seed", required_argument, 0, INITSEED},
+    {"conn_grid", required_argument, 0, 'q'},
+    {"momentum", required_argument, 0, MOMENTUM},
+    {"unpartitioned", required_argument, 0, UNPARTITIONED},
     {0, 0, 0, 0}};
 
 #endif  // COMMON_PARSECOMMANDLINE_H_

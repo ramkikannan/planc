@@ -158,11 +158,22 @@ class GNSYMNMF : public NMF<T> {
       stale_matmul = false;
       err_matmuls++;
     }
-
+    
+    this->normH = sqrt(arma::trace(HtH));
     double tAHHt = arma::trace(AHt * this->H);
     double tHtHHtH = arma::trace(HtH * HtH);
-    double raw_err = this->sqnormA - (2*tAHHt) + tHtHHtH;
-    this->objective_err = (raw_err > 0)? raw_err : 0;
+    this->fit_err_sq = this->sqnormA - (2*tAHHt) + tHtHHtH;
+    this->objective_err = this->fit_err_sq;
+  }
+
+  void printObjective(const int itr) {
+    double err = (this->fit_err_sq > 0)? sqrt(this->fit_err_sq) : this->normA;
+    INFO << "Completed it = " << itr << std::endl;
+    INFO << "objective::" << this->objective_err 
+         << "::squared error::" << this->fit_err_sq << std::endl 
+         << "error::" << err 
+         << "::relative error::" << err / this->normA << std::endl;
+    INFO << "H frobenius norm::" << this->normH << std::endl;
   }
 
   void computeNMF() {
@@ -244,9 +255,7 @@ class GNSYMNMF : public NMF<T> {
            << this->num_iterations() << ")"
            << " time =" << toc() << std::endl;
       this->computeObjectiveError();
-      INFO << "Completed it = " << currentIteration
-           << " GNSYMERR=" << sqrt(this->objective_err) / this->normA
-           << std::endl;
+      this->printObjective(currentIteration);
       currentIteration++;
     }
   }

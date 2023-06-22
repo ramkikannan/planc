@@ -1,4 +1,4 @@
-# OpenMP NMF
+# MPI Based HierNMF2
 
 ## Install Instructions
 
@@ -33,7 +33,7 @@ Refer to the build scripts found in the [build](build/README.md) directory for a
 PLANC supports both dense and sparse input matrices via the `-DCMAKE_BUILD_SPARSE` flag. To generate a sparse build run the following command.
 ```
 cmake -DCMAKE_BUILD_SPARSE=1 [path to the CMakeLists.txt]
-```
+``` 
 ### Other Macros
 
 `cmake` macros
@@ -47,24 +47,23 @@ Code level macros - Defined in distutils.h
 1. `MPI_VERBOSE` - Be **doubly sure** about what you do. It prints all intermediary matrices. Try this only for very very small matrix that is of size less than 10.
 2. `WRITE_RAND_INPUT` - for dumping the generated random matrix.
 
-## Runtime usage
+### IO options
 
-Tell OpenBlas how many threads you want to use. For example on a quad core system use the following.
+PLANC uses MPI-IO to read in dense input matrices.
+For sparse matrices, it can reads in files split by the [partitioners](utilities/) provided. 
 
-```
-export OPENBLAS_NUM_THREADS=4
-export MKL_NUM_THREADS=4
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MKL_LIB
-```
+PLANC uses MPI-IO for outputting the factor matrices into a single file per factor matrix.
 
 ## Command Line options
-For a full list of command line options please run `nmf -h`. Some common options are listed below.
-* `-k` Sets the low-rank parameter for the approximation.
+For a full list of command line options please run `hiernmf -h`. Some common options are listed below.
+* `-p` Sets the processor grid dimensions.
+* `-k` Sets the low-rank parameter for the approximation which is the number of leaf nodes in a H2NMF tree.
 * `-d` Sets the input dimensions.
 * `-e` Switch to toggle error calculation. Off by default.
 * `-t` Maximum number of iterations to run the algorithms for.
 * `-a` Algorithm to run.
 * `-i` Input matrix to run on. Can be a synthetic input via options `rand_lowrank`/`rand_uniform`/`rand_normal` or a path to a file.
+* `--nodes` Sets the number of nodes to compute in a H2NMF tree.
 
 ## Citation
 

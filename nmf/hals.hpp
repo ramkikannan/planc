@@ -110,9 +110,7 @@ class HALSNMF : public NMF<T> {
            << this->num_iterations() << ")"
            << " time =" << toc() << std::endl;
       this->computeObjectiveError();
-      INFO << "Completed it = " << currentIteration
-           << " HALSERR=" << sqrt(this->objective_err) / this->normA
-           << std::endl;
+      this->printObjective(currentIteration);
       currentIteration++;
     }
   }

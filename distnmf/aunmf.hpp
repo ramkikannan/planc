@@ -59,6 +59,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
   // needed for symm regularization
   MAT crossFac;     // holds the appropriate row of W,H
   int paired_proc;  // processor to swap factors with
+  double localdiff;
 
   // needed for block implementation to save memory
   MAT Ht_blk;
@@ -109,7 +110,7 @@ class DistAUNMF : public DistNMF<INPUTMATTYPE> {
     }
 #endif
     // allocated for block implementation.
-    Ht_blk.zeros(this->perk, (this->W.n_rows));
+    Ht_blk.zeros(this->perk, (this->H.n_rows));
     AHtij_blk.zeros(this->perk, this->W.n_rows);
 
     // These initialization are for solving H.
@@ -555,6 +556,19 @@ than in dense x sparse. Keeping current version for performance reasons.
         this->time_stats.compute_duration(temp);
         this->time_stats.nnls_duration(temp);
         this->reportTime(temp, "NNLS::H::");
+
+        // Remove crossfac term for error calculation
+        if (this->is_compute_error()) {
+          // Remove the regular regularization
+          this->removeReg(this->regH(), &this->WtW);
+
+          // Remove the symmetric regularization and compute factor difference
+          if (this->symm_reg() > 0) {
+            this->removeSymmetricReg(this->symm_reg(), &this->WtW,
+                  &this->crossFac, &this->WtAij);
+            localdiff = arma::norm(this->prevH - this->crossFac.t(), "fro");
+          }
+        }
       }
       // Update W given HtH and AH step 3 of the algorithm.
       {
@@ -599,41 +613,23 @@ than in dense x sparse. Keeping current version for performance reasons.
         this->time_stats.compute_duration(temp);
         this->time_stats.nnls_duration(temp);
         this->reportTime(temp, "NNLS::W::");
+
+        // Remove gamma term for error calculations
+        if (this->is_compute_error()) {
+          // Remove the regular regularization
+          this->removeReg(this->regW(), &this->HtH);
+
+          // Remove the symmetric regularization and compute factor difference
+          if (this->symm_reg() > 0) {
+            this->removeSymmetricReg(this->symm_reg(), &this->HtH,
+                  &this->crossFac, &this->AHtij);
+          }
+        }
       }
       this->time_stats.duration(MPITOC);  // total_d W&H
       if (iter > 0 && this->is_compute_error()) {
-#ifdef BUILD_SPARSE
-        this->computeError(iter);
-#else
-        this->computeError2(iter);
-#endif
-
-        PRINTROOT("it=" << iter << "::algo::" << this->m_algorithm << "::k::"
-                        << this->k << "::err::" << sqrt(this->objective_err)
-                        << "::relerr::"
-                        << sqrt(this->objective_err / this->m_globalsqnormA));
-
-        // Compute the difference between factor matrices
-        if (this->symm_reg() > 0) {
-          double localdiff = arma::norm(this->Wt-this->crossFac, "fro");
-          double globaldiff = 0.0;
-
-          // Compute global difference
-          localdiff = localdiff * localdiff;
-          MPI_Allreduce(&localdiff, &globaldiff, 1,
-              MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-          double localWnorm = arma::norm(this->Wt, "fro");
-          double globalWnorm = 0.0;
-
-          // Compute global W norm
-          localWnorm = localWnorm * localWnorm;
-          MPI_Allreduce(&localWnorm, &globalWnorm, 1,
-              MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-          PRINTROOT("it=" << iter << "::symmdiff::" << globaldiff
-                    << "::reldiff::" << sqrt(globaldiff / globalWnorm));
-        }
+        this->computeObjectiveError(iter);
+        this->printObjective(iter);
       }
       PRINTROOT("completed it=" << iter
                                 << "::taken::" << this->time_stats.duration());
@@ -658,6 +654,120 @@ than in dense x sparse. Keeping current version for performance reasons.
       this->reportTime(this->time_stats.err_compute_duration(),
                        "total_err_communication");
     }
+  }
+
+  /**
+  * Print out the objective stats
+  */
+  void printObjective(const int itr) {
+    double gnormA = sqrt(this->m_globalsqnormA);
+    double err = (this->fit_err_sq > 0)? sqrt(this->fit_err_sq) : gnormA;
+    PRINTROOT("Completed it =" << itr << "::algo::" << this->m_algorithm 
+         << "::k::" << this->k << std::endl
+         << "objective::" << this->objective_err 
+         << "::squared error::" << this->fit_err_sq << std::endl
+         << "error::" << err 
+         << "::relative error::" << err / gnormA << std::endl
+         << "W frobenius norm::" << this->normW 
+         << "::W L_12 norm::" << this->l1normW << std::endl
+         << "H frobenius norm::" << this->normH 
+         << "::H L_12 norm::" << this->l1normH);
+    if (this->symm_reg() > 0) {
+      PRINTROOT("symmdiff::" << this->symmdiff 
+         << "::relative symmdiff::" << this->symmdiff / this->normW);
+    }
+  }
+
+  /**
+  * Computes the objective function and various measures corresponding
+  * to the progress of the algorithms. We assume that the function will
+  * be called at the end of every outer iteration resuing W^T A.
+  */
+  void computeObjectiveError(const int it) {
+    // Reuse WtA for fast fit computation
+    MPITIC;
+    this->localWtAijH = this->WtAij * this->prevH;
+    double temp = MPITOC; // compute error
+    this->time_stats.err_compute_duration(temp);
+
+#ifdef MPI_VERBOSE
+    DISTPRINTINFO("::it=" << it << PRINTMAT(this->WtAij));
+    DISTPRINTINFO("::it=" << it << PRINTMAT(this->localWtAijH));
+    DISTPRINTINFO("::it=" << it << PRINTMAT(this->prevH));
+    PRINTROOT("::it=" << it << PRINTMAT(this->WtW));
+    PRINTROOT("::it=" << it << PRINTMAT(this->prevHtH));
+#endif
+
+    MPITIC;
+    MPI_Allreduce(this->localWtAijH.memptr(), this->WtAijH.memptr(),
+        this->k * this->k, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    temp = MPITOC; // communication error
+    this->time_stats.err_communication_duration(temp);
+
+#ifdef MPI_VERBOSE
+    DISTPRINTINFO("::it=" << it << PRINTMAT(WtAijH));
+#endif
+
+    // Compute the fit
+    MPITIC;
+    double tWtAijH = trace(this->WtAijH);
+    double tWtWHtH = trace(this->WtW * this->prevHtH);
+    this->fit_err_sq = this->m_globalsqnormA - (2 * tWtAijH) + tWtWHtH;
+    temp = MPITOC;
+    this->time_stats.err_compute_duration(temp);
+
+#ifdef MPI_VERBOSE
+    PRINTROOT("::it=" << it << "normA::" << this->m_globalsqnormA
+                      << "::tWtAijH::" << (2 * tWtAijH)
+                      << "::tWtWHtH::" << tWtWHtH);
+#endif
+
+    // Compute the regularizers
+    MAT onematrix = arma::ones<MAT>(this->k, this->k);
+
+    MPITIC;
+    // Frobenius norm regularization
+    double fro_W_sq = arma::trace(this->WtW);
+    double fro_W_obj = this->m_regW(0) * fro_W_sq;
+    this->normW = sqrt(fro_W_sq);
+    double fro_H_sq = arma::trace(this->prevHtH);
+    double fro_H_obj = this->m_regH(0) * fro_H_sq;
+    this->normH = sqrt(fro_H_sq);
+
+    // L_{12} norm regularization
+    double l1_W_sq = arma::trace(this->WtW * onematrix);
+    double l1_W_obj = this->m_regW(1) * l1_W_sq;
+    this->l1normW = sqrt(l1_W_sq);
+    double l1_H_sq = arma::trace(this->prevHtH * onematrix);
+    double l1_H_obj = this->m_regH(1) * l1_H_sq;
+    this->l1normH = sqrt(l1_H_sq);
+    temp = MPITOC;
+    this->time_stats.err_compute_duration(temp);
+
+    // Symmetric regularization
+    double sym_obj = 0.0;
+
+    if (this->symm_reg() > 0) {
+      double globaldiff = 0.0;
+      double localdiff_sq = localdiff * localdiff;
+      MPITIC;
+      MPI_Allreduce(&localdiff_sq, &globaldiff, 1, MPI_DOUBLE, 
+        MPI_SUM, MPI_COMM_WORLD);
+      temp = MPITOC;
+      this->time_stats.err_communication_duration(temp);
+
+      this->symmdiff = sqrt(globaldiff);
+      sym_obj = this->symm_reg() * globaldiff;
+    }
+
+#ifdef MPI_VERBOSE
+DISTPRINTINFO("::it=" << it << "localdiff::" << localdiff
+                      << "::localdiff_sq::" << localdiff_sq);
+#endif
+
+    // Objective being minimized
+    this->objective_err = this->fit_err_sq + fro_W_obj + fro_H_obj
+        + l1_W_obj + l1_H_obj + sym_obj;
   }
 
   /**
@@ -692,12 +802,12 @@ than in dense x sparse. Keeping current version for performance reasons.
     DISTPRINTINFO(PRINTMAT(WtAijH));
 #endif
     this->time_stats.err_communication_duration(temp);
-    double tWtAijh = trace(this->WtAijH);
+    double tWtAijH = trace(this->WtAijH);
     double tWtWHtH = trace(this->WtW * this->prevHtH);
     PRINTROOT("::it=" << it << "normA::" << this->m_globalsqnormA
-                      << "::tWtAijH::" << 2 * tWtAijh
+                      << "::tWtAijH::" << (2 * tWtAijH)
                       << "::tWtWHtH::" << tWtWHtH);
-    this->objective_err = this->m_globalsqnormA - 2 * tWtAijh + tWtWHtH;
+    this->objective_err = this->m_globalsqnormA - (2 * tWtAijH) + tWtWHtH;
   }
   /*
    * Compute error the old-fashioned way

@@ -14,6 +14,13 @@ then
     module load cmake
 fi
 
+if [ "$SYSTEM" = "andes" ];
+then
+    module load gcc
+    module load openblas 
+    module load cmake
+fi
+
 #load modules EOS
 if [ "$SYSTEM" = "eos" ];
 then
@@ -40,7 +47,7 @@ then
     module load openblas
 fi
 
-for cfg in dense_nmf dense_ntf dense_distnmf dense_distntf sparse_nmf sparse_distnmf dense_hiernmf sparse_hiernmf;
+for cfg in dense_nmf dense_ntf dense_distnmf dense_distntf sparse_nmf sparse_distnmf dense_hiernmf sparse_hiernmf jointnmf distjointnmf;
 do    
     mkdir ../build_$SYSTEM\_$cfg
 done
@@ -54,6 +61,9 @@ do
     if [ "$SYSTEM" = "rhea" ]; then
         cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1
     fi
+    if [ "$SYSTEM" = "andes" ]; then
+        cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1
+    fi
     #we consider this as eos/titan    
     if [ "$SYSTEM" = "eos" ]; then
         CC=CC CXX=CC cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1
@@ -65,7 +75,7 @@ do
     if [ "$SYSTEM" = "summit" ]; then
         CC=gcc CXX=g++ cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=0
     fi
-    make
+    make -j
     popd
 done
 #sparse builds
@@ -73,6 +83,9 @@ for cfg in nmf distnmf hiernmf;
 do
     pushd ../build_$SYSTEM\_sparse_$cfg/
     if [ "$SYSTEM" = "rhea" ]; then
+        cmake $SRC_DIR/$cfg/ -DCMAKE_BUILD_SPARSE=1 -DCMAKE_IGNORE_MKL=1
+    fi
+    if [ "$SYSTEM" = "andes" ]; then
         cmake $SRC_DIR/$cfg/ -DCMAKE_BUILD_SPARSE=1 -DCMAKE_IGNORE_MKL=1
     fi
     #we consider this as eos/titan
@@ -86,7 +99,21 @@ do
     if [ "$SYSTEM" = "summit" ]; then
         CC=gcc CXX=g++ cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_SPARSE=1 -DCMAKE_BUILD_CUDA=0
     fi    
-    make
+    make -j
+    popd
+done
+
+
+for cfg in jointnmf distjointnmf;
+do
+    pushd ../build_$SYSTEM\_$cfg/
+    if [ "$SYSTEM" = "summit" ]; then
+        CC=gcc CXX=g++ cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1 -DCMAKE_BUILD_CUDA=0
+    fi
+    if [ "$SYSTEM" = "andes" ]; then
+        cmake $SRC_DIR/$cfg/ -DCMAKE_IGNORE_MKL=1
+    fi
+    make -j
     popd
 done
 
@@ -99,4 +126,6 @@ cp ../build_$SYSTEM\_sparse_nmf/sparse_nmf .
 cp ../build_$SYSTEM\_sparse_distnmf/sparse_distnmf .
 cp ../build_$SYSTEM\_dense_hiernmf/dense_hiernmf .
 cp ../build_$SYSTEM\_sparse_hiernmf/sparse_hiernmf .
+cp ../build_$SYSTEM\_jointnmf/jointnmf .
+cp ../build_$SYSTEM\_distjointnmf/distjointnmf .
 

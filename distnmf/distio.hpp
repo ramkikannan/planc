@@ -89,7 +89,7 @@ class DistIO {
       arma::arma_rng::set_seed(random_sieve(primeseedidx));
     }
 
-#ifdef DEBUG_VERBOSE
+#ifdef MPI_VERBOSE
     DISTPRINTINFO("randMatrix::" << primeseedidx << "::sp=" << sparsity);
 #endif
 #ifdef BUILD_SPARSE
@@ -442,11 +442,12 @@ class DistIO {
   void readInput(const std::string file_name, UWORD m = 0, UWORD n = 0,
                  UWORD k = 0, double sparsity = 0, UWORD pr = 0, UWORD pc = 0,
                  int symm = 0, bool adj_rand = false,
-                 normtype i_normalization = NONE) {
+                 normtype i_normalization = NONE, int unpartitioned = 1) {
     // INFO << "readInput::" << file_name << "::" << distio << "::"
     //     << m << "::" << n << "::" << pr << "::" << pc
     //     << "::" << this->MPI_RANK << "::" << this->m_mpicomm.size() <<
     //     std::endl;
+    // cout << "UNPARTITIONED: " << unpartitioned << endl;
     std::string rand_prefix("rand_");
     // Check file sizes
     if (symm) {
@@ -537,32 +538,39 @@ class DistIO {
         // sr << file_name << MPI_RANK;
         // The global rank to pr, pc is not deterministic and can be different.
         // Hence naming the file for 2D distributed with pr, pc.
-        // sr << file_name << MPI_ROW_RANK << "_" << MPI_COL_RANK;
+        sr << file_name << MPI_ROW_RANK << "_" << MPI_COL_RANK;
+
+        DISTPRINTINFO("Reading in file:" << sr.str());
+
         int pr = m_mpicomm.pr();
         int pc = m_mpicomm.pc();
 
         int srow = itersplit(m, pr, MPI_ROW_RANK);
         int scol = itersplit(n, pc, MPI_COL_RANK);
 #ifdef BUILD_SPARSE
-        MAT temp_ijv;
-        temp_ijv.load(sr.str(), arma::raw_ascii);
-        if (temp_ijv.n_rows > 0 && temp_ijv.n_cols > 0) {
-          MAT vals(2, temp_ijv.n_rows);
-          MAT idxs_only = temp_ijv.cols(0, 1);
-          arma::umat idxs = arma::conv_to<arma::umat>::from(idxs_only);
-          arma::umat idxst = idxs.t();
-          vals = temp_ijv.col(2);
-          SP_MAT temp_spmat(idxst, vals);
-          m_A = temp_spmat;
-        } else {
-          arma::umat idxs = arma::zeros<arma::umat>(2, 1);
-          VEC vals = arma::zeros<VEC>(1);
-          SP_MAT temp_spmat(idxs, vals);
-          m_A = temp_spmat;
+        if(!unpartitioned){
+          MAT temp_ijv;
+          temp_ijv.load(sr.str(), arma::raw_ascii);
+          if (temp_ijv.n_rows > 0 && temp_ijv.n_cols > 0) {
+            MAT vals(2, temp_ijv.n_rows);
+            MAT idxs_only = temp_ijv.cols(0, 1);
+            arma::umat idxs = arma::conv_to<arma::umat>::from(idxs_only);
+            arma::umat idxst = idxs.t();
+            vals = temp_ijv.col(2);
+            SP_MAT temp_spmat(idxst, vals);
+            m_A = temp_spmat;
+          } else {
+            arma::umat idxs = arma::zeros<arma::umat>(2, 1);
+            VEC vals = arma::zeros<VEC>(1);
+            SP_MAT temp_spmat(idxs, vals);
+            m_A = temp_spmat;
+          }
+          // m_A.load(sr.str(), arma::coord_ascii);
+          // uniform_dist_matrix(m_A);
+          m_A.resize(srow, scol);
+        }else{
+          readInputMatrix(m, n, file_name, m_A, m_mpicomm.gridComm(), unpartitioned);
         }
-        // m_A.load(sr.str(), arma::coord_ascii);
-        // uniform_dist_matrix(m_A);
-        m_A.resize(srow, scol);
 #else
         readInputMatrix(m, n, file_name);
 #endif
@@ -575,6 +583,7 @@ class DistIO {
 #endif
   }
 
+#ifndef BUILD_SPARSE
   void readInputMatrix(int global_m, int global_n,
                        const std::string& input_file_name) {
     int pr = m_mpicomm.pr();
@@ -620,6 +629,8 @@ class DistIO {
     MPI_File_close(&fh);
     MPI_Type_free(&view);
   }
+#endif
+
   /**
    * Writes the factor matrix as output_file_name_W/H
    * @param[in] Local W factor matrix

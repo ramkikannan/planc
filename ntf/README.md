@@ -1,4 +1,4 @@
-# OpenMP NMF
+# OpenMP Based NTF
 
 ## Install Instructions
 
@@ -30,22 +30,19 @@ If you have got MKL, please source `mklvars.sh` before running `make`/`cmake`
 Refer to the build scripts found in the [build](build/README.md) directory for a sample script.
 
 ### Input types
-PLANC supports both dense and sparse input matrices via the `-DCMAKE_BUILD_SPARSE` flag. To generate a sparse build run the following command.
-```
-cmake -DCMAKE_BUILD_SPARSE=1 [path to the CMakeLists.txt]
-```
+PLANC only supports dense input tensors.
+
 ### Other Macros
 
 `cmake` macros
-1. `-DCMAKE_BUILD_SPARSE`: For handling sparse input matrices. Default is a dense build.
 2. `-DCMAKE_BUILD_TYPE=Debug`: For creating debug builds.
 3. `-DCMAKE_WITH_BARRIER_TIMING`: Default is set to barrier timing. To disable build with `-DCMAKE_WITH_BARRIER_TIMING:BOOL=OFF`.
 4. `-DCMAKE_BUILD_CUDA`: Default is off.
 5. `-DCMAKE_IGNORE_MKL`: Ignores MKL when discoverable by `cmake`. If using OpenBLAS, set `-DCMAKE_IGNORE_MKL=1` while building.
 
 Code level macros - Defined in distutils.h
-1. `MPI_VERBOSE` - Be **doubly sure** about what you do. It prints all intermediary matrices. Try this only for very very small matrix that is of size less than 10.
-2. `WRITE_RAND_INPUT` - for dumping the generated random matrix.
+1. `MPI_VERBOSE` - Be **doubly sure** about what you do. It prints all intermediary matrices. Try this only for very very small tensors that is of size less than 10.
+2. `WRITE_RAND_INPUT` - for dumping the generated random tensor.
 
 ## Runtime usage
 
@@ -58,13 +55,14 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:MKL_LIB
 ```
 
 ## Command Line options
-For a full list of command line options please run `nmf -h`. Some common options are listed below.
+For a full list of command line options please run `ntf -h`. Some common options are listed below.
 * `-k` Sets the low-rank parameter for the approximation.
 * `-d` Sets the input dimensions.
 * `-e` Switch to toggle error calculation. Off by default.
 * `-t` Maximum number of iterations to run the algorithms for.
 * `-a` Algorithm to run.
-* `-i` Input matrix to run on. Can be a synthetic input via options `rand_lowrank`/`rand_uniform`/`rand_normal` or a path to a file.
+* `-i` Input tensor to run on. Can be a synthetic input via options `rand_lowrank`/`rand_uniform`/`rand_normal` or a path to a file.
+* `-dimtree` Toggles the dimension tree optimization to speedup MTTKRP calculations. On by default.
 
 ## Citation
 

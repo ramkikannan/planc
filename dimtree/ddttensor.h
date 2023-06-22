@@ -3,7 +3,11 @@
 #ifndef DIMTREE_DDTTENSOR_H_
 #define DIMTREE_DDTTENSOR_H_
 
+#ifdef MKL_FOUND
+#include <mkl.h>
+#else
 #include <cblas.h>
+#endif
 #include <math.h>
 #include <omp.h>
 #include <stdio.h>

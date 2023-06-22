@@ -25,7 +25,7 @@ class NNLS {
   /**
    * Public constructor for NNLS solver via Normal Equations with single RHS. 
    * Base class for solving,
-   * \f$|| AX - b ||_F^2\f$ with \f$X >= 0\f$ via \f$A^TA X = A^Tb\f$.
+   * \f$|| Ax - b ||_F^2\f$ with \f$x >= 0\f$ via \f$A^TA x= A^Tb\f$.
    * 
    * @param[in] lhs of the normal equation. Sent as either A of size \f$m \times n\f$
    *            or AtA of size \f$n \times n\f$ depending on prodSent
@@ -56,7 +56,7 @@ class NNLS {
 /**
    * Public constructor for NNLS solver via Normal Equations with single RHS. 
    * Base class for solving,
-   * \f$|| AX - b ||_F^2\f$ with \f$X >= 0\f$ via \f$A^TA X = A^Tb\f$.
+   * \f$|| Ax - b ||_F^2\f$ with \f$X >= 0\f$ via \f$A^TA x = A^Tb\f$.
    * 
    * @param[in] lhs of the normal equation. Sent as either A of size \f$m \times n\f$
    *            or AtA of size \f$n \times n\f$ depending on prodSent
@@ -120,6 +120,9 @@ class NNLS {
         this->k = RHS.n_cols;
         X.resize(this->n, this->k);
         X.zeros();
+        if (RHS.n_cols == 1) {
+            x.zeros(this->n);
+        }
 #ifdef _VERBOSE
         INFO << "NNLS::Constructor with multiple RHS vector"
              << "k=" << k << std::endl;
@@ -163,6 +166,9 @@ class NNLS {
         this->k = RHS.n_cols;
         X.resize(this->n, this->k);
         X = initX;
+        if (RHS.n_cols == 1) {
+            x = X.col(0);
+        }
 #ifdef _VERBOSE
         INFO << "NNLS::Constructor with multiple RHS vector"
              << "k=" << k << std::endl;
